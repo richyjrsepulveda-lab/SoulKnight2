@@ -945,6 +945,16 @@ namespace SoulKnight.Editor
             var btnSalir = CrearBoton(panel.transform, "SALIR", new Vector2(0, -100), new Vector2(260, 50));
             var txtMsg = CrearTexto(panel.transform, "", new Vector2(0, -180), 20, Color.white);
 
+            // Botón Cambiar Nombre abajo a la izquierda
+            var btnCambiarNombre = CrearBoton(panel.transform, "CAMBIAR NOMBRE", Vector2.zero, new Vector2(290, 44));
+            var rtCambiarNom = btnCambiarNombre.GetComponent<RectTransform>();
+            rtCambiarNom.anchorMin = new Vector2(0f, 0f);
+            rtCambiarNom.anchorMax = new Vector2(0f, 0f);
+            rtCambiarNom.pivot = new Vector2(0f, 0f);
+            rtCambiarNom.anchoredPosition = new Vector2(24f, 24f);
+            var lblCambiarNom = btnCambiarNombre.GetComponentInChildren<Text>();
+            if (lblCambiarNom != null) lblCambiarNom.fontSize = 15;
+
             // Panel de Opciones de Controles Remapeables
             var panelOpcionesObj = new GameObject("PanelOpcionesControles");
             panelOpcionesObj.transform.SetParent(root.transform, false);
@@ -983,6 +993,7 @@ namespace SoulKnight.Editor
             ctrl.botonJugar = btnJugar;
             ctrl.botonOpciones = btnOpciones;
             ctrl.botonSalir = btnSalir;
+            ctrl.botonCambiarNombre = btnCambiarNombre;
             ctrl.textoMensaje = txtMsg;
             ctrl.panelOpciones = panelOpcComp;
 
@@ -1595,9 +1606,6 @@ namespace SoulKnight.Editor
             sombraNomLocal.effectColor = new Color(0f, 0f, 0f, 0.9f);
             sombraNomLocal.effectDistance = new Vector2(1.5f, -1.5f);
 
-            // Sprite blanco base para que uGUI Filled funcione con precisión sin shaders
-            var spriteBlancoBarra = Sprite.Create(Texture2D.whiteTexture, new Rect(0, 0, 4, 4), new Vector2(0.5f, 0.5f));
-
             // Barra de vida HUD (arriba a la izquierda, justo debajo del nombre del jugador local)
             var bvObj = new GameObject("BarraVidaHUD");
             bvObj.transform.SetParent(contArribaIzq.transform, false);
@@ -1609,23 +1617,20 @@ namespace SoulKnight.Editor
             bvRt.sizeDelta = new Vector2(380f, 32f);
 
             var bvFondo = bvObj.AddComponent<Image>();
-            bvFondo.sprite = spriteBlancoBarra;
             bvFondo.color = new Color(0.18f, 0.04f, 0.04f, 0.95f);
 
             var bvRellenoObj = new GameObject("Relleno");
             bvRellenoObj.transform.SetParent(bvObj.transform, false);
             var bvRellenoRt = bvRellenoObj.AddComponent<RectTransform>();
+            bvRellenoRt.pivot = new Vector2(0f, 0.5f);
             bvRellenoRt.anchorMin = Vector2.zero;
             bvRellenoRt.anchorMax = Vector2.one;
-            bvRellenoRt.sizeDelta = new Vector2(-4f, -4f);
-            bvRellenoRt.anchoredPosition = Vector2.zero;
+            bvRellenoRt.offsetMin = new Vector2(2f, 2f);
+            bvRellenoRt.offsetMax = new Vector2(-2f, -2f);
 
             var bvRelleno = bvRellenoObj.AddComponent<Image>();
-            bvRelleno.sprite = spriteBlancoBarra;
             bvRelleno.color = new Color(0.92f, 0.18f, 0.18f, 1f); // Rojo carmesí brillante
-            bvRelleno.type = Image.Type.Filled;
-            bvRelleno.fillMethod = Image.FillMethod.Horizontal;
-            bvRelleno.fillOrigin = (int)Image.OriginHorizontal.Left;
+            bvRelleno.type = Image.Type.Simple;
 
             // Texto numérico de vida ("100 / 100")
             var bvTxtObj = new GameObject("TextoVida");
@@ -1657,24 +1662,20 @@ namespace SoulKnight.Editor
             bmRt.sizeDelta = new Vector2(340f, 26f);
 
             var bmFondo = bmObj.AddComponent<Image>();
-            bmFondo.sprite = spriteBlancoBarra;
             bmFondo.color = new Color(0.12f, 0.06f, 0.18f, 0.95f);
 
             var bmRellenoObj = new GameObject("RellenoMaestria");
             bmRellenoObj.transform.SetParent(bmObj.transform, false);
             var bmRellenoRt = bmRellenoObj.AddComponent<RectTransform>();
+            bmRellenoRt.pivot = new Vector2(0f, 0.5f);
             bmRellenoRt.anchorMin = Vector2.zero;
-            bmRellenoRt.anchorMax = Vector2.one;
-            bmRellenoRt.sizeDelta = new Vector2(-4f, -4f);
-            bmRellenoRt.anchoredPosition = Vector2.zero;
+            bmRellenoRt.anchorMax = new Vector2(0f, 1f);
+            bmRellenoRt.offsetMin = Vector2.zero;
+            bmRellenoRt.offsetMax = Vector2.zero;
 
             var bmRelleno = bmRellenoObj.AddComponent<Image>();
-            bmRelleno.sprite = spriteBlancoBarra;
             bmRelleno.color = new Color(0.78f, 0.38f, 1f, 1f); // Púrpura brillante
-            bmRelleno.type = Image.Type.Filled;
-            bmRelleno.fillMethod = Image.FillMethod.Horizontal;
-            bmRelleno.fillOrigin = (int)Image.OriginHorizontal.Left;
-            bmRelleno.fillAmount = 0f;
+            bmRelleno.type = Image.Type.Simple;
 
             var bmTxtObj = new GameObject("TextoMaestria");
             bmTxtObj.transform.SetParent(bmObj.transform, false);
@@ -1693,7 +1694,6 @@ namespace SoulKnight.Editor
             var barraMaestriaComp = bmObj.AddComponent<BarraVida>();
             barraMaestriaComp.relleno = bmRelleno;
             barraMaestriaComp.textoVida = bmTxt;
-            barraMaestriaComp.Establecer(0, 200);
 
             // Contenedor Arriba a la Derecha (Botón de Pausa arriba del Minimapa)
             var contArribaDer = new GameObject("ContenedorHUD_ArribaDerecha");
@@ -1737,24 +1737,20 @@ namespace SoulKnight.Editor
             bxpRt.sizeDelta = new Vector2(360f, 26f);
 
             var bxpFondo = bxpObj.AddComponent<Image>();
-            bxpFondo.sprite = spriteBlancoBarra;
             bxpFondo.color = new Color(0.05f, 0.12f, 0.20f, 0.95f);
 
             var bxpRellenoObj = new GameObject("RellenoXP");
             bxpRellenoObj.transform.SetParent(bxpObj.transform, false);
             var bxpRellenoRt = bxpRellenoObj.AddComponent<RectTransform>();
+            bxpRellenoRt.pivot = new Vector2(0f, 0.5f);
             bxpRellenoRt.anchorMin = Vector2.zero;
-            bxpRellenoRt.anchorMax = Vector2.one;
-            bxpRellenoRt.sizeDelta = new Vector2(-4f, -4f);
-            bxpRellenoRt.anchoredPosition = Vector2.zero;
+            bxpRellenoRt.anchorMax = new Vector2(0f, 1f);
+            bxpRellenoRt.offsetMin = Vector2.zero;
+            bxpRellenoRt.offsetMax = Vector2.zero;
 
             var bxpRelleno = bxpRellenoObj.AddComponent<Image>();
-            bxpRelleno.sprite = spriteBlancoBarra;
             bxpRelleno.color = new Color(0.12f, 0.88f, 1f, 1f); // Cian eléctrico brillante
-            bxpRelleno.type = Image.Type.Filled;
-            bxpRelleno.fillMethod = Image.FillMethod.Horizontal;
-            bxpRelleno.fillOrigin = (int)Image.OriginHorizontal.Left;
-            bxpRelleno.fillAmount = 0f;
+            bxpRelleno.type = Image.Type.Simple;
 
             var bxpTxtObj = new GameObject("TextoXP");
             bxpTxtObj.transform.SetParent(bxpObj.transform, false);

@@ -119,10 +119,24 @@ namespace SoulKnight
 
             AsegurarTextoMiNombreHUD();
 
-            // Iniciar las barras de progresión en 0 para que se vayan rellenando progresivamente
-            if (barraVida != null) barraVida.Establecer(100, 100);
-            if (barraMaestria != null) barraMaestria.Establecer(0, 200);
-            if (barraXPRun != null) barraXPRun.Establecer(0, 100);
+            // Iniciar las barras de progresión en 0 con su texto de nivel correspondiente
+            if (barraVida != null) barraVida.Establecer(100, 100, true);
+            if (barraMaestria != null)
+            {
+                barraMaestria.Establecer(0, GestorMaestria.XP_POR_NIVEL_MAESTRIA, false);
+                if (barraMaestria.textoVida != null)
+                {
+                    barraMaestria.textoVida.text = $"Maestría Nv.1 (0/{GestorMaestria.XP_POR_NIVEL_MAESTRIA} XP)";
+                }
+            }
+            if (barraXPRun != null)
+            {
+                barraXPRun.Establecer(0, 100, false);
+                if (barraXPRun.textoVida != null)
+                {
+                    barraXPRun.textoVida.text = "Nv.1 (0/100 XP)";
+                }
+            }
 
             GestorMaestria.AlGanarMaestria += OnMaestriaActualizada;
 
@@ -649,13 +663,29 @@ namespace SoulKnight
                     : new Color(0.95f, 0.98f, 1f, 1f);
             }
 
-            if (_personajeLocal != null && barraVida != null)
+            if (_personajeLocal != null)
             {
-                int hpMax = (_personajeLocal.VidaMaxSincronizada.Value > 0)
-                    ? _personajeLocal.VidaMaxSincronizada.Value
-                    : Mathf.Max(1, _personajeLocal.vidaMax);
-                int hpActual = caidoLocal ? 0 : Mathf.Clamp(_personajeLocal.VidaActual.Value, 0, hpMax);
-                barraVida.Establecer(hpActual, hpMax);
+                if (barraVida != null)
+                {
+                    int hpMax = (_personajeLocal.VidaMaxSincronizada.Value > 0)
+                        ? _personajeLocal.VidaMaxSincronizada.Value
+                        : Mathf.Max(1, _personajeLocal.vidaMax);
+                    int hpActual = caidoLocal ? 0 : Mathf.Clamp(_personajeLocal.VidaActual.Value, 0, hpMax);
+                    barraVida.Establecer(hpActual, hpMax, true);
+                }
+
+                if (_personajeLocal.nivelProgreso != null && barraXPRun != null)
+                {
+                    ActualizarProgresoRun(
+                        _personajeLocal.nivelProgreso.NivelActual.Value,
+                        _personajeLocal.nivelProgreso.XPActual.Value,
+                        _personajeLocal.nivelProgreso.XPSiguienteNivel.Value);
+                }
+
+                if (barraMaestria != null && _personajeLocal.TipoPj != TipoPersonaje.Ninguno)
+                {
+                    ActualizarBarraMaestria(_personajeLocal.TipoPj);
+                }
             }
         }
 
@@ -1074,22 +1104,27 @@ namespace SoulKnight
             if (barraMaestria == null || pj == TipoPersonaje.Ninguno) return;
             int xpTotal = GestorMaestria.ObtenerPuntos(pj);
             int nivelMaestria = GestorMaestria.ObtenerNivelMaestria(pj);
-            int xpEnNivel = xpTotal % GestorMaestria.XP_POR_NIVEL_MAESTRIA;
-            barraMaestria.Establecer(xpEnNivel, GestorMaestria.XP_POR_NIVEL_MAESTRIA);
+            bool esMax = nivelMaestria >= GestorMaestria.NIVEL_MAXIMO_MAESTRIA;
+            int xpEnNivel = esMax ? GestorMaestria.XP_POR_NIVEL_MAESTRIA : (xpTotal % GestorMaestria.XP_POR_NIVEL_MAESTRIA);
+            barraMaestria.Establecer(xpEnNivel, GestorMaestria.XP_POR_NIVEL_MAESTRIA, false);
             if (barraMaestria.textoVida != null)
             {
-                barraMaestria.textoVida.text = $"Maestría Nv.{nivelMaestria} ({xpEnNivel}/{GestorMaestria.XP_POR_NIVEL_MAESTRIA} XP)";
+                barraMaestria.textoVida.text = esMax
+                    ? $"Maestría Nv.{nivelMaestria} (MÁXIMO)"
+                    : $"Maestría Nv.{nivelMaestria} ({xpEnNivel}/{GestorMaestria.XP_POR_NIVEL_MAESTRIA} XP)";
             }
         }
 
         public void ActualizarProgresoRun(int nivel, int xpActual, int xpMax)
         {
             if (barraXPRun == null) return;
-            barraXPRun.Establecer(xpActual, Mathf.Max(1, xpMax));
+            bool esMax = nivel >= NivelEnPartida.NivelMaximo;
+            int xpMostrar = esMax ? Mathf.Max(1, xpMax) : xpActual;
+            barraXPRun.Establecer(xpMostrar, Mathf.Max(1, xpMax), false);
             if (barraXPRun.textoVida != null)
             {
-                barraXPRun.textoVida.text = nivel >= NivelEnPartida.NivelMaximo 
-                    ? "⭐ NIVEL RUN 10 (MÁXIMO)" 
+                barraXPRun.textoVida.text = esMax 
+                    ? $"⭐ NIVEL RUN {NivelEnPartida.NivelMaximo} (MÁXIMO)" 
                     : $"Nv.{nivel} ({xpActual}/{xpMax} XP)";
             }
         }

@@ -15,7 +15,21 @@ namespace SoulKnight
 
         void Start()
         {
+            if (inputNombre != null && Global.Instancia != null && Global.Instancia.HayNombreGuardado && !string.IsNullOrWhiteSpace(Global.Instancia.NombreLocal))
+            {
+                inputNombre.text = Global.Instancia.NombreLocal.Trim();
+                inputNombre.ActivateInputField();
+            }
+
             if (botonContinuar) botonContinuar.onClick.AddListener(AlContinuar);
+        }
+
+        void Update()
+        {
+            if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter))
+            {
+                AlContinuar();
+            }
         }
 
         private void AlContinuar()
@@ -23,7 +37,9 @@ namespace SoulKnight
             string nombre = inputNombre != null ? inputNombre.text.Trim() : "";
             if (string.IsNullOrEmpty(nombre))
             {
-                nombre = "Jugador";
+                nombre = (Global.Instancia != null && !string.IsNullOrWhiteSpace(Global.Instancia.NombreLocal))
+                    ? Global.Instancia.NombreLocal.Trim()
+                    : "Jugador";
             }
 
             if (Global.Instancia != null)

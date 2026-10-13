@@ -105,11 +105,25 @@ namespace SoulKnight
 
         private IEnumerator RutinaAutoTest()
         {
-            Debug.Log("[AUTOTEST] Iniciando prueba integral de Lobby y Partida...");
-            yield return new WaitForSeconds(0.5f);
+            Debug.Log("[AUTOTEST] Iniciando prueba integral de Menú, Lobby y Partida...");
             GuardarNombre("RicardoTest");
+            SceneManager.LoadScene(Escenas.MenuPrincipal);
+            yield return new WaitForSeconds(0.5f);
+
+            var menuCtrl = FindObjectOfType<ControladorMenuPrincipal>();
+            string txtBotonNombre = (menuCtrl != null && menuCtrl.botonCambiarNombre != null)
+                ? menuCtrl.botonCambiarNombre.GetComponentInChildren<UnityEngine.UI.Text>()?.text
+                : "NULL";
+            Debug.Log($"[AUTOTEST] MenuPrincipal cargado. BotonCambiarNombre: '{txtBotonNombre}'");
+            if (menuCtrl == null || menuCtrl.botonCambiarNombre == null)
+            {
+                Debug.LogError("[AUTOTEST] FALLO: Falta botonCambiarNombre en MenuPrincipal.");
+                Application.Quit(1);
+                yield break;
+            }
+
             CrearSala("SalaTest", "");
-            yield return new WaitForSeconds(1.5f);
+            yield return new WaitForSeconds(1.2f);
 
             Debug.Log($"[AUTOTEST] Escena actual tras CrearSala: {SceneManager.GetActiveScene().name}, Personajes activos: {Personaje.Todos.Count}");
             if (Personaje.Todos.Count != 1)
@@ -131,20 +145,32 @@ namespace SoulKnight
             }
 
             SalaRed.Instancia.IniciarPartida();
-            yield return new WaitForSeconds(1.5f);
+            yield return new WaitForSeconds(1.2f);
 
-            string txtNom = HUDJugador.Instancia != null && HUDJugador.Instancia.textoMiNombreHUD != null
-                ? HUDJugador.Instancia.textoMiNombreHUD.text
-                : "NULL";
-            Debug.Log($"[AUTOTEST] Escena Juego cargada: {SceneManager.GetActiveScene().name}, Personajes activos: {Personaje.Todos.Count}, NombreHUD: '{txtNom}'");
-            if (Personaje.Todos.Count != 1)
+            var hud = HUDJugador.Instancia;
+            string txtNom = hud != null && hud.textoMiNombreHUD != null ? hud.textoMiNombreHUD.text : "NULL";
+            string txtMaestria = hud != null && hud.barraMaestria != null && hud.barraMaestria.textoVida != null ? hud.barraMaestria.textoVida.text : "NULL";
+            string txtXP = hud != null && hud.barraXPRun != null && hud.barraXPRun.textoVida != null ? hud.barraXPRun.textoVida.text : "NULL";
+
+            if (Personaje.Todos.Count == 1 && Personaje.Todos[0].nivelProgreso != null)
             {
-                Debug.LogError($"[AUTOTEST] FALLO en Juego: Se esperaban 1 personaje y hay {Personaje.Todos.Count}");
+                Personaje.Todos[0].nivelProgreso.AgregarXP(50);
+            }
+            yield return new WaitForSeconds(0.2f);
+
+            string txtXPTrasGanar = hud != null && hud.barraXPRun != null && hud.barraXPRun.textoVida != null ? hud.barraXPRun.textoVida.text : "NULL";
+            float anchorMaxXP = hud != null && hud.barraXPRun != null && hud.barraXPRun.relleno != null ? hud.barraXPRun.relleno.rectTransform.anchorMax.x : -1f;
+            float posX_XP = hud != null && hud.barraXPRun != null && hud.barraXPRun.relleno != null ? hud.barraXPRun.relleno.rectTransform.offsetMin.x : -999f;
+
+            Debug.Log($"[AUTOTEST] Escena Juego: Personajes={Personaje.Todos.Count}, NombreHUD='{txtNom}', Maestria='{txtMaestria}', XP_Inicial='{txtXP}', XP_50='{txtXPTrasGanar}', AnchorMaxX={anchorMaxXP:F2}, OffsetMinX={posX_XP:F1}");
+            if (Personaje.Todos.Count != 1 || Mathf.Abs(anchorMaxXP - 0.5f) > 0.05f)
+            {
+                Debug.LogError($"[AUTOTEST] FALLO en Juego o BarraXP: Personajes={Personaje.Todos.Count}, AnchorMaxX={anchorMaxXP}");
                 Application.Quit(1);
                 yield break;
             }
 
-            Debug.Log("[AUTOTEST] === PRUEBA INTEGRAL EXITOSA: 1 INSTANCIA EXACTA Y 0 ERRORES ===");
+            Debug.Log("[AUTOTEST] === PRUEBA INTEGRAL EXITOSA: 1 INSTANCIA, BARRAS DE NIVEL OK Y BOTÓN CAMBIAR NOMBRE OK ===");
             Application.Quit(0);
         }
 
