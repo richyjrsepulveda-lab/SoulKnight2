@@ -94,6 +94,60 @@ namespace SoulKnight
             Red.OnClientDisconnectCallback += AlDesconectarseAlguien;
         }
 
+        void Start()
+        {
+            string[] args = Environment.GetCommandLineArgs();
+            if (Array.Exists(args, a => a == "-autotest"))
+            {
+                StartCoroutine(RutinaAutoTest());
+            }
+        }
+
+        private IEnumerator RutinaAutoTest()
+        {
+            Debug.Log("[AUTOTEST] Iniciando prueba integral de Lobby y Partida...");
+            yield return new WaitForSeconds(0.5f);
+            GuardarNombre("RicardoTest");
+            CrearSala("SalaTest", "");
+            yield return new WaitForSeconds(1.5f);
+
+            Debug.Log($"[AUTOTEST] Escena actual tras CrearSala: {SceneManager.GetActiveScene().name}, Personajes activos: {Personaje.Todos.Count}");
+            if (Personaje.Todos.Count != 1)
+            {
+                Debug.LogError($"[AUTOTEST] FALLO en Lobby neutral: Se esperaban 1 personaje y hay {Personaje.Todos.Count}");
+                Application.Quit(1);
+                yield break;
+            }
+
+            SalaRed.Instancia.ElegirPersonaje(TipoPersonaje.Hielo);
+            yield return new WaitForSeconds(0.8f);
+
+            Debug.Log($"[AUTOTEST] Personajes activos tras elegir Hielo: {Personaje.Todos.Count} (Tipo: {Personaje.Todos[0].TipoPj})");
+            if (Personaje.Todos.Count != 1 || Personaje.Todos[0].TipoPj != TipoPersonaje.Hielo)
+            {
+                Debug.LogError($"[AUTOTEST] FALLO al elegir Hielo: Count={Personaje.Todos.Count}");
+                Application.Quit(1);
+                yield break;
+            }
+
+            SalaRed.Instancia.IniciarPartida();
+            yield return new WaitForSeconds(1.5f);
+
+            string txtNom = HUDJugador.Instancia != null && HUDJugador.Instancia.textoMiNombreHUD != null
+                ? HUDJugador.Instancia.textoMiNombreHUD.text
+                : "NULL";
+            Debug.Log($"[AUTOTEST] Escena Juego cargada: {SceneManager.GetActiveScene().name}, Personajes activos: {Personaje.Todos.Count}, NombreHUD: '{txtNom}'");
+            if (Personaje.Todos.Count != 1)
+            {
+                Debug.LogError($"[AUTOTEST] FALLO en Juego: Se esperaban 1 personaje y hay {Personaje.Todos.Count}");
+                Application.Quit(1);
+                yield break;
+            }
+
+            Debug.Log("[AUTOTEST] === PRUEBA INTEGRAL EXITOSA: 1 INSTANCIA EXACTA Y 0 ERRORES ===");
+            Application.Quit(0);
+        }
+
         void Update()
         {
             _descubrimiento?.Actualizar();

@@ -259,17 +259,10 @@ namespace SoulKnight
         {
             string limpio = string.IsNullOrWhiteSpace(nombreJugador) ? "Jugador" : nombreJugador.Trim();
             if (limpio.Length > 30) limpio = limpio.Substring(0, 30);
-            NombreJugadorSincronizado.Value = new FixedString64Bytes(limpio);
-
-            if (SalaRed.Instancia != null)
+            var fs = new FixedString64Bytes(limpio);
+            if (NombreJugadorSincronizado.Value != fs)
             {
-                int idx = SalaRed.Instancia.IndiceDe(OwnerClientId);
-                if (idx >= 0)
-                {
-                    var info = SalaRed.Instancia.Jugadores[idx];
-                    info.nombre = new FixedString64Bytes(limpio);
-                    SalaRed.Instancia.Jugadores[idx] = info;
-                }
+                NombreJugadorSincronizado.Value = fs;
             }
         }
 

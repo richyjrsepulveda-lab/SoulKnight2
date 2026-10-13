@@ -115,10 +115,13 @@ namespace SoulKnight
         {
             if (SalaRed.Instancia == null) return;
 
+            var clientesSpawneados = new HashSet<ulong>();
             int index = 0;
-            foreach (var info in SalaRed.Instancia.Jugadores)
+            for (int i = 0; i < SalaRed.Instancia.Jugadores.Count; i++)
             {
+                var info = SalaRed.Instancia.Jugadores[i];
                 if (info.personaje == TipoPersonaje.Ninguno) continue;
+                if (!clientesSpawneados.Add(info.idCliente)) continue;
 
                 GameObject prefab = null;
                 switch (info.personaje)

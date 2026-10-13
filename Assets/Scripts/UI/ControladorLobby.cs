@@ -668,84 +668,98 @@ namespace SoulKnight
             }
         }
 
+        private bool _actualizandoPersonajesLobby = false;
+
         public void ActualizarPersonajesLobbyServer()
         {
+            if (_actualizandoPersonajesLobby) return;
             if (NetworkManager.Singleton == null || !NetworkManager.Singleton.IsServer) return;
             if (SalaRed.Instancia == null) return;
 
-            var jugadoresActuales = new HashSet<ulong>();
-            int index = 0;
-
-            foreach (var info in SalaRed.Instancia.Jugadores)
+            _actualizandoPersonajesLobby = true;
+            try
             {
-                jugadoresActuales.Add(info.idCliente);
-                TipoPersonaje tipoActual = info.personaje; // Si es Ninguno, se genera el prefab neutral!
+                var jugadoresActuales = new HashSet<ulong>();
+                int index = 0;
 
-                bool necesitaSpawn = false;
-                Vector3 spawnPos = Vector3.zero;
+                for (int i = 0; i < SalaRed.Instancia.Jugadores.Count; i++)
+                {
+                    var info = SalaRed.Instancia.Jugadores[i];
+                    if (!jugadoresActuales.Add(info.idCliente)) continue;
 
-                if (!_personajesLobby.TryGetValue(info.idCliente, out GameObject objActual) || objActual == null)
-                {
-                    necesitaSpawn = true;
-                    if (puntosSpawnLobby != null && puntosSpawnLobby.Length > 0)
-                        spawnPos = puntosSpawnLobby[index % puntosSpawnLobby.Length].position;
-                    else
-                        spawnPos = new Vector3(-3f + index * 2f, 0f, 0f);
-                }
-                else if (_personajeElegidoLobby.TryGetValue(info.idCliente, out TipoPersonaje tipoPrevio) && tipoPrevio != tipoActual)
-                {
-                    necesitaSpawn = true;
-                    spawnPos = objActual.transform.position;
-                    var no = objActual.GetComponent<NetworkObject>();
-                    if (no != null && no.IsSpawned) no.Despawn(true);
-                    else Destroy(objActual);
-                    _personajesLobby.Remove(info.idCliente);
-                }
+                    TipoPersonaje tipoActual = info.personaje; // Si es Ninguno, se genera el prefab neutral!
 
-                if (necesitaSpawn)
-                {
-                    GameObject prefab = tipoActual switch
+                    bool necesitaSpawn = false;
+                    Vector3 spawnPos = Vector3.zero;
+
+                    if (!_personajesLobby.TryGetValue(info.idCliente, out GameObject objActual) || objActual == null)
                     {
-                        TipoPersonaje.Fuego => prefabFuego,
-                        TipoPersonaje.Hielo => prefabHielo,
-                        TipoPersonaje.Electrico => prefabElectrico,
-                        _ => (prefabNeutral != null ? prefabNeutral : prefabFuego)
-                    };
-
-                    if (prefab != null)
-                    {
-                        GameObject nuevoPj = Instantiate(prefab, spawnPos, Quaternion.identity);
-                        var netObj = nuevoPj.GetComponent<NetworkObject>();
-                        if (netObj != null)
-                        {
-                            netObj.SpawnWithOwnership(info.idCliente, destroyWithScene: true);
-                        }
-                        _personajesLobby[info.idCliente] = nuevoPj;
-                        _personajeElegidoLobby[info.idCliente] = tipoActual;
+                        necesitaSpawn = true;
+                        if (puntosSpawnLobby != null && puntosSpawnLobby.Length > 0)
+                            spawnPos = puntosSpawnLobby[index % puntosSpawnLobby.Length].position;
+                        else
+                            spawnPos = new Vector3(-3f + index * 2f, 0f, 0f);
                     }
-                }
-                index++;
-            }
-
-            // Limpiar desconectados
-            var aEliminar = new List<ulong>();
-            foreach (var kvp in _personajesLobby)
-            {
-                if (!jugadoresActuales.Contains(kvp.Key))
-                {
-                    if (kvp.Value != null)
+                    else if (_personajeElegidoLobby.TryGetValue(info.idCliente, out TipoPersonaje tipoPrevio) && tipoPrevio != tipoActual)
                     {
-                        var no = kvp.Value.GetComponent<NetworkObject>();
+                        necesitaSpawn = true;
+                        spawnPos = objActual.transform.position;
+                        var no = objActual.GetComponent<NetworkObject>();
                         if (no != null && no.IsSpawned) no.Despawn(true);
-                        else Destroy(kvp.Value);
+                        else Destroy(objActual);
+                        _personajesLobby.Remove(info.idCliente);
                     }
-                    aEliminar.Add(kvp.Key);
+
+                    if (necesitaSpawn)
+                    {
+                        GameObject prefab = tipoActual switch
+                        {
+                            TipoPersonaje.Fuego => prefabFuego,
+                            TipoPersonaje.Hielo => prefabHielo,
+                            TipoPersonaje.Electrico => prefabElectrico,
+                            _ => (prefabNeutral != null ? prefabNeutral : prefabFuego)
+                        };
+
+                        if (prefab != null)
+                        {
+                            GameObject nuevoPj = Instantiate(prefab, spawnPos, Quaternion.identity);
+                            _personajesLobby[info.idCliente] = nuevoPj;
+                            _personajeElegidoLobby[info.idCliente] = tipoActual;
+
+                            var netObj = nuevoPj.GetComponent<NetworkObject>();
+                            if (netObj != null)
+                            {
+                                netObj.SpawnWithOwnership(info.idCliente, destroyWithScene: true);
+                            }
+                        }
+                    }
+                    index++;
+                }
+
+                // Limpiar desconectados
+                var aEliminar = new List<ulong>();
+                foreach (var kvp in _personajesLobby)
+                {
+                    if (!jugadoresActuales.Contains(kvp.Key))
+                    {
+                        if (kvp.Value != null)
+                        {
+                            var no = kvp.Value.GetComponent<NetworkObject>();
+                            if (no != null && no.IsSpawned) no.Despawn(true);
+                            else Destroy(kvp.Value);
+                        }
+                        aEliminar.Add(kvp.Key);
+                    }
+                }
+                foreach (var id in aEliminar)
+                {
+                    _personajesLobby.Remove(id);
+                    _personajeElegidoLobby.Remove(id);
                 }
             }
-            foreach (var id in aEliminar)
+            finally
             {
-                _personajesLobby.Remove(id);
-                _personajeElegidoLobby.Remove(id);
+                _actualizandoPersonajesLobby = false;
             }
         }
 
