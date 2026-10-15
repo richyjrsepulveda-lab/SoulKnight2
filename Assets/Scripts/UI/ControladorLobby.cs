@@ -408,11 +408,16 @@ namespace SoulKnight
 
             int xpMaestria = GestorMaestria.ObtenerPuntos(pj);
             int nivelMaestria = GestorMaestria.ObtenerNivelMaestria(pj);
-            int xpProgresoNivel = xpMaestria % GestorMaestria.XP_POR_NIVEL_MAESTRIA;
+            bool esMaxMaestria = nivelMaestria >= GestorMaestria.NIVEL_MAXIMO_MAESTRIA;
+            int xpProgresoNivel = esMaxMaestria ? GestorMaestria.XP_POR_NIVEL_MAESTRIA : (xpMaestria % GestorMaestria.XP_POR_NIVEL_MAESTRIA);
 
             if (textoMaestriaCuarto != null)
             {
-                textoMaestriaCuarto.text = $"<b>⭐ MAESTRÍA PERMANENTE: NIVEL {nivelMaestria}</b>  <size=12><color=#a0d8ef>({xpProgresoNivel}/{GestorMaestria.XP_POR_NIVEL_MAESTRIA} XP al Nv.{nivelMaestria + 1})</color></size>\n" +
+                string infoSiguiente = esMaxMaestria
+                    ? "<size=12><color=#ffd700>(¡NIVEL MÁXIMO ALCANZADO!)</color></size>"
+                    : $"<size=12><color=#a0d8ef>({xpProgresoNivel}/{GestorMaestria.XP_POR_NIVEL_MAESTRIA} XP al Nv.{nivelMaestria + 1})</color></size>";
+
+                textoMaestriaCuarto.text = $"<b>⭐ MAESTRÍA PERMANENTE: NIVEL {nivelMaestria}</b>  {infoSiguiente}\n" +
                     $"<size=11><color=#f1fa8c>💡 La Maestría es permanente para este héroe (se guarda en tu cuenta y no se pierde al morir).\nSe gana eliminando monstruos y completando salas.\n• Nv.1 a 4: Desbloquea tus 4 habilidades (Básica, E, Q y Ultimate R).\n• Nv.5 a 20: Concede bonificaciones base.</color></size>";
             }
 

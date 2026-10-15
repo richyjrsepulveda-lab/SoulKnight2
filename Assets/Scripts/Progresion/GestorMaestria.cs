@@ -22,21 +22,25 @@ namespace SoulKnight
         public static int ObtenerPuntos(TipoPersonaje pj)
         {
             if (pj == TipoPersonaje.Ninguno) return 0;
-            return Mathf.Min(XP_MAXIMA_MAESTRIA, PlayerPrefs.GetInt(PrefijoMaestria + pj.ToString(), 0));
+            int guardado = PlayerPrefs.GetInt(PrefijoMaestria + pj.ToString(), 0);
+            return Mathf.Clamp(guardado, 0, XP_MAXIMA_MAESTRIA);
         }
 
         public static int ObtenerNivelMaestria(TipoPersonaje pj)
         {
             if (pj == TipoPersonaje.Ninguno) return 1;
             int xp = ObtenerPuntos(pj);
-            // Nivel 1 a Nivel 20 máximo por ahora
-            return Mathf.Clamp(1 + (xp / XP_POR_NIVEL_MAESTRIA), 1, NIVEL_MAXIMO_MAESTRIA);
+            // Nivel 1 a Nivel 20 máximo por ahora (estrictamente topado a NIVEL_MAXIMO_MAESTRIA)
+            int nivel = 1 + (xp / XP_POR_NIVEL_MAESTRIA);
+            return Mathf.Clamp(nivel, 1, NIVEL_MAXIMO_MAESTRIA);
         }
 
         public static void AgregarPuntos(TipoPersonaje pj, int puntos)
         {
             if (pj == TipoPersonaje.Ninguno || puntos <= 0) return;
             int actual = ObtenerPuntos(pj);
+            if (actual >= XP_MAXIMA_MAESTRIA) return; // Si ya alcanzó el nivel 20 máximo, no seguir acumulando ni disparar eventos innecesarios
+
             int nuevo = Mathf.Min(XP_MAXIMA_MAESTRIA, actual + puntos);
             PlayerPrefs.SetInt(PrefijoMaestria + pj.ToString(), nuevo);
             PlayerPrefs.Save();

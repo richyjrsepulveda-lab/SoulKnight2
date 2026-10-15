@@ -1703,14 +1703,16 @@ namespace SoulKnight.Editor
             arRt.anchorMax = new Vector2(1f, 1f);
             arRt.pivot = new Vector2(1f, 1f);
             arRt.anchoredPosition = new Vector2(-16f, -12f);
-            arRt.sizeDelta = new Vector2(120f, 38f);
+            arRt.sizeDelta = new Vector2(40f, 40f);
 
-            var btnPausaHUD = CrearBoton(contArribaDer.transform, "❚❚ PAUSA", Vector2.zero, new Vector2(115f, 34f));
+            var btnPausaHUD = CrearBoton(contArribaDer.transform, "☰", Vector2.zero, new Vector2(38f, 38f));
             var bRt = btnPausaHUD.GetComponent<RectTransform>();
             bRt.anchorMin = new Vector2(1f, 1f);
             bRt.anchorMax = new Vector2(1f, 1f);
             bRt.pivot = new Vector2(1f, 1f);
             bRt.anchoredPosition = Vector2.zero;
+            var txtBP = btnPausaHUD.GetComponentInChildren<Text>();
+            if (txtBP != null) txtBP.fontSize = 24;
 
             // Contenedor Abajo al Centro (Fila de Habilidades + Barra de XP de Run sobre ella)
             var contenedorAbajo = new GameObject("ContenedorHUD_AbajoCentro");
@@ -1777,12 +1779,12 @@ namespace SoulKnight.Editor
             filaRt.anchorMin = new Vector2(0.5f, 0.5f);
             filaRt.anchorMax = new Vector2(0.5f, 0.5f);
             filaRt.pivot = new Vector2(0.5f, 0.5f);
-            filaRt.anchoredPosition = new Vector2(0f, -12f);
-            filaRt.sizeDelta = new Vector2(340f, 66f);
+            filaRt.anchoredPosition = new Vector2(0f, -6f);
+            filaRt.sizeDelta = new Vector2(380f, 84f);
 
             var slots = new SlotHabilidadHUD[4];
             var iconosHabilidades = new Image[4];
-            float[] posX = new float[] { -114f, -38f, 38f, 114f };
+            float[] posX = new float[] { -141f, -47f, 47f, 141f };
             string[] teclas = new string[] { "LMB", "E", "Q", "R" };
 
             for (int i = 0; i < 4; i++)
@@ -1791,7 +1793,7 @@ namespace SoulKnight.Editor
                 slotObj.transform.SetParent(filaHabilidades.transform, false);
                 var sRt = slotObj.AddComponent<RectTransform>();
                 sRt.anchoredPosition = new Vector2(posX[i], 0f);
-                sRt.sizeDelta = new Vector2(62f, 62f);
+                sRt.sizeDelta = new Vector2(80f, 80f);
 
                 var sFondo = slotObj.AddComponent<Image>();
                 sFondo.color = new Color(0.12f, 0.15f, 0.22f, 0.9f);

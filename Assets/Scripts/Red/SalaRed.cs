@@ -258,8 +258,8 @@ namespace SoulKnight
         public void SolicitarVolverAlLobbyFinPartidaServerRpc(ServerRpcParams rpcParams = default)
         {
             // Llamado al pulsar el botón de Volver en la pantalla de Fin de Partida (cuando mueren todos)
-            // No inicia votación; asegura que la escena de Lobby esté cargada para que cada jugador entre al pulsar
             if (!IsServer) return;
+            MostrarFinPartidaPendiente = false;
             if (SceneManager.GetActiveScene().name != Escenas.Lobby)
             {
                 CargarLobbyTrasFinPartida();
@@ -470,12 +470,6 @@ namespace SoulKnight
             }
 
             PartidaTerminada?.Invoke(victoria);
-
-            // Preparar el Lobby en segundo plano para que cada jugador entre individualmente al pulsar su botón "Volver al Lobby"
-            if (IsServer)
-            {
-                Invoke(nameof(CargarLobbyTrasFinPartida), 0.35f);
-            }
         }
 
         [ClientRpc]

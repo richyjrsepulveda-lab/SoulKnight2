@@ -511,6 +511,33 @@ namespace SoulKnight
             return false;
         }
 
+        [ServerRpc]
+        public void ComprarMejoraTiendaServerRpc(byte tipoMejora, int costo)
+        {
+            if (EstaMuerto.Value) return;
+            if (GastarOro(costo))
+            {
+                AplicarMejoraRun((TipoMejoraRun)tipoMejora);
+            }
+        }
+
+        public bool SolicitarCompraTienda(TipoMejoraRun tipo, int costo)
+        {
+            if (OroRun.Value < costo) return false;
+            if (NetworkManager != null && NetworkManager.IsListening)
+            {
+                ComprarMejoraTiendaServerRpc((byte)tipo, costo);
+            }
+            else
+            {
+                if (GastarOro(costo))
+                {
+                    AplicarMejoraRun(tipo);
+                }
+            }
+            return true;
+        }
+
         public virtual void AplicarMejoraRun(TipoMejoraRun mejora)
         {
             if (!IsServer) return;

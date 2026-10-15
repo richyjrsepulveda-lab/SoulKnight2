@@ -635,23 +635,9 @@ namespace SoulKnight
                 if (sala != null && sala.esSalaTienda)
                 {
                     Vector2 centro = sala.limitesSala.center;
-                    SpawnearPedestalTienda(centro + new Vector2(-2.2f, 0f), TipoMejoraRun.AumentoDano, 30);
-                    SpawnearPedestalTienda(centro + new Vector2(0f, 0f), TipoMejoraRun.AumentoVidaMaxima, 35);
-                    SpawnearPedestalTienda(centro + new Vector2(2.2f, 0f), TipoMejoraRun.PescadoCompleto, 20);
+                    PuestitoTienda.CrearPuestito(centro);
                 }
             }
-        }
-
-        private void SpawnearPedestalTienda(Vector2 pos, TipoMejoraRun tipo, int costoOro)
-        {
-            GameObject itemObj = Instantiate(prefabItemMejoraRun, pos, Quaternion.identity);
-            var item = itemObj.GetComponent<ItemMejoraRun>();
-            if (item != null)
-            {
-                item.Configurar(tipo, costoOro);
-            }
-            var no = itemObj.GetComponent<NetworkObject>();
-            if (no != null) no.Spawn();
         }
 
         private void SpawnearRecompensaFinSala(ControladorSala sala)
@@ -680,7 +666,7 @@ namespace SoulKnight
             var no1 = itemObj.GetComponent<NetworkObject>();
             if (no1 != null) no1.Spawn();
 
-            // 65% de probabilidad de generar una segunda opción (tienda de paso u otra mejora)
+            // 65% de probabilidad de generar una segunda opción gratuita en salas comunes
             if (UnityEngine.Random.value < 0.65f)
             {
                 TipoMejoraRun elegida2 = posibles[UnityEngine.Random.Range(0, posibles.Length)];
@@ -688,8 +674,7 @@ namespace SoulKnight
                 var item2 = itemObj2.GetComponent<ItemMejoraRun>();
                 if (item2 != null)
                 {
-                    int costo = (UnityEngine.Random.value < 0.5f) ? UnityEngine.Random.Range(15, 30) : 0;
-                    item2.Configurar(elegida2, costo);
+                    item2.Configurar(elegida2, 0);
                 }
                 var no2 = itemObj2.GetComponent<NetworkObject>();
                 if (no2 != null) no2.Spawn();

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -78,6 +79,14 @@ namespace SoulKnight
         public Button botonVotarNo;
         private bool _yaVoteLocalmente = false;
 
+        [Header("Tienda Secreta Modal")]
+        public GameObject panelTienda;
+        public bool TiendaAbierta => panelTienda != null && panelTienda.activeSelf;
+        private PuestitoTienda _puestitoActivo;
+        private Text _textoOroTienda;
+        private readonly List<Button> _botonesCompraTienda = new List<Button>();
+        private readonly List<Text> _textosBotonTienda = new List<Text>();
+
         [Header("Transición de Nivel (Fade a Negro)")]
         public Image panelFadeNegro;
         public Text textoBannerNivel;
@@ -104,7 +113,7 @@ namespace SoulKnight
             if (botonPausaHUD)
             {
                 botonPausaHUD.onClick.AddListener(AlternarPausa);
-                // Asegurar que el botón de pausa esté arriba del minimapa (y = -12)
+                // Asegurar que el botón de pausa esté arriba del minimapa (y = -12) y sea un botón cuadrado limpio con 3 rayas
                 var rtContPausa = botonPausaHUD.transform.parent as RectTransform;
                 if (rtContPausa != null && rtContPausa.name == "ContenedorHUD_ArribaDerecha")
                 {
@@ -112,6 +121,22 @@ namespace SoulKnight
                     rtContPausa.anchorMax = new Vector2(1f, 1f);
                     rtContPausa.pivot = new Vector2(1f, 1f);
                     rtContPausa.anchoredPosition = new Vector2(-16f, -12f);
+                    rtContPausa.sizeDelta = new Vector2(40f, 40f);
+                }
+
+                var bRt = botonPausaHUD.GetComponent<RectTransform>();
+                if (bRt != null)
+                {
+                    bRt.sizeDelta = new Vector2(38f, 38f);
+                }
+
+                var txtPausa = botonPausaHUD.GetComponentInChildren<Text>();
+                if (txtPausa != null)
+                {
+                    txtPausa.text = "☰";
+                    txtPausa.fontSize = 24;
+                    txtPausa.fontStyle = FontStyle.Bold;
+                    txtPausa.alignment = TextAnchor.MiddleCenter;
                 }
             }
             if (botonReanudar) botonReanudar.onClick.AddListener(CerrarPausa);
@@ -124,7 +149,14 @@ namespace SoulKnight
             AsegurarBotonControlesPausa();
 
             // Iniciar las barras de progresión en 0 con su texto de nivel correspondiente
-            if (barraVida != null) barraVida.Establecer(100, 100, true);
+            if (barraVida != null)
+            {
+                barraVida.Establecer(100, 100, false);
+                if (barraVida.textoVida != null)
+                {
+                    barraVida.textoVida.text = "100 / 100 HP";
+                }
+            }
             if (barraMaestria != null)
             {
                 barraMaestria.Establecer(0, GestorMaestria.XP_POR_NIVEL_MAESTRIA, false);
@@ -513,9 +545,25 @@ namespace SoulKnight
 
         void Update()
         {
+            if (TiendaAbierta)
+            {
+                if (Input.GetKeyDown(KeyCode.Escape))
+                {
+                    CerrarTienda();
+                    return;
+                }
+            }
+
             if (Controles.Presionada(Controles.Pausa))
             {
-                AlternarPausa();
+                if (TiendaAbierta)
+                {
+                    CerrarTienda();
+                }
+                else
+                {
+                    AlternarPausa();
+                }
             }
 
             // Atajos de votación F1 (SÍ) y F2 (NO)
@@ -648,39 +696,59 @@ namespace SoulKnight
             contAbajo.anchorMin = new Vector2(0.5f, 0f);
             contAbajo.anchorMax = new Vector2(0.5f, 0f);
             contAbajo.pivot = new Vector2(0.5f, 0f);
-            contAbajo.anchoredPosition = new Vector2(0f, 8f);
-            contAbajo.sizeDelta = new Vector2(400f, 155f);
+            contAbajo.anchoredPosition = new Vector2(0f, 6f);
+            contAbajo.sizeDelta = new Vector2(400f, 184f);
 
-            // 1. Fila de Habilidades en la base
+            // 1. Fila de Habilidades en la base (slots aumentados a 80x80 px para visibilidad óptima)
             var filaHab = contAbajo.Find("FilaHabilidades") as RectTransform;
             if (filaHab != null)
             {
                 filaHab.anchorMin = new Vector2(0.5f, 0f);
                 filaHab.anchorMax = new Vector2(0.5f, 0f);
                 filaHab.pivot = new Vector2(0.5f, 0f);
-                filaHab.anchoredPosition = new Vector2(0f, 8f);
-                filaHab.sizeDelta = new Vector2(340f, 66f);
+                filaHab.anchoredPosition = new Vector2(0f, 6f);
+                filaHab.sizeDelta = new Vector2(380f, 84f);
+
+                float[] posX = new float[] { -141f, -47f, 47f, 141f };
+                for (int i = 0; i < filaHab.childCount && i < 4; i++)
+                {
+                    var slotChild = filaHab.GetChild(i) as RectTransform;
+                    if (slotChild != null)
+                    {
+                        slotChild.anchoredPosition = new Vector2(posX[i], 0f);
+                        slotChild.sizeDelta = new Vector2(80f, 80f);
+
+                        var iconoChild = slotChild.Find("Icono") as RectTransform;
+                        if (iconoChild != null)
+                        {
+                            iconoChild.sizeDelta = new Vector2(-6f, -6f);
+                            var imgIco = iconoChild.GetComponent<Image>();
+                            if (imgIco != null) imgIco.preserveAspect = true;
+                        }
+
+                        var sombraChild = slotChild.Find("SombraCooldown") as RectTransform;
+                        if (sombraChild != null)
+                        {
+                            sombraChild.sizeDelta = new Vector2(-6f, -6f);
+                        }
+
+                        var cdChild = slotChild.Find("TextoCooldown") as RectTransform;
+                        if (cdChild != null)
+                        {
+                            var txtCd = cdChild.GetComponent<Text>();
+                            if (txtCd != null) txtCd.fontSize = 15;
+                        }
+
+                        var badgeChild = slotChild.Find("BadgeTecla") as RectTransform;
+                        if (badgeChild != null)
+                        {
+                            badgeChild.sizeDelta = new Vector2(42f, 18f);
+                        }
+                    }
+                }
             }
 
-            // 2. Barra de Vida colocada SOBRE las habilidades
-            if (barraVida != null)
-            {
-                if (barraVida.transform.parent != contAbajo)
-                {
-                    barraVida.transform.SetParent(contAbajo, false);
-                }
-                var rtBv = barraVida.GetComponent<RectTransform>();
-                if (rtBv != null)
-                {
-                    rtBv.anchorMin = new Vector2(0.5f, 0f);
-                    rtBv.anchorMax = new Vector2(0.5f, 0f);
-                    rtBv.pivot = new Vector2(0.5f, 0f);
-                    rtBv.anchoredPosition = new Vector2(0f, 78f);
-                    rtBv.sizeDelta = new Vector2(360f, 22f);
-                }
-            }
-
-            // 3. Barra de Experiencia de Run colocada SOBRE la Barra de Vida
+            // 2. Barra de Experiencia de Run colocada SOBRE las habilidades
             if (barraXPRun != null)
             {
                 if (barraXPRun.transform.parent != contAbajo)
@@ -693,12 +761,30 @@ namespace SoulKnight
                     rtXp.anchorMin = new Vector2(0.5f, 0f);
                     rtXp.anchorMax = new Vector2(0.5f, 0f);
                     rtXp.pivot = new Vector2(0.5f, 0f);
-                    rtXp.anchoredPosition = new Vector2(0f, 104f);
-                    rtXp.sizeDelta = new Vector2(360f, 18f);
+                    rtXp.anchoredPosition = new Vector2(0f, 96f);
+                    rtXp.sizeDelta = new Vector2(370f, 20f);
                 }
             }
 
-            // 4. Contador de Oro en la Run sobre la Barra de Experiencia
+            // 3. Barra de Vida colocada SOBRE la Barra de Experiencia de Run (vida arriba de la barra de nivel)
+            if (barraVida != null)
+            {
+                if (barraVida.transform.parent != contAbajo)
+                {
+                    barraVida.transform.SetParent(contAbajo, false);
+                }
+                var rtBv = barraVida.GetComponent<RectTransform>();
+                if (rtBv != null)
+                {
+                    rtBv.anchorMin = new Vector2(0.5f, 0f);
+                    rtBv.anchorMax = new Vector2(0.5f, 0f);
+                    rtBv.pivot = new Vector2(0.5f, 0f);
+                    rtBv.anchoredPosition = new Vector2(0f, 122f);
+                    rtBv.sizeDelta = new Vector2(370f, 24f);
+                }
+            }
+
+            // 4. Contador de Oro en la Run sobre la Barra de Vida
             if (textoOroRun == null)
             {
                 var existOro = contAbajo.Find("TextoOroRun");
@@ -721,8 +807,17 @@ namespace SoulKnight
                 rtOro.anchorMin = new Vector2(0.5f, 0f);
                 rtOro.anchorMax = new Vector2(0.5f, 0f);
                 rtOro.pivot = new Vector2(0.5f, 0f);
-                rtOro.anchoredPosition = new Vector2(0f, 126f);
-                rtOro.sizeDelta = new Vector2(360f, 20f);
+                rtOro.anchoredPosition = new Vector2(0f, 152f);
+                rtOro.sizeDelta = new Vector2(370f, 20f);
+            }
+            else
+            {
+                var rtOro = textoOroRun.GetComponent<RectTransform>();
+                if (rtOro != null)
+                {
+                    rtOro.anchoredPosition = new Vector2(0f, 152f);
+                    rtOro.sizeDelta = new Vector2(370f, 20f);
+                }
             }
         }
 
@@ -744,20 +839,20 @@ namespace SoulKnight
                 var btnObj = new GameObject("BotonControlesPausa");
                 btnObj.transform.SetParent(panelPausa.transform, false);
                 var img = btnObj.AddComponent<Image>();
-                img.color = new Color(0.18f, 0.22f, 0.32f, 0.95f);
+                img.color = new Color(0.18f, 0.24f, 0.36f, 1f);
                 botonControlesPausa = btnObj.AddComponent<Button>();
 
                 var rt = btnObj.GetComponent<RectTransform>();
                 rt.anchorMin = new Vector2(0.5f, 0.5f);
                 rt.anchorMax = new Vector2(0.5f, 0.5f);
                 rt.pivot = new Vector2(0.5f, 0.5f);
-                rt.sizeDelta = new Vector2(230f, 40f);
+                rt.sizeDelta = new Vector2(240f, 42f);
 
                 var txtObj = new GameObject("Texto");
                 txtObj.transform.SetParent(btnObj.transform, false);
                 var txt = txtObj.AddComponent<Text>();
                 txt.font = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-                txt.fontSize = 11;
+                txt.fontSize = 14;
                 txt.fontStyle = FontStyle.Bold;
                 txt.alignment = TextAnchor.MiddleCenter;
                 txt.color = Color.white;
@@ -774,40 +869,354 @@ namespace SoulKnight
                 PanelOpcionesControles.ObtenerOCrear(transform).Abrir();
             });
 
-            // Reajustar posiciones verticales de los 4 botones en el Menú de Pausa:
-            if (botonReanudar != null)
+            // Reajustar y cuadrar perfectamente los 4 botones en el Menú de Pausa:
+            AjustarBotonPausaIndividual(botonReanudar, "▶ REANUDAR", 55f);
+            AjustarBotonPausaIndividual(botonControlesPausa, "⚙️ CONTROLES", 3f);
+            AjustarBotonPausaIndividual(botonVolverLobbyPausa, "🏠 VOLVER AL LOBBY", -49f);
+            AjustarBotonPausaIndividual(botonSalirPartida, "🚪 SALIR AL MENÚ", -101f);
+        }
+
+        private void AjustarBotonPausaIndividual(Button btn, string textoDefecto, float posY)
+        {
+            if (btn == null) return;
+            var rt = btn.transform as RectTransform;
+            if (rt != null)
             {
-                var rtReanudar = botonReanudar.transform as RectTransform;
-                if (rtReanudar != null)
+                rt.anchorMin = new Vector2(0.5f, 0.5f);
+                rt.anchorMax = new Vector2(0.5f, 0.5f);
+                rt.pivot = new Vector2(0.5f, 0.5f);
+                rt.anchoredPosition = new Vector2(0f, posY);
+                rt.sizeDelta = new Vector2(240f, 42f);
+            }
+
+            var img = btn.GetComponent<Image>();
+            if (img != null)
+            {
+                img.color = new Color(0.18f, 0.24f, 0.36f, 1f);
+            }
+
+            var txt = btn.GetComponentInChildren<Text>();
+            if (txt != null)
+            {
+                txt.font = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+                txt.fontSize = 14;
+                txt.fontStyle = FontStyle.Bold;
+                txt.alignment = TextAnchor.MiddleCenter;
+                txt.color = Color.white;
+            }
+        }
+
+        // =========================================================================
+        // TIENDA SECRETA MODAL (PUESTITO)
+        // =========================================================================
+
+        private void CrearPanelTiendaSiNoExiste()
+        {
+            if (panelTienda != null) return;
+
+            var tiendaObj = new GameObject("PanelTiendaModal");
+            tiendaObj.transform.SetParent(transform, false);
+            tiendaObj.transform.SetAsLastSibling();
+
+            var rtFull = tiendaObj.AddComponent<RectTransform>();
+            rtFull.anchorMin = Vector2.zero;
+            rtFull.anchorMax = Vector2.one;
+            rtFull.sizeDelta = Vector2.zero;
+
+            // Fondo translúcido oscuro para oscurecer la pantalla
+            var imgFondo = tiendaObj.AddComponent<Image>();
+            imgFondo.color = new Color(0.02f, 0.02f, 0.04f, 0.88f);
+
+            // Ventana modal centrada
+            var cardObj = new GameObject("VentanaTienda");
+            cardObj.transform.SetParent(tiendaObj.transform, false);
+            var rtCard = cardObj.AddComponent<RectTransform>();
+            rtCard.anchorMin = new Vector2(0.5f, 0.5f);
+            rtCard.anchorMax = new Vector2(0.5f, 0.5f);
+            rtCard.pivot = new Vector2(0.5f, 0.5f);
+            rtCard.anchoredPosition = Vector2.zero;
+            rtCard.sizeDelta = new Vector2(700f, 440f);
+
+            var imgCard = cardObj.AddComponent<Image>();
+            imgCard.color = new Color(0.08f, 0.10f, 0.15f, 0.98f);
+
+            // Título
+            var titObj = new GameObject("TituloTienda");
+            titObj.transform.SetParent(cardObj.transform, false);
+            var txtTit = titObj.AddComponent<Text>();
+            txtTit.font = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            txtTit.fontSize = 20;
+            txtTit.fontStyle = FontStyle.Bold;
+            txtTit.alignment = TextAnchor.MiddleCenter;
+            txtTit.color = new Color(1f, 0.88f, 0.25f);
+            txtTit.text = "🏪 TIENDA SECRETA DEL GATO MERCADER";
+            var rtTit = titObj.GetComponent<RectTransform>();
+            rtTit.anchorMin = new Vector2(0.5f, 1f);
+            rtTit.anchorMax = new Vector2(0.5f, 1f);
+            rtTit.pivot = new Vector2(0.5f, 1f);
+            rtTit.anchoredPosition = new Vector2(0f, -16f);
+            rtTit.sizeDelta = new Vector2(660f, 32f);
+
+            // Subtítulo
+            var subObj = new GameObject("SubtituloTienda");
+            subObj.transform.SetParent(cardObj.transform, false);
+            var txtSub = subObj.AddComponent<Text>();
+            txtSub.font = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            txtSub.fontSize = 11;
+            txtSub.alignment = TextAnchor.MiddleCenter;
+            txtSub.color = new Color(0.75f, 0.82f, 0.92f);
+            txtSub.text = "Haz clic sobre una mejora para adquirirla con tu oro de la run.";
+            var rtSub = subObj.GetComponent<RectTransform>();
+            rtSub.anchorMin = new Vector2(0.5f, 1f);
+            rtSub.anchorMax = new Vector2(0.5f, 1f);
+            rtSub.pivot = new Vector2(0.5f, 1f);
+            rtSub.anchoredPosition = new Vector2(0f, -48f);
+            rtSub.sizeDelta = new Vector2(660f, 22f);
+
+            // Contador de Oro
+            var oroObj = new GameObject("TextoOroTienda");
+            oroObj.transform.SetParent(cardObj.transform, false);
+            _textoOroTienda = oroObj.AddComponent<Text>();
+            _textoOroTienda.font = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            _textoOroTienda.fontSize = 14;
+            _textoOroTienda.fontStyle = FontStyle.Bold;
+            _textoOroTienda.alignment = TextAnchor.MiddleCenter;
+            _textoOroTienda.color = new Color(1f, 0.85f, 0.2f);
+            _textoOroTienda.text = "💰 Oro Disponible: 0";
+            var rtOro = oroObj.GetComponent<RectTransform>();
+            rtOro.anchorMin = new Vector2(0.5f, 1f);
+            rtOro.anchorMax = new Vector2(0.5f, 1f);
+            rtOro.pivot = new Vector2(0.5f, 1f);
+            rtOro.anchoredPosition = new Vector2(0f, -72f);
+            rtOro.sizeDelta = new Vector2(400f, 24f);
+
+            // Contenedor de Artículos (4 columnas)
+            float[] posX = new float[] { -234f, -78f, 78f, 234f };
+            _botonesCompraTienda.Clear();
+            _textosBotonTienda.Clear();
+
+            for (int i = 0; i < 4; i++)
+            {
+                int itemIndex = i;
+                var itemCardObj = new GameObject($"CardArticulo_{i}");
+                itemCardObj.transform.SetParent(cardObj.transform, false);
+                var rtIc = itemCardObj.AddComponent<RectTransform>();
+                rtIc.anchorMin = new Vector2(0.5f, 0.5f);
+                rtIc.anchorMax = new Vector2(0.5f, 0.5f);
+                rtIc.pivot = new Vector2(0.5f, 0.5f);
+                rtIc.anchoredPosition = new Vector2(posX[i], -12f);
+                rtIc.sizeDelta = new Vector2(148f, 240f);
+
+                var imgIc = itemCardObj.AddComponent<Image>();
+                imgIc.color = new Color(0.12f, 0.16f, 0.24f, 0.95f);
+
+                // Icono
+                var icObj = new GameObject("Icono");
+                icObj.transform.SetParent(itemCardObj.transform, false);
+                var rtIco = icObj.AddComponent<RectTransform>();
+                rtIco.anchorMin = new Vector2(0.5f, 1f);
+                rtIco.anchorMax = new Vector2(0.5f, 1f);
+                rtIco.pivot = new Vector2(0.5f, 1f);
+                rtIco.anchoredPosition = new Vector2(0f, -14f);
+                rtIco.sizeDelta = new Vector2(58f, 58f);
+                var imgSprite = icObj.AddComponent<Image>();
+                imgSprite.preserveAspect = true;
+
+                // Nombre
+                var nomObj = new GameObject("Nombre");
+                nomObj.transform.SetParent(itemCardObj.transform, false);
+                var rtNom = nomObj.AddComponent<RectTransform>();
+                rtNom.anchorMin = new Vector2(0.5f, 1f);
+                rtNom.anchorMax = new Vector2(0.5f, 1f);
+                rtNom.pivot = new Vector2(0.5f, 1f);
+                rtNom.anchoredPosition = new Vector2(0f, -78f);
+                rtNom.sizeDelta = new Vector2(140f, 32f);
+                var txtNom = nomObj.AddComponent<Text>();
+                txtNom.font = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+                txtNom.fontSize = 11;
+                txtNom.fontStyle = FontStyle.Bold;
+                txtNom.alignment = TextAnchor.MiddleCenter;
+                txtNom.color = Color.white;
+
+                // Descripción
+                var descObj = new GameObject("Desc");
+                descObj.transform.SetParent(itemCardObj.transform, false);
+                var rtDesc = descObj.AddComponent<RectTransform>();
+                rtDesc.anchorMin = new Vector2(0.5f, 1f);
+                rtDesc.anchorMax = new Vector2(0.5f, 1f);
+                rtDesc.pivot = new Vector2(0.5f, 1f);
+                rtDesc.anchoredPosition = new Vector2(0f, -114f);
+                rtDesc.sizeDelta = new Vector2(136f, 64f);
+                var txtDesc = descObj.AddComponent<Text>();
+                txtDesc.font = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+                txtDesc.fontSize = 9;
+                txtDesc.alignment = TextAnchor.MiddleCenter;
+                txtDesc.color = new Color(0.72f, 0.85f, 0.95f);
+
+                // Botón Comprar
+                var btnBuyObj = new GameObject("BotonComprar");
+                btnBuyObj.transform.SetParent(itemCardObj.transform, false);
+                var rtBtn = btnBuyObj.AddComponent<RectTransform>();
+                rtBtn.anchorMin = new Vector2(0.5f, 0f);
+                rtBtn.anchorMax = new Vector2(0.5f, 0f);
+                rtBtn.pivot = new Vector2(0.5f, 0f);
+                rtBtn.anchoredPosition = new Vector2(0f, 12f);
+                rtBtn.sizeDelta = new Vector2(134f, 36f);
+
+                var imgBtn = btnBuyObj.AddComponent<Image>();
+                imgBtn.color = new Color(0.20f, 0.55f, 0.35f, 1f);
+                var btn = btnBuyObj.AddComponent<Button>();
+
+                var txtBtnObj = new GameObject("TextoBtn");
+                txtBtnObj.transform.SetParent(btnBuyObj.transform, false);
+                var rtTb = txtBtnObj.AddComponent<RectTransform>();
+                rtTb.anchorMin = Vector2.zero;
+                rtTb.anchorMax = Vector2.one;
+                rtTb.sizeDelta = Vector2.zero;
+                var txtBtn = txtBtnObj.AddComponent<Text>();
+                txtBtn.font = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+                txtBtn.fontSize = 11;
+                txtBtn.fontStyle = FontStyle.Bold;
+                txtBtn.alignment = TextAnchor.MiddleCenter;
+                txtBtn.color = Color.white;
+                txtBtn.text = "COMPRAR";
+
+                btn.onClick.AddListener(() => ComprarArticuloTiendaIndex(itemIndex));
+                _botonesCompraTienda.Add(btn);
+                _textosBotonTienda.Add(txtBtn);
+            }
+
+            // Botón Salir de la Tienda
+            var btnSalirObj = new GameObject("BotonSalirTienda");
+            btnSalirObj.transform.SetParent(cardObj.transform, false);
+            var rtSalir = btnSalirObj.AddComponent<RectTransform>();
+            rtSalir.anchorMin = new Vector2(0.5f, 0f);
+            rtSalir.anchorMax = new Vector2(0.5f, 0f);
+            rtSalir.pivot = new Vector2(0.5f, 0f);
+            rtSalir.anchoredPosition = new Vector2(0f, 14f);
+            rtSalir.sizeDelta = new Vector2(260f, 38f);
+
+            var imgSalir = btnSalirObj.AddComponent<Image>();
+            imgSalir.color = new Color(0.48f, 0.18f, 0.18f, 1f);
+            var btnSalir = btnSalirObj.AddComponent<Button>();
+            btnSalir.onClick.AddListener(CerrarTienda);
+
+            var txtSalirObj = new GameObject("Texto");
+            txtSalirObj.transform.SetParent(btnSalirObj.transform, false);
+            var rtTs = txtSalirObj.AddComponent<RectTransform>();
+            rtTs.anchorMin = Vector2.zero;
+            rtTs.anchorMax = Vector2.one;
+            rtTs.sizeDelta = Vector2.zero;
+            var txtSalir = txtSalirObj.AddComponent<Text>();
+            txtSalir.font = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            txtSalir.fontSize = 12;
+            txtSalir.fontStyle = FontStyle.Bold;
+            txtSalir.alignment = TextAnchor.MiddleCenter;
+            txtSalir.color = Color.white;
+            txtSalir.text = "✖ SALIR DE LA TIENDA (ESC)";
+
+            panelTienda = tiendaObj;
+            panelTienda.SetActive(false);
+        }
+
+        public void AbrirTienda(PuestitoTienda puestito)
+        {
+            if (puestito == null) return;
+            if (panelPausa != null && panelPausa.activeSelf) return;
+            if (panelFinPartida != null && panelFinPartida.activeSelf) return;
+
+            CrearPanelTiendaSiNoExiste();
+            _puestitoActivo = puestito;
+            panelTienda.SetActive(true);
+            Controles.Bloqueado = true;
+            ActualizarItemsTiendaUI();
+        }
+
+        public void CerrarTienda()
+        {
+            if (panelTienda != null)
+            {
+                panelTienda.SetActive(false);
+            }
+            Controles.Bloqueado = false;
+            _puestitoActivo = null;
+        }
+
+        public void ActualizarItemsTiendaUI()
+        {
+            if (_puestitoActivo == null || panelTienda == null || !panelTienda.activeSelf) return;
+
+            int oroLocal = (_personajeLocal != null) ? _personajeLocal.OroRun.Value : 0;
+            if (_textoOroTienda != null)
+            {
+                _textoOroTienda.text = $"💰 Oro Disponible en la Run: {oroLocal}";
+            }
+
+            var cardObj = panelTienda.transform.Find("VentanaTienda");
+            if (cardObj == null) return;
+
+            for (int i = 0; i < _puestitoActivo.articulos.Count && i < _botonesCompraTienda.Count; i++)
+            {
+                var art = _puestitoActivo.articulos[i];
+                var card = cardObj.Find($"CardArticulo_{i}");
+                if (card != null)
                 {
-                    rtReanudar.anchoredPosition = new Vector2(0, 50);
-                    rtReanudar.sizeDelta = new Vector2(230, 40);
+                    var img = card.Find("Icono")?.GetComponent<Image>();
+                    if (img != null) img.sprite = ItemMejoraRun.ObtenerSpriteMejora(art.tipo);
+
+                    var txtNom = card.Find("Nombre")?.GetComponent<Text>();
+                    if (txtNom != null) txtNom.text = art.nombre;
+
+                    var txtDesc = card.Find("Desc")?.GetComponent<Text>();
+                    if (txtDesc != null) txtDesc.text = $"{art.descripcion}\n\n<color=#ffd700><b>{art.costoOro} 💰</b></color>";
+                }
+
+                var btn = _botonesCompraTienda[i];
+                var txtBtn = _textosBotonTienda[i];
+                var imgBtn = btn != null ? btn.GetComponent<Image>() : null;
+
+                if (btn != null && txtBtn != null)
+                {
+                    if (art.comprado)
+                    {
+                        btn.interactable = false;
+                        txtBtn.text = "✔ COMPRADO";
+                        txtBtn.color = new Color(0.7f, 0.7f, 0.7f);
+                        if (imgBtn != null) imgBtn.color = new Color(0.18f, 0.20f, 0.24f, 1f);
+                    }
+                    else if (oroLocal < art.costoOro)
+                    {
+                        btn.interactable = false;
+                        txtBtn.text = $"{art.costoOro} 💰 (Falta oro)";
+                        txtBtn.color = new Color(1f, 0.6f, 0.6f);
+                        if (imgBtn != null) imgBtn.color = new Color(0.35f, 0.18f, 0.18f, 1f);
+                    }
+                    else
+                    {
+                        btn.interactable = true;
+                        txtBtn.text = $"COMPRAR ({art.costoOro} 💰)";
+                        txtBtn.color = Color.white;
+                        if (imgBtn != null) imgBtn.color = new Color(0.18f, 0.60f, 0.35f, 1f);
+                    }
                 }
             }
-            if (botonControlesPausa != null)
+        }
+
+        private void ComprarArticuloTiendaIndex(int index)
+        {
+            if (_puestitoActivo == null || _personajeLocal == null) return;
+            if (index < 0 || index >= _puestitoActivo.articulos.Count) return;
+
+            var art = _puestitoActivo.articulos[index];
+            if (art.comprado) return;
+
+            if (_personajeLocal.OroRun.Value >= art.costoOro)
             {
-                var rtCtrl = botonControlesPausa.transform as RectTransform;
-                if (rtCtrl != null)
+                bool exito = _personajeLocal.SolicitarCompraTienda(art.tipo, art.costoOro);
+                if (exito)
                 {
-                    rtCtrl.anchoredPosition = new Vector2(0, 2);
-                }
-            }
-            if (botonVolverLobbyPausa != null)
-            {
-                var rtLobby = botonVolverLobbyPausa.transform as RectTransform;
-                if (rtLobby != null)
-                {
-                    rtLobby.anchoredPosition = new Vector2(0, -46);
-                    rtLobby.sizeDelta = new Vector2(230, 40);
-                }
-            }
-            if (botonSalirPartida != null)
-            {
-                var rtSalir = botonSalirPartida.transform as RectTransform;
-                if (rtSalir != null)
-                {
-                    rtSalir.anchoredPosition = new Vector2(0, -94);
-                    rtSalir.sizeDelta = new Vector2(230, 40);
+                    _puestitoActivo.MarcarArticuloComprado(index);
+                    ActualizarItemsTiendaUI();
                 }
             }
         }
@@ -861,10 +1270,10 @@ namespace SoulKnight
                         ? _personajeLocal.VidaMaxSincronizada.Value
                         : Mathf.Max(1, _personajeLocal.vidaMax);
                     int hpActual = caidoLocal ? 0 : Mathf.Clamp(_personajeLocal.VidaActual.Value, 0, hpMax);
-                    barraVida.Establecer(hpActual, hpMax, true);
+                    barraVida.Establecer(hpActual, hpMax, false);
                     if (barraVida.textoVida != null)
                     {
-                        barraVida.textoVida.text = $"❤ {hpActual} / {hpMax} HP";
+                        barraVida.textoVida.text = $"{hpActual} / {hpMax} HP";
                     }
                 }
 
@@ -1498,7 +1907,11 @@ namespace SoulKnight
         {
             if (barraVida != null)
             {
-                barraVida.Establecer(actual, max);
+                barraVida.Establecer(actual, max, false);
+                if (barraVida.textoVida != null)
+                {
+                    barraVida.textoVida.text = $"{actual} / {max} HP";
+                }
             }
         }
 

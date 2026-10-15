@@ -506,8 +506,16 @@ namespace SoulKnight
             // 6. Instanciar Controladores de Sala, Antorchas, Puertas de Bloqueo y Spawns por Oleadas
             AsegurarSpritesAntorcha();
 
-            // Si hay suficientes salas intermedias, designar una como sala de tienda
-            int indiceSalaTienda = (salas.Count >= 4) ? 2 : -1;
+            // La sala de tienda es SECRETA:
+            // 1. NO aparece en todos los niveles (aprox 50% de probabilidad).
+            // 2. NUNCA en el camino principal hacia la salida (debe ser una de las habitaciones de relleno / ramificaciones sin salida).
+            // 3. En el minimapa se ve exactamente como cualquier otra sala normal (sin marcas ni íconos dorados).
+            int indiceSalaTienda = -1;
+            if (salas.Count > totalSalasCaminoPrincipal && UnityEngine.Random.value < 0.52f)
+            {
+                // Elegir aleatoriamente una de las habitaciones de relleno laterales sin salida
+                indiceSalaTienda = UnityEngine.Random.Range(totalSalasCaminoPrincipal, salas.Count);
+            }
 
             for (int idx = 0; idx < salas.Count; idx++)
             {
@@ -516,7 +524,7 @@ namespace SoulKnight
                 bool esJefe = s.esSalaJefe;
                 bool esTienda = (idx == indiceSalaTienda && !esInicio && !esJefe);
 
-                var salaObj = new GameObject(esTienda ? $"Sala_Tienda_{idx}" : $"Sala_{idx}");
+                var salaObj = new GameObject($"Sala_{idx}");
                 salaObj.transform.SetParent(contenedorMapa);
                 salaObj.transform.position = new Vector3(s.cx, s.cy, 0f);
 
