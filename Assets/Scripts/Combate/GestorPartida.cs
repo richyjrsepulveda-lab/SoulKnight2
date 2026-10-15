@@ -627,7 +627,7 @@ namespace SoulKnight
 
         public void SpawnearTiendasEnSalas()
         {
-            if (prefabItemMejoraRun == null || !IsServer) return;
+            if (prefabItemMejoraRun == null || NetworkManager.Singleton == null || !NetworkManager.Singleton.IsServer) return;
 
             var salas = FindObjectsOfType<ControladorSala>();
             foreach (var sala in salas)
@@ -656,7 +656,7 @@ namespace SoulKnight
 
         private void SpawnearRecompensaFinSala(ControladorSala sala)
         {
-            if (prefabItemMejoraRun == null || !IsServer || sala == null) return;
+            if (prefabItemMejoraRun == null || sala == null || NetworkManager.Singleton == null || !NetworkManager.Singleton.IsServer) return;
 
             Vector2 centro = sala.limitesSala.center;
 
