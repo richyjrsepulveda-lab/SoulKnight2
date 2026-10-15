@@ -328,7 +328,8 @@ namespace SoulKnight
             }
             else
             {
-                if (Controles.PrincipalPresionado && _cdBolaFuegoRestante <= 0)
+                // Disparo automático continuo al mantener presionado el click izquierdo
+                if (Controles.PrincipalMantenido && _cdBolaFuegoRestante <= 0)
                 {
                     if (PuedeUsarHabilidad(IdHabilidad.Fuego_BolaFuego, out string motivo))
                     {
@@ -344,8 +345,8 @@ namespace SoulKnight
                 }
             }
 
-            // Activar Cabeza de Fuego (E)
-            if (Controles.Presionada(Controles.Habilidad1) && _cdCabezaFuegoRestante <= 0 && !CabezaFuegoActiva.Value)
+            // Activar Cabeza de Fuego (E) - Auto-casteo al mantener presionado
+            if (Controles.AutoDisparo(Controles.Habilidad1) && _cdCabezaFuegoRestante <= 0 && !CabezaFuegoActiva.Value)
             {
                 if (PuedeUsarHabilidad(IdHabilidad.Fuego_Lanzallamas, out string motivo))
                 {
@@ -358,8 +359,8 @@ namespace SoulKnight
                 }
             }
 
-            // Activar Armadura de Fuego (Q)
-            if (Controles.Presionada(Controles.Habilidad2) && _cdArmaduraRestante <= 0 && !ArmaduraActiva.Value)
+            // Activar Armadura de Fuego (Q) - Auto-casteo al mantener presionado
+            if (Controles.AutoDisparo(Controles.Habilidad2) && _cdArmaduraRestante <= 0 && !ArmaduraActiva.Value)
             {
                 if (PuedeUsarHabilidad(IdHabilidad.Fuego_Armadura, out string motivo))
                 {
@@ -437,7 +438,8 @@ namespace SoulKnight
                         danados.Add(enemigo);
                         int danoEscalado = Mathf.RoundToInt(danoCabezaFuego * MultiplicadorDanoTotal);
                         enemigo.RecibirDano(danoEscalado);
-                        enemigo.AplicarQuemadura();
+                        int danoQuemaduraEscalado = Mathf.RoundToInt(18 * MultiplicadorDanoTotal);
+                        enemigo.AplicarQuemadura(danoQuemaduraEscalado);
                     }
                 }
             }

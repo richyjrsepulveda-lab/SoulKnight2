@@ -12,6 +12,7 @@
 .vs/
 .vscode/
 .idea/
+.vsconfig
 ExportedObj/
 .consulo/
 *.csproj

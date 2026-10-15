@@ -256,7 +256,8 @@ namespace SoulKnight
             {
                 int gridW = gen.gridActual.GetLength(0);
                 int gridH = gen.gridActual.GetLength(1);
-                if (_gridReferencia != gen.gridActual || _celdasExploradas == null)
+                if (_gridReferencia != gen.gridActual || _celdasExploradas == null || 
+                    _celdasExploradas.GetLength(0) != gridW || _celdasExploradas.GetLength(1) != gridH)
                 {
                     _gridReferencia = gen.gridActual;
                     _celdasExploradas = new bool[gridW, gridH];
@@ -276,7 +277,10 @@ namespace SoulKnight
                     {
                         for (int gy = syMin; gy <= syMax; gy++)
                         {
-                            _celdasExploradas[gx, gy] = true;
+                            if (gx >= 0 && gx < gridW && gy >= 0 && gy < gridH)
+                            {
+                                _celdasExploradas[gx, gy] = true;
+                            }
                         }
                     }
 
@@ -316,6 +320,7 @@ namespace SoulKnight
                     {
                         for (int gy = y0; gy <= y1; gy++)
                         {
+                            if (gx < 0 || gx >= gridW || gy < 0 || gy >= gridH) continue;
                             if (_celdasExploradas[gx, gy]) continue;
                             if (gen.gridActual[gx, gy] == 0) continue;
 

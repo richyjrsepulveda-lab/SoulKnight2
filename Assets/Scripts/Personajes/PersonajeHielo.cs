@@ -41,6 +41,7 @@ namespace SoulKnight
         // Estados sincronizados
         public NetworkVariable<bool> DisparandoRayo = new NetworkVariable<bool>(false);
         public NetworkVariable<bool> ArmaduraActiva = new NetworkVariable<bool>(false);
+        public NetworkVariable<float> AlcanceEfectivoRayoSincronizado = new NetworkVariable<float>(7.5f, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
 
         // Cooldowns locales UI
         private float _cdBolaHieloRestante = 0f;
@@ -252,12 +253,25 @@ namespace SoulKnight
                     if (_heliceEscarcha != null) _heliceEscarcha.enabled = true;
 
                     Vector2 origen = transform.position;
-                    Vector2 dir = IsOwner ? ((Vector2)Controles.PosicionMouseMundo() - origen).normalized : DireccionApuntado.Value;
+                    Vector2 mouseMundo = Controles.PosicionMouseMundo();
+                    float distMouse = Vector2.Distance(origen, mouseMundo);
+                    // Si el cursor está por debajo del límite, el rayo se recorta al cursor; si está por encima, llega hasta el límite
+                    float alcanceDinamico = IsOwner ? Mathf.Min(distMouse, rangoRayo) : Mathf.Min(AlcanceEfectivoRayoSincronizado.Value, rangoRayo);
+
+                    if (IsOwner && IsSpawned && NetworkManager != null && NetworkManager.IsListening)
+                    {
+                        if (Mathf.Abs(AlcanceEfectivoRayoSincronizado.Value - alcanceDinamico) > 0.05f)
+                        {
+                            AlcanceEfectivoRayoSincronizado.Value = alcanceDinamico;
+                        }
+                    }
+
+                    Vector2 dir = IsOwner ? (mouseMundo - origen).normalized : DireccionApuntado.Value;
                     if (dir.sqrMagnitude < 0.001f) dir = Vector2.right;
 
-                    // El rayo penetra enemigos y solo se frena si choca contra una pared sólida dentro de su alcance moderado
-                    Vector2 destino = origen + dir * rangoRayo;
-                    RaycastHit2D[] hits = Physics2D.RaycastAll(origen, dir, rangoRayo);
+                    // El rayo penetra enemigos y se frena en su alcance dinámico o si choca con una pared sólida
+                    Vector2 destino = origen + dir * alcanceDinamico;
+                    RaycastHit2D[] hits = Physics2D.RaycastAll(origen, dir, alcanceDinamico);
                     foreach (var h in hits)
                     {
                         if (h.collider != null && h.collider.gameObject != gameObject)
@@ -611,8 +625,8 @@ namespace SoulKnight
                 SetDisparandoRayoServerRpc(disparando);
             }
 
-            // Bola de Hielo (E)
-            if (Controles.Presionada(Controles.Habilidad1) && _cdBolaHieloRestante <= 0)
+            // Bola de Hielo (E) - Auto-casteo continuo al mantener presionado
+            if (Controles.AutoDisparo(Controles.Habilidad1) && _cdBolaHieloRestante <= 0)
             {
                 if (PuedeUsarHabilidad(IdHabilidad.Hielo_BolaHielo, out string motivo))
                 {
@@ -628,8 +642,8 @@ namespace SoulKnight
                 }
             }
 
-            // Armadura de Hielo (Q)
-            if (Controles.Presionada(Controles.Habilidad2) && _cdArmaduraRestante <= 0 && !ArmaduraActiva.Value)
+            // Armadura de Hielo (Q) - Auto-casteo continuo al mantener presionado
+            if (Controles.AutoDisparo(Controles.Habilidad2) && _cdArmaduraRestante <= 0 && !ArmaduraActiva.Value)
             {
                 if (PuedeUsarHabilidad(IdHabilidad.Hielo_Armadura, out string motivo))
                 {
@@ -642,8 +656,8 @@ namespace SoulKnight
                 }
             }
 
-            // Era de Hielo (R)
-            if (Controles.Presionada(Controles.Ultimate) && _cdEraHieloRestante <= 0)
+            // Era de Hielo (R) - Auto-casteo continuo al mantener presionado
+            if (Controles.AutoDisparo(Controles.Ultimate) && _cdEraHieloRestante <= 0)
             {
                 if (PuedeUsarHabilidad(IdHabilidad.Hielo_EraHielo, out string motivo))
                 {
@@ -671,8 +685,9 @@ namespace SoulKnight
             Vector2 dir = DireccionApuntado.Value;
             if (dir.sqrMagnitude < 0.001f) dir = Vector2.right;
 
-            // Daña y ralentiza a TODOS los enemigos a lo largo de la trayectoria del rayo dentro del rango moderado
-            RaycastHit2D[] hits = Physics2D.RaycastAll(origen, dir, rangoRayo);
+            // Daña y ralentiza a los enemigos hasta el alcance dinámico recortado al cursor
+            float alcanceEfectivo = Mathf.Min(AlcanceEfectivoRayoSincronizado.Value, rangoRayo);
+            RaycastHit2D[] hits = Physics2D.RaycastAll(origen, dir, alcanceEfectivo);
             foreach (var hit in hits)
             {
                 if (hit.collider == null || hit.collider.gameObject == gameObject) continue;

@@ -37,8 +37,8 @@ namespace SoulKnight
         public NetworkVariable<int> XPActual = new NetworkVariable<int>(0);
         public NetworkVariable<int> XPSiguienteNivel = new NetworkVariable<int>(100);
 
-        // Factor multiplicador de daño que escala con el nivel: (1.0 + (nivel - 1) * 0.12)
-        public float MultiplicadorDano => 1.0f + ((NivelActual.Value - 1) * 0.12f);
+        // Factor multiplicador de daño que escala con el nivel: (1.0 + (nivel - 1) * 0.25) -> ¡Aumento de daño muy notorio por nivel!
+        public float MultiplicadorDano => 1.0f + ((NivelActual.Value - 1) * 0.25f);
 
         public event Action<int> AlSubirNivel;
 

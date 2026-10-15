@@ -109,6 +109,7 @@ namespace SoulKnight
             }
 
             SpawnearJugadores();
+            SpawnearTiendasEnSalas();
         }
 
         private void SpawnearJugadores()
@@ -457,6 +458,11 @@ namespace SoulKnight
                         salaCompletada.AbrirMuroSalidaJefe();
                         ActivarPasajeSiguienteNivel();
                     }
+                    else
+                    {
+                        // Recompensas de mejoras permanentes y compras al despejar la sala
+                        SpawnearRecompensaFinSala(salaCompletada);
+                    }
 
                     if (SalaRed.Instancia != null)
                     {
@@ -575,6 +581,8 @@ namespace SoulKnight
                 SalaRed.Instancia.SincronizarMapaClientRpc(semilla, bioma);
             }
 
+            SpawnearTiendasEnSalas();
+
             int index = 0;
             foreach (var p in _personajesActivos)
             {
@@ -615,6 +623,77 @@ namespace SoulKnight
             }
 
             _transicionEnProgreso = false;
+        }
+
+        public void SpawnearTiendasEnSalas()
+        {
+            if (prefabItemMejoraRun == null || !IsServer) return;
+
+            var salas = FindObjectsOfType<ControladorSala>();
+            foreach (var sala in salas)
+            {
+                if (sala != null && sala.esSalaTienda)
+                {
+                    Vector2 centro = sala.limitesSala.center;
+                    SpawnearPedestalTienda(centro + new Vector2(-2.2f, 0f), TipoMejoraRun.AumentoDano, 30);
+                    SpawnearPedestalTienda(centro + new Vector2(0f, 0f), TipoMejoraRun.AumentoVidaMaxima, 35);
+                    SpawnearPedestalTienda(centro + new Vector2(2.2f, 0f), TipoMejoraRun.PescadoCompleto, 20);
+                }
+            }
+        }
+
+        private void SpawnearPedestalTienda(Vector2 pos, TipoMejoraRun tipo, int costoOro)
+        {
+            GameObject itemObj = Instantiate(prefabItemMejoraRun, pos, Quaternion.identity);
+            var item = itemObj.GetComponent<ItemMejoraRun>();
+            if (item != null)
+            {
+                item.Configurar(tipo, costoOro);
+            }
+            var no = itemObj.GetComponent<NetworkObject>();
+            if (no != null) no.Spawn();
+        }
+
+        private void SpawnearRecompensaFinSala(ControladorSala sala)
+        {
+            if (prefabItemMejoraRun == null || !IsServer || sala == null) return;
+
+            Vector2 centro = sala.limitesSala.center;
+
+            TipoMejoraRun[] posibles = new TipoMejoraRun[]
+            {
+                TipoMejoraRun.AumentoDano,
+                TipoMejoraRun.AumentoDefensa,
+                TipoMejoraRun.AumentoVidaMaxima,
+                TipoMejoraRun.AumentoVelocidad,
+                TipoMejoraRun.PescadoMedio,
+                TipoMejoraRun.PescadoCompleto
+            };
+
+            TipoMejoraRun elegida1 = posibles[UnityEngine.Random.Range(0, posibles.Length)];
+            GameObject itemObj = Instantiate(prefabItemMejoraRun, centro + new Vector2(-1.2f, 0f), Quaternion.identity);
+            var item = itemObj.GetComponent<ItemMejoraRun>();
+            if (item != null)
+            {
+                item.Configurar(elegida1, 0); // Recompensa de sala garantizada y gratuita
+            }
+            var no1 = itemObj.GetComponent<NetworkObject>();
+            if (no1 != null) no1.Spawn();
+
+            // 65% de probabilidad de generar una segunda opción (tienda de paso u otra mejora)
+            if (UnityEngine.Random.value < 0.65f)
+            {
+                TipoMejoraRun elegida2 = posibles[UnityEngine.Random.Range(0, posibles.Length)];
+                GameObject itemObj2 = Instantiate(prefabItemMejoraRun, centro + new Vector2(1.2f, 0f), Quaternion.identity);
+                var item2 = itemObj2.GetComponent<ItemMejoraRun>();
+                if (item2 != null)
+                {
+                    int costo = (UnityEngine.Random.value < 0.5f) ? UnityEngine.Random.Range(15, 30) : 0;
+                    item2.Configurar(elegida2, costo);
+                }
+                var no2 = itemObj2.GetComponent<NetworkObject>();
+                if (no2 != null) no2.Spawn();
+            }
         }
     }
 }

@@ -14,6 +14,7 @@ namespace SoulKnight
         public int indiceSala;
         public bool esSalaInicio;
         public bool esSalaJefe;
+        public bool esSalaTienda;
 
         public Rect limitesSala;       // xMin, yMin, width, height
         public Rect limitesInteriores; // un poco más adentro para que el jugador ya haya cruzado el umbral
@@ -35,11 +36,12 @@ namespace SoulKnight
         private bool _portalesActivos = false;
         private float _escalaPortales = 0f;
 
-        public void Inicializar(int idx, int xMin, int xMax, int yMin, int yMax, bool inicio, bool jefe)
+        public void Inicializar(int idx, int xMin, int xMax, int yMin, int yMax, bool inicio, bool jefe, bool tienda = false)
         {
             indiceSala = idx;
             esSalaInicio = inicio;
             esSalaJefe = jefe;
+            esSalaTienda = tienda;
 
             float w = xMax - xMin + 1;
             float h = yMax - yMin + 1;
@@ -48,7 +50,7 @@ namespace SoulKnight
             // Margen interior de 2.2 unidades para asegurar que el jugador ya entró a la sala antes de cerrar puertas
             limitesInteriores = new Rect(xMin + 1.8f, yMin + 1.8f, Mathf.Max(2f, w - 3.6f), Mathf.Max(2f, h - 3.6f));
 
-            if (esSalaInicio)
+            if (esSalaInicio || esSalaTienda)
             {
                 descubierta = true;
                 despejada = true;
@@ -206,7 +208,7 @@ namespace SoulKnight
             }
 
             // En el servidor: detectar si algún jugador vivo entró a una sala aún no despejada ni en combate
-            if (!esSalaInicio && !despejada && !enCombate)
+            if (!esSalaInicio && !esSalaTienda && !despejada && !enCombate)
             {
                 if (Unity.Netcode.NetworkManager.Singleton != null && Unity.Netcode.NetworkManager.Singleton.IsServer)
                 {

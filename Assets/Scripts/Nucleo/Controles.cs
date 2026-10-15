@@ -61,6 +61,8 @@ namespace SoulKnight
         public static bool PrincipalPresionado => !Bloqueado && (Input.GetKeyDown(GestorControles.ObtenerTecla(AccionControl.AtaquePrincipal)) || Input.GetMouseButtonDown(0)) && !MouseSobreUI();
 
         public static bool Presionada(KeyCode tecla) => !Bloqueado && Input.GetKeyDown(tecla);
+        public static bool Mantenida(KeyCode tecla) => !Bloqueado && Input.GetKey(tecla);
+        public static bool AutoDisparo(KeyCode tecla) => !Bloqueado && (Input.GetKey(tecla) || Input.GetKeyDown(tecla));
 
         /// <summary>Posición del mouse en coordenadas del mundo (equivale a get_global_mouse_position()).</summary>
         public static Vector2 PosicionMouseMundo()

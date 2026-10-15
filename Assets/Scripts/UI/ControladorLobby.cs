@@ -295,6 +295,16 @@ namespace SoulKnight
                     textoEstado.text = $"🎉 ¡Has seleccionado a {seleccionado}! Dirígete al portal norte para iniciar la mazmorra.";
                 }
 
+                // Marcar el cuarto físico para no volver a desplegar la ventana inmediatamente mientras el jugador permanezca adentro
+                var todosCuartos = GameObject.FindObjectsOfType<CuartoFisicoLobby>();
+                foreach (var c in todosCuartos)
+                {
+                    if (c != null && c.personaje == seleccionado)
+                    {
+                        c.MarcarSeleccionado();
+                    }
+                }
+
                 // Desbloquear controles inmediatamente para que el jugador pueda moverse
                 Controles.Bloqueado = false;
                 _cuartoAbierto = TipoPersonaje.Ninguno;
@@ -358,6 +368,16 @@ namespace SoulKnight
 
         public void VolverDeCuarto()
         {
+            // Marcar el cuarto para no reabrirse de inmediato hasta que salga
+            var todosCuartos = GameObject.FindObjectsOfType<CuartoFisicoLobby>();
+            foreach (var c in todosCuartos)
+            {
+                if (c != null && c.personaje == _cuartoAbierto)
+                {
+                    c.MarcarSeleccionado();
+                }
+            }
+
             // Desbloquear controles para poder moverse de nuevo por el Lobby
             Controles.Bloqueado = false;
             _cuartoAbierto = TipoPersonaje.Ninguno;
@@ -392,7 +412,8 @@ namespace SoulKnight
 
             if (textoMaestriaCuarto != null)
             {
-                textoMaestriaCuarto.text = $"<b>⭐ MAESTRÍA PERMANENTE: NIVEL {nivelMaestria}</b>  <size=13><color=#a0d8ef>({xpProgresoNivel}/{GestorMaestria.XP_POR_NIVEL_MAESTRIA} XP al Nv.{nivelMaestria + 1})</color></size>";
+                textoMaestriaCuarto.text = $"<b>⭐ MAESTRÍA PERMANENTE: NIVEL {nivelMaestria}</b>  <size=12><color=#a0d8ef>({xpProgresoNivel}/{GestorMaestria.XP_POR_NIVEL_MAESTRIA} XP al Nv.{nivelMaestria + 1})</color></size>\n" +
+                    $"<size=11><color=#f1fa8c>💡 La Maestría es permanente para este héroe (se guarda en tu cuenta y no se pierde al morir).\nSe gana eliminando monstruos y completando salas.\n• Nv.1 a 4: Desbloquea tus 4 habilidades (Básica, E, Q y Ultimate R).\n• Nv.5 a 20: Concede bonificaciones base.</color></size>";
             }
 
             ulong miId = NetworkManager.Singleton != null ? NetworkManager.Singleton.LocalClientId : 0;

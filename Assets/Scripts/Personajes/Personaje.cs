@@ -34,6 +34,7 @@ namespace SoulKnight
         public NetworkVariable<float> ReduccionDanoLoot = new NetworkVariable<float>(0f);
         public NetworkVariable<float> MultiplicadorVelocidadLoot = new NetworkVariable<float>(1.0f);
         public NetworkVariable<int> NivelMaestriaSincronizado = new NetworkVariable<int>(1);
+        public NetworkVariable<int> OroRun = new NetworkVariable<int>(0);
 
         protected Rigidbody2D _rb;
         protected Collider2D _col;
@@ -370,7 +371,17 @@ namespace SoulKnight
         protected virtual void FixedUpdate()
         {
             bool esControlLocal = IsOwner || NetworkManager == null || !NetworkManager.IsListening;
-            if (!esControlLocal || EstaMuerto.Value) return;
+            if (!esControlLocal) return;
+            if (EstaMuerto.Value)
+            {
+                if (_rb != null)
+                {
+                    _rb.velocity = Vector2.zero;
+                    _rb.angularVelocity = 0f;
+                }
+                _knockback = Vector2.zero;
+                return;
+            }
 
             // Manejo físico del movimiento y knockback inmediatamente en la máquina local (0ms delay)
             float vel = (_corriendo ? ObtenerVelocidadCorrer() : _velocidadActual) * MultiplicadorVelocidadLoot.Value;
@@ -481,6 +492,25 @@ namespace SoulKnight
             }
         }
 
+        public void AgregarOro(int cantidad)
+        {
+            if (!IsServer || cantidad <= 0) return;
+            OroRun.Value += cantidad;
+            MostrarTextoFlotanteClientRpc($"+{cantidad} Oro 💰", new Color(1f, 0.88f, 0.2f));
+        }
+
+        public bool GastarOro(int cantidad)
+        {
+            if (!IsServer || cantidad <= 0) return false;
+            if (OroRun.Value >= cantidad)
+            {
+                OroRun.Value -= cantidad;
+                MostrarTextoFlotanteClientRpc($"-{cantidad} Oro 💰", new Color(1f, 0.5f, 0.2f));
+                return true;
+            }
+            return false;
+        }
+
         public virtual void AplicarMejoraRun(TipoMejoraRun mejora)
         {
             if (!IsServer) return;
@@ -495,30 +525,31 @@ namespace SoulKnight
                     Curar(Mathf.RoundToInt(def.valor));
                     break;
                 case TipoMejoraRun.AumentoDano:
-                    _timerEfectoDano = DURACION_EFECTO_CONSUMIBLE;
-                    MultiplicadorDanoLoot.Value = 1.0f + def.valor;
-                    MostrarEfectoConsumibleHUDClientRpc((byte)mejora, DURACION_EFECTO_CONSUMIBLE);
+                    // Mejora permanente acumulativa en toda la run (+15% por cada item recogido)
+                    MultiplicadorDanoLoot.Value += def.valor;
+                    MostrarTextoFlotanteClientRpc($"¡+{Mathf.RoundToInt(def.valor * 100f)}% Daño Permanente!", new Color(1f, 0.45f, 0.2f));
+                    MostrarEfectoConsumibleHUDClientRpc((byte)mejora, 9999f);
                     break;
                 case TipoMejoraRun.AumentoDefensa:
-                    _timerEfectoDefensa = DURACION_EFECTO_CONSUMIBLE;
-                    ReduccionDanoLoot.Value = Mathf.Clamp(def.valor, 0f, 0.6f);
-                    MostrarEfectoConsumibleHUDClientRpc((byte)mejora, DURACION_EFECTO_CONSUMIBLE);
+                    // Mejora permanente acumulativa en toda la run (+10% de reducción, tope 75%)
+                    ReduccionDanoLoot.Value = Mathf.Clamp(ReduccionDanoLoot.Value + def.valor, 0f, 0.75f);
+                    MostrarTextoFlotanteClientRpc($"¡+{Mathf.RoundToInt(def.valor * 100f)}% Armadura Permanente!", new Color(0.35f, 0.85f, 1f));
+                    MostrarEfectoConsumibleHUDClientRpc((byte)mejora, 9999f);
                     break;
                 case TipoMejoraRun.AumentoVelocidad:
-                    _timerEfectoVelocidad = DURACION_EFECTO_CONSUMIBLE;
-                    MultiplicadorVelocidadLoot.Value = 1.0f + def.valor;
-                    MostrarEfectoConsumibleHUDClientRpc((byte)mejora, DURACION_EFECTO_CONSUMIBLE);
+                    // Mejora permanente acumulativa en toda la run (+12% de velocidad)
+                    MultiplicadorVelocidadLoot.Value += def.valor;
+                    MostrarTextoFlotanteClientRpc($"¡+{Mathf.RoundToInt(def.valor * 100f)}% Velocidad Permanente!", new Color(0.45f, 1f, 0.45f));
+                    MostrarEfectoConsumibleHUDClientRpc((byte)mejora, 9999f);
                     break;
                 case TipoMejoraRun.AumentoVidaMaxima:
-                    if (_bonoVidaMaxActivo == 0)
-                    {
-                        _bonoVidaMaxActivo = Mathf.RoundToInt(def.valor);
-                        vidaMax += _bonoVidaMaxActivo;
-                        VidaMaxSincronizada.Value = vidaMax;
-                    }
-                    _timerEfectoVidaMax = DURACION_EFECTO_CONSUMIBLE;
-                    Curar(Mathf.RoundToInt(def.valor));
-                    MostrarEfectoConsumibleHUDClientRpc((byte)mejora, DURACION_EFECTO_CONSUMIBLE);
+                    // Mejora permanente acumulativa en toda la run (+30 vida máxima)
+                    int bonoHp = Mathf.RoundToInt(def.valor);
+                    vidaMax += bonoHp;
+                    VidaMaxSincronizada.Value = vidaMax;
+                    Curar(bonoHp);
+                    MostrarTextoFlotanteClientRpc($"¡+{bonoHp} Vida Máxima Permanente!", new Color(1f, 0.25f, 0.45f));
+                    MostrarEfectoConsumibleHUDClientRpc((byte)mejora, 9999f);
                     break;
             }
         }
@@ -575,6 +606,7 @@ namespace SoulKnight
 
         public virtual void AplicarKnockback(Vector2 direccion, float fuerza)
         {
+            if (EstaMuerto.Value) return;
             if (!IsServer && !IsOwner) return;
             if (IsOwner)
             {
@@ -590,6 +622,7 @@ namespace SoulKnight
         [ClientRpc]
         public void AplicarKnockbackClientRpc(Vector2 direccion, float fuerza)
         {
+            if (EstaMuerto.Value) return;
             if (IsOwner)
             {
                 _knockback = direccion.normalized * (fuerza / 32f);
@@ -600,8 +633,15 @@ namespace SoulKnight
         {
             if (!IsServer) return;
             EstaMuerto.Value = true;
-            _rb.velocity = Vector2.zero;
-            _col.enabled = false;
+            _knockback = Vector2.zero;
+            _inputMovimiento = Vector2.zero;
+            if (_rb != null)
+            {
+                _rb.velocity = Vector2.zero;
+                _rb.angularVelocity = 0f;
+                _rb.isKinematic = true;
+            }
+            if (_col != null) _col.enabled = false;
 
             // Apagar inmediatamente cualquier rayo, lanzallamas o habilidad activa al morir
             LimpiarEstadosYHabilidades();
@@ -754,7 +794,15 @@ namespace SoulKnight
         {
             if (muerto)
             {
-                _col.enabled = false;
+                if (_col != null) _col.enabled = false;
+                _knockback = Vector2.zero;
+                _inputMovimiento = Vector2.zero;
+                if (_rb != null)
+                {
+                    _rb.velocity = Vector2.zero;
+                    _rb.angularVelocity = 0f;
+                    _rb.isKinematic = true;
+                }
                 if (_spriteRenderer != null) _spriteRenderer.color = new Color(0.6f, 0.6f, 0.6f, 0.55f);
                 transform.rotation = Quaternion.Euler(0, 0, 80f);
                 if (IsOwner)
@@ -764,7 +812,17 @@ namespace SoulKnight
             }
             else
             {
-                _col.enabled = true;
+                if (_col != null) _col.enabled = true;
+                _knockback = Vector2.zero;
+                if (_rb != null)
+                {
+                    _rb.velocity = Vector2.zero;
+                    _rb.angularVelocity = 0f;
+                    if (IsOwner || NetworkManager == null || !NetworkManager.IsListening)
+                    {
+                        _rb.isKinematic = false;
+                    }
+                }
                 if (_spriteRenderer != null) _spriteRenderer.color = Color.white;
                 transform.rotation = Quaternion.identity;
             }

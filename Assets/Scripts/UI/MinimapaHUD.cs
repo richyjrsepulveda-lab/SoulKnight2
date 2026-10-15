@@ -28,47 +28,59 @@ namespace SoulKnight
             marcoObj.transform.SetParent(canvasParent, false);
 
             var imgMarco = marcoObj.AddComponent<Image>();
-            imgMarco.color = new Color(0.06f, 0.08f, 0.12f, 0.92f);
+            imgMarco.color = new Color(0.04f, 0.06f, 0.09f, 0.96f);
 
             var rtMarco = marcoObj.GetComponent<RectTransform>();
             rtMarco.anchorMin = new Vector2(1f, 1f);
             rtMarco.anchorMax = new Vector2(1f, 1f);
             rtMarco.pivot = new Vector2(1f, 1f);
             rtMarco.anchoredPosition = new Vector2(-16f, -54f);
-            rtMarco.sizeDelta = new Vector2(224f, 168f);
+            rtMarco.sizeDelta = new Vector2(285f, 214f); // Más grande y amplio para navegación clara
 
+            // Borde exterior definido y nítido de estilo pixel-art
             var bordeObj = new GameObject("BordeMinimapa");
             bordeObj.transform.SetParent(marcoObj.transform, false);
             var imgBorde = bordeObj.AddComponent<Image>();
-            imgBorde.color = new Color(0.28f, 0.36f, 0.48f, 0.65f);
+            imgBorde.color = new Color(0.32f, 0.65f, 0.95f, 0.95f); // Borde azul cian bien definido
             var rtBorde = bordeObj.GetComponent<RectTransform>();
             rtBorde.anchorMin = Vector2.zero;
             rtBorde.anchorMax = Vector2.one;
-            rtBorde.sizeDelta = new Vector2(-4f, -4f);
+            rtBorde.sizeDelta = Vector2.zero;
+
+            // Capa interna que deja 3px de borde marcado
+            var fondoInterno = new GameObject("FondoInternoMinimapa");
+            fondoInterno.transform.SetParent(bordeObj.transform, false);
+            var imgFondoInt = fondoInterno.AddComponent<Image>();
+            imgFondoInt.color = new Color(0.05f, 0.07f, 0.11f, 0.98f);
+            var rtFondoInt = fondoInterno.GetComponent<RectTransform>();
+            rtFondoInt.anchorMin = Vector2.zero;
+            rtFondoInt.anchorMax = Vector2.one;
+            rtFondoInt.offsetMin = new Vector2(3f, 3f);
+            rtFondoInt.offsetMax = new Vector2(-3f, -3f);
 
             var rawObj = new GameObject("LienzoMinimapa");
-            rawObj.transform.SetParent(marcoObj.transform, false);
+            rawObj.transform.SetParent(fondoInterno.transform, false);
             var raw = rawObj.AddComponent<RawImage>();
             var rtRaw = rawObj.GetComponent<RectTransform>();
             rtRaw.anchorMin = Vector2.zero;
             rtRaw.anchorMax = Vector2.one;
-            rtRaw.offsetMin = new Vector2(6f, 6f);
-            rtRaw.offsetMax = new Vector2(-6f, -24f);
+            rtRaw.offsetMin = new Vector2(4f, 4f);
+            rtRaw.offsetMax = new Vector2(-4f, -22f);
 
             var lblObj = new GameObject("TituloMinimapa");
-            lblObj.transform.SetParent(marcoObj.transform, false);
+            lblObj.transform.SetParent(fondoInterno.transform, false);
             var txt = lblObj.AddComponent<Text>();
-            txt.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            txt.fontSize = 11;
+            txt.font = FuenteUtil.ObtenerFuentePixelArt();
+            txt.fontSize = 10;
             txt.fontStyle = FontStyle.Bold;
             txt.alignment = TextAnchor.MiddleCenter;
-            txt.color = new Color(0.75f, 0.88f, 1f, 0.9f);
-            txt.text = "MINIMAPA";
+            txt.color = new Color(0.85f, 0.95f, 1f, 0.95f);
+            txt.text = "✦ MINIMAPA ✦";
             var rtLbl = lblObj.GetComponent<RectTransform>();
             rtLbl.anchorMin = new Vector2(0f, 1f);
             rtLbl.anchorMax = new Vector2(1f, 1f);
             rtLbl.pivot = new Vector2(0.5f, 1f);
-            rtLbl.anchoredPosition = new Vector2(0f, -3f);
+            rtLbl.anchoredPosition = new Vector2(0f, -2f);
             rtLbl.sizeDelta = new Vector2(0f, 18f);
 
             var comp = marcoObj.AddComponent<MinimapaHUD>();
@@ -181,7 +193,10 @@ namespace SoulKnight
             {
                 var item = ItemMejoraRun.Todos[i];
                 if (item == null || !item.gameObject.activeInHierarchy) continue;
-                DibujarPuntoMundo(item.transform.position, minX, minY, spanX, spanY, new Color32(80, 255, 220, 255), 2);
+                Color32 col = (item.CostoOro != null && item.CostoOro.Value > 0)
+                    ? new Color32(255, 215, 0, 255)   // Dorado para tienda
+                    : new Color32(80, 255, 220, 255);  // Cian para mejora libre
+                DibujarPuntoMundo(item.transform.position, minX, minY, spanX, spanY, col, 2);
             }
 
             // Enemigos (en el mapa la visión SOLO aplica para mostrar u ocultar a los enemigos)

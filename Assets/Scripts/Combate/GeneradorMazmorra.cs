@@ -506,18 +506,22 @@ namespace SoulKnight
             // 6. Instanciar Controladores de Sala, Antorchas, Puertas de Bloqueo y Spawns por Oleadas
             AsegurarSpritesAntorcha();
 
+            // Si hay suficientes salas intermedias, designar una como sala de tienda
+            int indiceSalaTienda = (salas.Count >= 4) ? 2 : -1;
+
             for (int idx = 0; idx < salas.Count; idx++)
             {
                 var s = salas[idx];
                 bool esInicio = s.esSalaInicio;
                 bool esJefe = s.esSalaJefe;
+                bool esTienda = (idx == indiceSalaTienda && !esInicio && !esJefe);
 
-                var salaObj = new GameObject($"Sala_{idx}");
+                var salaObj = new GameObject(esTienda ? $"Sala_Tienda_{idx}" : $"Sala_{idx}");
                 salaObj.transform.SetParent(contenedorMapa);
                 salaObj.transform.position = new Vector3(s.cx, s.cy, 0f);
 
                 var ctrl = salaObj.AddComponent<ControladorSala>();
-                ctrl.Inicializar(idx, s.xMin, s.xMax, s.yMin, s.yMax, esInicio, esJefe);
+                ctrl.Inicializar(idx, s.xMin, s.xMax, s.yMin, s.yMax, esInicio, esJefe, esTienda);
 
                 // Colocar 4 Antorchas en las esquinas interiores de la sala
                 Vector2[] posAntorchas = new Vector2[]
@@ -570,7 +574,7 @@ namespace SoulKnight
                 }
 
                 // Portales de Invocación (2 o 4 portales por sala) y Oleadas que salen de ellos
-                if (!esInicio && !esJefe)
+                if (!esInicio && !esJefe && !esTienda)
                 {
                     int numPortales = (UnityEngine.Random.value < 0.5f) ? 2 : 4;
                     float wSala = s.xMax - s.xMin;

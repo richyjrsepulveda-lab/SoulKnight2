@@ -13,11 +13,13 @@ namespace SoulKnight
         public static readonly System.Collections.Generic.List<ItemMejoraRun> Todos = new System.Collections.Generic.List<ItemMejoraRun>();
 
         public NetworkVariable<byte> TipoMejora = new NetworkVariable<byte>(0);
+        public NetworkVariable<int> CostoOro = new NetworkVariable<int>(0);
 
         private SpriteRenderer _sr;
         private CircleCollider2D _col;
         private bool _recogido = false;
         private Sprite _spriteBase;
+        private TextMesh _textoPrecio;
 
         private static Sprite _spritePescadoEsqueleto;
         private static Sprite _spritePescadoMedio;
@@ -54,12 +56,14 @@ namespace SoulKnight
         {
             ActualizarVisual();
             TipoMejora.OnValueChanged += (ant, act) => ActualizarVisual();
+            CostoOro.OnValueChanged += (ant, act) => ActualizarVisual();
         }
 
-        public void Configurar(TipoMejoraRun tipo)
+        public void Configurar(TipoMejoraRun tipo, int costoOro = 0)
         {
             if (NetworkManager != null && NetworkManager.IsListening && IsSpawned && !IsServer) return;
             TipoMejora.Value = (byte)tipo;
+            CostoOro.Value = Mathf.Max(0, costoOro);
             ActualizarVisual();
         }
 
@@ -436,6 +440,31 @@ namespace SoulKnight
             return Sprite.Create(tex, new Rect(0, 0, W, H), new Vector2(0.5f, 0.5f), 20f);
         }
 
+        private void CrearTextoPrecioSiNoExiste()
+        {
+            if (_textoPrecio != null) return;
+            var tObj = new GameObject("TextoPrecio");
+            tObj.transform.SetParent(transform, false);
+            tObj.transform.localPosition = new Vector3(0f, 0.72f, 0f);
+
+            _textoPrecio = tObj.AddComponent<TextMesh>();
+            _textoPrecio.font = FuenteUtil.ObtenerFuentePixelArt();
+            if (_textoPrecio.font == null)
+                _textoPrecio.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+
+            var mr = _textoPrecio.GetComponent<MeshRenderer>();
+            if (mr != null)
+            {
+                mr.material = _textoPrecio.font.material;
+                mr.sortingOrder = 10;
+            }
+            _textoPrecio.fontSize = 20;
+            _textoPrecio.characterSize = 0.08f;
+            _textoPrecio.alignment = TextAlignment.Center;
+            _textoPrecio.anchor = TextAnchor.MiddleCenter;
+            _textoPrecio.color = new Color(1f, 0.88f, 0.2f, 1f);
+        }
+
         private void ActualizarVisual()
         {
             if (_sr == null) _sr = GetComponent<SpriteRenderer>();
@@ -446,6 +475,21 @@ namespace SoulKnight
             _sr.sprite = ObtenerSpriteMejora(tipo);
             _sr.color = Color.white;
             transform.localScale = Vector3.one * 1.15f;
+
+            int costo = CostoOro.Value;
+            if (costo > 0)
+            {
+                CrearTextoPrecioSiNoExiste();
+                if (_textoPrecio != null)
+                {
+                    _textoPrecio.text = $"💰 {costo}";
+                    _textoPrecio.gameObject.SetActive(true);
+                }
+            }
+            else if (_textoPrecio != null)
+            {
+                _textoPrecio.gameObject.SetActive(false);
+            }
         }
 
         private void Update()
@@ -462,6 +506,17 @@ namespace SoulKnight
             var pj = collision.GetComponent<Personaje>();
             if (pj != null && !pj.EstaMuerto.Value)
             {
+                int costo = CostoOro.Value;
+                if (costo > 0)
+                {
+                    if (pj.OroRun.Value < costo)
+                    {
+                        pj.MostrarTextoFlotanteClientRpc($"¡Falta Oro! ({pj.OroRun.Value}/{costo} 💰)", new Color(1f, 0.4f, 0.4f));
+                        return;
+                    }
+                    pj.GastarOro(costo);
+                }
+
                 _recogido = true;
                 TipoMejoraRun tipo = (TipoMejoraRun)TipoMejora.Value;
                 pj.AplicarMejoraRun(tipo);
@@ -470,9 +525,19 @@ namespace SoulKnight
                 string nombreMejora = def != null ? def.nombre : "¡Mejora!";
                 Color color = def != null ? def.colorTexto : Color.green;
 
-                pj.MostrarTextoFlotanteClientRpc($"¡{nombreMejora}!", color);
+                if (costo > 0)
+                {
+                    pj.MostrarTextoFlotanteClientRpc($"¡Compraste {nombreMejora}! (-{costo} 💰)", Color.yellow);
+                }
+                else
+                {
+                    pj.MostrarTextoFlotanteClientRpc($"¡{nombreMejora}!", color);
+                }
 
-                GetComponent<NetworkObject>().Despawn();
+                if (NetworkObject != null && NetworkObject.IsSpawned)
+                {
+                    NetworkObject.Despawn();
+                }
                 Destroy(gameObject);
             }
         }

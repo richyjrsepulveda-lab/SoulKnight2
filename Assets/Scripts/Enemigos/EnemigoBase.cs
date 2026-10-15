@@ -51,6 +51,7 @@ namespace SoulKnight
         private float _tiempoCongelado = 0f;
         private float _tiempoQuemado = 0f;
         private float _tiempoTickQuemadoActual = 0f;
+        private int _danoQuemadoPersonalizado = 0;
 
         // IA Probabilística
         private float _timerDecision = 0f;
@@ -176,12 +177,14 @@ namespace SoulKnight
                 if (_tiempoTickQuemadoActual <= 0f)
                 {
                     _tiempoTickQuemadoActual = tickQuemado;
-                    RecibirDano(danoQuemadoPorSegundo);
+                    int danoFinalQuemado = _danoQuemadoPersonalizado > 0 ? _danoQuemadoPersonalizado : danoQuemadoPorSegundo;
+                    RecibirDano(danoFinalQuemado);
                 }
 
                 if (_tiempoQuemado <= 0f)
                 {
                     EstaQuemado.Value = false;
+                    _danoQuemadoPersonalizado = 0;
                 }
             }
 
@@ -376,18 +379,33 @@ namespace SoulKnight
             _rb.velocity = Vector2.zero;
         }
 
-        public void AplicarQuemadura()
+        public void AplicarQuemadura(int danoPorTick = -1)
         {
             if (!IsServer) return;
             EstaQuemado.Value = true;
             _tiempoQuemado = duracionQuemado;
             _tiempoTickQuemadoActual = tickQuemado;
+            if (danoPorTick > 0)
+            {
+                _danoQuemadoPersonalizado = Mathf.Max(_danoQuemadoPersonalizado, danoPorTick);
+            }
         }
 
         protected virtual void Morir()
         {
             if (!IsServer) return;
             AlMorir?.Invoke();
+
+            // Otorgar oro de la run a los jugadores
+            int oroRecompensa = UnityEngine.Random.Range(2, 6);
+            for (int i = 0; i < Personaje.Todos.Count; i++)
+            {
+                var pj = Personaje.Todos[i];
+                if (pj != null && !pj.EstaMuerto.Value)
+                {
+                    pj.AgregarOro(oroRecompensa);
+                }
+            }
 
             if (GestorPartida.Instancia != null)
             {

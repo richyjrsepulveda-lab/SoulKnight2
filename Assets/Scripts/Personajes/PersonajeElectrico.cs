@@ -47,7 +47,10 @@ namespace SoulKnight
         public NetworkVariable<bool> RayoCargando = new NetworkVariable<bool>(false);
         public NetworkVariable<bool> RayoLanzado = new NetworkVariable<bool>(false);
 
+        public float cooldownEspada = 0.25f;
+
         // Timers locales UI
+        private float _cdEspadaRestante = 0f;
         private float _cdDashRestante = 0f;
         private float _cdTeleportRestante = 0f;
         private float _cdRayoRestante = 0f;
@@ -88,13 +91,14 @@ namespace SoulKnight
 
             if (EsControlLocal)
             {
+                if (_cdEspadaRestante > 0) _cdEspadaRestante -= Time.deltaTime;
                 if (_cdDashRestante > 0) _cdDashRestante -= Time.deltaTime;
                 if (_cdTeleportRestante > 0) _cdTeleportRestante -= Time.deltaTime;
                 if (_cdRayoRestante > 0) _cdRayoRestante -= Time.deltaTime;
 
                 if (HUDJugador.Instancia != null)
                 {
-                    HUDJugador.Instancia.ActualizarCooldown(0, 0f, 1f); // LMB (Espada)
+                    HUDJugador.Instancia.ActualizarCooldown(0, _cdEspadaRestante, cooldownEspada); // LMB (Espada)
                     HUDJugador.Instancia.ActualizarCooldown(1, _cdDashRestante, cooldownDash);       // E
                     HUDJugador.Instancia.ActualizarCooldown(2, _cdTeleportRestante, cooldownTeleport); // Q
                     HUDJugador.Instancia.ActualizarCooldown(3, _cdRayoRestante, cooldownRayo);       // R
@@ -240,11 +244,12 @@ namespace SoulKnight
 
         protected override void ProcesarInputsHabilidadesLocales()
         {
-            // Espada Eléctrica (Click Izquierdo)
-            if (Controles.PrincipalPresionado)
+            // Espada Eléctrica (Click Izquierdo continuo al mantener presionado)
+            if (Controles.PrincipalMantenido && _cdEspadaRestante <= 0)
             {
                 if (PuedeUsarHabilidad(IdHabilidad.Elec_Espada, out string motivo))
                 {
+                    _cdEspadaRestante = cooldownEspada;
                     Vector2 dir = ((Vector2)Controles.PosicionMouseMundo() - (Vector2)transform.position).normalized;
                     if (dir.sqrMagnitude < 0.001f) dir = Vector2.right;
                     UsarEspadaServerRpc(dir);
@@ -255,8 +260,8 @@ namespace SoulKnight
                 }
             }
 
-            // Dash (E)
-            if (Controles.Presionada(Controles.Habilidad1) && _cdDashRestante <= 0 && !DashActivo.Value)
+            // Dash (E) - Auto-casteo continuo al mantener presionado
+            if (Controles.AutoDisparo(Controles.Habilidad1) && _cdDashRestante <= 0 && !DashActivo.Value)
             {
                 if (PuedeUsarHabilidad(IdHabilidad.Elec_Dash, out string motivo))
                 {
@@ -271,8 +276,8 @@ namespace SoulKnight
                 }
             }
 
-            // Teleport (Q)
-            if (Controles.Presionada(Controles.Habilidad2) && _cdTeleportRestante <= 0)
+            // Teleport (Q) - Auto-casteo continuo al mantener presionado
+            if (Controles.AutoDisparo(Controles.Habilidad2) && _cdTeleportRestante <= 0)
             {
                 if (PuedeUsarHabilidad(IdHabilidad.Elec_Teleport, out string motivo))
                 {
@@ -285,8 +290,8 @@ namespace SoulKnight
                 }
             }
 
-            // Rayo Eléctrico (R)
-            if (Controles.Presionada(Controles.Ultimate) && _cdRayoRestante <= 0 && !RayoCargando.Value && !RayoLanzado.Value)
+            // Rayo Eléctrico (R) - Auto-casteo continuo al mantener presionado
+            if (Controles.AutoDisparo(Controles.Ultimate) && _cdRayoRestante <= 0 && !RayoCargando.Value && !RayoLanzado.Value)
             {
                 if (PuedeUsarHabilidad(IdHabilidad.Elec_Rayo, out string motivo))
                 {

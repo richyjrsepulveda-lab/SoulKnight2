@@ -396,9 +396,10 @@ namespace SoulKnight
                 var jugadores = FindObjectsOfType<Personaje>();
                 foreach (var pj in jugadores)
                 {
-                    if (pj != null && pj.nivelProgreso != null)
+                    if (pj != null)
                     {
-                        pj.nivelProgreso.AgregarXP(350);
+                        if (pj.nivelProgreso != null) pj.nivelProgreso.AgregarXP(350);
+                        pj.AgregarOro(50);
                     }
                 }
 

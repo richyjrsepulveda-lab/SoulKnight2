@@ -217,7 +217,8 @@ namespace SoulKnight
 
                     if (aplicaQuemadura)
                     {
-                        enemigo.AplicarQuemadura();
+                        int danoTickQuemadura = Mathf.Max(12, Mathf.RoundToInt(dano * 0.45f));
+                        enemigo.AplicarQuemadura(danoTickQuemadura);
                     }
 
                     if (aplicaCongelacion)
@@ -260,7 +261,8 @@ namespace SoulKnight
 
                     if (aplicaQuemadura)
                     {
-                        enCercano.AplicarQuemadura();
+                        int danoTickQuemadura = Mathf.Max(10, Mathf.RoundToInt(danoCercanos * 0.45f));
+                        enCercano.AplicarQuemadura(danoTickQuemadura);
                     }
 
                     Vector2 dirKnock = ((Vector2)enCercano.transform.position - centro).normalized;
@@ -296,7 +298,10 @@ namespace SoulKnight
         {
             if (NetworkObject != null && NetworkObject.IsSpawned)
             {
-                NetworkObject.Despawn();
+                if (IsServer)
+                {
+                    NetworkObject.Despawn();
+                }
             }
             else
             {
