@@ -103,7 +103,7 @@ namespace SoulKnight
             txtObj.transform.localPosition = new Vector3(0f, 1.6f, -0.2f);
 
             _textoIndicador = txtObj.AddComponent<TextMesh>();
-            _textoIndicador.text = "🏪 TIENDA [E]";
+            _textoIndicador.text = "🏪 TIENDA [F]";
             _textoIndicador.fontSize = 26;
             _textoIndicador.characterSize = 0.08f;
             _textoIndicador.fontStyle = FontStyle.Bold;
@@ -121,10 +121,7 @@ namespace SoulKnight
             if (pj != null && pj.EsControlLocal)
             {
                 _jugadorEnPuerta = true;
-                if (HUDJugador.Instancia != null && !HUDJugador.Instancia.TiendaAbierta)
-                {
-                    HUDJugador.Instancia.AbrirTienda(this);
-                }
+                // No abrir automáticamente: la tienda se abre ÚNICAMENTE pulsando [F]
             }
         }
 
@@ -134,16 +131,12 @@ namespace SoulKnight
             if (pj != null && pj.EsControlLocal)
             {
                 _jugadorEnPuerta = false;
-                if (HUDJugador.Instancia != null && HUDJugador.Instancia.TiendaAbierta)
-                {
-                    HUDJugador.Instancia.CerrarTienda();
-                }
             }
         }
 
         void Update()
         {
-            // Permitir abrir con [E] si está cerca
+            // Permitir abrir con [F] ÚNICAMENTE si está cerca
             Personaje local = null;
             for (int i = 0; i < Personaje.Todos.Count; i++)
             {
@@ -163,7 +156,8 @@ namespace SoulKnight
                     _textoIndicador.gameObject.SetActive(cerca);
                 }
 
-                if (cerca && Input.GetKeyDown(KeyCode.E))
+                // Abrir o alternar tienda ÚNICAMENTE con tecla [F]
+                if (cerca && Input.GetKeyDown(KeyCode.F))
                 {
                     if (HUDJugador.Instancia != null)
                     {
@@ -171,6 +165,14 @@ namespace SoulKnight
                             HUDJugador.Instancia.CerrarTienda();
                         else
                             HUDJugador.Instancia.AbrirTienda(this);
+                    }
+                }
+                else if (dist > 3.6f)
+                {
+                    // Si el jugador se aleja físicamente del puesto, cerrar la tienda
+                    if (HUDJugador.Instancia != null && HUDJugador.Instancia.TiendaAbierta && HUDJugador.Instancia.PuestitoActivo == this)
+                    {
+                        HUDJugador.Instancia.CerrarTienda();
                     }
                 }
             }

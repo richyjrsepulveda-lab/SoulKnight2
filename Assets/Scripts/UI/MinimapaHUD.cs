@@ -13,8 +13,11 @@ namespace SoulKnight
     /// </summary>
     public class MinimapaHUD : MonoBehaviour
     {
+        public static MinimapaHUD Instancia { get; private set; }
+
         private RawImage _rawImage;
         private Texture2D _texMapa;
+        public Texture2D TextureMapa => _texMapa;
         private Color32[] _pixeles;
 
         private const int MAP_W = 120;
@@ -90,6 +93,7 @@ namespace SoulKnight
 
         public void Inicializar(RawImage raw)
         {
+            Instancia = this;
             _rawImage = raw;
             _texMapa = new Texture2D(MAP_W, MAP_H, TextureFormat.RGBA32, false);
             _texMapa.filterMode = FilterMode.Point;
@@ -100,6 +104,7 @@ namespace SoulKnight
 
         void OnDestroy()
         {
+            if (Instancia == this) Instancia = null;
             if (_texMapa != null) Destroy(_texMapa);
         }
 
@@ -113,7 +118,7 @@ namespace SoulKnight
             }
         }
 
-        private void RenderizarMinimapa()
+        public void RenderizarMinimapa()
         {
             var gen = GeneradorMazmorra.Instancia;
             var vision = SistemaVision.Instancia;

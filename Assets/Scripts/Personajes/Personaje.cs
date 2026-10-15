@@ -874,27 +874,12 @@ namespace SoulKnight
 
         public virtual void LimpiarEstadosYHabilidades()
         {
+            // Solo reiniciamos cooldowns para que el jugador entre al nuevo piso con habilidades listas.
             ReiniciarCooldowns();
-            if (IsServer)
-            {
-                _timerEfectoDano = 0f;
-                _timerEfectoDefensa = 0f;
-                _timerEfectoVelocidad = 0f;
-                _timerEfectoVidaMax = 0f;
-                if (_bonoVidaMaxActivo > 0)
-                {
-                    vidaMax = Mathf.Max(100, vidaMax - _bonoVidaMaxActivo);
-                    VidaMaxSincronizada.Value = vidaMax;
-                    _bonoVidaMaxActivo = 0;
-                }
-                MultiplicadorDanoLoot.Value = 1.0f;
-                ReduccionDanoLoot.Value = 0f;
-                MultiplicadorVelocidadLoot.Value = 1.0f;
-            }
-            if (EsControlLocal && HUDJugador.Instancia != null)
-            {
-                HUDJugador.Instancia.LimpiarEfectosConsumiblesDerecha();
-            }
+
+            // NOTA: Las mejoras acumulativas de la run (MultiplicadorDanoLoot, ReduccionDanoLoot,
+            // MultiplicadorVelocidadLoot, vidaMax extra y OroRun) son permanentes durante TODA la run
+            // y deben preservarse al pasar de piso / nivel.
         }
 
         protected abstract void ProcesarInputsHabilidadesLocales();
