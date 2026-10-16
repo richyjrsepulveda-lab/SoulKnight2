@@ -86,7 +86,7 @@ namespace SoulKnight
                     personaje = TipoPersonaje.Fuego,
                     nombre = "Bola de Fuego",
                     descripcion = "Disparo ígneo estándar con quemadura continua.",
-                    descripcionTecnica = "Lanza un proyectil ígneo que inflige 40 de daño base (+25% por nivel en run) y aplica Quemadura durante 3.5s (8 de daño/s). Cooldown: 1.0s. [Click Izq]",
+                    descripcionTecnica = "Disparo de fuego que inflige daño continuo y quema a los enemigos durante 3.5 segundos.",
                     slotPorDefecto = 0,
                     nivelMaestriaRequerido = 1,
                     nivelRequeridoRun = 1
@@ -100,7 +100,7 @@ namespace SoulKnight
                     personaje = TipoPersonaje.Fuego,
                     nombre = "Lanzallamas Fluido",
                     descripcion = "Chorro continuo que calcina enemigos en cono frontal.",
-                    descripcionTecnica = "Emite un torrente de fuego en abanico continuo durante 5s. Inflige 10 de daño por tick cada 0.15s y reinicia el estado de Quemadura a todos los alcanzados. Cooldown: 20s. [Tecla E]",
+                    descripcionTecnica = "Chorro continuo de fuego en cono frontal que calcina y daña a corta distancia.",
                     slotPorDefecto = 1,
                     nivelMaestriaRequerido = 2,
                     nivelRequeridoRun = 3
@@ -114,7 +114,7 @@ namespace SoulKnight
                     personaje = TipoPersonaje.Fuego,
                     nombre = "Armadura de Fuego",
                     descripcion = "Coraza de magma que reduce masivamente el daño recibido.",
-                    descripcionTecnica = "Genera una coraza ígnea sobre el gato que absorbe y reduce un 80% de todo el daño entrante durante 10 segundos. Cooldown: 20s. [Tecla Q]",
+                    descripcionTecnica = "Coraza de magma que reduce un 80% del daño recibido durante 10 segundos.",
                     slotPorDefecto = 2,
                     nivelMaestriaRequerido = 3,
                     nivelRequeridoRun = 5
@@ -128,7 +128,7 @@ namespace SoulKnight
                     personaje = TipoPersonaje.Fuego,
                     nombre = "Tormenta de Meteoros",
                     descripcion = "Impacto cósmico devastador en área con daño masivo de fuego.",
-                    descripcionTecnica = "Invoca un colosal meteorito ígneo tras 1s sobre la posición del cursor, infligiendo 180 de daño masivo en área (+25% por nivel en run) y derribando enemigos. Cooldown: 25s. [Tecla R]",
+                    descripcionTecnica = "Invoca un meteorito colosal hacia el cursor que desata gran daño de fuego en área tras 1 segundo.",
                     slotPorDefecto = 3,
                     nivelMaestriaRequerido = 4,
                     nivelRequeridoRun = 7
@@ -144,7 +144,7 @@ namespace SoulKnight
                     personaje = TipoPersonaje.Hielo,
                     nombre = "Rayo Glacial",
                     descripcion = "Haz congelante continuo que ralentiza y erosiona a los enemigos.",
-                    descripcionTecnica = "Dispara un haz continuo de escarcha hasta 9.5m (siguiendo dinámicamente la posición del cursor). Atraviesa enemigos, inflige 16 de daño continuo cada 0.18s y ralentiza un 50% la velocidad enemiga. [Click Izq]",
+                    descripcionTecnica = "Rayo de hielo continuo hacia el cursor que daña y ralentiza a los enemigos un 50%.",
                     slotPorDefecto = 0,
                     nivelMaestriaRequerido = 1,
                     nivelRequeridoRun = 1
@@ -158,7 +158,7 @@ namespace SoulKnight
                     personaje = TipoPersonaje.Hielo,
                     nombre = "Orbe Gélido",
                     descripcion = "Detona en área congelando al 100% a todos los enemigos cercanos.",
-                    descripcionTecnica = "Lanza un proyectil gélido que detona en área al chocar. Inflige 50 de daño e inmoviliza/congela por completo a los enemigos alcanzados durante 2.5 segundos. Cooldown: 6s. [Tecla E]",
+                    descripcionTecnica = "Orbe de hielo que detona en área congelando por completo a los enemigos durante 2.5 segundos.",
                     slotPorDefecto = 1,
                     nivelMaestriaRequerido = 2,
                     nivelRequeridoRun = 3
@@ -172,7 +172,7 @@ namespace SoulKnight
                     personaje = TipoPersonaje.Hielo,
                     nombre = "Armadura Helada",
                     descripcion = "80% de reducción de daño con espinas de escarcha.",
-                    descripcionTecnica = "Envuelve al gato en una coraza glacial que reduce un 80% todo el daño recibido durante 10s y congela a los enemigos que te ataquen cuerpo a cuerpo. Cooldown: 20s. [Tecla Q]",
+                    descripcionTecnica = "Escudo glacial que reduce un 80% del daño recibido y congela a los atacantes cercanos.",
                     slotPorDefecto = 2,
                     nivelMaestriaRequerido = 3,
                     nivelRequeridoRun = 5
@@ -186,7 +186,7 @@ namespace SoulKnight
                     personaje = TipoPersonaje.Hielo,
                     nombre = "Era de Hielo",
                     descripcion = "Aura glacial gigante que congela y castiga toda el área.",
-                    descripcionTecnica = "Desata una ventisca absoluta que congela instantáneamente al 100% a todos los enemigos en pantalla durante 4s y causa 25 de daño continuo por segundo durante 8s. Cooldown: 35s. [Tecla R]",
+                    descripcionTecnica = "Ventisca bajo cero que congela e inflige daño continuo a todos los enemigos de la sala por 6 segundos.",
                     slotPorDefecto = 3,
                     nivelMaestriaRequerido = 4,
                     nivelRequeridoRun = 7
@@ -202,7 +202,7 @@ namespace SoulKnight
                     personaje = TipoPersonaje.Electrico,
                     nombre = "Corte Voltaico",
                     descripcion = "Ataque veloz cuerpo a cuerpo que empuja a los rivales.",
-                    descripcionTecnica = "Ejecuta un veloz tajo con espada relámpago de 55 de daño (+25% por nivel en run) que empuja a los rivales y encadena chispas eléctricas a objetivos secundarios. Cooldown: 0.5s. [Click Izq]",
+                    descripcionTecnica = "Tajo rápido con espada eléctrica que inflige daño cuerpo a cuerpo y empuja a los enemigos.",
                     slotPorDefecto = 0,
                     nivelMaestriaRequerido = 1,
                     nivelRequeridoRun = 1
@@ -216,7 +216,7 @@ namespace SoulKnight
                     personaje = TipoPersonaje.Electrico,
                     nombre = "Ráfaga Relámpago",
                     descripcion = "Desplazamiento supersónico que atraviesa y electrocuta.",
-                    descripcionTecnica = "Embestida relámpago con invulnerabilidad total. Atraviesa enemigos causándoles 35 de daño y aturdiéndolos durante 0.8s. Cooldown: 4s. [Tecla E]",
+                    descripcionTecnica = "Embestida relámpago con invulnerabilidad total que atraviesa a los enemigos y los aturde.",
                     slotPorDefecto = 1,
                     nivelMaestriaRequerido = 2,
                     nivelRequeridoRun = 3
@@ -230,7 +230,7 @@ namespace SoulKnight
                     personaje = TipoPersonaje.Electrico,
                     nombre = "Salto Cuántico",
                     descripcion = "Teletransporte instantáneo con ondas expansivas de choque.",
-                    descripcionTecnica = "Teletransporte instantáneo hacia la dirección del cursor, emitiendo una onda de choque estática que causa 45 de daño y repele a los enemigos al llegar. Cooldown: 7s. [Tecla Q]",
+                    descripcionTecnica = "Teletransporte instantáneo hacia el cursor desatando una onda de choque expansiva.",
                     slotPorDefecto = 2,
                     nivelMaestriaRequerido = 3,
                     nivelRequeridoRun = 5
@@ -244,7 +244,7 @@ namespace SoulKnight
                     personaje = TipoPersonaje.Electrico,
                     nombre = "Rayo Devastador",
                     descripcion = "Carga de 2s seguida de un láser eléctrico destructor de largo alcance.",
-                    descripcionTecnica = "Tras 1.2s de concentración, dispara un gigantesco rayo voltaico de 250 de daño en línea recta que atraviesa muros y electrocuta a todos los enemigos en la sala. Cooldown: 30s. [Tecla R]",
+                    descripcionTecnica = "Láser voltaico masivo que atraviesa muros y electrocuta a todos los enemigos a su paso.",
                     slotPorDefecto = 3,
                     nivelMaestriaRequerido = 4,
                     nivelRequeridoRun = 7

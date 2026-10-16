@@ -92,6 +92,7 @@ namespace SoulKnight
         private RawImage _rawMapaPausa;
         private Text _textoDescHabilidadPausa;
         private readonly List<Image> _iconosHabilidadesPausa = new List<Image>();
+        private readonly List<Image> _bordesHabilidadesPausa = new List<Image>();
         private readonly List<Button> _botonesHabilidadesPausa = new List<Button>();
         private int _habilidadSeleccionadaPausa = 0;
         private GameObject _modalMaestriaHUD;
@@ -871,9 +872,9 @@ namespace SoulKnight
                 rtCuerpo.offsetMin = new Vector2(24f, 55f);
                 rtCuerpo.offsetMax = new Vector2(-24f, -50f);
                 var txtCuerpo = cuerpoObj.AddComponent<Text>();
-                txtCuerpo.font = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-                txtCuerpo.fontSize = 9;
-                txtCuerpo.lineSpacing = 1.25f;
+                txtCuerpo.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+                txtCuerpo.fontSize = 13;
+                txtCuerpo.lineSpacing = 1.3f;
                 txtCuerpo.alignment = TextAnchor.UpperLeft;
                 txtCuerpo.color = new Color(0.9f, 0.95f, 1f);
                 txtCuerpo.text =
@@ -1137,9 +1138,9 @@ namespace SoulKnight
         {
             if (panelPausa == null) return;
 
-            const float posXDerecha = 195f;
+            const float posXDerecha = 205f;
 
-            // --- 3A. Fila de Habilidades (4 casillas) ---
+            // --- 3A. Fila de Habilidades (4 casillas en filita, SOLO ICONOS) ---
             var contHabs = panelPausa.transform.Find("FilaHabilidadesPausa");
             if (contHabs == null)
             {
@@ -1151,16 +1152,20 @@ namespace SoulKnight
             rtHabs.anchorMin = new Vector2(0.5f, 0.5f);
             rtHabs.anchorMax = new Vector2(0.5f, 0.5f);
             rtHabs.pivot = new Vector2(0.5f, 0.5f);
-            rtHabs.anchoredPosition = new Vector2(posXDerecha, 118f);
-            rtHabs.sizeDelta = new Vector2(340f, 72f);
+            rtHabs.anchoredPosition = new Vector2(posXDerecha, 142f);
+            rtHabs.sizeDelta = new Vector2(370f, 56f);
 
-            string[] teclas = new string[] { "CLICK", "E", "Q", "R" };
-            float[] slotsX = new float[] { -123f, -41f, 41f, 123f };
+            float[] slotsX = new float[] { -105f, -35f, 35f, 105f };
 
             if (_botonesHabilidadesPausa.Count < 4)
             {
+                for (int c = contHabs.childCount - 1; c >= 0; c--)
+                {
+                    Destroy(contHabs.GetChild(c).gameObject);
+                }
                 _botonesHabilidadesPausa.Clear();
                 _iconosHabilidadesPausa.Clear();
+                _bordesHabilidadesPausa.Clear();
 
                 for (int i = 0; i < 4; i++)
                 {
@@ -1173,50 +1178,48 @@ namespace SoulKnight
                     rtSlot.anchorMax = new Vector2(0.5f, 0.5f);
                     rtSlot.pivot = new Vector2(0.5f, 0.5f);
                     rtSlot.anchoredPosition = new Vector2(slotsX[i], 0f);
-                    rtSlot.sizeDelta = new Vector2(68f, 68f);
+                    rtSlot.sizeDelta = new Vector2(52f, 52f);
 
-                    var imgFondo = slotBtnObj.AddComponent<Image>();
-                    imgFondo.color = new Color(0.12f, 0.16f, 0.24f, 0.95f);
+                    // Marco exterior (borde de selección)
+                    var imgBorde = slotBtnObj.AddComponent<Image>();
+                    imgBorde.color = (idx == _habilidadSeleccionadaPausa)
+                        ? new Color(0.25f, 0.85f, 1.0f, 1f)
+                        : new Color(0.20f, 0.28f, 0.40f, 0.7f);
 
                     var btn = slotBtnObj.AddComponent<Button>();
                     btn.onClick.AddListener(() => SeleccionarHabilidadPausa(idx));
 
-                    // Icono de la habilidad
+                    // Fondo interior del icono
+                    var fondoIcoObj = new GameObject("FondoInterno");
+                    fondoIcoObj.transform.SetParent(slotBtnObj.transform, false);
+                    var rtFondoIco = fondoIcoObj.AddComponent<RectTransform>();
+                    rtFondoIco.anchorMin = Vector2.zero;
+                    rtFondoIco.anchorMax = Vector2.one;
+                    rtFondoIco.offsetMin = new Vector2(2f, 2f);
+                    rtFondoIco.offsetMax = new Vector2(-2f, -2f);
+                    var imgFondo = fondoIcoObj.AddComponent<Image>();
+                    imgFondo.color = new Color(0.08f, 0.11f, 0.17f, 0.98f);
+                    imgFondo.raycastTarget = false;
+
+                    // SOLO ICONO de la habilidad (sin badges ni letras)
                     var icoObj = new GameObject("Icono");
-                    icoObj.transform.SetParent(slotBtnObj.transform, false);
+                    icoObj.transform.SetParent(fondoIcoObj.transform, false);
                     var rtIco = icoObj.AddComponent<RectTransform>();
-                    rtIco.anchorMin = Vector2.zero;
-                    rtIco.anchorMax = Vector2.one;
-                    rtIco.offsetMin = new Vector2(6f, 16f);
-                    rtIco.offsetMax = new Vector2(-6f, -6f);
+                    rtIco.anchorMin = new Vector2(0.08f, 0.08f);
+                    rtIco.anchorMax = new Vector2(0.92f, 0.92f);
+                    rtIco.offsetMin = Vector2.zero;
+                    rtIco.offsetMax = Vector2.zero;
                     var imgIco = icoObj.AddComponent<Image>();
                     imgIco.preserveAspect = true;
                     imgIco.raycastTarget = false;
 
-                    // Badge de tecla abajo
-                    var badgeObj = new GameObject("BadgeTecla");
-                    badgeObj.transform.SetParent(slotBtnObj.transform, false);
-                    var rtBadge = badgeObj.AddComponent<RectTransform>();
-                    rtBadge.anchorMin = new Vector2(0.5f, 0f);
-                    rtBadge.anchorMax = new Vector2(0.5f, 0f);
-                    rtBadge.pivot = new Vector2(0.5f, 0f);
-                    rtBadge.anchoredPosition = new Vector2(0f, 2f);
-                    rtBadge.sizeDelta = new Vector2(60f, 14f);
-                    var txtBadge = badgeObj.AddComponent<Text>();
-                    txtBadge.font = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-                    txtBadge.fontSize = 9;
-                    txtBadge.fontStyle = FontStyle.Bold;
-                    txtBadge.alignment = TextAnchor.MiddleCenter;
-                    txtBadge.color = new Color(1f, 0.88f, 0.35f);
-                    txtBadge.text = $"[{teclas[i]}]";
-                    txtBadge.raycastTarget = false;
-
                     _botonesHabilidadesPausa.Add(btn);
                     _iconosHabilidadesPausa.Add(imgIco);
+                    _bordesHabilidadesPausa.Add(imgBorde);
                 }
             }
 
-            // --- 3B. Caja de Descripción de Habilidad ---
+            // --- 3B. Caja de Descripción de Habilidad (desplegada abajo de los iconos) ---
             var descBox = panelPausa.transform.Find("CajaDescHabilidadPausa");
             if (descBox == null)
             {
@@ -1224,33 +1227,47 @@ namespace SoulKnight
                 obj.transform.SetParent(panelPausa.transform, false);
                 descBox = obj.transform;
 
-                var imgBox = obj.AddComponent<Image>();
-                imgBox.color = new Color(0.08f, 0.11f, 0.17f, 0.95f);
+                var imgMarcoBox = obj.AddComponent<Image>();
+                imgMarcoBox.color = new Color(0.24f, 0.40f, 0.62f, 0.85f); // Borde estético
+
+                var fondoInt = new GameObject("Fondo");
+                fondoInt.transform.SetParent(obj.transform, false);
+                var rtFi = fondoInt.AddComponent<RectTransform>();
+                rtFi.anchorMin = Vector2.zero;
+                rtFi.anchorMax = Vector2.one;
+                rtFi.offsetMin = new Vector2(2f, 2f);
+                rtFi.offsetMax = new Vector2(-2f, -2f);
+                var imgFi = fondoInt.AddComponent<Image>();
+                imgFi.color = new Color(0.06f, 0.08f, 0.14f, 0.96f);
 
                 var txtObj = new GameObject("Texto");
-                txtObj.transform.SetParent(obj.transform, false);
+                txtObj.transform.SetParent(fondoInt.transform, false);
                 var rtTxt = txtObj.AddComponent<RectTransform>();
                 rtTxt.anchorMin = Vector2.zero;
                 rtTxt.anchorMax = Vector2.one;
-                rtTxt.offsetMin = new Vector2(8f, 4f);
-                rtTxt.offsetMax = new Vector2(-8f, -4f);
+                rtTxt.offsetMin = new Vector2(10f, 6f);
+                rtTxt.offsetMax = new Vector2(-10f, -6f);
 
                 _textoDescHabilidadPausa = txtObj.AddComponent<Text>();
-                _textoDescHabilidadPausa.font = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-                _textoDescHabilidadPausa.fontSize = 9;
-                _textoDescHabilidadPausa.lineSpacing = 1.15f;
-                _textoDescHabilidadPausa.alignment = TextAnchor.UpperLeft;
-                _textoDescHabilidadPausa.color = new Color(0.88f, 0.94f, 1f);
+                _textoDescHabilidadPausa.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+                _textoDescHabilidadPausa.fontSize = 12;
+                _textoDescHabilidadPausa.lineSpacing = 1.22f;
+                _textoDescHabilidadPausa.alignment = TextAnchor.MiddleLeft;
+                _textoDescHabilidadPausa.color = new Color(0.90f, 0.95f, 1f);
                 _textoDescHabilidadPausa.raycastTarget = false;
+            }
+            else if (_textoDescHabilidadPausa == null)
+            {
+                _textoDescHabilidadPausa = descBox.GetComponentInChildren<Text>(true);
             }
             var rtDesc = descBox.GetComponent<RectTransform>();
             rtDesc.anchorMin = new Vector2(0.5f, 0.5f);
             rtDesc.anchorMax = new Vector2(0.5f, 0.5f);
             rtDesc.pivot = new Vector2(0.5f, 0.5f);
-            rtDesc.anchoredPosition = new Vector2(posXDerecha, 50f);
-            rtDesc.sizeDelta = new Vector2(340f, 66f);
+            rtDesc.anchoredPosition = new Vector2(posXDerecha, 70f);
+            rtDesc.sizeDelta = new Vector2(370f, 72f);
 
-            // --- 3C. Marco del Mapa ---
+            // --- 3C. Marco del Mapa (abajo de la descripción) ---
             var marcoMapa = panelPausa.transform.Find("MarcoMapaPausa");
             if (marcoMapa == null)
             {
@@ -1296,12 +1313,19 @@ namespace SoulKnight
                 txtTit.color = new Color(0.85f, 0.95f, 1f, 0.95f);
                 txtTit.text = "✦ MAPA DE LA MAZMORRA ✦";
             }
+            if (_rawMapaPausa == null && marcoMapa != null)
+            {
+                _rawMapaPausa = marcoMapa.GetComponentInChildren<RawImage>(true);
+            }
             var rtMm = marcoMapa.GetComponent<RectTransform>();
             rtMm.anchorMin = new Vector2(0.5f, 0.5f);
             rtMm.anchorMax = new Vector2(0.5f, 0.5f);
             rtMm.pivot = new Vector2(0.5f, 0.5f);
-            rtMm.anchoredPosition = new Vector2(posXDerecha, -82f);
-            rtMm.sizeDelta = new Vector2(340f, 184f);
+            rtMm.anchoredPosition = new Vector2(posXDerecha, -76f);
+            rtMm.sizeDelta = new Vector2(370f, 196f);
+
+            // Cargar mapa inmediatamente
+            ActualizarMapaPausa();
         }
 
         private void SeleccionarHabilidadPausa(int index)
@@ -1384,7 +1408,35 @@ namespace SoulKnight
 
         private void ActualizarDetalleHabilidadPausa()
         {
+            // Actualizar realce visual en el borde de los iconos de habilidad
+            for (int i = 0; i < _bordesHabilidadesPausa.Count; i++)
+            {
+                if (_bordesHabilidadesPausa[i] != null)
+                {
+                    _bordesHabilidadesPausa[i].color = (i == _habilidadSeleccionadaPausa)
+                        ? new Color(0.25f, 0.85f, 1.0f, 1f)
+                        : new Color(0.20f, 0.28f, 0.40f, 0.7f);
+                }
+            }
+
+            if (_textoDescHabilidadPausa == null)
+            {
+                if (panelPausa != null)
+                {
+                    var descBox = panelPausa.transform.Find("CajaDescHabilidadPausa");
+                    if (descBox != null)
+                    {
+                        _textoDescHabilidadPausa = descBox.GetComponentInChildren<Text>(true);
+                    }
+                }
+            }
+
             if (_textoDescHabilidadPausa == null) return;
+
+            // Asegurar tipografía LegacyRuntime sin distorsión
+            _textoDescHabilidadPausa.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            _textoDescHabilidadPausa.fontSize = 12;
+            _textoDescHabilidadPausa.lineSpacing = 1.22f;
 
             var tipo = ObtenerTipoPersonajeLocal();
             var habs = CatalogoHabilidades.ObtenerHabilidadesPersonaje(tipo);
@@ -1396,11 +1448,44 @@ namespace SoulKnight
             {
                 var h = habs[idx];
                 string desc = !string.IsNullOrEmpty(h.descripcionTecnica) ? h.descripcionTecnica : h.descripcion;
-                _textoDescHabilidadPausa.text = $"<b><color=#a0e0ff>{h.nombre.ToUpper()}</color></b> [{teclas[idx]}]:\n{desc}";
+                _textoDescHabilidadPausa.text = $"<b><size=13><color=#5ce1e6>{h.nombre.ToUpper()}</color></size></b> <color=#ffd700>({teclas[idx]})</color>\n{desc}";
             }
             else
             {
-                _textoDescHabilidadPausa.text = "✦ Haz clic en una habilidad para ver su descripción detallada.";
+                _textoDescHabilidadPausa.text = "<color=#94a3b8><i>Haz clic en una habilidad para ver su descripción detallada.</i></color>";
+            }
+        }
+
+        private void ActualizarMapaPausa()
+        {
+            if (panelPausa == null) return;
+
+            if (_rawMapaPausa == null)
+            {
+                var marco = panelPausa.transform.Find("MarcoMapaPausa");
+                if (marco != null)
+                {
+                    _rawMapaPausa = marco.GetComponentInChildren<RawImage>(true);
+                }
+            }
+
+            if (minimapaHUD == null)
+            {
+                minimapaHUD = MinimapaHUD.Instancia ?? MinimapaHUD.CrearEnHUD(transform);
+            }
+
+            if (MinimapaHUD.Instancia != null)
+            {
+                MinimapaHUD.Instancia.RenderizarMinimapa();
+                if (_rawMapaPausa != null)
+                {
+                    _rawMapaPausa.texture = MinimapaHUD.Instancia.TextureMapa;
+                    _rawMapaPausa.color = Color.white;
+                    _rawMapaPausa.enabled = true;
+                    _rawMapaPausa.gameObject.SetActive(true);
+                    _rawMapaPausa.SetVerticesDirty();
+                    _rawMapaPausa.SetMaterialDirty();
+                }
             }
         }
 
@@ -2628,14 +2713,7 @@ namespace SoulKnight
                 ConfigurarLayoutMenuPausa();
                 ActualizarVisibilidadBotonLobbyPausa();
                 ActualizarHabilidadesPausaUI();
-                if (MinimapaHUD.Instancia != null)
-                {
-                    MinimapaHUD.Instancia.RenderizarMinimapa();
-                    if (_rawMapaPausa != null)
-                    {
-                        _rawMapaPausa.texture = MinimapaHUD.Instancia.TextureMapa;
-                    }
-                }
+                ActualizarMapaPausa();
             }
             else
             {

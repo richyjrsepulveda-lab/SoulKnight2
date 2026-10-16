@@ -824,8 +824,8 @@ namespace SoulKnight
                 rtTd.offsetMax = new Vector2(-12f, -6f);
 
                 _txtDetalleTecnicoCuarto = txtObj.AddComponent<Text>();
-                _txtDetalleTecnicoCuarto.font = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-                _txtDetalleTecnicoCuarto.fontSize = 9;
+                _txtDetalleTecnicoCuarto.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+                _txtDetalleTecnicoCuarto.fontSize = 13;
                 _txtDetalleTecnicoCuarto.lineSpacing = 1.25f;
                 _txtDetalleTecnicoCuarto.alignment = TextAnchor.MiddleLeft;
                 _txtDetalleTecnicoCuarto.color = new Color(0.92f, 0.96f, 1f);
@@ -846,9 +846,9 @@ namespace SoulKnight
                     string[] teclas = new string[] { "CLICK IZQ", "E", "Q", "R" };
                     string tStr = habSel.slotPorDefecto < teclas.Length ? teclas[habSel.slotPorDefecto] : "HAB";
                     string descTec = !string.IsNullOrEmpty(habSel.descripcionTecnica) ? habSel.descripcionTecnica : habSel.descripcion;
-                    _txtDetalleTecnicoCuarto.text = $"<b><color=#a0e0ff>✦ FICHA TÉCNICA: {habSel.nombre.ToUpper()} [{tStr}] ✦</color></b>\n" +
+                    _txtDetalleTecnicoCuarto.text = $"<b><size=14><color=#70d0ff>{habSel.nombre.ToUpper()}</color></size></b> <color=#ffd700>[{tStr}]</color>\n" +
                                                   $"{descTec}\n" +
-                                                  $"<size=8><color=#6c7e99>(Haz clic en cualquier habilidad de la lista para ver sus especificaciones)</color></size>";
+                                                  $"<size=11><color=#88a0c0><i>(Haz clic en cualquier habilidad para ver sus especificaciones)</i></color></size>";
                 }
             }
         }
@@ -918,9 +918,9 @@ namespace SoulKnight
                 rtCuerpo.offsetMin = new Vector2(24f, 55f);
                 rtCuerpo.offsetMax = new Vector2(-24f, -50f);
                 var txtCuerpo = cuerpoObj.AddComponent<Text>();
-                txtCuerpo.font = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-                txtCuerpo.fontSize = 10;
-                txtCuerpo.lineSpacing = 1.25f;
+                txtCuerpo.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+                txtCuerpo.fontSize = 13;
+                txtCuerpo.lineSpacing = 1.3f;
                 txtCuerpo.alignment = TextAnchor.UpperLeft;
                 txtCuerpo.color = new Color(0.9f, 0.95f, 1f);
                 txtCuerpo.text =

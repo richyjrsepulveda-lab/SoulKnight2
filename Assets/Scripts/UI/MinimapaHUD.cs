@@ -107,6 +107,10 @@ namespace SoulKnight
             _texMapa.filterMode = FilterMode.Point;
             _texMapa.wrapMode = TextureWrapMode.Clamp;
             _pixeles = new Color32[MAP_W * MAP_H];
+            Color32 initColor = new Color32(8, 10, 16, 245);
+            for (int i = 0; i < _pixeles.Length; i++) _pixeles[i] = initColor;
+            _texMapa.SetPixels32(_pixeles);
+            _texMapa.Apply(false);
             _rawImage.texture = _texMapa;
         }
 
@@ -130,12 +134,19 @@ namespace SoulKnight
         {
             var gen = GeneradorMazmorra.Instancia;
             var vision = SistemaVision.Instancia;
-            if (gen == null || gen.gridActual == null) return;
+            if (_texMapa == null || _pixeles == null) return;
 
             Color32 colFondo = new Color32(8, 10, 16, 245);
             for (int i = 0; i < _pixeles.Length; i++)
             {
                 _pixeles[i] = colFondo;
+            }
+
+            if (gen == null || gen.gridActual == null)
+            {
+                _texMapa.SetPixels32(_pixeles);
+                _texMapa.Apply(false);
+                return;
             }
 
             int minX = gen.gridMinX;
