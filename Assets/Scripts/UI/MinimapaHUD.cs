@@ -27,6 +27,14 @@ namespace SoulKnight
 
         public static MinimapaHUD CrearEnHUD(Transform canvasParent)
         {
+            var existente = canvasParent.Find("MarcoMinimapa");
+            if (existente != null)
+            {
+                var compExist = existente.GetComponent<MinimapaHUD>();
+                if (compExist != null) return compExist;
+                Destroy(existente.gameObject);
+            }
+
             var marcoObj = new GameObject("MarcoMinimapa");
             marcoObj.transform.SetParent(canvasParent, false);
 
@@ -73,7 +81,7 @@ namespace SoulKnight
             var lblObj = new GameObject("TituloMinimapa");
             lblObj.transform.SetParent(fondoInterno.transform, false);
             var txt = lblObj.AddComponent<Text>();
-            txt.font = FuenteUtil.ObtenerFuentePixelArt();
+            txt.font = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
             txt.fontSize = 10;
             txt.fontStyle = FontStyle.Bold;
             txt.alignment = TextAnchor.MiddleCenter;

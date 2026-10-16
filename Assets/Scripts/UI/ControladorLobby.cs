@@ -65,6 +65,7 @@ namespace SoulKnight
         private GameObject _panelFinPartidaIndividual;
         private IdHabilidad _habilidadSeleccionadaCuarto = IdHabilidad.Ninguna;
         private GameObject _modalMaestriaLobby;
+        private Text _txtDetalleTecnicoCuarto;
 
         void Awake()
         {
@@ -606,9 +607,13 @@ namespace SoulKnight
                 var rt = slotObj.AddComponent<RectTransform>();
                 rt.sizeDelta = new Vector2(620f, 48f);
 
+                var le = slotObj.AddComponent<LayoutElement>();
+                le.preferredHeight = 48f;
+                le.minHeight = 48f;
+
                 var img = slotObj.AddComponent<Image>();
                 img.color = seleccionada
-                    ? new Color(0.18f, 0.28f, 0.42f, 0.98f)
+                    ? new Color(0.18f, 0.32f, 0.48f, 0.98f)
                     : (equipada
                         ? new Color(0.12f, 0.26f, 0.20f, 0.95f)
                         : (desbloqueada ? new Color(0.11f, 0.14f, 0.20f, 0.92f) : new Color(0.07f, 0.08f, 0.11f, 0.85f)));
@@ -629,7 +634,7 @@ namespace SoulKnight
                 rtIcoBox.anchorMin = new Vector2(0f, 0.5f);
                 rtIcoBox.anchorMax = new Vector2(0f, 0.5f);
                 rtIcoBox.pivot = new Vector2(0.5f, 0.5f);
-                rtIcoBox.anchoredPosition = new Vector2(30f, 0f);
+                rtIcoBox.anchoredPosition = new Vector2(28f, 0f);
                 rtIcoBox.sizeDelta = new Vector2(40f, 40f);
 
                 var imgIcoBox = icoBox.AddComponent<Image>();
@@ -656,8 +661,8 @@ namespace SoulKnight
                 rtBadge.anchorMin = new Vector2(0f, 0.5f);
                 rtBadge.anchorMax = new Vector2(0f, 0.5f);
                 rtBadge.pivot = new Vector2(0f, 0.5f);
-                rtBadge.anchoredPosition = new Vector2(56f, 0f);
-                rtBadge.sizeDelta = new Vector2(74f, 24f);
+                rtBadge.anchoredPosition = new Vector2(98f, 0f);
+                rtBadge.sizeDelta = new Vector2(76f, 24f);
 
                 var imgBadge = badgeObj.AddComponent<Image>();
                 imgBadge.color = new Color(0.06f, 0.08f, 0.14f, 0.95f);
@@ -678,15 +683,15 @@ namespace SoulKnight
                 txtBadge.text = $"[{teclaStr}]";
                 txtBadge.raycastTarget = false;
 
-                // 3. Textos del slot (Nombre, estado y descripción corta)
+                // 3. Textos del slot (Nombre limpio y estado, sin texto feo)
                 var txtObj = new GameObject("TextoSlot");
                 txtObj.transform.SetParent(slotObj.transform, false);
                 var rtTxt = txtObj.AddComponent<RectTransform>();
                 rtTxt.anchorMin = new Vector2(0f, 0.5f);
                 rtTxt.anchorMax = new Vector2(1f, 0.5f);
                 rtTxt.pivot = new Vector2(0f, 0.5f);
-                rtTxt.anchoredPosition = new Vector2(136f, 0f);
-                rtTxt.sizeDelta = new Vector2(-260f, 40f);
+                rtTxt.anchoredPosition = new Vector2(185f, 0f);
+                rtTxt.sizeDelta = new Vector2(-295f, 40f);
 
                 var txt = txtObj.AddComponent<Text>();
                 txt.font = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
@@ -696,10 +701,10 @@ namespace SoulKnight
                 txt.raycastTarget = false;
 
                 string estadoRun = desbloqueada 
-                    ? $"<color=#8be9fd>Desbloquea Run Nv.{hab.nivelRequeridoRun}</color>" 
+                    ? $"<color=#8be9fd>Desbloquea en Run Nv.{hab.nivelRequeridoRun}</color>" 
                     : $"<color=#ffb86c>Requiere Maestría Nv.{hab.nivelMaestriaRequerido}</color>";
 
-                txt.text = $"<b>{hab.nombre.ToUpper()}</b>  —  {estadoRun}\n<size=9><color=#9db0c6>{hab.descripcion}</color></size>";
+                txt.text = $"<b>{hab.nombre.ToUpper()}</b>\n<size=9>{estadoRun}</size>";
 
                 // 4. Botón interactivo de equipar o etiqueta de bloqueo a la derecha
                 if (desbloqueada)
@@ -776,19 +781,26 @@ namespace SoulKnight
         {
             if (panelVistaCuarto == null) return;
 
-            var cardTec = panelVistaCuarto.transform.Find("TarjetaDetalleTecnicoCuarto");
-            if (cardTec == null)
+            if (_txtDetalleTecnicoCuarto == null)
+            {
+                var existCard = panelVistaCuarto.transform.Find("TarjetaDetalleTecnicoCuarto");
+                if (existCard != null)
+                {
+                    _txtDetalleTecnicoCuarto = existCard.Find("Fondo/TextoDetalle")?.GetComponent<Text>();
+                }
+            }
+
+            if (_txtDetalleTecnicoCuarto == null)
             {
                 var objCard = new GameObject("TarjetaDetalleTecnicoCuarto");
                 objCard.transform.SetParent(panelVistaCuarto.transform, false);
-                cardTec = objCard.transform;
 
                 var rtCard = objCard.AddComponent<RectTransform>();
                 rtCard.anchorMin = new Vector2(0.5f, 0.5f);
                 rtCard.anchorMax = new Vector2(0.5f, 0.5f);
                 rtCard.pivot = new Vector2(0.5f, 0.5f);
-                rtCard.anchoredPosition = new Vector2(0f, -90f);
-                rtCard.sizeDelta = new Vector2(620f, 78f);
+                rtCard.anchoredPosition = new Vector2(0f, -86f);
+                rtCard.sizeDelta = new Vector2(620f, 92f);
 
                 var imgBorde = objCard.AddComponent<Image>();
                 imgBorde.color = new Color(0.32f, 0.65f, 0.95f, 0.95f); // Borde azul cian
@@ -808,19 +820,19 @@ namespace SoulKnight
                 var rtTd = txtObj.AddComponent<RectTransform>();
                 rtTd.anchorMin = Vector2.zero;
                 rtTd.anchorMax = Vector2.one;
-                rtTd.offsetMin = new Vector2(10f, 4f);
-                rtTd.offsetMax = new Vector2(-10f, -4f);
+                rtTd.offsetMin = new Vector2(12f, 6f);
+                rtTd.offsetMax = new Vector2(-12f, -6f);
 
-                var txtTd = txtObj.AddComponent<Text>();
-                txtTd.font = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-                txtTd.fontSize = 9;
-                txtTd.lineSpacing = 1.2f;
-                txtTd.alignment = TextAnchor.MiddleLeft;
-                txtTd.color = new Color(0.92f, 0.96f, 1f);
+                _txtDetalleTecnicoCuarto = txtObj.AddComponent<Text>();
+                _txtDetalleTecnicoCuarto.font = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+                _txtDetalleTecnicoCuarto.fontSize = 9;
+                _txtDetalleTecnicoCuarto.lineSpacing = 1.25f;
+                _txtDetalleTecnicoCuarto.alignment = TextAnchor.MiddleLeft;
+                _txtDetalleTecnicoCuarto.color = new Color(0.92f, 0.96f, 1f);
+                _txtDetalleTecnicoCuarto.raycastTarget = false;
             }
 
-            var txtDet = cardTec.GetComponentInChildren<Text>();
-            if (txtDet != null)
+            if (_txtDetalleTecnicoCuarto != null)
             {
                 var habSel = CatalogoHabilidades.Obtener(_habilidadSeleccionadaCuarto);
                 if (habSel == null)
@@ -834,9 +846,9 @@ namespace SoulKnight
                     string[] teclas = new string[] { "CLICK IZQ", "E", "Q", "R" };
                     string tStr = habSel.slotPorDefecto < teclas.Length ? teclas[habSel.slotPorDefecto] : "HAB";
                     string descTec = !string.IsNullOrEmpty(habSel.descripcionTecnica) ? habSel.descripcionTecnica : habSel.descripcion;
-                    txtDet.text = $"<b><color=#a0e0ff>✦ FICHA TÉCNICA: {habSel.nombre.ToUpper()} [{tStr}] ✦</color></b>\n" +
-                                  $"{descTec}\n" +
-                                  $"<size=8><color=#6c7e99>(Haz clic en cualquier habilidad de la lista para ver sus especificaciones)</color></size>";
+                    _txtDetalleTecnicoCuarto.text = $"<b><color=#a0e0ff>✦ FICHA TÉCNICA: {habSel.nombre.ToUpper()} [{tStr}] ✦</color></b>\n" +
+                                                  $"{descTec}\n" +
+                                                  $"<size=8><color=#6c7e99>(Haz clic en cualquier habilidad de la lista para ver sus especificaciones)</color></size>";
                 }
             }
         }

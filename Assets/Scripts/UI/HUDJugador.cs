@@ -153,10 +153,10 @@ namespace SoulKnight
             if (botonSalirPartida) botonSalirPartida.onClick.AddListener(SalirAlMenuPrincipal);
             if (botonVolverLobby) botonVolverLobby.onClick.AddListener(VolverAlLobbyFinPartidaIndividual);
 
-            AsegurarTextoMiNombreHUD();
-            AsegurarLayoutInferior();
-            AsegurarTextoOroRun();
-            ConfigurarLayoutMenuPausa();
+            try { AsegurarTextoMiNombreHUD(); } catch (System.Exception e) { Debug.LogError($"[HUD] Error AsegurarTextoMiNombreHUD: {e}"); }
+            try { AsegurarLayoutInferior(); } catch (System.Exception e) { Debug.LogError($"[HUD] Error AsegurarLayoutInferior: {e}"); }
+            try { AsegurarTextoOroRun(); } catch (System.Exception e) { Debug.LogError($"[HUD] Error AsegurarTextoOroRun: {e}"); }
+            try { ConfigurarLayoutMenuPausa(); } catch (System.Exception e) { Debug.LogError($"[HUD] Error ConfigurarLayoutMenuPausa: {e}"); }
 
             // Iniciar las barras de progresión en 0 con su texto de nivel correspondiente
             if (barraVida != null)
@@ -604,6 +604,11 @@ namespace SoulKnight
             }
 
             // Asegurar que el minimapa permanezca visible durante el gameplay normal
+            if (minimapaHUD == null)
+            {
+                minimapaHUD = MinimapaHUD.Instancia ?? MinimapaHUD.CrearEnHUD(transform);
+            }
+
             if (minimapaHUD != null)
             {
                 bool debeEstarActivo = (panelPausa == null || !panelPausa.activeSelf)
@@ -1024,43 +1029,51 @@ namespace SoulKnight
         {
             if (textoOroRun == null)
             {
-                var existOro = transform.Find("TextoOroRunHUD");
-                if (existOro != null)
+                var existCont = transform.Find("ContenedorOroRunHUD");
+                if (existCont != null)
                 {
-                    textoOroRun = existOro.GetComponent<Text>();
+                    textoOroRun = existCont.GetComponentInChildren<Text>();
                 }
             }
 
             if (textoOroRun == null)
             {
-                var oroObj = new GameObject("TextoOroRunHUD");
-                oroObj.transform.SetParent(transform, false);
+                // Contenedor visual de oro (lleva la imagen de fondo)
+                var contOroObj = new GameObject("ContenedorOroRunHUD");
+                contOroObj.transform.SetParent(transform, false);
 
-                var imgFondo = oroObj.AddComponent<Image>();
+                var rtCont = contOroObj.AddComponent<RectTransform>();
+                rtCont.anchorMin = new Vector2(1f, 1f);
+                rtCont.anchorMax = new Vector2(1f, 1f);
+                rtCont.pivot = new Vector2(1f, 1f);
+                // Minimapa está en X = -16, Ancho = 285 (borde izquierdo en -301)
+                // Colocamos el oro arriba a la derecha, al ladito a la izquierda del minimapa
+                rtCont.anchoredPosition = new Vector2(-310f, -54f);
+                rtCont.sizeDelta = new Vector2(130f, 34f);
+
+                var imgFondo = contOroObj.AddComponent<Image>();
                 imgFondo.color = new Color(0.06f, 0.08f, 0.14f, 0.92f);
 
-                textoOroRun = oroObj.AddComponent<Text>();
+                // GameObject hijo dedicado al texto (evita conflicto Graphic de Unity UI)
+                var txtObj = new GameObject("TextoOro");
+                txtObj.transform.SetParent(contOroObj.transform, false);
+                var rtTxt = txtObj.AddComponent<RectTransform>();
+                rtTxt.anchorMin = Vector2.zero;
+                rtTxt.anchorMax = Vector2.one;
+                rtTxt.sizeDelta = Vector2.zero;
+
+                textoOroRun = txtObj.AddComponent<Text>();
                 textoOroRun.font = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-                textoOroRun.fontSize = 13;
+                textoOroRun.fontSize = 12;
                 textoOroRun.fontStyle = FontStyle.Bold;
                 textoOroRun.alignment = TextAnchor.MiddleCenter;
                 textoOroRun.color = new Color(1f, 0.88f, 0.2f, 1f);
+                textoOroRun.text = "🪙 0";
+                textoOroRun.raycastTarget = false;
 
-                var sombra = oroObj.AddComponent<Shadow>();
+                var sombra = txtObj.AddComponent<Shadow>();
                 sombra.effectColor = new Color(0f, 0f, 0f, 0.95f);
                 sombra.effectDistance = new Vector2(1f, -1f);
-            }
-
-            var rtOro = textoOroRun.GetComponent<RectTransform>();
-            if (rtOro != null)
-            {
-                rtOro.anchorMin = new Vector2(1f, 1f);
-                rtOro.anchorMax = new Vector2(1f, 1f);
-                rtOro.pivot = new Vector2(1f, 1f);
-                // Minimapa está en X = -16, Ancho = 285 (borde izquierdo en -301)
-                // Colocamos el oro arriba a la derecha, al ladito a la izquierda del minimapa
-                rtOro.anchoredPosition = new Vector2(-310f, -54f);
-                rtOro.sizeDelta = new Vector2(130f, 34f);
             }
         }
 
@@ -1326,9 +1339,29 @@ namespace SoulKnight
                 {
                     sp = CatalogoHabilidades.ObtenerSpriteHabilidad(habs[i].id);
                 }
-                if (sp == null && iconosHabilidades != null && i < iconosHabilidades.Length && iconosHabilidades[i] != null && iconosHabilidades[i].sprite != null)
+
+                if (sp == null)
                 {
-                    sp = iconosHabilidades[i].sprite;
+                    if (tipo == TipoPersonaje.Fuego)
+                    {
+                        if (i == 0) sp = iconoFuegoLMB;
+                        else if (i == 1) sp = iconoFuegoE;
+                        else if (i == 2) sp = iconoFuegoQ;
+                    }
+                    else if (tipo == TipoPersonaje.Hielo)
+                    {
+                        if (i == 0) sp = iconoHieloLMB;
+                        else if (i == 1) sp = iconoHieloE;
+                        else if (i == 2) sp = iconoHieloQ;
+                        else if (i == 3) sp = iconoHieloR;
+                    }
+                    else if (tipo == TipoPersonaje.Electrico)
+                    {
+                        if (i == 0) sp = iconoElecLMB;
+                        else if (i == 1) sp = iconoElecE;
+                        else if (i == 2) sp = iconoElecQ;
+                        else if (i == 3) sp = iconoElecR;
+                    }
                 }
 
                 if (_iconosHabilidadesPausa[i] != null)
@@ -2563,6 +2596,7 @@ namespace SoulKnight
 
         public void AlternarPausa()
         {
+            if (panelPausa == null) return;
             if (panelFinPartida != null && panelFinPartida.activeSelf) return;
 
             bool estado = !panelPausa.activeSelf;
