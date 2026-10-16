@@ -999,6 +999,8 @@ namespace SoulKnight
             return ulong.MaxValue;
         }
 
+        private Image _fadeNegroLobby;
+
         public void IniciarPartida()
         {
             if (SalaRed.Instancia == null || !SalaRed.Instancia.IsServer) return;
@@ -1021,8 +1023,78 @@ namespace SoulKnight
                 return;
             }
 
-            Controles.Bloqueado = false;
+            SalaRed.Instancia.IniciarFadeNegroLobbyClientRpc();
+            StartCoroutine(RutinaIniciarPartidaConFade());
+        }
+
+        public void IniciarFadeNegroLobby()
+        {
+            StartCoroutine(RutinaFadeNegroLobbySoloVisual());
+        }
+
+        private System.Collections.IEnumerator RutinaFadeNegroLobbySoloVisual()
+        {
+            Controles.Bloqueado = true;
+            AsegurarFadeNegroLobby();
+
+            float t = 0f;
+            float dur = 0.8f;
+            while (t < dur)
+            {
+                t += Time.deltaTime;
+                float alpha = Mathf.SmoothStep(0f, 1f, t / dur);
+                if (_fadeNegroLobby != null)
+                {
+                    _fadeNegroLobby.color = new Color(0f, 0f, 0f, alpha);
+                }
+                yield return null;
+            }
+
+            if (_fadeNegroLobby != null) _fadeNegroLobby.color = Color.black;
+        }
+
+        private System.Collections.IEnumerator RutinaIniciarPartidaConFade()
+        {
+            Controles.Bloqueado = true;
+            AsegurarFadeNegroLobby();
+
+            float t = 0f;
+            float dur = 0.8f;
+            while (t < dur)
+            {
+                t += Time.deltaTime;
+                float alpha = Mathf.SmoothStep(0f, 1f, t / dur);
+                if (_fadeNegroLobby != null)
+                {
+                    _fadeNegroLobby.color = new Color(0f, 0f, 0f, alpha);
+                }
+                yield return null;
+            }
+
+            if (_fadeNegroLobby != null) _fadeNegroLobby.color = Color.black;
+            yield return new WaitForSeconds(0.25f);
+
             SalaRed.Instancia.IniciarPartida();
+        }
+
+        private void AsegurarFadeNegroLobby()
+        {
+            if (_fadeNegroLobby != null) return;
+            var canvas = FindObjectOfType<Canvas>();
+            if (canvas == null) return;
+
+            var obj = new GameObject("PanelFadeNegroLobby");
+            obj.transform.SetParent(canvas.transform, false);
+            obj.transform.SetAsLastSibling();
+
+            var rt = obj.AddComponent<RectTransform>();
+            rt.anchorMin = Vector2.zero;
+            rt.anchorMax = Vector2.one;
+            rt.sizeDelta = Vector2.zero;
+
+            _fadeNegroLobby = obj.AddComponent<Image>();
+            _fadeNegroLobby.color = new Color(0f, 0f, 0f, 0f);
+            _fadeNegroLobby.raycastTarget = true;
         }
 
         public void RevisarPortalMazmorra(HashSet<ulong> jugadoresEnPortal, bool mostrarAviso)

@@ -175,7 +175,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 3802729067
+  GlobalObjectIdHash: 3358623506
   InScenePlacedSourceGlobalObjectIdHash: 0
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
@@ -336,6 +336,8 @@ MonoBehaviour:
     m_InternalValue: 1
   NivelMaestriaSincronizado:
     m_InternalValue: 1
+  OroRun:
+    m_InternalValue: 0
   DireccionApuntado:
     m_InternalValue: {x: 1, y: 0}
   MovimientoSincronizado:

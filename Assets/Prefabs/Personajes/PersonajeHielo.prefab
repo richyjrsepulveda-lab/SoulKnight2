@@ -176,7 +176,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 3802729067
+  GlobalObjectIdHash: 3358623506
   InScenePlacedSourceGlobalObjectIdHash: 0
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
@@ -337,6 +337,8 @@ MonoBehaviour:
     m_InternalValue: 1
   NivelMaestriaSincronizado:
     m_InternalValue: 1
+  OroRun:
+    m_InternalValue: 0
   DireccionApuntado:
     m_InternalValue: {x: 1, y: 0}
   MovimientoSincronizado:
@@ -362,6 +364,8 @@ MonoBehaviour:
     m_InternalValue: 0
   ArmaduraActiva:
     m_InternalValue: 0
+  AlcanceEfectivoRayoSincronizado:
+    m_InternalValue: 7.5
   spritesAbajo:
   - {fileID: 21300000, guid: 8a1c5cad62ebba74998216853f7accb7, type: 3}
   - {fileID: 21300000, guid: 74001bbe910c2a7458ebf5561f8c3fd1, type: 3}

@@ -210,6 +210,15 @@ namespace SoulKnight
         public static bool UltimoResultadoVictoria = false;
 
         // ------------------------------------------- INICIAR / TERMINAR (solo host)
+        [ClientRpc]
+        public void IniciarFadeNegroLobbyClientRpc()
+        {
+            if (ControladorLobby.Instancia != null)
+            {
+                ControladorLobby.Instancia.IniciarFadeNegroLobby();
+            }
+        }
+
         public void IniciarPartida()
         {
             if (!IsServer || PartidaEnCurso.Value) return;
@@ -494,10 +503,25 @@ namespace SoulKnight
         [ClientRpc]
         public void FinalizarTransicionNivelClientRpc(int nivel, FixedString64Bytes bioma)
         {
-            Controles.Bloqueado = false;
+            if (SistemaVision.Instancia != null)
+            {
+                SistemaVision.Instancia.ForzarActualizacionExploracion();
+            }
+            if (MinimapaHUD.Instancia != null)
+            {
+                MinimapaHUD.Instancia.RenderizarMinimapa();
+            }
             if (HUDJugador.Instancia != null)
             {
-                HUDJugador.Instancia.IniciarFadeAclarar(1.2f, $"NIVEL {nivel}\n{bioma}");
+                HUDJugador.Instancia.PrecargarMenuPausa();
+                HUDJugador.Instancia.IniciarFadeAclarar(1.2f, $"NIVEL {nivel}\n{bioma}", () =>
+                {
+                    Controles.Bloqueado = false;
+                });
+            }
+            else
+            {
+                Controles.Bloqueado = false;
             }
         }
 

@@ -54,6 +54,79 @@ namespace SoulKnight
             return EstaCeldaExplorada(gx, gy);
         }
 
+        public void ForzarActualizacionExploracion()
+        {
+            var gen = GeneradorMazmorra.Instancia;
+            if (gen == null || gen.gridActual == null) return;
+
+            int gridW = gen.gridActual.GetLength(0);
+            int gridH = gen.gridActual.GetLength(1);
+            if (_gridReferencia != gen.gridActual || _celdasExploradas == null || 
+                _celdasExploradas.GetLength(0) != gridW || _celdasExploradas.GetLength(1) != gridH)
+            {
+                _gridReferencia = gen.gridActual;
+                _celdasExploradas = new bool[gridW, gridH];
+            }
+
+            for (int i = 0; i < gen.salasGeneradas.Count; i++)
+            {
+                var s = gen.salasGeneradas[i];
+                if (s == null || !s.descubierta) continue;
+
+                int sxMin = Mathf.Max(0, Mathf.FloorToInt(s.limitesSala.xMin) - 1 - gen.gridMinX);
+                int sxMax = Mathf.Min(gridW - 1, Mathf.CeilToInt(s.limitesSala.xMax) + 1 - gen.gridMinX);
+                int syMin = Mathf.Max(0, Mathf.FloorToInt(s.limitesSala.yMin) - 1 - gen.gridMinY);
+                int syMax = Mathf.Min(gridH - 1, Mathf.CeilToInt(s.limitesSala.yMax) + 1 - gen.gridMinY);
+                for (int gx = sxMin; gx <= sxMax; gx++)
+                {
+                    for (int gy = syMin; gy <= syMax; gy++)
+                    {
+                        if (gx >= 0 && gx < gridW && gy >= 0 && gy < gridH)
+                        {
+                            _celdasExploradas[gx, gy] = true;
+                        }
+                    }
+                }
+            }
+
+            // Marcar celdas del entorno inmediato de los personajes presentes
+            int rInt = Mathf.CeilToInt(radioLuzJugador) + 1;
+            float rExpSq = (radioLuzJugador + 0.8f) * (radioLuzJugador + 0.8f);
+            ControladorSala salaCerrada = ObtenerSalaBloqueadaActiva();
+
+            for (int j = 0; j < Personaje.Todos.Count; j++)
+            {
+                var pj = Personaje.Todos[j];
+                if (pj == null || !pj.gameObject.activeInHierarchy) continue;
+                Vector2 orig = pj.transform.position;
+                int cx = Mathf.RoundToInt(orig.x) - gen.gridMinX;
+                int cy = Mathf.RoundToInt(orig.y) - gen.gridMinY;
+                int x0 = Mathf.Max(0, cx - rInt);
+                int x1 = Mathf.Min(gridW - 1, cx + rInt);
+                int y0 = Mathf.Max(0, cy - rInt);
+                int y1 = Mathf.Min(gridH - 1, cy + rInt);
+
+                for (int gx = x0; gx <= x1; gx++)
+                {
+                    for (int gy = y0; gy <= y1; gy++)
+                    {
+                        if (gx < 0 || gx >= gridW || gy < 0 || gy >= gridH) continue;
+                        if (_celdasExploradas[gx, gy]) continue;
+                        if (gen.gridActual[gx, gy] == 0) continue;
+
+                        Vector2 posCelda = new Vector2(gx + gen.gridMinX, gy + gen.gridMinY);
+                        if ((orig - posCelda).sqrMagnitude <= rExpSq)
+                        {
+                            if (HayLineaDeVisionSinAtravesarPared(orig, posCelda, gen, salaCerrada))
+                            {
+                                _celdasExploradas[gx, gy] = true;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         public static void AsegurarInstancia()
         {
             if (Instancia != null) return;
@@ -252,37 +325,15 @@ namespace SoulKnight
                 altoCam + (radioLuzAntorcha + 1f) * 2f
             );
 
+            ForzarActualizacionExploracion();
+
             if (gen != null && gen.gridActual != null)
             {
-                int gridW = gen.gridActual.GetLength(0);
-                int gridH = gen.gridActual.GetLength(1);
-                if (_gridReferencia != gen.gridActual || _celdasExploradas == null || 
-                    _celdasExploradas.GetLength(0) != gridW || _celdasExploradas.GetLength(1) != gridH)
-                {
-                    _gridReferencia = gen.gridActual;
-                    _celdasExploradas = new bool[gridW, gridH];
-                }
-
-                // Marcar celdas de salas descubiertas y recolectar antorchas activas
+                // Recolectar antorchas activas
                 for (int i = 0; i < gen.salasGeneradas.Count; i++)
                 {
                     var s = gen.salasGeneradas[i];
                     if (s == null || !s.descubierta) continue;
-
-                    int sxMin = Mathf.Max(0, Mathf.FloorToInt(s.limitesSala.xMin) - 1 - gen.gridMinX);
-                    int sxMax = Mathf.Min(gridW - 1, Mathf.CeilToInt(s.limitesSala.xMax) + 1 - gen.gridMinX);
-                    int syMin = Mathf.Max(0, Mathf.FloorToInt(s.limitesSala.yMin) - 1 - gen.gridMinY);
-                    int syMax = Mathf.Min(gridH - 1, Mathf.CeilToInt(s.limitesSala.yMax) + 1 - gen.gridMinY);
-                    for (int gx = sxMin; gx <= sxMax; gx++)
-                    {
-                        for (int gy = syMin; gy <= syMax; gy++)
-                        {
-                            if (gx >= 0 && gx < gridW && gy >= 0 && gy < gridH)
-                            {
-                                _celdasExploradas[gx, gy] = true;
-                            }
-                        }
-                    }
 
                     // Si hay una sala bloqueada en combate, no iluminar antorchas de otras salas
                     if (salaCerrada != null && salaCerrada != s) continue;
@@ -299,39 +350,6 @@ namespace SoulKnight
                                 pos = posAnt,
                                 radioEfectivo = radioLuzAntorcha * factorEncendido * pulso
                             });
-                        }
-                    }
-                }
-
-                // Marcar celdas que entren en el radio de visión de los jugadores según van explorando
-                int rInt = Mathf.CeilToInt(radioLuzJugador) + 1;
-                float rExpSq = (radioLuzJugador + 0.8f) * (radioLuzJugador + 0.8f);
-                for (int j = 0; j < _fuentesJugadores.Count; j++)
-                {
-                    Vector2 orig = _fuentesJugadores[j];
-                    int cx = Mathf.RoundToInt(orig.x) - gen.gridMinX;
-                    int cy = Mathf.RoundToInt(orig.y) - gen.gridMinY;
-                    int x0 = Mathf.Max(0, cx - rInt);
-                    int x1 = Mathf.Min(gridW - 1, cx + rInt);
-                    int y0 = Mathf.Max(0, cy - rInt);
-                    int y1 = Mathf.Min(gridH - 1, cy + rInt);
-
-                    for (int gx = x0; gx <= x1; gx++)
-                    {
-                        for (int gy = y0; gy <= y1; gy++)
-                        {
-                            if (gx < 0 || gx >= gridW || gy < 0 || gy >= gridH) continue;
-                            if (_celdasExploradas[gx, gy]) continue;
-                            if (gen.gridActual[gx, gy] == 0) continue;
-
-                            Vector2 posCelda = new Vector2(gx + gen.gridMinX, gy + gen.gridMinY);
-                            if ((orig - posCelda).sqrMagnitude <= rExpSq)
-                            {
-                                if (HayLineaDeVisionSinAtravesarPared(orig, posCelda, gen, salaCerrada))
-                                {
-                                    _celdasExploradas[gx, gy] = true;
-                                }
-                            }
                         }
                     }
                 }

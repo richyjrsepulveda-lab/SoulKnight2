@@ -98,6 +98,7 @@ namespace SoulKnight
         private bool _menuPausaPrecargado = false;
         private GameObject _modalMaestriaHUD;
 
+        public static bool EnTransicionCarga = true;
         [Header("Transición de Nivel (Fade a Negro)")]
         public Image panelFadeNegro;
         public Text textoBannerNivel;
@@ -281,20 +282,34 @@ namespace SoulKnight
             // Crear dinámicamente panel de votación estilo League of Legends si no existe
             CrearPanelVotacionSiNoExiste();
 
-            // Crear Minimapa arriba a la derecha
+            // Crear Minimapa arriba a la derecha (inicia estrictamente oculto durante la carga)
             if (minimapaHUD == null)
             {
                 minimapaHUD = MinimapaHUD.CrearEnHUD(transform);
+            }
+            if (minimapaHUD != null)
+            {
+                minimapaHUD.gameObject.SetActive(false);
             }
 
             // Crear Barra de Jefe estilo Dark Souls arriba al centro
             CrearBarraJefeDarkSoulsSiNoExiste(spriteBlanco);
 
+            // Asegurar que la pantalla de fade a negro esté por encima de absolutamente todos los elementos del HUD
+            if (panelFadeNegro != null)
+            {
+                panelFadeNegro.transform.SetAsLastSibling();
+                panelFadeNegro.color = Color.black;
+                panelFadeNegro.gameObject.SetActive(true);
+                panelFadeNegro.raycastTarget = true;
+            }
+            if (textoBannerNivel != null)
+            {
+                textoBannerNivel.transform.SetAsLastSibling();
+            }
+
             // Ocultar botón de volver al lobby en pausa si no es servidor
             ActualizarVisibilidadBotonLobbyPausa();
-
-            // Precargar y calentar todo el menú de pausa en memoria para 0 retraso al abrir
-            PrecargarMenuPausa();
 
             // Pantalla negra inicial cinematográfica: esperar a que todo esté 100% generado y cargado
             StartCoroutine(RutinaCargaInicialMazmorra());
@@ -617,7 +632,7 @@ namespace SoulKnight
                 }
             }
 
-            // Asegurar que el minimapa permanezca visible durante el gameplay normal
+            // Asegurar que el minimapa permanezca visible durante el gameplay normal (estrictamente oculto en cargas)
             if (minimapaHUD == null)
             {
                 minimapaHUD = MinimapaHUD.Instancia ?? MinimapaHUD.CrearEnHUD(transform);
@@ -625,7 +640,10 @@ namespace SoulKnight
 
             if (minimapaHUD != null)
             {
-                bool debeEstarActivo = (panelPausa == null || !panelPausa.activeSelf)
+                bool fadeActivo = (panelFadeNegro != null && panelFadeNegro.gameObject.activeSelf && panelFadeNegro.color.a > 0.02f);
+                bool debeEstarActivo = !EnTransicionCarga
+                    && !fadeActivo
+                    && (panelPausa == null || !panelPausa.activeSelf)
                     && (panelFinPartida == null || !panelFinPartida.activeSelf)
                     && !TiendaAbierta;
                 if (minimapaHUD.gameObject.activeSelf != debeEstarActivo)
@@ -2729,6 +2747,14 @@ namespace SoulKnight
                 }
                 ActualizarVisibilidadBotonLobbyPausa();
                 ActualizarHabilidadesPausaUI();
+                if (SistemaVision.Instancia != null)
+                {
+                    SistemaVision.Instancia.ForzarActualizacionExploracion();
+                }
+                if (MinimapaHUD.Instancia != null)
+                {
+                    MinimapaHUD.Instancia.RenderizarMinimapa();
+                }
                 ActualizarMapaPausa();
             }
             else
@@ -2877,6 +2903,8 @@ namespace SoulKnight
 
         public void IniciarFadeOscurecer(float duracion = 0.8f, Action alTerminar = null)
         {
+            EnTransicionCarga = true;
+            if (minimapaHUD != null) minimapaHUD.gameObject.SetActive(false);
             if (_rutinaFade != null) StopCoroutine(_rutinaFade);
             _rutinaFade = StartCoroutine(RutinaFade(1f, duracion, alTerminar));
         }
@@ -2888,9 +2916,11 @@ namespace SoulKnight
             {
                 textoBannerNivel.text = textoBanner;
                 textoBannerNivel.gameObject.SetActive(true);
+                textoBannerNivel.transform.SetAsLastSibling();
             }
             _rutinaFade = StartCoroutine(RutinaFade(0f, duracion, () =>
             {
+                EnTransicionCarga = false;
                 if (textoBannerNivel != null)
                 {
                     StartCoroutine(RutinaOcultarBanner());
@@ -2909,6 +2939,11 @@ namespace SoulKnight
 
             panelFadeNegro.gameObject.SetActive(true);
             panelFadeNegro.raycastTarget = alfaObjetivo > 0.01f;
+            panelFadeNegro.transform.SetAsLastSibling();
+            if (textoBannerNivel != null && textoBannerNivel.gameObject.activeSelf)
+            {
+                textoBannerNivel.transform.SetAsLastSibling();
+            }
 
             Color c = panelFadeNegro.color;
             float alfaInicial = c.a;
@@ -2917,7 +2952,8 @@ namespace SoulKnight
             while (t < duracion)
             {
                 t += Time.deltaTime;
-                c.a = Mathf.Lerp(alfaInicial, alfaObjetivo, t / duracion);
+                float p = Mathf.Clamp01(t / duracion);
+                c.a = Mathf.SmoothStep(alfaInicial, alfaObjetivo, p);
                 panelFadeNegro.color = c;
                 yield return null;
             }
@@ -2950,6 +2986,14 @@ namespace SoulKnight
                 ConfigurarLayoutMenuPausa();
                 ActualizarVisibilidadBotonLobbyPausa();
                 ActualizarHabilidadesPausaUI();
+                if (SistemaVision.Instancia != null)
+                {
+                    SistemaVision.Instancia.ForzarActualizacionExploracion();
+                }
+                if (MinimapaHUD.Instancia != null)
+                {
+                    MinimapaHUD.Instancia.RenderizarMinimapa();
+                }
                 ActualizarMapaPausa();
                 Canvas.ForceUpdateCanvases();
                 panelPausa.SetActive(false);
@@ -2964,24 +3008,29 @@ namespace SoulKnight
 
         private System.Collections.IEnumerator RutinaCargaInicialMazmorra()
         {
+            EnTransicionCarga = true;
             // Bloquear controles e iniciar pantalla completamente negra
             Controles.Bloqueado = true;
+            if (minimapaHUD != null) minimapaHUD.gameObject.SetActive(false);
             if (panelFadeNegro != null)
             {
                 panelFadeNegro.color = Color.black;
                 panelFadeNegro.gameObject.SetActive(true);
                 panelFadeNegro.raycastTarget = true;
+                panelFadeNegro.transform.SetAsLastSibling();
             }
 
             // Esperar a que la escena y la red se estabilicen
-            yield return new WaitForSeconds(0.5f);
+            yield return new WaitForSeconds(0.4f);
 
             // Esperar activamente hasta que el generador de mazmorra tenga el grid listo y los personajes existan
-            float tiempoMaximoEspera = 6f;
+            float tiempoMaximoEspera = 8f;
             float tiempoTranscurrido = 0f;
             while (tiempoTranscurrido < tiempoMaximoEspera)
             {
-                bool mazmorraLista = GeneradorMazmorra.Instancia != null && GeneradorMazmorra.Instancia.gridActual != null;
+                bool mazmorraLista = GeneradorMazmorra.Instancia != null 
+                    && GeneradorMazmorra.Instancia.gridActual != null
+                    && GeneradorMazmorra.Instancia.salasGeneradas.Count > 0;
                 bool jugadoresListos = Personaje.Todos.Count > 0;
                 if (mazmorraLista && jugadoresListos)
                 {
@@ -2991,16 +3040,36 @@ namespace SoulKnight
                 yield return new WaitForSeconds(0.1f);
             }
 
-            // Renderizar el mapa inicial y refrescar el menú de pausa
+            // Dejar pasar dos frames para que todos los Start/Awake de salas y antorchas completen
+            yield return null;
+            yield return null;
+
+            // Actualizar visión completa antes de que el jugador vea nada
+            if (SistemaVision.Instancia != null)
+            {
+                SistemaVision.Instancia.ForzarActualizacionExploracion();
+            }
+            if (MinimapaHUD.Instancia != null)
+            {
+                MinimapaHUD.Instancia.RenderizarMinimapa();
+            }
+
+            // Precargar el menú de pausa y su mapa
+            PrecargarMenuPausa();
+
+            // Espera generosa en negro para que todo el escenario, luces, shaders y texturas se asienten sin tirones
+            yield return new WaitForSeconds(1.8f);
+
+            // Re-verificar visión y mapa justo antes del fade
+            if (SistemaVision.Instancia != null)
+            {
+                SistemaVision.Instancia.ForzarActualizacionExploracion();
+            }
             if (MinimapaHUD.Instancia != null)
             {
                 MinimapaHUD.Instancia.RenderizarMinimapa();
             }
             ActualizarMapaPausa();
-            ActualizarHabilidadesPausaUI();
-
-            // Espera generosa en negro para que todo el escenario, luces, shaders y texturas se asienten sin tirones
-            yield return new WaitForSeconds(1.8f);
 
             int nivel = (GestorPartida.Instancia != null) ? GestorPartida.Instancia.NivelActual : 1;
             string bioma = (GeneradorMazmorra.Instancia != null) ? GeneradorMazmorra.Instancia.biomaActual.ToString().ToUpper() : "MAZMORRA";
@@ -3009,6 +3078,7 @@ namespace SoulKnight
             IniciarFadeAclarar(1.2f, textoBanner, () =>
             {
                 Controles.Bloqueado = false;
+                EnTransicionCarga = false;
             });
         }
 
