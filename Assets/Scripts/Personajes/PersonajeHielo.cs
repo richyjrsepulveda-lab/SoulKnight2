@@ -140,7 +140,12 @@ namespace SoulKnight
                 var goHelice = new GameObject("HeliceEscarcha");
                 goHelice.transform.SetParent(transform, false);
                 _heliceEscarcha = goHelice.AddComponent<LineRenderer>();
-                _heliceEscarcha.material = rayoHielo.sharedMaterial;
+                Material matRayo = (rayoHielo != null && rayoHielo.sharedMaterial != null) 
+                    ? rayoHielo.sharedMaterial 
+                    : new Material(Shader.Find("Sprites/Default"));
+                if (rayoHielo != null && rayoHielo.sharedMaterial == null) rayoHielo.material = matRayo;
+                if (rayoHieloHalo != null && rayoHieloHalo.sharedMaterial == null) rayoHieloHalo.material = matRayo;
+                _heliceEscarcha.material = matRayo;
                 _heliceEscarcha.sortingOrder = rayoHielo.sortingOrder + 1;
                 _heliceEscarcha.startWidth = 0.14f;
                 _heliceEscarcha.endWidth = 0.14f;

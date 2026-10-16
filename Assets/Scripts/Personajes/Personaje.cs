@@ -735,13 +735,19 @@ namespace SoulKnight
             {
                 var go = new GameObject("IndicadorRevivirAliado");
                 _textoIndicadorRevivir = go.AddComponent<TextMesh>();
+                Font f = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+                _textoIndicadorRevivir.font = f;
                 _textoIndicadorRevivir.fontSize = 28;
                 _textoIndicadorRevivir.characterSize = 0.085f;
                 _textoIndicadorRevivir.fontStyle = FontStyle.Bold;
                 _textoIndicadorRevivir.alignment = TextAlignment.Center;
                 _textoIndicadorRevivir.anchor = TextAnchor.MiddleCenter;
                 var mr = go.GetComponent<MeshRenderer>();
-                if (mr != null) mr.sortingOrder = 15;
+                if (mr != null)
+                {
+                    mr.sharedMaterial = f.material;
+                    mr.sortingOrder = 15;
+                }
             }
 
             _textoIndicadorRevivir.gameObject.SetActive(true);

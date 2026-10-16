@@ -22,7 +22,7 @@ namespace SoulKnight
 
         public static void Crear(Vector3 posicion, string texto, Color color)
         {
-            if (_fuente == null) _fuente = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            if (_fuente == null) _fuente = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
 
             // Desfase aleatorio para evitar que los textos se encimen directamente unos sobre otros
             Vector3 offset = new Vector3(Random.Range(-0.4f, 0.4f), Random.Range(-0.15f, 0.25f), 0f);

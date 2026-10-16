@@ -63,6 +63,8 @@ namespace SoulKnight
         private TipoPersonaje _cuartoAbierto = TipoPersonaje.Ninguno;
 
         private GameObject _panelFinPartidaIndividual;
+        private IdHabilidad _habilidadSeleccionadaCuarto = IdHabilidad.Ninguna;
+        private GameObject _modalMaestriaLobby;
 
         void Awake()
         {
@@ -215,9 +217,16 @@ namespace SoulKnight
                 ActualizarPersonajesLobbyServer();
             }
 
-            if (_estadoActual == EstadoLobbyUI.VistaCuarto && Input.GetKeyDown(KeyCode.Escape))
+            if (Input.GetKeyDown(KeyCode.Escape))
             {
-                VolverDeCuarto();
+                if (_modalMaestriaLobby != null && _modalMaestriaLobby.activeSelf)
+                {
+                    _modalMaestriaLobby.SetActive(false);
+                }
+                else if (_estadoActual == EstadoLobbyUI.VistaCuarto)
+                {
+                    VolverDeCuarto();
+                }
             }
         }
 
@@ -396,6 +405,12 @@ namespace SoulKnight
         {
             if (textoTituloCuarto != null)
             {
+                var rtTit = textoTituloCuarto.GetComponent<RectTransform>();
+                if (rtTit != null)
+                {
+                    rtTit.anchoredPosition = new Vector2(0f, 275f);
+                    rtTit.sizeDelta = new Vector2(620f, 32f);
+                }
                 string emojiPj = pj switch
                 {
                     TipoPersonaje.Fuego => "🔥",
@@ -404,6 +419,8 @@ namespace SoulKnight
                     _ => "⭐"
                 };
                 textoTituloCuarto.text = $"{emojiPj} PERSONAJE: {pj.ToString().ToUpper()}";
+                textoTituloCuarto.font = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+                textoTituloCuarto.fontSize = 18;
             }
 
             int xpMaestria = GestorMaestria.ObtenerPuntos(pj);
@@ -413,12 +430,58 @@ namespace SoulKnight
 
             if (textoMaestriaCuarto != null)
             {
-                string infoSiguiente = esMaxMaestria
-                    ? "<size=12><color=#ffd700>(¡NIVEL MÁXIMO ALCANZADO!)</color></size>"
-                    : $"<size=12><color=#a0d8ef>({xpProgresoNivel}/{GestorMaestria.XP_POR_NIVEL_MAESTRIA} XP al Nv.{nivelMaestria + 1})</color></size>";
+                var rtM = textoMaestriaCuarto.GetComponent<RectTransform>();
+                if (rtM != null)
+                {
+                    rtM.anchoredPosition = new Vector2(-75f, 238f);
+                    rtM.sizeDelta = new Vector2(460f, 26f);
+                }
+                textoMaestriaCuarto.font = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+                textoMaestriaCuarto.fontSize = 11;
+                textoMaestriaCuarto.alignment = TextAnchor.MiddleLeft;
 
-                textoMaestriaCuarto.text = $"<b>⭐ MAESTRÍA PERMANENTE: NIVEL {nivelMaestria}</b>  {infoSiguiente}\n" +
-                    $"<size=11><color=#f1fa8c>💡 La Maestría es permanente para este héroe (se guarda en tu cuenta y no se pierde al morir).\nSe gana eliminando monstruos y completando salas.\n• Nv.1 a 4: Desbloquea tus 4 habilidades (Básica, E, Q y Ultimate R).\n• Nv.5 a 20: Concede bonificaciones base.</color></size>";
+                string infoSiguiente = esMaxMaestria
+                    ? "<color=#ffd700>(¡MAX!)</color>"
+                    : $"<color=#a0d8ef>({xpProgresoNivel}/{GestorMaestria.XP_POR_NIVEL_MAESTRIA} XP)</color>";
+
+                textoMaestriaCuarto.text = $"<b>⭐ MAESTRÍA: NV.{nivelMaestria}</b>  {infoSiguiente}";
+
+                // Botón interactivo de ayuda de maestría al lado
+                if (panelVistaCuarto != null)
+                {
+                    var btnAyuda = panelVistaCuarto.transform.Find("BotonInfoMaestriaCuarto");
+                    if (btnAyuda == null)
+                    {
+                        var btnAyudaObj = new GameObject("BotonInfoMaestriaCuarto");
+                        btnAyudaObj.transform.SetParent(panelVistaCuarto.transform, false);
+                        var rtBtnA = btnAyudaObj.AddComponent<RectTransform>();
+                        rtBtnA.anchorMin = new Vector2(0.5f, 0.5f);
+                        rtBtnA.anchorMax = new Vector2(0.5f, 0.5f);
+                        rtBtnA.pivot = new Vector2(0.5f, 0.5f);
+                        rtBtnA.anchoredPosition = new Vector2(230f, 238f);
+                        rtBtnA.sizeDelta = new Vector2(145f, 24f);
+
+                        var imgBtnA = btnAyudaObj.AddComponent<Image>();
+                        imgBtnA.color = new Color(0.20f, 0.35f, 0.55f, 0.95f);
+
+                        var txtAyudaObj = new GameObject("Texto");
+                        txtAyudaObj.transform.SetParent(btnAyudaObj.transform, false);
+                        var rtTa = txtAyudaObj.AddComponent<RectTransform>();
+                        rtTa.anchorMin = Vector2.zero;
+                        rtTa.anchorMax = Vector2.one;
+                        rtTa.sizeDelta = Vector2.zero;
+                        var txtTa = txtAyudaObj.AddComponent<Text>();
+                        txtTa.font = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+                        txtTa.fontSize = 9;
+                        txtTa.fontStyle = FontStyle.Bold;
+                        txtTa.alignment = TextAnchor.MiddleCenter;
+                        txtTa.color = Color.white;
+                        txtTa.text = "[?] ¿CÓMO FUNCIONA?";
+
+                        var btnA = btnAyudaObj.AddComponent<Button>();
+                        btnA.onClick.AddListener(MostrarExplicacionMaestriaLobby);
+                    }
+                }
             }
 
             ulong miId = NetworkManager.Singleton != null ? NetworkManager.Singleton.LocalClientId : 0;
@@ -428,6 +491,16 @@ namespace SoulKnight
 
             if (textoEstadoCuarto != null)
             {
+                var rtE = textoEstadoCuarto.GetComponent<RectTransform>();
+                if (rtE != null)
+                {
+                    rtE.anchoredPosition = new Vector2(0f, 212f);
+                    rtE.sizeDelta = new Vector2(620f, 22f);
+                }
+                textoEstadoCuarto.font = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+                textoEstadoCuarto.fontSize = 11;
+                textoEstadoCuarto.alignment = TextAnchor.MiddleCenter;
+
                 if (ocupadoPorMi)
                 {
                     textoEstadoCuarto.text = "👑 SELECCIONADO POR TI (LISTO)";
@@ -450,6 +523,11 @@ namespace SoulKnight
             if (botonSeleccionarCuarto != null)
             {
                 var txtBtnSel = botonSeleccionarCuarto.GetComponentInChildren<Text>();
+                if (txtBtnSel != null)
+                {
+                    txtBtnSel.font = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+                    txtBtnSel.fontSize = 12;
+                }
                 if (ocupadoPorMi)
                 {
                     if (txtBtnSel) txtBtnSel.text = "✅ CONFIRMAR ELECCIÓN";
@@ -471,9 +549,33 @@ namespace SoulKnight
             if (botonLiberarCuarto != null)
             {
                 botonLiberarCuarto.gameObject.SetActive(ocupadoPorMi);
+                var txtBtnLib = botonLiberarCuarto.GetComponentInChildren<Text>();
+                if (txtBtnLib != null)
+                {
+                    txtBtnLib.font = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+                    txtBtnLib.fontSize = 12;
+                }
+            }
+
+            if (botonVolverCuarto != null)
+            {
+                var txtBtnVol = botonVolverCuarto.GetComponentInChildren<Text>();
+                if (txtBtnVol != null)
+                {
+                    txtBtnVol.font = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+                    txtBtnVol.fontSize = 12;
+                }
             }
 
             if (contenedorSlotsHabilidades == null) return;
+
+            // Reajustar dimensiones del contenedor de slots para dejar espacio a la ficha técnica
+            var rtContHabs = contenedorSlotsHabilidades.GetComponent<RectTransform>();
+            if (rtContHabs != null)
+            {
+                rtContHabs.anchoredPosition = new Vector2(0f, 50f);
+                rtContHabs.sizeDelta = new Vector2(640f, 215f);
+            }
 
             // Limpiar slots viejos
             foreach (Transform hijo in contenedorSlotsHabilidades)
@@ -485,57 +587,148 @@ namespace SoulKnight
             var todasHabilidades = CatalogoHabilidades.ObtenerHabilidadesPersonaje(pj);
             var loadoutActual = GestorLoadout.ObtenerLoadout(pj);
 
+            if (_habilidadSeleccionadaCuarto == IdHabilidad.Ninguna && todasHabilidades.Count > 0)
+            {
+                _habilidadSeleccionadaCuarto = todasHabilidades[0].id;
+            }
+
+            string[] teclas = new string[] { "CLICK IZQ", "E", "Q", "R" };
+
             foreach (var hab in todasHabilidades)
             {
                 bool desbloqueada = GestorMaestria.EstaDesbloqueada(pj, hab.id);
                 bool equipada = loadoutActual.Contains(hab.id);
+                bool seleccionada = (_habilidadSeleccionadaCuarto == hab.id);
 
                 var slotObj = new GameObject($"Slot_{hab.id}");
                 slotObj.transform.SetParent(contenedorSlotsHabilidades, false);
-                var img = slotObj.AddComponent<Image>();
-                img.color = equipada 
-                    ? new Color(0.12f, 0.32f, 0.20f, 0.95f) 
-                    : (desbloqueada ? new Color(0.14f, 0.16f, 0.22f, 0.90f) : new Color(0.08f, 0.08f, 0.11f, 0.70f));
-                var rt = slotObj.GetComponent<RectTransform>();
-                rt.sizeDelta = new Vector2(620, 60);
 
+                var rt = slotObj.AddComponent<RectTransform>();
+                rt.sizeDelta = new Vector2(620f, 48f);
+
+                var img = slotObj.AddComponent<Image>();
+                img.color = seleccionada
+                    ? new Color(0.18f, 0.28f, 0.42f, 0.98f)
+                    : (equipada
+                        ? new Color(0.12f, 0.26f, 0.20f, 0.95f)
+                        : (desbloqueada ? new Color(0.11f, 0.14f, 0.20f, 0.92f) : new Color(0.07f, 0.08f, 0.11f, 0.85f)));
+
+                // Botón interactivo en el slot completo para seleccionarla y ver ficha técnica
+                var btnSlot = slotObj.AddComponent<Button>();
+                IdHabilidad idHabActual = hab.id;
+                btnSlot.onClick.AddListener(() =>
+                {
+                    _habilidadSeleccionadaCuarto = idHabActual;
+                    ConstruirVistaCuarto(pj);
+                });
+
+                // 1. Icono de la habilidad en recuadro estilizado a la izquierda
+                var icoBox = new GameObject("IconoBox");
+                icoBox.transform.SetParent(slotObj.transform, false);
+                var rtIcoBox = icoBox.AddComponent<RectTransform>();
+                rtIcoBox.anchorMin = new Vector2(0f, 0.5f);
+                rtIcoBox.anchorMax = new Vector2(0f, 0.5f);
+                rtIcoBox.pivot = new Vector2(0.5f, 0.5f);
+                rtIcoBox.anchoredPosition = new Vector2(30f, 0f);
+                rtIcoBox.sizeDelta = new Vector2(40f, 40f);
+
+                var imgIcoBox = icoBox.AddComponent<Image>();
+                imgIcoBox.color = seleccionada ? new Color(0.35f, 0.85f, 1f, 0.9f) : new Color(0.20f, 0.24f, 0.35f, 0.9f);
+
+                var icoImgObj = new GameObject("Icono");
+                icoImgObj.transform.SetParent(icoBox.transform, false);
+                var rtIcoImg = icoImgObj.AddComponent<RectTransform>();
+                rtIcoImg.anchorMin = Vector2.zero;
+                rtIcoImg.anchorMax = Vector2.one;
+                rtIcoImg.offsetMin = new Vector2(2f, 2f);
+                rtIcoImg.offsetMax = new Vector2(-2f, -2f);
+                var imgIco = icoImgObj.AddComponent<Image>();
+                imgIco.sprite = CatalogoHabilidades.ObtenerSpriteHabilidad(hab.id);
+                imgIco.preserveAspect = true;
+                imgIco.color = desbloqueada ? Color.white : new Color(0.45f, 0.45f, 0.45f, 0.75f);
+                imgIco.raycastTarget = false;
+
+                // 2. Badge de tecla
+                string teclaStr = hab.slotPorDefecto < teclas.Length ? teclas[hab.slotPorDefecto] : "HAB";
+                var badgeObj = new GameObject("BadgeTecla");
+                badgeObj.transform.SetParent(slotObj.transform, false);
+                var rtBadge = badgeObj.AddComponent<RectTransform>();
+                rtBadge.anchorMin = new Vector2(0f, 0.5f);
+                rtBadge.anchorMax = new Vector2(0f, 0.5f);
+                rtBadge.pivot = new Vector2(0f, 0.5f);
+                rtBadge.anchoredPosition = new Vector2(56f, 0f);
+                rtBadge.sizeDelta = new Vector2(74f, 24f);
+
+                var imgBadge = badgeObj.AddComponent<Image>();
+                imgBadge.color = new Color(0.06f, 0.08f, 0.14f, 0.95f);
+                imgBadge.raycastTarget = false;
+
+                var txtBadgeObj = new GameObject("Txt");
+                txtBadgeObj.transform.SetParent(badgeObj.transform, false);
+                var rtTxtB = txtBadgeObj.AddComponent<RectTransform>();
+                rtTxtB.anchorMin = Vector2.zero;
+                rtTxtB.anchorMax = Vector2.one;
+                rtTxtB.sizeDelta = Vector2.zero;
+                var txtBadge = txtBadgeObj.AddComponent<Text>();
+                txtBadge.font = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+                txtBadge.fontSize = 9;
+                txtBadge.fontStyle = FontStyle.Bold;
+                txtBadge.alignment = TextAnchor.MiddleCenter;
+                txtBadge.color = new Color(1f, 0.88f, 0.35f);
+                txtBadge.text = $"[{teclaStr}]";
+                txtBadge.raycastTarget = false;
+
+                // 3. Textos del slot (Nombre, estado y descripción corta)
                 var txtObj = new GameObject("TextoSlot");
                 txtObj.transform.SetParent(slotObj.transform, false);
+                var rtTxt = txtObj.AddComponent<RectTransform>();
+                rtTxt.anchorMin = new Vector2(0f, 0.5f);
+                rtTxt.anchorMax = new Vector2(1f, 0.5f);
+                rtTxt.pivot = new Vector2(0f, 0.5f);
+                rtTxt.anchoredPosition = new Vector2(136f, 0f);
+                rtTxt.sizeDelta = new Vector2(-260f, 40f);
+
                 var txt = txtObj.AddComponent<Text>();
-                txt.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-                txt.fontSize = 14;
+                txt.font = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+                txt.fontSize = 10;
                 txt.color = desbloqueada ? Color.white : new Color(0.6f, 0.6f, 0.6f);
                 txt.alignment = TextAnchor.MiddleLeft;
-                txt.rectTransform.anchoredPosition = new Vector2(-70, 0);
-                txt.rectTransform.sizeDelta = new Vector2(440, 52);
+                txt.raycastTarget = false;
 
                 string estadoRun = desbloqueada 
-                    ? $"<color=#8be9fd>Desbloquea en Run Nv.{hab.nivelRequeridoRun}</color>" 
+                    ? $"<color=#8be9fd>Desbloquea Run Nv.{hab.nivelRequeridoRun}</color>" 
                     : $"<color=#ffb86c>Requiere Maestría Nv.{hab.nivelMaestriaRequerido}</color>";
 
-                txt.text = $"<b>{hab.nombre}</b>  —  {estadoRun}\n<size=11><color=#b0b0b0>{hab.descripcion}</color></size>";
+                txt.text = $"<b>{hab.nombre.ToUpper()}</b>  —  {estadoRun}\n<size=9><color=#9db0c6>{hab.descripcion}</color></size>";
 
-                // Botón interactivo o etiqueta de estado
+                // 4. Botón interactivo de equipar o etiqueta de bloqueo a la derecha
                 if (desbloqueada)
                 {
                     var btnEquiparObj = new GameObject("BotonEquipar");
                     btnEquiparObj.transform.SetParent(slotObj.transform, false);
                     var imgBtn = btnEquiparObj.AddComponent<Image>();
-                    imgBtn.color = equipada ? new Color(0.65f, 0.22f, 0.22f) : new Color(0.20f, 0.55f, 0.30f);
+                    imgBtn.color = equipada ? new Color(0.65f, 0.22f, 0.22f) : new Color(0.18f, 0.55f, 0.30f);
                     var rtBtn = btnEquiparObj.GetComponent<RectTransform>();
-                    rtBtn.anchoredPosition = new Vector2(230, 0);
-                    rtBtn.sizeDelta = new Vector2(100, 36);
+                    rtBtn.anchorMin = new Vector2(1f, 0.5f);
+                    rtBtn.anchorMax = new Vector2(1f, 0.5f);
+                    rtBtn.pivot = new Vector2(1f, 0.5f);
+                    rtBtn.anchoredPosition = new Vector2(-12f, 0f);
+                    rtBtn.sizeDelta = new Vector2(98f, 32f);
 
                     var txtBtnObj = new GameObject("TxtBtn");
                     txtBtnObj.transform.SetParent(btnEquiparObj.transform, false);
+                    var rtTb = txtBtnObj.AddComponent<RectTransform>();
+                    rtTb.anchorMin = Vector2.zero;
+                    rtTb.anchorMax = Vector2.one;
+                    rtTb.sizeDelta = Vector2.zero;
                     var txtBtn = txtBtnObj.AddComponent<Text>();
-                    txtBtn.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-                    txtBtn.fontSize = 12;
+                    txtBtn.font = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+                    txtBtn.fontSize = 10;
                     txtBtn.fontStyle = FontStyle.Bold;
                     txtBtn.color = Color.white;
                     txtBtn.alignment = TextAnchor.MiddleCenter;
                     txtBtn.text = equipada ? "EQUIPADA" : "+ EQUIPAR";
-                    txtBtn.rectTransform.sizeDelta = new Vector2(100, 36);
+                    txtBtn.raycastTarget = false;
 
                     var btn = btnEquiparObj.AddComponent<Button>();
                     IdHabilidad idClick = hab.id;
@@ -549,17 +742,219 @@ namespace SoulKnight
                 {
                     var txtBloqObj = new GameObject("TxtBloq");
                     txtBloqObj.transform.SetParent(slotObj.transform, false);
-                    var txtBloq = txtBloqObj.AddComponent<Text>();
-                    txtBloq.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-                    txtBloq.fontSize = 12;
+                    var imgBloq = txtBloqObj.AddComponent<Image>();
+                    imgBloq.color = new Color(0.18f, 0.15f, 0.12f, 0.95f);
+                    var rtBloq = txtBloqObj.GetComponent<RectTransform>();
+                    rtBloq.anchorMin = new Vector2(1f, 0.5f);
+                    rtBloq.anchorMax = new Vector2(1f, 0.5f);
+                    rtBloq.pivot = new Vector2(1f, 0.5f);
+                    rtBloq.anchoredPosition = new Vector2(-12f, 0f);
+                    rtBloq.sizeDelta = new Vector2(98f, 32f);
+
+                    var txtB = new GameObject("Txt");
+                    txtB.transform.SetParent(txtBloqObj.transform, false);
+                    var rtTxtBloq = txtB.AddComponent<RectTransform>();
+                    rtTxtBloq.anchorMin = Vector2.zero;
+                    rtTxtBloq.anchorMax = Vector2.one;
+                    rtTxtBloq.sizeDelta = Vector2.zero;
+                    var txtBloq = txtB.AddComponent<Text>();
+                    txtBloq.font = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+                    txtBloq.fontSize = 9;
                     txtBloq.fontStyle = FontStyle.Bold;
                     txtBloq.color = new Color(1f, 0.70f, 0.25f);
                     txtBloq.alignment = TextAnchor.MiddleCenter;
                     txtBloq.text = $"🔒 NV.{hab.nivelMaestriaRequerido}";
-                    txtBloq.rectTransform.anchoredPosition = new Vector2(230, 0);
-                    txtBloq.rectTransform.sizeDelta = new Vector2(100, 36);
+                    txtBloq.raycastTarget = false;
                 }
             }
+
+            // 5. Tarjeta inferior con la DESCRIPCIÓN TÉCNICA detallada de la habilidad seleccionada
+            ActualizarTarjetaDetalleTecnicoCuarto(pj);
+        }
+
+        private void ActualizarTarjetaDetalleTecnicoCuarto(TipoPersonaje pj)
+        {
+            if (panelVistaCuarto == null) return;
+
+            var cardTec = panelVistaCuarto.transform.Find("TarjetaDetalleTecnicoCuarto");
+            if (cardTec == null)
+            {
+                var objCard = new GameObject("TarjetaDetalleTecnicoCuarto");
+                objCard.transform.SetParent(panelVistaCuarto.transform, false);
+                cardTec = objCard.transform;
+
+                var rtCard = objCard.AddComponent<RectTransform>();
+                rtCard.anchorMin = new Vector2(0.5f, 0.5f);
+                rtCard.anchorMax = new Vector2(0.5f, 0.5f);
+                rtCard.pivot = new Vector2(0.5f, 0.5f);
+                rtCard.anchoredPosition = new Vector2(0f, -90f);
+                rtCard.sizeDelta = new Vector2(620f, 78f);
+
+                var imgBorde = objCard.AddComponent<Image>();
+                imgBorde.color = new Color(0.32f, 0.65f, 0.95f, 0.95f); // Borde azul cian
+
+                var fondoInt = new GameObject("Fondo");
+                fondoInt.transform.SetParent(objCard.transform, false);
+                var rtFi = fondoInt.AddComponent<RectTransform>();
+                rtFi.anchorMin = Vector2.zero;
+                rtFi.anchorMax = Vector2.one;
+                rtFi.offsetMin = new Vector2(2f, 2f);
+                rtFi.offsetMax = new Vector2(-2f, -2f);
+                var imgFi = fondoInt.AddComponent<Image>();
+                imgFi.color = new Color(0.06f, 0.08f, 0.13f, 0.98f);
+
+                var txtObj = new GameObject("TextoDetalle");
+                txtObj.transform.SetParent(fondoInt.transform, false);
+                var rtTd = txtObj.AddComponent<RectTransform>();
+                rtTd.anchorMin = Vector2.zero;
+                rtTd.anchorMax = Vector2.one;
+                rtTd.offsetMin = new Vector2(10f, 4f);
+                rtTd.offsetMax = new Vector2(-10f, -4f);
+
+                var txtTd = txtObj.AddComponent<Text>();
+                txtTd.font = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+                txtTd.fontSize = 9;
+                txtTd.lineSpacing = 1.2f;
+                txtTd.alignment = TextAnchor.MiddleLeft;
+                txtTd.color = new Color(0.92f, 0.96f, 1f);
+            }
+
+            var txtDet = cardTec.GetComponentInChildren<Text>();
+            if (txtDet != null)
+            {
+                var habSel = CatalogoHabilidades.Obtener(_habilidadSeleccionadaCuarto);
+                if (habSel == null)
+                {
+                    var habs = CatalogoHabilidades.ObtenerHabilidadesPersonaje(pj);
+                    if (habs.Count > 0) habSel = habs[0];
+                }
+
+                if (habSel != null)
+                {
+                    string[] teclas = new string[] { "CLICK IZQ", "E", "Q", "R" };
+                    string tStr = habSel.slotPorDefecto < teclas.Length ? teclas[habSel.slotPorDefecto] : "HAB";
+                    string descTec = !string.IsNullOrEmpty(habSel.descripcionTecnica) ? habSel.descripcionTecnica : habSel.descripcion;
+                    txtDet.text = $"<b><color=#a0e0ff>✦ FICHA TÉCNICA: {habSel.nombre.ToUpper()} [{tStr}] ✦</color></b>\n" +
+                                  $"{descTec}\n" +
+                                  $"<size=8><color=#6c7e99>(Haz clic en cualquier habilidad de la lista para ver sus especificaciones)</color></size>";
+                }
+            }
+        }
+
+        public void MostrarExplicacionMaestriaLobby()
+        {
+            if (_modalMaestriaLobby == null)
+            {
+                _modalMaestriaLobby = new GameObject("ModalExplicacionMaestriaLobby");
+                Canvas canvasDestino = GetComponentInChildren<Canvas>() ?? FindObjectOfType<Canvas>();
+                if (canvasDestino != null) _modalMaestriaLobby.transform.SetParent(canvasDestino.transform, false);
+                _modalMaestriaLobby.transform.SetAsLastSibling();
+
+                var rt = _modalMaestriaLobby.AddComponent<RectTransform>();
+                rt.anchorMin = Vector2.zero;
+                rt.anchorMax = Vector2.one;
+                rt.sizeDelta = Vector2.zero;
+
+                var imgFondo = _modalMaestriaLobby.AddComponent<Image>();
+                imgFondo.color = new Color(0f, 0f, 0f, 0.85f);
+
+                var cardObj = new GameObject("Tarjeta");
+                cardObj.transform.SetParent(_modalMaestriaLobby.transform, false);
+                var rtCard = cardObj.AddComponent<RectTransform>();
+                rtCard.anchorMin = new Vector2(0.5f, 0.5f);
+                rtCard.anchorMax = new Vector2(0.5f, 0.5f);
+                rtCard.pivot = new Vector2(0.5f, 0.5f);
+                rtCard.anchoredPosition = Vector2.zero;
+                rtCard.sizeDelta = new Vector2(580f, 360f);
+
+                var imgCardBorde = cardObj.AddComponent<Image>();
+                imgCardBorde.color = new Color(0.32f, 0.65f, 0.95f, 1f);
+
+                var cardFondo = new GameObject("Fondo");
+                cardFondo.transform.SetParent(cardObj.transform, false);
+                var rtCf = cardFondo.AddComponent<RectTransform>();
+                rtCf.anchorMin = Vector2.zero;
+                rtCf.anchorMax = Vector2.one;
+                rtCf.offsetMin = new Vector2(3f, 3f);
+                rtCf.offsetMax = new Vector2(-3f, -3f);
+                var imgCf = cardFondo.AddComponent<Image>();
+                imgCf.color = new Color(0.06f, 0.08f, 0.14f, 0.98f);
+
+                // Título
+                var titObj = new GameObject("Titulo");
+                titObj.transform.SetParent(cardFondo.transform, false);
+                var rtTit = titObj.AddComponent<RectTransform>();
+                rtTit.anchorMin = new Vector2(0f, 1f);
+                rtTit.anchorMax = new Vector2(1f, 1f);
+                rtTit.pivot = new Vector2(0.5f, 1f);
+                rtTit.anchoredPosition = new Vector2(0f, -14f);
+                rtTit.sizeDelta = new Vector2(-30f, 32f);
+                var txtTit = titObj.AddComponent<Text>();
+                txtTit.font = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+                txtTit.fontSize = 14;
+                txtTit.fontStyle = FontStyle.Bold;
+                txtTit.alignment = TextAnchor.MiddleCenter;
+                txtTit.color = new Color(1f, 0.88f, 0.35f);
+                txtTit.text = "✦ GUÍA DE MAESTRÍA PERMANENTE ✦";
+
+                // Cuerpo
+                var cuerpoObj = new GameObject("TextoCuerpo");
+                cuerpoObj.transform.SetParent(cardFondo.transform, false);
+                var rtCuerpo = cuerpoObj.AddComponent<RectTransform>();
+                rtCuerpo.anchorMin = new Vector2(0f, 0f);
+                rtCuerpo.anchorMax = new Vector2(1f, 1f);
+                rtCuerpo.offsetMin = new Vector2(24f, 55f);
+                rtCuerpo.offsetMax = new Vector2(-24f, -50f);
+                var txtCuerpo = cuerpoObj.AddComponent<Text>();
+                txtCuerpo.font = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+                txtCuerpo.fontSize = 10;
+                txtCuerpo.lineSpacing = 1.25f;
+                txtCuerpo.alignment = TextAnchor.UpperLeft;
+                txtCuerpo.color = new Color(0.9f, 0.95f, 1f);
+                txtCuerpo.text =
+                    "• La Maestría es PERMANENTE en tu cuenta y se conserva para siempre.\n\n" +
+                    "• Ganas XP de maestría eliminando monstruos y jefes en mazmorras (~35% de la XP de combate).\n\n" +
+                    "• Desbloqueo progresivo de habilidades por personaje:\n" +
+                    "   <color=#a0e0ff>Nv. 1:</color> Habilidad Básica (Click Izquierdo)\n" +
+                    "   <color=#a0e0ff>Nv. 2:</color> Habilidad Activa 1 (Tecla E)\n" +
+                    "   <color=#a0e0ff>Nv. 3:</color> Habilidad Activa 2 (Tecla Q)\n" +
+                    "   <color=#a0e0ff>Nv. 4:</color> Habilidad Definitiva (Tecla R / Ultimate)\n" +
+                    "   <color=#ffd700>Nv. 5 a 20:</color> Bonificaciones de maestría de cuenta.\n\n" +
+                    "¡Completa partidas para alcanzar el nivel máximo y dominar a todos los gatos!";
+
+                // Botón Cerrar
+                var btnCerrarObj = new GameObject("BotonCerrar");
+                btnCerrarObj.transform.SetParent(cardFondo.transform, false);
+                var rtBtn = btnCerrarObj.AddComponent<RectTransform>();
+                rtBtn.anchorMin = new Vector2(0.5f, 0f);
+                rtBtn.anchorMax = new Vector2(0.5f, 0f);
+                rtBtn.pivot = new Vector2(0.5f, 0f);
+                rtBtn.anchoredPosition = new Vector2(0f, 14f);
+                rtBtn.sizeDelta = new Vector2(180f, 32f);
+
+                var imgBtn = btnCerrarObj.AddComponent<Image>();
+                imgBtn.color = new Color(0.24f, 0.32f, 0.48f, 1f);
+
+                var txtBtnObj = new GameObject("Texto");
+                txtBtnObj.transform.SetParent(btnCerrarObj.transform, false);
+                var rtTxtBtn = txtBtnObj.AddComponent<RectTransform>();
+                rtTxtBtn.anchorMin = Vector2.zero;
+                rtTxtBtn.anchorMax = Vector2.one;
+                rtTxtBtn.sizeDelta = Vector2.zero;
+                var txtBtn = txtBtnObj.AddComponent<Text>();
+                txtBtn.font = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+                txtBtn.fontSize = 11;
+                txtBtn.fontStyle = FontStyle.Bold;
+                txtBtn.alignment = TextAnchor.MiddleCenter;
+                txtBtn.color = Color.white;
+                txtBtn.text = "CERRAR (ESC)";
+
+                var btn = btnCerrarObj.AddComponent<Button>();
+                btn.onClick.AddListener(() => _modalMaestriaLobby.SetActive(false));
+            }
+
+            _modalMaestriaLobby.SetActive(true);
+            _modalMaestriaLobby.transform.SetAsLastSibling();
         }
 
         private void AlternarHabilidadEnLoadout(TipoPersonaje pj, IdHabilidad id)

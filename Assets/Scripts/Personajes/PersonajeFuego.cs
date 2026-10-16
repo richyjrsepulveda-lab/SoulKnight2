@@ -86,7 +86,11 @@ namespace SoulKnight
                 var goNucleo = new GameObject("NucleoLanzallamas");
                 goNucleo.transform.SetParent(transform, false);
                 _nucleoLanzallamas = goNucleo.AddComponent<LineRenderer>();
-                _nucleoLanzallamas.material = rayoCabezaFuego.sharedMaterial;
+                Material matFuego = (rayoCabezaFuego != null && rayoCabezaFuego.sharedMaterial != null)
+                    ? rayoCabezaFuego.sharedMaterial
+                    : new Material(Shader.Find("Sprites/Default"));
+                if (rayoCabezaFuego != null && rayoCabezaFuego.sharedMaterial == null) rayoCabezaFuego.material = matFuego;
+                _nucleoLanzallamas.material = matFuego;
                 _nucleoLanzallamas.sortingOrder = rayoCabezaFuego.sortingOrder + 1;
                 _nucleoLanzallamas.numCapVertices = 4;
                 _nucleoLanzallamas.numCornerVertices = 4;

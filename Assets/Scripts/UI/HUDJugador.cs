@@ -94,6 +94,7 @@ namespace SoulKnight
         private readonly List<Image> _iconosHabilidadesPausa = new List<Image>();
         private readonly List<Button> _botonesHabilidadesPausa = new List<Button>();
         private int _habilidadSeleccionadaPausa = 0;
+        private GameObject _modalMaestriaHUD;
 
         [Header("Transición de Nivel (Fade a Negro)")]
         public Image panelFadeNegro;
@@ -562,7 +563,8 @@ namespace SoulKnight
 
         private void PausarPorPerdidaFoco()
         {
-            // Si la partida está activa, no estamos en fin de partida ni ya pausados
+            // Solo pausar si ha pasado un breve tiempo desde que cargó el nivel (evitar pausa en arranque)
+            if (Time.timeSinceLevelLoad < 2.0f) return;
             if (panelFinPartida != null && panelFinPartida.activeSelf) return;
             if (panelPausa != null && !panelPausa.activeSelf)
             {
@@ -580,24 +582,36 @@ namespace SoulKnight
 
         void Update()
         {
-            if (TiendaAbierta)
+            // Atajo ESC: siempre responde para cerrar modales o alternar pausa
+            if (Input.GetKeyDown(KeyCode.Escape) || Input.GetKeyDown(Controles.Pausa))
             {
-                if (Input.GetKeyDown(KeyCode.Escape))
+                if (_modalMaestriaHUD != null && _modalMaestriaHUD.activeSelf)
                 {
-                    CerrarTienda();
-                    return;
+                    _modalMaestriaHUD.SetActive(false);
                 }
-            }
-
-            if (Controles.Presionada(Controles.Pausa))
-            {
-                if (TiendaAbierta)
+                else if (TiendaAbierta)
                 {
                     CerrarTienda();
+                }
+                else if (PanelOpcionesControles.Instancia != null && PanelOpcionesControles.Instancia.gameObject.activeSelf)
+                {
+                    PanelOpcionesControles.Instancia.Cerrar();
                 }
                 else
                 {
                     AlternarPausa();
+                }
+            }
+
+            // Asegurar que el minimapa permanezca visible durante el gameplay normal
+            if (minimapaHUD != null)
+            {
+                bool debeEstarActivo = (panelPausa == null || !panelPausa.activeSelf)
+                    && (panelFinPartida == null || !panelFinPartida.activeSelf)
+                    && !TiendaAbierta;
+                if (minimapaHUD.gameObject.activeSelf != debeEstarActivo)
+                {
+                    minimapaHUD.gameObject.SetActive(debeEstarActivo);
                 }
             }
 
@@ -726,14 +740,180 @@ namespace SoulKnight
                         rtBm.anchorMax = new Vector2(0f, 1f);
                         rtBm.pivot = new Vector2(0f, 1f);
                         rtBm.anchoredPosition = new Vector2(2f, -28f);
-                        rtBm.sizeDelta = new Vector2(165f, 12f); // Barra de maestría más compacta
+                        rtBm.sizeDelta = new Vector2(175f, 16f); // Barra de maestría más compacta
                     }
                     if (barraMaestria.textoVida != null)
                     {
-                        barraMaestria.textoVida.fontSize = 9;
+                        barraMaestria.textoVida.font = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+                        barraMaestria.textoVida.fontSize = 8;
+                        barraMaestria.textoVida.alignment = TextAnchor.MiddleCenter;
+                        barraMaestria.textoVida.raycastTarget = false;
+                    }
+
+                    // Botón para abrir la explicación de maestría al hacer clic en la barra
+                    var btnBarra = barraMaestria.GetComponent<Button>();
+                    if (btnBarra == null)
+                    {
+                        btnBarra = barraMaestria.gameObject.AddComponent<Button>();
+                    }
+                    btnBarra.onClick.RemoveAllListeners();
+                    btnBarra.onClick.AddListener(MostrarExplicacionMaestriaHUD);
+
+                    // Botón [?] accesible justo al lado de la barra de maestría
+                    var btnInfoObj = contArribaIzq.Find("BotonInfoMaestriaHUD");
+                    if (btnInfoObj == null)
+                    {
+                        var objInfo = new GameObject("BotonInfoMaestriaHUD");
+                        objInfo.transform.SetParent(contArribaIzq, false);
+                        var rtInfo = objInfo.AddComponent<RectTransform>();
+                        rtInfo.anchorMin = new Vector2(0f, 1f);
+                        rtInfo.anchorMax = new Vector2(0f, 1f);
+                        rtInfo.pivot = new Vector2(0f, 1f);
+                        rtInfo.anchoredPosition = new Vector2(182f, -28f);
+                        rtInfo.sizeDelta = new Vector2(16f, 16f);
+
+                        var imgInfo = objInfo.AddComponent<Image>();
+                        imgInfo.color = new Color(0.18f, 0.24f, 0.38f, 0.95f);
+
+                        var btnInfo = objInfo.AddComponent<Button>();
+                        btnInfo.onClick.AddListener(MostrarExplicacionMaestriaHUD);
+
+                        var txtInfoObj = new GameObject("Texto");
+                        txtInfoObj.transform.SetParent(objInfo.transform, false);
+                        var rtTxt = txtInfoObj.AddComponent<RectTransform>();
+                        rtTxt.anchorMin = Vector2.zero;
+                        rtTxt.anchorMax = Vector2.one;
+                        rtTxt.sizeDelta = Vector2.zero;
+                        var txtInfo = txtInfoObj.AddComponent<Text>();
+                        txtInfo.font = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+                        txtInfo.fontSize = 9;
+                        txtInfo.fontStyle = FontStyle.Bold;
+                        txtInfo.alignment = TextAnchor.MiddleCenter;
+                        txtInfo.color = new Color(1f, 0.88f, 0.35f);
+                        txtInfo.text = "?";
+                        txtInfo.raycastTarget = false;
                     }
                 }
             }
+        }
+
+        public void MostrarExplicacionMaestriaHUD()
+        {
+            if (_modalMaestriaHUD == null)
+            {
+                _modalMaestriaHUD = new GameObject("ModalExplicacionMaestriaHUD");
+                Canvas canvasDestino = GetComponentInChildren<Canvas>() ?? GetComponentInParent<Canvas>() ?? FindObjectOfType<Canvas>();
+                if (canvasDestino != null) _modalMaestriaHUD.transform.SetParent(canvasDestino.transform, false);
+                _modalMaestriaHUD.transform.SetAsLastSibling();
+
+                var rt = _modalMaestriaHUD.AddComponent<RectTransform>();
+                rt.anchorMin = Vector2.zero;
+                rt.anchorMax = Vector2.one;
+                rt.sizeDelta = Vector2.zero;
+
+                var imgFondo = _modalMaestriaHUD.AddComponent<Image>();
+                imgFondo.color = new Color(0f, 0f, 0f, 0.85f);
+
+                // Cierre por clic en el fondo oscuro
+                var btnFondo = _modalMaestriaHUD.AddComponent<Button>();
+                btnFondo.onClick.AddListener(() => _modalMaestriaHUD.SetActive(false));
+
+                var cardObj = new GameObject("Tarjeta");
+                cardObj.transform.SetParent(_modalMaestriaHUD.transform, false);
+                var rtCard = cardObj.AddComponent<RectTransform>();
+                rtCard.anchorMin = new Vector2(0.5f, 0.5f);
+                rtCard.anchorMax = new Vector2(0.5f, 0.5f);
+                rtCard.pivot = new Vector2(0.5f, 0.5f);
+                rtCard.anchoredPosition = Vector2.zero;
+                rtCard.sizeDelta = new Vector2(580f, 360f);
+
+                var imgCardBorde = cardObj.AddComponent<Image>();
+                imgCardBorde.color = new Color(0.32f, 0.65f, 0.95f, 1f);
+
+                var cardFondo = new GameObject("Fondo");
+                cardFondo.transform.SetParent(cardObj.transform, false);
+                var rtCf = cardFondo.AddComponent<RectTransform>();
+                rtCf.anchorMin = Vector2.zero;
+                rtCf.anchorMax = Vector2.one;
+                rtCf.offsetMin = new Vector2(3f, 3f);
+                rtCf.offsetMax = new Vector2(-3f, -3f);
+                var imgCf = cardFondo.AddComponent<Image>();
+                imgCf.color = new Color(0.06f, 0.08f, 0.14f, 0.98f);
+
+                // Título
+                var titObj = new GameObject("Titulo");
+                titObj.transform.SetParent(cardFondo.transform, false);
+                var rtTit = titObj.AddComponent<RectTransform>();
+                rtTit.anchorMin = new Vector2(0f, 1f);
+                rtTit.anchorMax = new Vector2(1f, 1f);
+                rtTit.pivot = new Vector2(0.5f, 1f);
+                rtTit.anchoredPosition = new Vector2(0f, -14f);
+                rtTit.sizeDelta = new Vector2(-30f, 32f);
+                var txtTit = titObj.AddComponent<Text>();
+                txtTit.font = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+                txtTit.fontSize = 13;
+                txtTit.fontStyle = FontStyle.Bold;
+                txtTit.alignment = TextAnchor.MiddleCenter;
+                txtTit.color = new Color(1f, 0.88f, 0.35f);
+                txtTit.text = "✦ GUÍA DE MAESTRÍA PERMANENTE ✦";
+
+                // Cuerpo
+                var cuerpoObj = new GameObject("TextoCuerpo");
+                cuerpoObj.transform.SetParent(cardFondo.transform, false);
+                var rtCuerpo = cuerpoObj.AddComponent<RectTransform>();
+                rtCuerpo.anchorMin = new Vector2(0f, 0f);
+                rtCuerpo.anchorMax = new Vector2(1f, 1f);
+                rtCuerpo.offsetMin = new Vector2(24f, 55f);
+                rtCuerpo.offsetMax = new Vector2(-24f, -50f);
+                var txtCuerpo = cuerpoObj.AddComponent<Text>();
+                txtCuerpo.font = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+                txtCuerpo.fontSize = 9;
+                txtCuerpo.lineSpacing = 1.25f;
+                txtCuerpo.alignment = TextAnchor.UpperLeft;
+                txtCuerpo.color = new Color(0.9f, 0.95f, 1f);
+                txtCuerpo.text =
+                    "• La Maestría es PERMANENTE en tu cuenta y se conserva para siempre.\n\n" +
+                    "• Ganas XP de maestría eliminando monstruos y jefes en mazmorras (~35% de la XP de combate).\n\n" +
+                    "• Desbloqueo progresivo de habilidades por personaje:\n" +
+                    "   <color=#a0e0ff>Nv. 1:</color> Habilidad Básica (Click Izquierdo)\n" +
+                    "   <color=#a0e0ff>Nv. 2:</color> Habilidad Activa 1 (Tecla E)\n" +
+                    "   <color=#a0e0ff>Nv. 3:</color> Habilidad Activa 2 (Tecla Q)\n" +
+                    "   <color=#a0e0ff>Nv. 4:</color> Habilidad Definitiva (Tecla R / Ultimate)\n" +
+                    "   <color=#ffd700>Nv. 5 a 20:</color> Bonificaciones de maestría de cuenta.\n\n" +
+                    "¡Derrota monstruos en la run para maximizar el nivel de tu personaje!";
+
+                // Botón Cerrar
+                var btnCerrarObj = new GameObject("BotonCerrar");
+                btnCerrarObj.transform.SetParent(cardFondo.transform, false);
+                var rtBtn = btnCerrarObj.AddComponent<RectTransform>();
+                rtBtn.anchorMin = new Vector2(0.5f, 0f);
+                rtBtn.anchorMax = new Vector2(0.5f, 0f);
+                rtBtn.pivot = new Vector2(0.5f, 0f);
+                rtBtn.anchoredPosition = new Vector2(0f, 12f);
+                rtBtn.sizeDelta = new Vector2(220f, 32f);
+
+                var imgBtn = btnCerrarObj.AddComponent<Image>();
+                imgBtn.color = new Color(0.18f, 0.24f, 0.36f, 1f);
+                var btnC = btnCerrarObj.AddComponent<Button>();
+                btnC.onClick.AddListener(() => _modalMaestriaHUD.SetActive(false));
+
+                var txtBtnObj = new GameObject("Texto");
+                txtBtnObj.transform.SetParent(btnCerrarObj.transform, false);
+                var rtTxtB = txtBtnObj.AddComponent<RectTransform>();
+                rtTxtB.anchorMin = Vector2.zero;
+                rtTxtB.anchorMax = Vector2.one;
+                rtTxtB.sizeDelta = Vector2.zero;
+                var txtBtn = txtBtnObj.AddComponent<Text>();
+                txtBtn.font = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+                txtBtn.fontSize = 10;
+                txtBtn.fontStyle = FontStyle.Bold;
+                txtBtn.alignment = TextAnchor.MiddleCenter;
+                txtBtn.color = Color.white;
+                txtBtn.text = "ENTENDIDO [ESC]";
+            }
+
+            _modalMaestriaHUD.SetActive(true);
+            _modalMaestriaHUD.transform.SetAsLastSibling();
         }
 
         private void AsegurarLayoutInferior()
@@ -1044,8 +1224,9 @@ namespace SoulKnight
 
                 _textoDescHabilidadPausa = txtObj.AddComponent<Text>();
                 _textoDescHabilidadPausa.font = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-                _textoDescHabilidadPausa.fontSize = 10;
-                _textoDescHabilidadPausa.alignment = TextAnchor.MiddleCenter;
+                _textoDescHabilidadPausa.fontSize = 9;
+                _textoDescHabilidadPausa.lineSpacing = 1.15f;
+                _textoDescHabilidadPausa.alignment = TextAnchor.UpperLeft;
                 _textoDescHabilidadPausa.color = new Color(0.88f, 0.94f, 1f);
                 _textoDescHabilidadPausa.raycastTarget = false;
             }
@@ -1053,8 +1234,8 @@ namespace SoulKnight
             rtDesc.anchorMin = new Vector2(0.5f, 0.5f);
             rtDesc.anchorMax = new Vector2(0.5f, 0.5f);
             rtDesc.pivot = new Vector2(0.5f, 0.5f);
-            rtDesc.anchoredPosition = new Vector2(posXDerecha, 54f);
-            rtDesc.sizeDelta = new Vector2(340f, 46f);
+            rtDesc.anchoredPosition = new Vector2(posXDerecha, 50f);
+            rtDesc.sizeDelta = new Vector2(340f, 66f);
 
             // --- 3C. Marco del Mapa ---
             var marcoMapa = panelPausa.transform.Find("MarcoMapaPausa");
@@ -1106,8 +1287,8 @@ namespace SoulKnight
             rtMm.anchorMin = new Vector2(0.5f, 0.5f);
             rtMm.anchorMax = new Vector2(0.5f, 0.5f);
             rtMm.pivot = new Vector2(0.5f, 0.5f);
-            rtMm.anchoredPosition = new Vector2(posXDerecha, -78f);
-            rtMm.sizeDelta = new Vector2(340f, 200f);
+            rtMm.anchoredPosition = new Vector2(posXDerecha, -82f);
+            rtMm.sizeDelta = new Vector2(340f, 184f);
         }
 
         private void SeleccionarHabilidadPausa(int index)
@@ -1140,32 +1321,27 @@ namespace SoulKnight
 
             for (int i = 0; i < _iconosHabilidadesPausa.Count && i < 4; i++)
             {
-                if (iconosHabilidades != null && i < iconosHabilidades.Length && iconosHabilidades[i] != null && iconosHabilidades[i].sprite != null)
+                Sprite sp = null;
+                if (i < habs.Count)
                 {
-                    _iconosHabilidadesPausa[i].sprite = iconosHabilidades[i].sprite;
+                    sp = CatalogoHabilidades.ObtenerSpriteHabilidad(habs[i].id);
                 }
-                else
+                if (sp == null && iconosHabilidades != null && i < iconosHabilidades.Length && iconosHabilidades[i] != null && iconosHabilidades[i].sprite != null)
                 {
-                    // Asignar según el personaje
-                    if (tipo == TipoPersonaje.Fuego)
+                    sp = iconosHabilidades[i].sprite;
+                }
+
+                if (_iconosHabilidadesPausa[i] != null)
+                {
+                    if (sp != null)
                     {
-                        if (i == 0) _iconosHabilidadesPausa[i].sprite = iconoFuegoLMB;
-                        else if (i == 1) _iconosHabilidadesPausa[i].sprite = iconoFuegoE;
-                        else if (i == 2) _iconosHabilidadesPausa[i].sprite = iconoFuegoQ;
+                        _iconosHabilidadesPausa[i].sprite = sp;
+                        _iconosHabilidadesPausa[i].color = Color.white;
+                        _iconosHabilidadesPausa[i].enabled = true;
                     }
-                    else if (tipo == TipoPersonaje.Hielo)
+                    else
                     {
-                        if (i == 0) _iconosHabilidadesPausa[i].sprite = iconoHieloLMB;
-                        else if (i == 1) _iconosHabilidadesPausa[i].sprite = iconoHieloE;
-                        else if (i == 2) _iconosHabilidadesPausa[i].sprite = iconoHieloQ;
-                        else if (i == 3) _iconosHabilidadesPausa[i].sprite = iconoHieloR;
-                    }
-                    else if (tipo == TipoPersonaje.Electrico)
-                    {
-                        if (i == 0) _iconosHabilidadesPausa[i].sprite = iconoElecLMB;
-                        else if (i == 1) _iconosHabilidadesPausa[i].sprite = iconoElecE;
-                        else if (i == 2) _iconosHabilidadesPausa[i].sprite = iconoElecQ;
-                        else if (i == 3) _iconosHabilidadesPausa[i].sprite = iconoElecR;
+                        _iconosHabilidadesPausa[i].color = new Color(0.2f, 0.25f, 0.35f, 0.8f);
                     }
                 }
             }
@@ -1186,7 +1362,8 @@ namespace SoulKnight
             if (idx < habs.Count)
             {
                 var h = habs[idx];
-                _textoDescHabilidadPausa.text = $"<b>{h.nombre.ToUpper()}</b> [{teclas[idx]}]: {h.descripcion}";
+                string desc = !string.IsNullOrEmpty(h.descripcionTecnica) ? h.descripcionTecnica : h.descripcion;
+                _textoDescHabilidadPausa.text = $"<b><color=#a0e0ff>{h.nombre.ToUpper()}</color></b> [{teclas[idx]}]:\n{desc}";
             }
             else
             {
