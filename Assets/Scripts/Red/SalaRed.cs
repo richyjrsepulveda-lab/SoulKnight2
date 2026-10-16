@@ -487,7 +487,7 @@ namespace SoulKnight
             Controles.Bloqueado = true;
             if (HUDJugador.Instancia != null)
             {
-                HUDJugador.Instancia.IniciarFadeOscurecer(0.8f);
+                HUDJugador.Instancia.IniciarFadeOscurecer(1.0f);
             }
         }
 
@@ -497,7 +497,7 @@ namespace SoulKnight
             Controles.Bloqueado = false;
             if (HUDJugador.Instancia != null)
             {
-                HUDJugador.Instancia.IniciarFadeAclarar(0.8f, $"NIVEL {nivel}\n{bioma}");
+                HUDJugador.Instancia.IniciarFadeAclarar(1.2f, $"NIVEL {nivel}\n{bioma}");
             }
         }
 

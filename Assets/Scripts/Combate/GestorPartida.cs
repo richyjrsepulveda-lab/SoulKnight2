@@ -614,7 +614,7 @@ namespace SoulKnight
                 }
             }
 
-            yield return new WaitForSeconds(0.4f);
+            yield return new WaitForSeconds(2.0f);
 
             string nombreBioma = (generadorMazmorra != null) ? generadorMazmorra.biomaActual.ToString().ToUpper() : "MAZMORRA";
             if (SalaRed.Instancia != null)

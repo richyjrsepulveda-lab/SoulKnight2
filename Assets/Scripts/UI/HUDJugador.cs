@@ -95,6 +95,7 @@ namespace SoulKnight
         private readonly List<Image> _bordesHabilidadesPausa = new List<Image>();
         private readonly List<Button> _botonesHabilidadesPausa = new List<Button>();
         private int _habilidadSeleccionadaPausa = 0;
+        private bool _menuPausaPrecargado = false;
         private GameObject _modalMaestriaHUD;
 
         [Header("Transición de Nivel (Fade a Negro)")]
@@ -194,14 +195,20 @@ namespace SoulKnight
                 fadeObj.transform.SetParent(transform, false);
                 fadeObj.transform.SetAsLastSibling(); // Por encima de todo
                 panelFadeNegro = fadeObj.AddComponent<Image>();
-                panelFadeNegro.color = new Color(0f, 0f, 0f, 0f);
-                panelFadeNegro.raycastTarget = false;
-                fadeObj.SetActive(false);
+                panelFadeNegro.color = Color.black;
+                panelFadeNegro.raycastTarget = true;
+                fadeObj.SetActive(true);
 
                 var rt = fadeObj.GetComponent<RectTransform>();
                 rt.anchorMin = Vector2.zero;
                 rt.anchorMax = Vector2.one;
                 rt.sizeDelta = Vector2.zero;
+            }
+            else
+            {
+                panelFadeNegro.color = Color.black;
+                panelFadeNegro.raycastTarget = true;
+                panelFadeNegro.gameObject.SetActive(true);
             }
 
             // Crear dinámicamente texto de aviso de pasaje si no existe
@@ -285,6 +292,12 @@ namespace SoulKnight
 
             // Ocultar botón de volver al lobby en pausa si no es servidor
             ActualizarVisibilidadBotonLobbyPausa();
+
+            // Precargar y calentar todo el menú de pausa en memoria para 0 retraso al abrir
+            PrecargarMenuPausa();
+
+            // Pantalla negra inicial cinematográfica: esperar a que todo esté 100% generado y cargado
+            StartCoroutine(RutinaCargaInicialMazmorra());
         }
 
         private void CrearBarraJefeDarkSoulsSiNoExiste(Sprite spriteBlanco)
@@ -1114,7 +1127,7 @@ namespace SoulKnight
                 rtTit.anchorMin = new Vector2(0.5f, 0.5f);
                 rtTit.anchorMax = new Vector2(0.5f, 0.5f);
                 rtTit.pivot = new Vector2(0.5f, 0.5f);
-                rtTit.anchoredPosition = new Vector2(0f, 185f);
+                rtTit.anchoredPosition = new Vector2(0f, 220f);
                 rtTit.sizeDelta = new Vector2(400f, 60f);
                 txtTit.font = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
                 txtTit.fontSize = 42;
@@ -2710,7 +2723,10 @@ namespace SoulKnight
 
             if (estado)
             {
-                ConfigurarLayoutMenuPausa();
+                if (!_menuPausaPrecargado)
+                {
+                    ConfigurarLayoutMenuPausa();
+                }
                 ActualizarVisibilidadBotonLobbyPausa();
                 ActualizarHabilidadesPausaUI();
                 ActualizarMapaPausa();
@@ -2923,6 +2939,77 @@ namespace SoulKnight
             {
                 textoBannerNivel.gameObject.SetActive(false);
             }
+        }
+
+        public void PrecargarMenuPausa()
+        {
+            if (panelPausa == null) return;
+            try
+            {
+                panelPausa.SetActive(true);
+                ConfigurarLayoutMenuPausa();
+                ActualizarVisibilidadBotonLobbyPausa();
+                ActualizarHabilidadesPausaUI();
+                ActualizarMapaPausa();
+                Canvas.ForceUpdateCanvases();
+                panelPausa.SetActive(false);
+                _menuPausaPrecargado = true;
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogError($"[HUD] Error al precargar menu de pausa: {ex}");
+                if (panelPausa != null) panelPausa.SetActive(false);
+            }
+        }
+
+        private System.Collections.IEnumerator RutinaCargaInicialMazmorra()
+        {
+            // Bloquear controles e iniciar pantalla completamente negra
+            Controles.Bloqueado = true;
+            if (panelFadeNegro != null)
+            {
+                panelFadeNegro.color = Color.black;
+                panelFadeNegro.gameObject.SetActive(true);
+                panelFadeNegro.raycastTarget = true;
+            }
+
+            // Esperar a que la escena y la red se estabilicen
+            yield return new WaitForSeconds(0.5f);
+
+            // Esperar activamente hasta que el generador de mazmorra tenga el grid listo y los personajes existan
+            float tiempoMaximoEspera = 6f;
+            float tiempoTranscurrido = 0f;
+            while (tiempoTranscurrido < tiempoMaximoEspera)
+            {
+                bool mazmorraLista = GeneradorMazmorra.Instancia != null && GeneradorMazmorra.Instancia.gridActual != null;
+                bool jugadoresListos = Personaje.Todos.Count > 0;
+                if (mazmorraLista && jugadoresListos)
+                {
+                    break;
+                }
+                tiempoTranscurrido += 0.1f;
+                yield return new WaitForSeconds(0.1f);
+            }
+
+            // Renderizar el mapa inicial y refrescar el menú de pausa
+            if (MinimapaHUD.Instancia != null)
+            {
+                MinimapaHUD.Instancia.RenderizarMinimapa();
+            }
+            ActualizarMapaPausa();
+            ActualizarHabilidadesPausaUI();
+
+            // Espera generosa en negro para que todo el escenario, luces, shaders y texturas se asienten sin tirones
+            yield return new WaitForSeconds(1.8f);
+
+            int nivel = (GestorPartida.Instancia != null) ? GestorPartida.Instancia.NivelActual : 1;
+            string bioma = (GeneradorMazmorra.Instancia != null) ? GeneradorMazmorra.Instancia.biomaActual.ToString().ToUpper() : "MAZMORRA";
+            string textoBanner = $"NIVEL {nivel}\n{bioma}";
+
+            IniciarFadeAclarar(1.2f, textoBanner, () =>
+            {
+                Controles.Bloqueado = false;
+            });
         }
 
         private void AlTerminarPartida(bool victoria)
