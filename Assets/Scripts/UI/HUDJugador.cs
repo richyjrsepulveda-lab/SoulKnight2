@@ -1187,207 +1187,221 @@ namespace SoulKnight
         {
             if (panelPausa == null) return;
 
-            const float posXDerecha = 205f;
-
-            // --- 3A. Fila de Habilidades (4 casillas en filita, SOLO ICONOS) ---
-            var contHabs = panelPausa.transform.Find("FilaHabilidadesPausa");
-            if (contHabs == null)
+            try
             {
-                var obj = new GameObject("FilaHabilidadesPausa");
-                obj.transform.SetParent(panelPausa.transform, false);
-                contHabs = obj.transform;
-            }
-            var rtHabs = contHabs.GetComponent<RectTransform>() ?? contHabs.gameObject.AddComponent<RectTransform>();
-            rtHabs.anchorMin = new Vector2(0.5f, 0.5f);
-            rtHabs.anchorMax = new Vector2(0.5f, 0.5f);
-            rtHabs.pivot = new Vector2(0.5f, 0.5f);
-            rtHabs.anchoredPosition = new Vector2(posXDerecha, 142f);
-            rtHabs.sizeDelta = new Vector2(370f, 56f);
+                const float posXDerecha = 205f;
 
-            float[] slotsX = new float[] { -105f, -35f, 35f, 105f };
-
-            bool necesitaReconstruir = (_botonesHabilidadesPausa.Count < 4 || _iconosHabilidadesPausa.Count < 4 || contHabs.childCount < 4);
-            if (!necesitaReconstruir)
-            {
-                for (int i = 0; i < 4; i++)
+                // --- 3A. Fila de Habilidades (4 casillas en filita, SOLO ICONOS) ---
+                Transform contHabs = panelPausa.transform.Find("FilaHabilidadesPausa");
+                if (contHabs == null)
                 {
-                    if (_botonesHabilidadesPausa[i] == null || _iconosHabilidadesPausa[i] == null || _bordesHabilidadesPausa[i] == null)
+                    var obj = new GameObject("FilaHabilidadesPausa", typeof(RectTransform));
+                    obj.transform.SetParent(panelPausa.transform, false);
+                    contHabs = obj.transform;
+                }
+                var rtHabs = contHabs.GetComponent<RectTransform>();
+                if (rtHabs != null)
+                {
+                    rtHabs.anchorMin = new Vector2(0.5f, 0.5f);
+                    rtHabs.anchorMax = new Vector2(0.5f, 0.5f);
+                    rtHabs.pivot = new Vector2(0.5f, 0.5f);
+                    rtHabs.anchoredPosition = new Vector2(posXDerecha, 142f);
+                    rtHabs.sizeDelta = new Vector2(370f, 56f);
+                }
+
+                float[] slotsX = new float[] { -105f, -35f, 35f, 105f };
+
+                bool necesitaReconstruir = (_botonesHabilidadesPausa.Count < 4 || _iconosHabilidadesPausa.Count < 4);
+                if (!necesitaReconstruir)
+                {
+                    for (int i = 0; i < 4; i++)
                     {
-                        necesitaReconstruir = true;
-                        break;
+                        if (_botonesHabilidadesPausa[i] == null || _iconosHabilidadesPausa[i] == null || _bordesHabilidadesPausa[i] == null)
+                        {
+                            necesitaReconstruir = true;
+                            break;
+                        }
                     }
                 }
-            }
 
-            if (necesitaReconstruir)
-            {
-                for (int c = contHabs.childCount - 1; c >= 0; c--)
+                if (necesitaReconstruir)
                 {
-                    Destroy(contHabs.GetChild(c).gameObject);
-                }
-                _botonesHabilidadesPausa.Clear();
-                _iconosHabilidadesPausa.Clear();
-                _bordesHabilidadesPausa.Clear();
+                    for (int c = contHabs.childCount - 1; c >= 0; c--)
+                    {
+                        var ch = contHabs.GetChild(c);
+                        if (ch != null) DestroyImmediate(ch.gameObject);
+                    }
+                    _botonesHabilidadesPausa.Clear();
+                    _iconosHabilidadesPausa.Clear();
+                    _bordesHabilidadesPausa.Clear();
 
-                for (int i = 0; i < 4; i++)
+                    for (int i = 0; i < 4; i++)
+                    {
+                        int idx = i;
+                        var slotBtnObj = new GameObject($"SlotHabPausa_{i}", typeof(RectTransform));
+                        slotBtnObj.transform.SetParent(contHabs, false);
+
+                        var rtSlot = slotBtnObj.GetComponent<RectTransform>();
+                        rtSlot.anchorMin = new Vector2(0.5f, 0.5f);
+                        rtSlot.anchorMax = new Vector2(0.5f, 0.5f);
+                        rtSlot.pivot = new Vector2(0.5f, 0.5f);
+                        rtSlot.anchoredPosition = new Vector2(slotsX[i], 0f);
+                        rtSlot.sizeDelta = new Vector2(52f, 52f);
+
+                        // Marco exterior (borde de selección)
+                        var imgBorde = slotBtnObj.AddComponent<Image>();
+                        imgBorde.color = (idx == _habilidadSeleccionadaPausa)
+                            ? new Color(0.25f, 0.85f, 1.0f, 1f)
+                            : new Color(0.20f, 0.28f, 0.40f, 0.7f);
+
+                        var btn = slotBtnObj.AddComponent<Button>();
+                        btn.onClick.AddListener(() => SeleccionarHabilidadPausa(idx));
+
+                        // Fondo interior del icono
+                        var fondoIcoObj = new GameObject("FondoInterno", typeof(RectTransform));
+                        fondoIcoObj.transform.SetParent(slotBtnObj.transform, false);
+                        var rtFondoIco = fondoIcoObj.GetComponent<RectTransform>();
+                        rtFondoIco.anchorMin = Vector2.zero;
+                        rtFondoIco.anchorMax = Vector2.one;
+                        rtFondoIco.offsetMin = new Vector2(2f, 2f);
+                        rtFondoIco.offsetMax = new Vector2(-2f, -2f);
+                        var imgFondo = fondoIcoObj.AddComponent<Image>();
+                        imgFondo.color = new Color(0.08f, 0.11f, 0.17f, 0.98f);
+                        imgFondo.raycastTarget = false;
+
+                        // SOLO ICONO de la habilidad (sin badges ni letras)
+                        var icoObj = new GameObject("Icono", typeof(RectTransform));
+                        icoObj.transform.SetParent(fondoIcoObj.transform, false);
+                        var rtIco = icoObj.GetComponent<RectTransform>();
+                        rtIco.anchorMin = new Vector2(0.08f, 0.08f);
+                        rtIco.anchorMax = new Vector2(0.92f, 0.92f);
+                        rtIco.offsetMin = Vector2.zero;
+                        rtIco.offsetMax = Vector2.zero;
+                        var imgIco = icoObj.AddComponent<Image>();
+                        imgIco.preserveAspect = true;
+                        imgIco.raycastTarget = false;
+
+                        _botonesHabilidadesPausa.Add(btn);
+                        _iconosHabilidadesPausa.Add(imgIco);
+                        _bordesHabilidadesPausa.Add(imgBorde);
+                    }
+                }
+
+                // --- 3B. Caja de Descripción de Habilidad (desplegada abajo de los iconos) ---
+                Transform descBox = panelPausa.transform.Find("CajaDescHabilidadPausa");
+                if (descBox == null)
                 {
-                    int idx = i;
-                    var slotBtnObj = new GameObject($"SlotHabPausa_{i}");
-                    slotBtnObj.transform.SetParent(contHabs, false);
+                    var obj = new GameObject("CajaDescHabilidadPausa", typeof(RectTransform));
+                    obj.transform.SetParent(panelPausa.transform, false);
+                    descBox = obj.transform;
 
-                    var rtSlot = slotBtnObj.AddComponent<RectTransform>();
-                    rtSlot.anchorMin = new Vector2(0.5f, 0.5f);
-                    rtSlot.anchorMax = new Vector2(0.5f, 0.5f);
-                    rtSlot.pivot = new Vector2(0.5f, 0.5f);
-                    rtSlot.anchoredPosition = new Vector2(slotsX[i], 0f);
-                    rtSlot.sizeDelta = new Vector2(52f, 52f);
+                    var imgMarcoBox = obj.AddComponent<Image>();
+                    imgMarcoBox.color = new Color(0.24f, 0.40f, 0.62f, 0.85f); // Borde estético
 
-                    // Marco exterior (borde de selección)
-                    var imgBorde = slotBtnObj.AddComponent<Image>();
-                    imgBorde.color = (idx == _habilidadSeleccionadaPausa)
-                        ? new Color(0.25f, 0.85f, 1.0f, 1f)
-                        : new Color(0.20f, 0.28f, 0.40f, 0.7f);
+                    var fondoInt = new GameObject("Fondo", typeof(RectTransform));
+                    fondoInt.transform.SetParent(obj.transform, false);
+                    var rtFi = fondoInt.GetComponent<RectTransform>();
+                    rtFi.anchorMin = Vector2.zero;
+                    rtFi.anchorMax = Vector2.one;
+                    rtFi.offsetMin = new Vector2(2f, 2f);
+                    rtFi.offsetMax = new Vector2(-2f, -2f);
+                    var imgFi = fondoInt.AddComponent<Image>();
+                    imgFi.color = new Color(0.06f, 0.08f, 0.14f, 0.96f);
 
-                    var btn = slotBtnObj.AddComponent<Button>();
-                    btn.onClick.AddListener(() => SeleccionarHabilidadPausa(idx));
+                    var txtObj = new GameObject("Texto", typeof(RectTransform));
+                    txtObj.transform.SetParent(fondoInt.transform, false);
+                    var rtTxt = txtObj.GetComponent<RectTransform>();
+                    rtTxt.anchorMin = Vector2.zero;
+                    rtTxt.anchorMax = Vector2.one;
+                    rtTxt.offsetMin = new Vector2(10f, 6f);
+                    rtTxt.offsetMax = new Vector2(-10f, -6f);
 
-                    // Fondo interior del icono
-                    var fondoIcoObj = new GameObject("FondoInterno");
-                    fondoIcoObj.transform.SetParent(slotBtnObj.transform, false);
-                    var rtFondoIco = fondoIcoObj.AddComponent<RectTransform>();
-                    rtFondoIco.anchorMin = Vector2.zero;
-                    rtFondoIco.anchorMax = Vector2.one;
-                    rtFondoIco.offsetMin = new Vector2(2f, 2f);
-                    rtFondoIco.offsetMax = new Vector2(-2f, -2f);
-                    var imgFondo = fondoIcoObj.AddComponent<Image>();
-                    imgFondo.color = new Color(0.08f, 0.11f, 0.17f, 0.98f);
-                    imgFondo.raycastTarget = false;
+                    _textoDescHabilidadPausa = txtObj.AddComponent<Text>();
+                    _textoDescHabilidadPausa.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+                    _textoDescHabilidadPausa.fontSize = 12;
+                    _textoDescHabilidadPausa.lineSpacing = 1.22f;
+                    _textoDescHabilidadPausa.alignment = TextAnchor.MiddleLeft;
+                    _textoDescHabilidadPausa.color = new Color(0.90f, 0.95f, 1f);
+                    _textoDescHabilidadPausa.raycastTarget = false;
+                }
+                else if (_textoDescHabilidadPausa == null)
+                {
+                    _textoDescHabilidadPausa = descBox.GetComponentInChildren<Text>(true);
+                }
+                var rtDesc = descBox.GetComponent<RectTransform>();
+                if (rtDesc != null)
+                {
+                    rtDesc.anchorMin = new Vector2(0.5f, 0.5f);
+                    rtDesc.anchorMax = new Vector2(0.5f, 0.5f);
+                    rtDesc.pivot = new Vector2(0.5f, 0.5f);
+                    rtDesc.anchoredPosition = new Vector2(posXDerecha, 70f);
+                    rtDesc.sizeDelta = new Vector2(370f, 72f);
+                }
 
-                    // SOLO ICONO de la habilidad (sin badges ni letras)
-                    var icoObj = new GameObject("Icono");
-                    icoObj.transform.SetParent(fondoIcoObj.transform, false);
-                    var rtIco = icoObj.AddComponent<RectTransform>();
-                    rtIco.anchorMin = new Vector2(0.08f, 0.08f);
-                    rtIco.anchorMax = new Vector2(0.92f, 0.92f);
-                    rtIco.offsetMin = Vector2.zero;
-                    rtIco.offsetMax = Vector2.zero;
-                    var imgIco = icoObj.AddComponent<Image>();
-                    imgIco.preserveAspect = true;
-                    imgIco.raycastTarget = false;
+                // --- 3C. Marco del Mapa (abajo de la descripción) ---
+                Transform marcoMapa = panelPausa.transform.Find("MarcoMapaPausa");
+                if (marcoMapa == null)
+                {
+                    var obj = new GameObject("MarcoMapaPausa", typeof(RectTransform));
+                    obj.transform.SetParent(panelPausa.transform, false);
+                    marcoMapa = obj.transform;
 
-                    _botonesHabilidadesPausa.Add(btn);
-                    _iconosHabilidadesPausa.Add(imgIco);
-                    _bordesHabilidadesPausa.Add(imgBorde);
+                    var imgMarco = obj.AddComponent<Image>();
+                    imgMarco.color = new Color(0.32f, 0.65f, 0.95f, 0.95f); // Borde azul cian definido
+
+                    var fondoInt = new GameObject("Fondo", typeof(RectTransform));
+                    fondoInt.transform.SetParent(obj.transform, false);
+                    var rtFi = fondoInt.GetComponent<RectTransform>();
+                    rtFi.anchorMin = Vector2.zero;
+                    rtFi.anchorMax = Vector2.one;
+                    rtFi.offsetMin = new Vector2(3f, 3f);
+                    rtFi.offsetMax = new Vector2(-3f, -3f);
+                    var imgFi = fondoInt.AddComponent<Image>();
+                    imgFi.color = new Color(0.05f, 0.07f, 0.11f, 0.98f);
+
+                    var rawObj = new GameObject("Lienzo", typeof(RectTransform));
+                    rawObj.transform.SetParent(fondoInt.transform, false);
+                    var rtRaw = rawObj.GetComponent<RectTransform>();
+                    rtRaw.anchorMin = Vector2.zero;
+                    rtRaw.anchorMax = Vector2.one;
+                    rtRaw.offsetMin = new Vector2(4f, 4f);
+                    rtRaw.offsetMax = new Vector2(-4f, -22f);
+                    _rawMapaPausa = rawObj.AddComponent<RawImage>();
+
+                    var titObj = new GameObject("Titulo", typeof(RectTransform));
+                    titObj.transform.SetParent(fondoInt.transform, false);
+                    var rtTit = titObj.GetComponent<RectTransform>();
+                    rtTit.anchorMin = new Vector2(0f, 1f);
+                    rtTit.anchorMax = new Vector2(1f, 1f);
+                    rtTit.pivot = new Vector2(0.5f, 1f);
+                    rtTit.anchoredPosition = new Vector2(0f, -2f);
+                    rtTit.sizeDelta = new Vector2(0f, 18f);
+                    var txtTit = titObj.AddComponent<Text>();
+                    txtTit.font = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+                    txtTit.fontSize = 10;
+                    txtTit.fontStyle = FontStyle.Bold;
+                    txtTit.alignment = TextAnchor.MiddleCenter;
+                    txtTit.color = new Color(0.85f, 0.95f, 1f, 0.95f);
+                    txtTit.text = "✦ MAPA DE LA MAZMORRA ✦";
+                }
+                if (_rawMapaPausa == null && marcoMapa != null)
+                {
+                    _rawMapaPausa = marcoMapa.GetComponentInChildren<RawImage>(true);
+                }
+                var rtMm = marcoMapa.GetComponent<RectTransform>();
+                if (rtMm != null)
+                {
+                    rtMm.anchorMin = new Vector2(0.5f, 0.5f);
+                    rtMm.anchorMax = new Vector2(0.5f, 0.5f);
+                    rtMm.pivot = new Vector2(0.5f, 0.5f);
+                    rtMm.anchoredPosition = new Vector2(posXDerecha, -76f);
+                    rtMm.sizeDelta = new Vector2(370f, 196f);
                 }
             }
-
-            // --- 3B. Caja de Descripción de Habilidad (desplegada abajo de los iconos) ---
-            var descBox = panelPausa.transform.Find("CajaDescHabilidadPausa");
-            if (descBox == null)
+            catch (System.Exception ex)
             {
-                var obj = new GameObject("CajaDescHabilidadPausa");
-                obj.transform.SetParent(panelPausa.transform, false);
-                descBox = obj.transform;
-
-                var imgMarcoBox = obj.AddComponent<Image>();
-                imgMarcoBox.color = new Color(0.24f, 0.40f, 0.62f, 0.85f); // Borde estético
-
-                var fondoInt = new GameObject("Fondo");
-                fondoInt.transform.SetParent(obj.transform, false);
-                var rtFi = fondoInt.AddComponent<RectTransform>();
-                rtFi.anchorMin = Vector2.zero;
-                rtFi.anchorMax = Vector2.one;
-                rtFi.offsetMin = new Vector2(2f, 2f);
-                rtFi.offsetMax = new Vector2(-2f, -2f);
-                var imgFi = fondoInt.AddComponent<Image>();
-                imgFi.color = new Color(0.06f, 0.08f, 0.14f, 0.96f);
-
-                var txtObj = new GameObject("Texto");
-                txtObj.transform.SetParent(fondoInt.transform, false);
-                var rtTxt = txtObj.AddComponent<RectTransform>();
-                rtTxt.anchorMin = Vector2.zero;
-                rtTxt.anchorMax = Vector2.one;
-                rtTxt.offsetMin = new Vector2(10f, 6f);
-                rtTxt.offsetMax = new Vector2(-10f, -6f);
-
-                _textoDescHabilidadPausa = txtObj.AddComponent<Text>();
-                _textoDescHabilidadPausa.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-                _textoDescHabilidadPausa.fontSize = 12;
-                _textoDescHabilidadPausa.lineSpacing = 1.22f;
-                _textoDescHabilidadPausa.alignment = TextAnchor.MiddleLeft;
-                _textoDescHabilidadPausa.color = new Color(0.90f, 0.95f, 1f);
-                _textoDescHabilidadPausa.raycastTarget = false;
+                Debug.LogError($"[HUD] Excepción en CrearOActualizarSeccionDerechaPausa: {ex}");
             }
-            else if (_textoDescHabilidadPausa == null)
-            {
-                _textoDescHabilidadPausa = descBox.GetComponentInChildren<Text>(true);
-            }
-            var rtDesc = descBox.GetComponent<RectTransform>();
-            rtDesc.anchorMin = new Vector2(0.5f, 0.5f);
-            rtDesc.anchorMax = new Vector2(0.5f, 0.5f);
-            rtDesc.pivot = new Vector2(0.5f, 0.5f);
-            rtDesc.anchoredPosition = new Vector2(posXDerecha, 70f);
-            rtDesc.sizeDelta = new Vector2(370f, 72f);
-
-            // --- 3C. Marco del Mapa (abajo de la descripción) ---
-            var marcoMapa = panelPausa.transform.Find("MarcoMapaPausa");
-            if (marcoMapa == null)
-            {
-                var obj = new GameObject("MarcoMapaPausa");
-                obj.transform.SetParent(panelPausa.transform, false);
-                marcoMapa = obj.transform;
-
-                var imgMarco = obj.AddComponent<Image>();
-                imgMarco.color = new Color(0.32f, 0.65f, 0.95f, 0.95f); // Borde azul cian definido
-
-                var fondoInt = new GameObject("Fondo");
-                fondoInt.transform.SetParent(obj.transform, false);
-                var rtFi = fondoInt.AddComponent<RectTransform>();
-                rtFi.anchorMin = Vector2.zero;
-                rtFi.anchorMax = Vector2.one;
-                rtFi.offsetMin = new Vector2(3f, 3f);
-                rtFi.offsetMax = new Vector2(-3f, -3f);
-                var imgFi = fondoInt.AddComponent<Image>();
-                imgFi.color = new Color(0.05f, 0.07f, 0.11f, 0.98f);
-
-                var rawObj = new GameObject("Lienzo");
-                rawObj.transform.SetParent(fondoInt.transform, false);
-                var rtRaw = rawObj.AddComponent<RectTransform>();
-                rtRaw.anchorMin = Vector2.zero;
-                rtRaw.anchorMax = Vector2.one;
-                rtRaw.offsetMin = new Vector2(4f, 4f);
-                rtRaw.offsetMax = new Vector2(-4f, -22f);
-                _rawMapaPausa = rawObj.AddComponent<RawImage>();
-
-                var titObj = new GameObject("Titulo");
-                titObj.transform.SetParent(fondoInt.transform, false);
-                var rtTit = titObj.AddComponent<RectTransform>();
-                rtTit.anchorMin = new Vector2(0f, 1f);
-                rtTit.anchorMax = new Vector2(1f, 1f);
-                rtTit.pivot = new Vector2(0.5f, 1f);
-                rtTit.anchoredPosition = new Vector2(0f, -2f);
-                rtTit.sizeDelta = new Vector2(0f, 18f);
-                var txtTit = titObj.AddComponent<Text>();
-                txtTit.font = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-                txtTit.fontSize = 10;
-                txtTit.fontStyle = FontStyle.Bold;
-                txtTit.alignment = TextAnchor.MiddleCenter;
-                txtTit.color = new Color(0.85f, 0.95f, 1f, 0.95f);
-                txtTit.text = "✦ MAPA DE LA MAZMORRA ✦";
-            }
-            if (_rawMapaPausa == null && marcoMapa != null)
-            {
-                _rawMapaPausa = marcoMapa.GetComponentInChildren<RawImage>(true);
-            }
-            var rtMm = marcoMapa.GetComponent<RectTransform>();
-            rtMm.anchorMin = new Vector2(0.5f, 0.5f);
-            rtMm.anchorMax = new Vector2(0.5f, 0.5f);
-            rtMm.pivot = new Vector2(0.5f, 0.5f);
-            rtMm.anchoredPosition = new Vector2(posXDerecha, -76f);
-            rtMm.sizeDelta = new Vector2(370f, 196f);
-
-            // Cargar mapa inmediatamente
-            ActualizarMapaPausa();
         }
 
         private void SeleccionarHabilidadPausa(int index)
@@ -1408,6 +1422,16 @@ namespace SoulKnight
                 {
                     _personajeLocal = Personaje.Todos[i];
                     return _personajeLocal.TipoPj;
+                }
+            }
+            if (SalaRed.Instancia != null && Unity.Netcode.NetworkManager.Singleton != null)
+            {
+                ulong myId = Unity.Netcode.NetworkManager.Singleton.LocalClientId;
+                int idx = SalaRed.Instancia.IndiceDe(myId);
+                if (idx >= 0 && idx < SalaRed.Instancia.Jugadores.Count)
+                {
+                    var pj = SalaRed.Instancia.Jugadores[idx].personaje;
+                    if (pj != TipoPersonaje.Ninguno) return pj;
                 }
             }
             return TipoPersonaje.Fuego;
@@ -1616,7 +1640,7 @@ namespace SoulKnight
 
             if (botonControlesPausa == null)
             {
-                var btnObj = new GameObject("BotonControlesPausa");
+                var btnObj = new GameObject("BotonControlesPausa", typeof(RectTransform));
                 btnObj.transform.SetParent(panelPausa.transform, false);
                 var img = btnObj.AddComponent<Image>();
                 img.color = new Color(0.18f, 0.24f, 0.36f, 1f);
@@ -1628,7 +1652,7 @@ namespace SoulKnight
                 rt.pivot = new Vector2(0.5f, 0.5f);
                 rt.sizeDelta = new Vector2(230f, 44f);
 
-                var txtObj = new GameObject("Texto");
+                var txtObj = new GameObject("Texto", typeof(RectTransform));
                 txtObj.transform.SetParent(btnObj.transform, false);
                 var txt = txtObj.AddComponent<Text>();
                 txt.font = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
@@ -2835,19 +2859,26 @@ namespace SoulKnight
                     rtP.anchoredPosition = Vector2.zero;
                 }
 
-                ConfigurarLayoutMenuPausa();
-                ActualizarVisibilidadBotonLobbyPausa();
-
-                Canvas.ForceUpdateCanvases();
-                if (rtP != null)
+                try
                 {
-                    LayoutRebuilder.ForceRebuildLayoutImmediate(rtP);
+                    ConfigurarLayoutMenuPausa();
+                    ActualizarVisibilidadBotonLobbyPausa();
+
+                    Canvas.ForceUpdateCanvases();
+                    if (rtP != null)
+                    {
+                        LayoutRebuilder.ForceRebuildLayoutImmediate(rtP);
+                    }
+
+                    ActualizarHabilidadesPausaUI();
+                    ActualizarMapaPausa();
+
+                    Canvas.ForceUpdateCanvases();
                 }
-
-                ActualizarHabilidadesPausaUI();
-                ActualizarMapaPausa();
-
-                Canvas.ForceUpdateCanvases();
+                catch (System.Exception ex)
+                {
+                    Debug.LogError($"[HUD] Excepción al actualizar menú de pausa: {ex}");
+                }
             }
             else
             {
@@ -3044,7 +3075,7 @@ namespace SoulKnight
 
             while (t < duracion)
             {
-                t += Time.deltaTime;
+                t += Time.unscaledDeltaTime;
                 float p = Mathf.Clamp01(t / duracion);
                 c.a = Mathf.SmoothStep(alfaInicial, alfaObjetivo, p);
                 panelFadeNegro.color = c;
@@ -3063,7 +3094,7 @@ namespace SoulKnight
 
         private System.Collections.IEnumerator RutinaOcultarBanner()
         {
-            yield return new WaitForSeconds(2.8f);
+            yield return new WaitForSecondsRealtime(2.8f);
             if (textoBannerNivel != null)
             {
                 textoBannerNivel.gameObject.SetActive(false);
@@ -3128,114 +3159,138 @@ namespace SoulKnight
                 panelFadeNegro.transform.SetAsLastSibling();
             }
 
-            // Esperar a que la escena y la red se estabilicen
-            yield return new WaitForSeconds(0.4f);
+            // Esperar brevemente a que la escena se inicialice
+            yield return new WaitForSecondsRealtime(0.2f);
 
             // Esperar activamente hasta que el generador de mazmorra tenga el grid listo y el jugador local esté conectado
-            float tiempoMaximoEspera = 8f;
+            float tiempoMaximoEspera = 2.5f;
             float tiempoTranscurrido = 0f;
             while (tiempoTranscurrido < tiempoMaximoEspera)
             {
                 bool mazmorraLista = GeneradorMazmorra.Instancia != null 
                     && GeneradorMazmorra.Instancia.gridActual != null
                     && GeneradorMazmorra.Instancia.salasGeneradas.Count > 0;
-                bool jugadorLocalListo = (_personajeLocal != null && _personajeLocal.TipoPj != TipoPersonaje.Ninguno)
-                    || Personaje.Todos.Exists(p => p != null && p.EsControlLocal && p.TipoPj != TipoPersonaje.Ninguno);
-                if (mazmorraLista && jugadorLocalListo)
+                bool jugadorListo = (_personajeLocal != null)
+                    || Personaje.Todos.Exists(p => p != null && p.EsControlLocal);
+                if (mazmorraLista && jugadorListo)
                 {
                     break;
                 }
                 tiempoTranscurrido += 0.1f;
-                yield return new WaitForSeconds(0.1f);
+                yield return new WaitForSecondsRealtime(0.1f);
             }
 
-            if (_personajeLocal == null)
+            try
             {
-                for (int i = 0; i < Personaje.Todos.Count; i++)
+                if (_personajeLocal == null)
                 {
-                    var p = Personaje.Todos[i];
-                    if (p != null && p.EsControlLocal)
+                    for (int i = 0; i < Personaje.Todos.Count; i++)
                     {
-                        ConectarPersonaje(p);
-                        break;
+                        var p = Personaje.Todos[i];
+                        if (p != null && p.EsControlLocal)
+                        {
+                            ConectarPersonaje(p);
+                            break;
+                        }
                     }
                 }
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogWarning($"[HUD] Excepción al conectar personaje en carga: {ex.Message}");
             }
 
             // Dejar pasar dos frames para que todos los Start/Awake de salas y antorchas completen
             yield return null;
             yield return null;
 
-            // Actualizar visión completa antes de que el jugador vea nada
-            if (SistemaVision.Instancia != null)
+            try
             {
-                SistemaVision.Instancia.ForzarActualizacionExploracion();
+                // Actualizar visión completa antes de que el jugador vea nada
+                if (SistemaVision.Instancia != null)
+                {
+                    SistemaVision.Instancia.ForzarActualizacionExploracion();
+                }
+                if (MinimapaHUD.Instancia != null)
+                {
+                    MinimapaHUD.Instancia.RenderizarMinimapa();
+                }
+
+                // Precargar el menú de pausa y hornear su renderizado en GPU tras el fade negro
+                if (panelPausa != null)
+                {
+                    panelPausa.transform.SetAsLastSibling();
+                    panelPausa.SetActive(true);
+                    if (panelFadeNegro != null)
+                    {
+                        panelFadeNegro.transform.SetAsLastSibling(); // Mantener pantalla negra por encima
+                    }
+
+                    var rtP = panelPausa.GetComponent<RectTransform>();
+                    if (rtP != null)
+                    {
+                        rtP.anchorMin = Vector2.zero;
+                        rtP.anchorMax = Vector2.one;
+                        rtP.sizeDelta = Vector2.zero;
+                        rtP.anchoredPosition = Vector2.zero;
+                    }
+
+                    ConfigurarLayoutMenuPausa();
+                    ActualizarVisibilidadBotonLobbyPausa();
+
+                    Canvas.ForceUpdateCanvases();
+                    if (rtP != null)
+                    {
+                        LayoutRebuilder.ForceRebuildLayoutImmediate(rtP);
+                    }
+
+                    ActualizarHabilidadesPausaUI();
+                    ActualizarMapaPausa();
+
+                    Canvas.ForceUpdateCanvases();
+                }
             }
-            if (MinimapaHUD.Instancia != null)
+            catch (System.Exception ex)
             {
-                MinimapaHUD.Instancia.RenderizarMinimapa();
+                Debug.LogError($"[HUD] Excepción al precargar pausa/mapa: {ex}");
             }
 
-            // Precargar el menú de pausa y hornear su renderizado en GPU tras el fade negro
+            // Dejar 2 frames reales mientras está oculto detrás de la pantalla negra para que Unity compile shaders y cargue mallas y texturas en la GPU
+            yield return null;
+            yield return null;
+
             if (panelPausa != null)
             {
-                panelPausa.transform.SetAsLastSibling();
-                panelPausa.SetActive(true);
-                if (panelFadeNegro != null)
-                {
-                    panelFadeNegro.transform.SetAsLastSibling(); // Mantener pantalla negra por encima
-                }
-
-                var rtP = panelPausa.GetComponent<RectTransform>();
-                if (rtP != null)
-                {
-                    rtP.anchorMin = Vector2.zero;
-                    rtP.anchorMax = Vector2.one;
-                    rtP.sizeDelta = Vector2.zero;
-                    rtP.anchoredPosition = Vector2.zero;
-                }
-
-                ConfigurarLayoutMenuPausa();
-                ActualizarVisibilidadBotonLobbyPausa();
-
-                Canvas.ForceUpdateCanvases();
-                if (rtP != null)
-                {
-                    LayoutRebuilder.ForceRebuildLayoutImmediate(rtP);
-                }
-
-                ActualizarHabilidadesPausaUI();
-                ActualizarMapaPausa();
-
-                Canvas.ForceUpdateCanvases();
-
-                // Dejar 2 frames reales mientras está oculto detrás de la pantalla negra para que Unity compile shaders y cargue mallas y texturas en la GPU
-                yield return null;
-                yield return null;
-
                 panelPausa.SetActive(false);
                 _menuPausaPrecargado = true;
             }
 
-            // Espera generosa en negro para que todo el escenario, luces, shaders y texturas se asienten sin tirones
-            yield return new WaitForSeconds(1.5f);
+            // Pausa breve y suave para asentar el escenario
+            yield return new WaitForSecondsRealtime(0.4f);
 
             // Re-verificar visión y mapa justo antes del fade
-            if (SistemaVision.Instancia != null)
+            try
             {
-                SistemaVision.Instancia.ForzarActualizacionExploracion();
+                if (SistemaVision.Instancia != null)
+                {
+                    SistemaVision.Instancia.ForzarActualizacionExploracion();
+                }
+                if (MinimapaHUD.Instancia != null)
+                {
+                    MinimapaHUD.Instancia.RenderizarMinimapa();
+                }
+                ActualizarMapaPausa();
             }
-            if (MinimapaHUD.Instancia != null)
+            catch (System.Exception ex)
             {
-                MinimapaHUD.Instancia.RenderizarMinimapa();
+                Debug.LogWarning($"[HUD] Advertencia al refrescar mapa: {ex.Message}");
             }
-            ActualizarMapaPausa();
 
             int nivel = (GestorPartida.Instancia != null) ? GestorPartida.Instancia.NivelActual : 1;
             string bioma = (GeneradorMazmorra.Instancia != null) ? GeneradorMazmorra.Instancia.biomaActual.ToString().ToUpper() : "MAZMORRA";
             string textoBanner = $"NIVEL {nivel}\n{bioma}";
 
-            IniciarFadeAclarar(1.2f, textoBanner, () =>
+            IniciarFadeAclarar(0.8f, textoBanner, () =>
             {
                 Controles.Bloqueado = false;
                 EnTransicionCarga = false;

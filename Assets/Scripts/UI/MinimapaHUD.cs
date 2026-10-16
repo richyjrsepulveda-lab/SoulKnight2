@@ -114,6 +114,19 @@ namespace SoulKnight
             _rawImage.texture = _texMapa;
         }
 
+        void Awake()
+        {
+            if (Instancia == null) Instancia = this;
+            if (_texMapa == null)
+            {
+                if (_rawImage == null) _rawImage = GetComponentInChildren<RawImage>(true);
+                if (_rawImage != null)
+                {
+                    Inicializar(_rawImage);
+                }
+            }
+        }
+
         void OnDestroy()
         {
             if (Instancia == this) Instancia = null;
@@ -134,7 +147,12 @@ namespace SoulKnight
         {
             var gen = GeneradorMazmorra.Instancia;
             var vision = SistemaVision.Instancia;
-            if (_texMapa == null || _pixeles == null) return;
+            if (_texMapa == null || _pixeles == null)
+            {
+                if (_rawImage == null) _rawImage = GetComponentInChildren<RawImage>(true);
+                if (_rawImage != null) Inicializar(_rawImage);
+                if (_texMapa == null || _pixeles == null) return;
+            }
 
             Color32 colFondo = new Color32(8, 10, 16, 245);
             for (int i = 0; i < _pixeles.Length; i++)
