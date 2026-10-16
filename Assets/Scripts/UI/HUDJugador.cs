@@ -42,6 +42,7 @@ namespace SoulKnight
         public Sprite iconoFuegoLMB;
         public Sprite iconoFuegoE;
         public Sprite iconoFuegoQ;
+        public Sprite iconoFuegoR;
 
         [Header("Sprites de Habilidades - Hielo")]
         public Sprite iconoHieloLMB;
@@ -279,6 +280,23 @@ namespace SoulKnight
                     }
                 }
             }
+
+            // Asegurar carga de sprites de habilidades para no depender de dependencias vacías
+            if (iconoFuegoLMB == null) iconoFuegoLMB = Resources.Load<Sprite>("IconosHabilidades/Fuego_BolaFuego");
+            if (iconoFuegoE == null) iconoFuegoE = Resources.Load<Sprite>("IconosHabilidades/Fuego_Lanzallamas");
+            if (iconoFuegoQ == null) iconoFuegoQ = Resources.Load<Sprite>("IconosHabilidades/Fuego_Armadura");
+            if (iconoFuegoR == null) iconoFuegoR = Resources.Load<Sprite>("IconosHabilidades/Fuego_Meteorito");
+
+            if (iconoHieloLMB == null) iconoHieloLMB = Resources.Load<Sprite>("IconosHabilidades/Hielo_RayoHielo");
+            if (iconoHieloE == null) iconoHieloE = Resources.Load<Sprite>("IconosHabilidades/Hielo_BolaHielo");
+            if (iconoHieloQ == null) iconoHieloQ = Resources.Load<Sprite>("IconosHabilidades/Hielo_Armadura");
+            if (iconoHieloR == null) iconoHieloR = Resources.Load<Sprite>("IconosHabilidades/Hielo_EraHielo");
+
+            if (iconoElecLMB == null) iconoElecLMB = Resources.Load<Sprite>("IconosHabilidades/Elec_Espada");
+            if (iconoElecE == null) iconoElecE = Resources.Load<Sprite>("IconosHabilidades/Elec_Dash");
+            if (iconoElecQ == null) iconoElecQ = Resources.Load<Sprite>("IconosHabilidades/Elec_Teleport");
+            if (iconoElecR == null) iconoElecR = Resources.Load<Sprite>("IconosHabilidades/Elec_Rayo");
+
             // Crear dinámicamente panel de votación estilo League of Legends si no existe
             CrearPanelVotacionSiNoExiste();
 
@@ -1188,7 +1206,20 @@ namespace SoulKnight
 
             float[] slotsX = new float[] { -105f, -35f, 35f, 105f };
 
-            if (_botonesHabilidadesPausa.Count < 4)
+            bool necesitaReconstruir = (_botonesHabilidadesPausa.Count < 4 || _iconosHabilidadesPausa.Count < 4 || contHabs.childCount < 4);
+            if (!necesitaReconstruir)
+            {
+                for (int i = 0; i < 4; i++)
+                {
+                    if (_botonesHabilidadesPausa[i] == null || _iconosHabilidadesPausa[i] == null || _bordesHabilidadesPausa[i] == null)
+                    {
+                        necesitaReconstruir = true;
+                        break;
+                    }
+                }
+            }
+
+            if (necesitaReconstruir)
             {
                 for (int c = contHabs.childCount - 1; c >= 0; c--)
                 {
@@ -1387,6 +1418,34 @@ namespace SoulKnight
             var tipo = ObtenerTipoPersonajeLocal();
             var habs = CatalogoHabilidades.ObtenerHabilidadesPersonaje(tipo);
 
+            // Re-enlazar si la lista interna está incompleta o con referencias nulas
+            if (_iconosHabilidadesPausa.Count < 4 || _iconosHabilidadesPausa[0] == null)
+            {
+                _iconosHabilidadesPausa.Clear();
+                _bordesHabilidadesPausa.Clear();
+                _botonesHabilidadesPausa.Clear();
+                if (panelPausa != null)
+                {
+                    var cont = panelPausa.transform.Find("FilaHabilidadesPausa");
+                    if (cont != null)
+                    {
+                        for (int k = 0; k < 4; k++)
+                        {
+                            var slot = cont.Find($"SlotHabPausa_{k}");
+                            if (slot != null)
+                            {
+                                var btn = slot.GetComponent<Button>();
+                                var borde = slot.GetComponent<Image>();
+                                var ico = slot.Find("FondoInterno/Icono")?.GetComponent<Image>();
+                                if (btn != null) _botonesHabilidadesPausa.Add(btn);
+                                if (borde != null) _bordesHabilidadesPausa.Add(borde);
+                                if (ico != null) _iconosHabilidadesPausa.Add(ico);
+                            }
+                        }
+                    }
+                }
+            }
+
             for (int i = 0; i < _iconosHabilidadesPausa.Count && i < 4; i++)
             {
                 Sprite sp = null;
@@ -1395,6 +1454,13 @@ namespace SoulKnight
                     sp = CatalogoHabilidades.ObtenerSpriteHabilidad(habs[i].id);
                 }
 
+                // Fallback 1: Si ya está en los slots de habilidades activos del HUD del jugador
+                if (sp == null && slotsHabilidades != null && i < slotsHabilidades.Length && slotsHabilidades[i] != null && slotsHabilidades[i].icono != null)
+                {
+                    sp = slotsHabilidades[i].icono.sprite;
+                }
+
+                // Fallback 2: Iconos del HUD
                 if (sp == null)
                 {
                     if (tipo == TipoPersonaje.Fuego)
@@ -1402,6 +1468,7 @@ namespace SoulKnight
                         if (i == 0) sp = iconoFuegoLMB;
                         else if (i == 1) sp = iconoFuegoE;
                         else if (i == 2) sp = iconoFuegoQ;
+                        else if (i == 3) sp = iconoFuegoR;
                     }
                     else if (tipo == TipoPersonaje.Hielo)
                     {
@@ -1419,6 +1486,12 @@ namespace SoulKnight
                     }
                 }
 
+                // Fallback 3: Carga directa desde Resources
+                if (sp == null && i < habs.Count)
+                {
+                    sp = Resources.Load<Sprite>($"IconosHabilidades/{habs[i].id}");
+                }
+
                 if (_iconosHabilidadesPausa[i] != null)
                 {
                     if (sp != null)
@@ -1426,10 +1499,14 @@ namespace SoulKnight
                         _iconosHabilidadesPausa[i].sprite = sp;
                         _iconosHabilidadesPausa[i].color = Color.white;
                         _iconosHabilidadesPausa[i].enabled = true;
+                        _iconosHabilidadesPausa[i].preserveAspect = true;
+                        _iconosHabilidadesPausa[i].SetAllDirty();
                     }
                     else
                     {
+                        _iconosHabilidadesPausa[i].sprite = null;
                         _iconosHabilidadesPausa[i].color = new Color(0.2f, 0.25f, 0.35f, 0.8f);
+                        _iconosHabilidadesPausa[i].SetAllDirty();
                     }
                 }
             }
@@ -1505,6 +1582,11 @@ namespace SoulKnight
                 minimapaHUD = MinimapaHUD.Instancia ?? MinimapaHUD.CrearEnHUD(transform);
             }
 
+            if (SistemaVision.Instancia != null)
+            {
+                SistemaVision.Instancia.ForzarActualizacionExploracion();
+            }
+
             if (MinimapaHUD.Instancia != null)
             {
                 MinimapaHUD.Instancia.RenderizarMinimapa();
@@ -1514,8 +1596,7 @@ namespace SoulKnight
                     _rawMapaPausa.color = Color.white;
                     _rawMapaPausa.enabled = true;
                     _rawMapaPausa.gameObject.SetActive(true);
-                    _rawMapaPausa.SetVerticesDirty();
-                    _rawMapaPausa.SetMaterialDirty();
+                    _rawMapaPausa.SetAllDirty();
                 }
             }
         }
@@ -2403,6 +2484,7 @@ namespace SoulKnight
 
             ActualizarBarraMaestria(personaje.TipoPj);
             ActualizarDesbloqueoHabilidadesVisual();
+            ActualizarHabilidadesPausaUI();
         }
 
         public void ActualizarBarraMaestria(TipoPersonaje pj)
@@ -2542,7 +2624,7 @@ namespace SoulKnight
                 ConfigurarSlot(0, iconoFuegoLMB, "LMB", true);
                 ConfigurarSlot(1, iconoFuegoE, "E", true);
                 ConfigurarSlot(2, iconoFuegoQ, "Q", true);
-                ConfigurarSlot(3, null, "", false); // Fuego no tiene R
+                ConfigurarSlot(3, iconoFuegoR, "R", true);
             }
             else if (personaje is PersonajeHielo)
             {
@@ -2741,24 +2823,35 @@ namespace SoulKnight
 
             if (estado)
             {
-                if (!_menuPausaPrecargado)
+                panelPausa.transform.SetAsLastSibling();
+                panelPausa.SetActive(true);
+
+                var rtP = panelPausa.GetComponent<RectTransform>();
+                if (rtP != null)
                 {
-                    ConfigurarLayoutMenuPausa();
+                    rtP.anchorMin = Vector2.zero;
+                    rtP.anchorMax = Vector2.one;
+                    rtP.sizeDelta = Vector2.zero;
+                    rtP.anchoredPosition = Vector2.zero;
                 }
+
+                ConfigurarLayoutMenuPausa();
                 ActualizarVisibilidadBotonLobbyPausa();
+
+                Canvas.ForceUpdateCanvases();
+                if (rtP != null)
+                {
+                    LayoutRebuilder.ForceRebuildLayoutImmediate(rtP);
+                }
+
                 ActualizarHabilidadesPausaUI();
-                if (SistemaVision.Instancia != null)
-                {
-                    SistemaVision.Instancia.ForzarActualizacionExploracion();
-                }
-                if (MinimapaHUD.Instancia != null)
-                {
-                    MinimapaHUD.Instancia.RenderizarMinimapa();
-                }
                 ActualizarMapaPausa();
+
+                Canvas.ForceUpdateCanvases();
             }
             else
             {
+                panelPausa.SetActive(false);
                 if (PanelOpcionesControles.Instancia != null)
                 {
                     PanelOpcionesControles.Instancia.Cerrar();
@@ -2982,19 +3075,34 @@ namespace SoulKnight
             if (panelPausa == null) return;
             try
             {
+                panelPausa.transform.SetAsLastSibling();
                 panelPausa.SetActive(true);
+                if (panelFadeNegro != null && panelFadeNegro.gameObject.activeSelf)
+                {
+                    panelFadeNegro.transform.SetAsLastSibling();
+                }
+
+                var rtP = panelPausa.GetComponent<RectTransform>();
+                if (rtP != null)
+                {
+                    rtP.anchorMin = Vector2.zero;
+                    rtP.anchorMax = Vector2.one;
+                    rtP.sizeDelta = Vector2.zero;
+                    rtP.anchoredPosition = Vector2.zero;
+                }
+
                 ConfigurarLayoutMenuPausa();
                 ActualizarVisibilidadBotonLobbyPausa();
+
+                Canvas.ForceUpdateCanvases();
+                if (rtP != null)
+                {
+                    LayoutRebuilder.ForceRebuildLayoutImmediate(rtP);
+                }
+
                 ActualizarHabilidadesPausaUI();
-                if (SistemaVision.Instancia != null)
-                {
-                    SistemaVision.Instancia.ForzarActualizacionExploracion();
-                }
-                if (MinimapaHUD.Instancia != null)
-                {
-                    MinimapaHUD.Instancia.RenderizarMinimapa();
-                }
                 ActualizarMapaPausa();
+
                 Canvas.ForceUpdateCanvases();
                 panelPausa.SetActive(false);
                 _menuPausaPrecargado = true;
@@ -3023,7 +3131,7 @@ namespace SoulKnight
             // Esperar a que la escena y la red se estabilicen
             yield return new WaitForSeconds(0.4f);
 
-            // Esperar activamente hasta que el generador de mazmorra tenga el grid listo y los personajes existan
+            // Esperar activamente hasta que el generador de mazmorra tenga el grid listo y el jugador local esté conectado
             float tiempoMaximoEspera = 8f;
             float tiempoTranscurrido = 0f;
             while (tiempoTranscurrido < tiempoMaximoEspera)
@@ -3031,13 +3139,27 @@ namespace SoulKnight
                 bool mazmorraLista = GeneradorMazmorra.Instancia != null 
                     && GeneradorMazmorra.Instancia.gridActual != null
                     && GeneradorMazmorra.Instancia.salasGeneradas.Count > 0;
-                bool jugadoresListos = Personaje.Todos.Count > 0;
-                if (mazmorraLista && jugadoresListos)
+                bool jugadorLocalListo = (_personajeLocal != null && _personajeLocal.TipoPj != TipoPersonaje.Ninguno)
+                    || Personaje.Todos.Exists(p => p != null && p.EsControlLocal && p.TipoPj != TipoPersonaje.Ninguno);
+                if (mazmorraLista && jugadorLocalListo)
                 {
                     break;
                 }
                 tiempoTranscurrido += 0.1f;
                 yield return new WaitForSeconds(0.1f);
+            }
+
+            if (_personajeLocal == null)
+            {
+                for (int i = 0; i < Personaje.Todos.Count; i++)
+                {
+                    var p = Personaje.Todos[i];
+                    if (p != null && p.EsControlLocal)
+                    {
+                        ConectarPersonaje(p);
+                        break;
+                    }
+                }
             }
 
             // Dejar pasar dos frames para que todos los Start/Awake de salas y antorchas completen
@@ -3054,11 +3176,49 @@ namespace SoulKnight
                 MinimapaHUD.Instancia.RenderizarMinimapa();
             }
 
-            // Precargar el menú de pausa y su mapa
-            PrecargarMenuPausa();
+            // Precargar el menú de pausa y hornear su renderizado en GPU tras el fade negro
+            if (panelPausa != null)
+            {
+                panelPausa.transform.SetAsLastSibling();
+                panelPausa.SetActive(true);
+                if (panelFadeNegro != null)
+                {
+                    panelFadeNegro.transform.SetAsLastSibling(); // Mantener pantalla negra por encima
+                }
+
+                var rtP = panelPausa.GetComponent<RectTransform>();
+                if (rtP != null)
+                {
+                    rtP.anchorMin = Vector2.zero;
+                    rtP.anchorMax = Vector2.one;
+                    rtP.sizeDelta = Vector2.zero;
+                    rtP.anchoredPosition = Vector2.zero;
+                }
+
+                ConfigurarLayoutMenuPausa();
+                ActualizarVisibilidadBotonLobbyPausa();
+
+                Canvas.ForceUpdateCanvases();
+                if (rtP != null)
+                {
+                    LayoutRebuilder.ForceRebuildLayoutImmediate(rtP);
+                }
+
+                ActualizarHabilidadesPausaUI();
+                ActualizarMapaPausa();
+
+                Canvas.ForceUpdateCanvases();
+
+                // Dejar 2 frames reales mientras está oculto detrás de la pantalla negra para que Unity compile shaders y cargue mallas y texturas en la GPU
+                yield return null;
+                yield return null;
+
+                panelPausa.SetActive(false);
+                _menuPausaPrecargado = true;
+            }
 
             // Espera generosa en negro para que todo el escenario, luces, shaders y texturas se asienten sin tirones
-            yield return new WaitForSeconds(1.8f);
+            yield return new WaitForSeconds(1.5f);
 
             // Re-verificar visión y mapa justo antes del fade
             if (SistemaVision.Instancia != null)

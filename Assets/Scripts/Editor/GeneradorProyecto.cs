@@ -1915,6 +1915,7 @@ namespace SoulKnight.Editor
             hud.iconoFuegoLMB = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Arte/Personajes/Fuego/BolaFuego.png");
             hud.iconoFuegoE = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Arte/Personajes/Fuego/CabezaFuegoAtaque.png");
             hud.iconoFuegoQ = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Arte/Personajes/Fuego/ArmaduraFuego.png");
+            hud.iconoFuegoR = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Resources/IconosHabilidades/Fuego_Meteorito.png");
 
             hud.iconoHieloLMB = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Arte/Personajes/Hielo/Iconos/IconoRayoHielo.png");
             hud.iconoHieloE = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Arte/Personajes/Hielo/Iconos/IconoBolaHielo.png");
