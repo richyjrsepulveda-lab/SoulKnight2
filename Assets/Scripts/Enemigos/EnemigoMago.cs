@@ -14,21 +14,21 @@ namespace SoulKnight
     {
         [Header("Hechizos y Disparo")]
         public GameObject prefabProyectil;
-        public float tiempoEntreDisparos = 2.8f;
+        public float tiempoEntreDisparos = 1.35f;
         public int danoProyectil = 12;
         public float rangoDisparo = 12f;
         public float distanciaOptima = 5.5f;
 
-        private float _timerDisparo = 1.5f;
+        private float _timerDisparo = 0.6f;
         private float _tiempoCasteo = 0f;
 
         protected override void Awake()
         {
-            vidaMax = 75;
-            velocidadBase = 2.8f;
+            vidaMax = 95;
+            velocidadBase = 3.0f;
             dano = 8;
             rangoAtaque = 1.8f;
-            tiempoEntreAtaques = 2.5f;
+            tiempoEntreAtaques = 1.10f;
             base.Awake();
         }
 
@@ -61,9 +61,9 @@ namespace SoulKnight
             }
             else if (_timerDisparo <= 0f && distancia <= rangoDisparo)
             {
-                // Iniciar casteo
-                _tiempoCasteo = 0.35f;
-                _timerDisparo = tiempoEntreDisparos + UnityEngine.Random.Range(-0.4f, 0.5f);
+                // Iniciar casteo rápido
+                _tiempoCasteo = 0.22f;
+                _timerDisparo = tiempoEntreDisparos + UnityEngine.Random.Range(-0.15f, 0.20f);
                 Vector2 dirCasteo = ((Vector2)jugador.transform.position - (Vector2)transform.position).normalized;
                 MostrarCasteoClientRpc((Vector2)transform.position + dirCasteo * 0.60f, BiomaActualNet.Value);
             }

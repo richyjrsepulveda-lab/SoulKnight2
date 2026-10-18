@@ -17,11 +17,11 @@ namespace SoulKnight
 
         protected override void Awake()
         {
-            vidaMax = 50;
-            velocidadBase = 4.2f;
-            dano = 7;
-            rangoAtaque = 1.6f;
-            tiempoEntreAtaques = 1.8f;
+            vidaMax = 65;
+            velocidadBase = 4.6f;
+            dano = 8;
+            rangoAtaque = 1.4f;
+            tiempoEntreAtaques = 0.95f;
             base.Awake();
             _escalaBase = transform.localScale;
         }

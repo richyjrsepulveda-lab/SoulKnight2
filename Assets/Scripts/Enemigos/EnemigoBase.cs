@@ -156,50 +156,73 @@ namespace SoulKnight
             ActualizarVisualPixelArt();
         }
 
-        public void ConfigurarRolYBioma(TipoBioma bioma, RolEnemigo rol, float multDificultad = 1.0f)
+        public void ConfigurarRolYBioma(TipoBioma bioma, RolEnemigo rol, float multDificultad = 1.0f, int nivelRun = 1)
         {
             if (!IsServer) return;
             BiomaActualNet.Value = (int)bioma;
             RolActualNet.Value = (int)rol;
 
+            int nivelCiclo = Mathf.Clamp(((nivelRun - 1) % 10) + 1, 1, 10);
+            float bonusVelocidadNivel = 1.0f + (nivelCiclo - 1) * 0.035f;
+            float reduccionCooldownNivel = Mathf.Max(0.68f, 1.0f - (nivelCiclo - 1) * 0.035f);
+
             switch (rol)
             {
                 case RolEnemigo.Tanque:
-                    vidaMax = Mathf.RoundToInt(240 * multDificultad);
-                    velocidadBase = 2.4f;
-                    dano = Mathf.RoundToInt(15 * multDificultad);
-                    rangoAtaque = 1.35f;
+                    vidaMax = Mathf.RoundToInt(250 * multDificultad);
+                    velocidadBase = 2.6f * bonusVelocidadNivel;
+                    dano = Mathf.RoundToInt(16 * multDificultad);
+                    rangoAtaque = 1.40f;
+                    tiempoEntreAtaques = 1.35f * reduccionCooldownNivel;
                     EscalaVisualNet.Value = 1.95f;
                     break;
                 case RolEnemigo.MeleeRapido:
-                    vidaMax = Mathf.RoundToInt(85 * multDificultad);
-                    velocidadBase = 4.7f;
-                    dano = Mathf.RoundToInt(9 * multDificultad);
-                    rangoAtaque = 1.15f;
+                    vidaMax = Mathf.RoundToInt(95 * multDificultad);
+                    velocidadBase = 4.8f * bonusVelocidadNivel;
+                    dano = Mathf.RoundToInt(10 * multDificultad);
+                    rangoAtaque = 1.25f;
+                    tiempoEntreAtaques = 0.75f * reduccionCooldownNivel;
                     EscalaVisualNet.Value = 1.45f;
                     break;
                 case RolEnemigo.Rango:
-                    vidaMax = Mathf.RoundToInt(110 * multDificultad);
-                    velocidadBase = 2.7f;
-                    dano = Mathf.RoundToInt(12 * multDificultad);
-                    rangoAtaque = 1.0f; // Los enemigos de rango disparan proyectiles via EnemigoMago
+                    vidaMax = Mathf.RoundToInt(120 * multDificultad);
+                    velocidadBase = 2.9f * bonusVelocidadNivel;
+                    dano = Mathf.RoundToInt(13 * multDificultad);
+                    rangoAtaque = 1.05f;
+                    tiempoEntreAtaques = 1.10f * reduccionCooldownNivel;
                     EscalaVisualNet.Value = 1.55f;
                     break;
                 case RolEnemigo.Especial:
-                    vidaMax = Mathf.RoundToInt(135 * multDificultad);
-                    velocidadBase = 3.3f;
+                    vidaMax = Mathf.RoundToInt(145 * multDificultad);
+                    velocidadBase = 3.5f * bonusVelocidadNivel;
                     dano = Mathf.RoundToInt(14 * multDificultad);
-                    rangoAtaque = 1.25f;
+                    rangoAtaque = 1.30f;
+                    tiempoEntreAtaques = 1.05f * reduccionCooldownNivel;
                     EscalaVisualNet.Value = 1.60f;
                     break;
                 case RolEnemigo.Spawner:
-                    vidaMax = Mathf.RoundToInt(320 * multDificultad);
+                    vidaMax = Mathf.RoundToInt(340 * multDificultad);
                     velocidadBase = 0f;
                     dano = 0;
                     rangoAtaque = 0f;
+                    tiempoEntreAtaques = 2.0f;
                     EscalaVisualNet.Value = 2.05f;
                     if (_rb != null) _rb.isKinematic = true;
                     break;
+            }
+
+            var mago = GetComponent<EnemigoMago>();
+            if (mago != null)
+            {
+                mago.tiempoEntreDisparos = Mathf.Max(0.85f, 1.35f * reduccionCooldownNivel);
+                mago.danoProyectil = Mathf.RoundToInt(12 * multDificultad);
+            }
+
+            var slime = GetComponent<EnemigoSlime>();
+            if (slime != null)
+            {
+                slime.tiempoEntreAtaques = Mathf.Max(0.65f, 0.95f * reduccionCooldownNivel);
+                slime.velocidadBase = 4.4f * bonusVelocidadNivel;
             }
 
             _velocidadActual = velocidadBase;
@@ -395,10 +418,10 @@ namespace SoulKnight
             if (!IsServer || VidaActual.Value <= 0) return;
             if (GestorPartida.Instancia != null)
             {
-                // Invocar 1 momia o 1 rata cerca
-                RolEnemigo subrol = (UnityEngine.Random.value < 0.5f) ? RolEnemigo.MeleeRapido : RolEnemigo.Rango;
+                RolEnemigo subrol = (UnityEngine.Random.value < 0.65f) ? RolEnemigo.MeleeRapido : RolEnemigo.Rango;
                 Vector2 posSpawn = (Vector2)transform.position + UnityEngine.Random.insideUnitCircle.normalized * 1.6f;
-                GestorPartida.Instancia.SpawnearEsbirroEmergente(posSpawn, TipoBioma.Arena, subrol);
+                TipoBioma biomaActual = (TipoBioma)BiomaActualNet.Value;
+                GestorPartida.Instancia.SpawnearEsbirroEmergente(posSpawn, biomaActual, subrol);
             }
         }
 
@@ -480,7 +503,7 @@ namespace SoulKnight
                 _timerHabilidadRol += Time.deltaTime;
                 if (BiomaActualNet.Value == (int)TipoBioma.Planta && RolActualNet.Value == (int)RolEnemigo.Tanque)
                 {
-                    if (_timerHabilidadRol >= 5.5f)
+                    if (_timerHabilidadRol >= 3.8f)
                     {
                         _timerHabilidadRol = 0f;
                         PulsoCuracionPlanta();
@@ -488,7 +511,7 @@ namespace SoulKnight
                 }
                 else if (BiomaActualNet.Value == (int)TipoBioma.Planta && RolActualNet.Value == (int)RolEnemigo.Especial)
                 {
-                    if (_timerHabilidadRol >= 4.0f)
+                    if (_timerHabilidadRol >= 2.6f)
                     {
                         _timerHabilidadRol = 0f;
                         SoltarEsporasEnPiso();
@@ -496,7 +519,7 @@ namespace SoulKnight
                 }
                 else if (BiomaActualNet.Value == (int)TipoBioma.Fuego && RolActualNet.Value == (int)RolEnemigo.Especial)
                 {
-                    if (_timerHabilidadRol >= 4.5f)
+                    if (_timerHabilidadRol >= 2.5f)
                     {
                         _timerHabilidadRol = 0f;
                         SoltarFuegoEnPiso();
@@ -504,7 +527,7 @@ namespace SoulKnight
                 }
                 else if (BiomaActualNet.Value == (int)TipoBioma.Hielo && RolActualNet.Value == (int)RolEnemigo.Especial)
                 {
-                    if (_timerHabilidadRol >= 4.5f)
+                    if (_timerHabilidadRol >= 2.6f)
                     {
                         _timerHabilidadRol = 0f;
                         SoltarHieloEnPiso();
@@ -512,7 +535,7 @@ namespace SoulKnight
                 }
                 else if (RolActualNet.Value == (int)RolEnemigo.Spawner)
                 {
-                    if (_timerHabilidadRol >= 5.0f)
+                    if (_timerHabilidadRol >= 3.0f)
                     {
                         _timerHabilidadRol = 0f;
                         InvocarEsbirroAtaud();
@@ -577,11 +600,11 @@ namespace SoulKnight
 
                     _tiempoAtaqueActual = tiempoEntreAtaques;
 
-                    // Al golpear, retrocede un momento para dar respiro
-                    _modoActual = ModoMovimiento.Retroceder;
-                    _timerDecision = 1.2f;
-                    _direccionMovimiento = -dirAtaque;
-                    _factorVelocidad = 0.7f;
+                    // Al golpear, mantiene la presión sobre el jugador
+                    _modoActual = ModoMovimiento.Perseguir;
+                    _timerDecision = 0.35f;
+                    _direccionMovimiento = dirAtaque;
+                    _factorVelocidad = 0.95f;
                 }
             }
         }
@@ -602,11 +625,11 @@ namespace SoulKnight
             }
             else
             {
-                // Decisión probabilística de movimiento cada cierto tiempo
+                // Decisión de movimiento dinámica y rápida (entre 0.6s y 1.2s)
                 _timerDecision -= Time.fixedDeltaTime;
                 if (_timerDecision <= 0f)
                 {
-                    _timerDecision = UnityEngine.Random.Range(1.3f, 2.3f);
+                    _timerDecision = UnityEngine.Random.Range(0.6f, 1.2f);
                     TomarDecisionProbabilistica(jugador);
                 }
             }
@@ -637,58 +660,54 @@ namespace SoulKnight
 
             float tirada = UnityEngine.Random.value;
 
-            // Si está muy cerca (menos de 2.2m), tiende a retroceder o dudar más
-            if (distancia < 2.2f)
+            // Si está muy cerca (< 2.5m), ataca y presiona agresivamente al jugador
+            if (distancia < 2.5f)
             {
-                if (tirada < 0.40f)
+                if (tirada < 0.75f)
                 {
-                    _modoActual = ModoMovimiento.Retroceder;
-                    _direccionMovimiento = -dirHaciaJugador;
-                    _factorVelocidad = 0.75f;
+                    // 75% Probabilidad: Embestir directo
+                    _modoActual = ModoMovimiento.Perseguir;
+                    _direccionMovimiento = dirHaciaJugador;
+                    _factorVelocidad = 1.05f;
                 }
-                else if (tirada < 0.70f)
+                else if (tirada < 0.90f)
                 {
+                    // 15% Probabilidad: Flanqueo cerrado
                     _modoActual = ModoMovimiento.Flanquear;
-                    _direccionMovimiento = dirPerpendicular;
-                    _factorVelocidad = 0.8f;
+                    _direccionMovimiento = (dirHaciaJugador * 0.4f + dirPerpendicular * 0.8f).normalized;
+                    _factorVelocidad = 0.95f;
                 }
                 else
                 {
-                    _modoActual = ModoMovimiento.Dudar;
-                    _direccionMovimiento = Vector2.zero;
-                    _factorVelocidad = 0f;
+                    // 10% Probabilidad: Breve finta
+                    _modoActual = ModoMovimiento.Retroceder;
+                    _direccionMovimiento = -dirHaciaJugador;
+                    _factorVelocidad = 0.65f;
                 }
                 return;
             }
 
             // A distancia normal:
-            if (tirada < 0.50f)
+            if (tirada < 0.70f)
             {
-                // 50% Probabilidad: Acercarse al jugador tranquilamente
+                // 70% Probabilidad: Perseguir directamente
                 _modoActual = ModoMovimiento.Perseguir;
                 _direccionMovimiento = dirHaciaJugador;
                 _factorVelocidad = 1.0f;
             }
-            else if (tirada < 0.75f)
-            {
-                // 25% Probabilidad: Flanquear / Merodear en zigzag
-                _modoActual = ModoMovimiento.Flanquear;
-                _direccionMovimiento = (dirHaciaJugador * 0.4f + dirPerpendicular * 0.8f).normalized;
-                _factorVelocidad = 0.85f;
-            }
             else if (tirada < 0.90f)
             {
-                // 15% Probabilidad: Dudar / Pausa (le da respiro y ventana de disparo al jugador)
-                _modoActual = ModoMovimiento.Dudar;
-                _direccionMovimiento = dirHaciaJugador * 0.2f;
-                _factorVelocidad = 0.2f;
+                // 20% Probabilidad: Flanquear agresivo
+                _modoActual = ModoMovimiento.Flanquear;
+                _direccionMovimiento = (dirHaciaJugador * 0.45f + dirPerpendicular * 0.75f).normalized;
+                _factorVelocidad = 0.95f;
             }
             else
             {
-                // 10% Probabilidad: Retroceder o cambiar ángulo
+                // 10% Probabilidad: Ajuste de ángulo
                 _modoActual = ModoMovimiento.Retroceder;
                 _direccionMovimiento = -dirHaciaJugador;
-                _factorVelocidad = 0.6f;
+                _factorVelocidad = 0.65f;
             }
         }
 

@@ -375,7 +375,7 @@ namespace SoulKnight
 
             if (esPrimeraOleada)
             {
-                yield return new WaitForSeconds(1.0f);
+                yield return new WaitForSeconds(0.45f);
                 if (PartidaTerminada || sala == null) { _spawneandoOleada = false; yield break; }
 
                 sala.MostrarPortalesSpawn(true);
@@ -386,20 +386,38 @@ namespace SoulKnight
                     SalaRed.Instancia.EnviarAvisoTodos(msgOleada);
                 }
 
-                yield return new WaitForSeconds(1.0f);
+                yield return new WaitForSeconds(0.55f);
             }
             else
             {
-                yield return new WaitForSeconds(1.0f);
+                yield return new WaitForSeconds(0.6f);
             }
 
             TipoBioma biomaActual = ObtenerBiomaPorNivel(NivelActual);
-            float multDificultad = (1.0f + (LoopActual * 0.55f)) * (esGuardianes ? 1.25f : 1.0f);
 
-            if (puntosSpawn != null && puntosSpawn.Count > 0)
+            // Escalamiento continuo según nivel actual del run (1 a 10) y loops
+            int nivelEnCiclo = ((NivelActual - 1) % 10) + 1;
+            float escalaNivel = 1.0f + (nivelEnCiclo - 1) * 0.12f;
+            float escalaLoop = 1.0f + (LoopActual * 0.65f);
+            float multDificultad = escalaNivel * escalaLoop * (esGuardianes ? 1.30f : 1.0f);
+
+            // Refuerzos adicionales según nivel actual de la run (+1 enemigo cada 2 niveles)
+            List<Vector2> spawnsFinales = new List<Vector2>(puntosSpawn != null ? puntosSpawn : new List<Vector2>());
+            if (sala != null && sala.posicionesPortales != null && sala.posicionesPortales.Count > 0)
             {
-                var roles = ObtenerRolesOleada(biomaActual, _oleadaActualSala, puntosSpawn.Count, esGuardianes);
-                for (int i = 0; i < puntosSpawn.Count; i++)
+                int enemigosExtraNivel = Mathf.Clamp((nivelEnCiclo - 1) / 2, 0, 5);
+                for (int ex = 0; ex < enemigosExtraNivel; ex++)
+                {
+                    Vector2 pPortal = sala.posicionesPortales[ex % sala.posicionesPortales.Count];
+                    Vector2 jitter = UnityEngine.Random.insideUnitCircle * 0.5f;
+                    spawnsFinales.Add(pPortal + jitter);
+                }
+            }
+
+            if (spawnsFinales.Count > 0)
+            {
+                var roles = ObtenerRolesOleada(biomaActual, _oleadaActualSala, spawnsFinales.Count, esGuardianes);
+                for (int i = 0; i < spawnsFinales.Count; i++)
                 {
                     if (PartidaTerminada) break;
 
@@ -410,19 +428,19 @@ namespace SoulKnight
 
                     if (prefab != null)
                     {
-                        GameObject enemigoObj = Instantiate(prefab, (Vector3)puntosSpawn[i], Quaternion.identity);
+                        GameObject enemigoObj = Instantiate(prefab, (Vector3)spawnsFinales[i], Quaternion.identity);
                         var netObj = enemigoObj.GetComponent<NetworkObject>();
                         netObj.Spawn(destroyWithScene: true);
 
                         var enemigo = enemigoObj.GetComponent<EnemigoBase>();
                         if (enemigo != null)
                         {
-                            enemigo.ConfigurarRolYBioma(biomaActual, rol, multDificultad);
+                            enemigo.ConfigurarRolYBioma(biomaActual, rol, multDificultad, NivelActual);
                             _enemigosActivos.Add(enemigo);
                         }
                     }
 
-                    yield return new WaitForSeconds(0.15f);
+                    yield return new WaitForSeconds(0.07f);
                 }
             }
 
@@ -437,7 +455,10 @@ namespace SoulKnight
 
             Vector2 posJefe = salaJefe.limitesSala.center;
             TipoBioma biomaActual = ObtenerBiomaPorNivel(NivelActual);
-            float multDificultad = 1.0f + (LoopActual * 0.55f);
+            int nivelEnCiclo = ((NivelActual - 1) % 10) + 1;
+            float escalaNivel = 1.0f + (nivelEnCiclo - 1) * 0.12f;
+            float escalaLoop = 1.0f + (LoopActual * 0.65f);
+            float multDificultad = escalaNivel * escalaLoop;
 
             GameObject prefabJefeElegido = prefabJefeGolemColosal != null ? prefabJefeGolemColosal : (prefabJefeSlimeRey != null ? prefabJefeSlimeRey : prefabEnemigo);
 
@@ -476,8 +497,9 @@ namespace SoulKnight
             var enemigo = go.GetComponent<EnemigoBase>();
             if (enemigo != null)
             {
-                float mult = 1.0f + (LoopActual * 0.55f);
-                enemigo.ConfigurarRolYBioma(bioma, rol, mult);
+                int nivelEnCiclo = ((NivelActual - 1) % 10) + 1;
+                float mult = (1.0f + (nivelEnCiclo - 1) * 0.12f) * (1.0f + (LoopActual * 0.65f));
+                enemigo.ConfigurarRolYBioma(bioma, rol, mult, NivelActual);
                 _enemigosActivos.Add(enemigo);
             }
         }
