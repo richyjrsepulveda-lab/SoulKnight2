@@ -33,6 +33,7 @@ namespace SoulKnight
         public readonly NetworkVariable<bool> PartidaEnCurso = new NetworkVariable<bool>();
         public readonly NetworkVariable<int> SemillaMapaActual = new NetworkVariable<int>(0);
         public readonly NetworkVariable<int> BiomaMapaActual = new NetworkVariable<int>(0);
+        public readonly NetworkVariable<bool> TieneJefeActual = new NetworkVariable<bool>(false);
 
         // Votación para volver al Lobby (Estilo LoL / Rendición)
         public readonly NetworkVariable<bool> VotacionLobbyActiva = new NetworkVariable<bool>(false);
