@@ -50,11 +50,16 @@ namespace SoulKnight
             // Margen interior de 2.2 unidades para asegurar que el jugador ya entró a la sala antes de cerrar puertas
             limitesInteriores = new Rect(xMin + 1.8f, yMin + 1.8f, Mathf.Max(2f, w - 3.6f), Mathf.Max(2f, h - 3.6f));
 
-            if (esSalaInicio || esSalaTienda)
+            if (esSalaInicio)
             {
                 descubierta = true;
                 despejada = true;
                 EncenderAntorchas(true);
+            }
+            else if (esSalaTienda)
+            {
+                descubierta = false;
+                despejada = true; // Despejada para que no haya combate ni puertas cerradas
             }
         }
 
@@ -203,6 +208,20 @@ namespace SoulKnight
                         float pulso = _escalaPortales * (1f + Mathf.Sin(Time.time * 7f + i * 1.5f) * 0.08f);
                         p.localScale = new Vector3(pulso, pulso, 1f);
                         p.rotation = Quaternion.Euler(0f, 0f, -Time.time * 140f + i * 90f);
+                    }
+                }
+            }
+
+            // Encender antorchas de la tienda al entrar el jugador
+            if (esSalaTienda && !descubierta)
+            {
+                for (int i = 0; i < Personaje.Todos.Count; i++)
+                {
+                    var pj = Personaje.Todos[i];
+                    if (pj != null && limitesSala.Contains(pj.transform.position))
+                    {
+                        EncenderAntorchas(true);
+                        break;
                     }
                 }
             }

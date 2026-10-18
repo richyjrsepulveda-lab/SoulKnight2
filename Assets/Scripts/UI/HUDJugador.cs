@@ -2909,6 +2909,8 @@ namespace SoulKnight
 
         public void SalirAlMenuPrincipal()
         {
+            CerrarTienda();
+            PuestitoTienda.DestruirTodos();
             Controles.Bloqueado = false;
             Time.timeScale = 1f;
             if (Global.Instancia != null)
@@ -2922,6 +2924,8 @@ namespace SoulKnight
         /// </summary>
         public void VolverAlLobbyDesdePausa()
         {
+            CerrarTienda();
+            PuestitoTienda.DestruirTodos();
             CerrarPausa();
 
             if (SalaRed.Instancia != null)
@@ -2940,6 +2944,8 @@ namespace SoulKnight
         /// </summary>
         public void VolverAlLobbyFinPartidaIndividual()
         {
+            CerrarTienda();
+            PuestitoTienda.DestruirTodos();
             SalaRed.MostrarFinPartidaPendiente = false;
             Controles.Bloqueado = false;
 

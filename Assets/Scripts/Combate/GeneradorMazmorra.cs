@@ -137,6 +137,7 @@ namespace SoulKnight
 
         private void LimpiarMapaExistente()
         {
+            PuestitoTienda.DestruirTodos();
             puntosSpawnJugadores.Clear();
             puntosSpawnEnemigos.Clear();
             salasGeneradas.Clear();
@@ -269,15 +270,13 @@ namespace SoulKnight
             int pasilloJefeY = salaFinal.cy;
             posicionPortal = new Vector2(pasilloJefeXMax - 1.2f, pasilloJefeY + 0.5f);
 
-            // Cuartos Extra sin salida (ramificaciones laterales más amplias)
+            // Cuartos Extra sin salida (ramificaciones laterales sin invadir zonas previas)
             Vector2Int[] dirsRamificacion = new Vector2Int[]
             {
-                new Vector2Int(0, 44),
-                new Vector2Int(0, -44),
-                new Vector2Int(-44, 40),
-                new Vector2Int(-44, -40),
-                new Vector2Int(44, 44),
-                new Vector2Int(44, -44)
+                new Vector2Int(0, 48),
+                new Vector2Int(0, -48),
+                new Vector2Int(48, 48),
+                new Vector2Int(48, -48)
             };
 
             for (int idxPadre = 1; idxPadre <= 3; idxPadre++)
@@ -506,15 +505,13 @@ namespace SoulKnight
             // 6. Instanciar Controladores de Sala, Antorchas, Puertas de Bloqueo y Spawns por Oleadas
             AsegurarSpritesAntorcha();
 
-            // La sala de tienda es SECRETA:
-            // 1. NO aparece en todos los niveles (aprox 50% de probabilidad).
-            // 2. NUNCA en el camino principal hacia la salida (debe ser una de las habitaciones de relleno / ramificaciones sin salida).
-            // 3. En el minimapa se ve exactamente como cualquier otra sala normal (sin marcas ni íconos dorados).
+            // Asignación de la Sala de Tienda:
+            // Se ubica exclusivamente en una de las habitaciones de ramificación sin salida (fuera del camino principal).
             int indiceSalaTienda = -1;
-            if (salas.Count > totalSalasCaminoPrincipal && UnityEngine.Random.value < 0.52f)
+            if (salas.Count > totalSalasCaminoPrincipal)
             {
-                // Elegir aleatoriamente una de las habitaciones de relleno laterales sin salida
-                indiceSalaTienda = UnityEngine.Random.Range(totalSalasCaminoPrincipal, salas.Count);
+                // La primera habitación de ramificación lateral es la tienda designada
+                indiceSalaTienda = totalSalasCaminoPrincipal;
             }
 
             for (int idx = 0; idx < salas.Count; idx++)
@@ -530,6 +527,12 @@ namespace SoulKnight
 
                 var ctrl = salaObj.AddComponent<ControladorSala>();
                 ctrl.Inicializar(idx, s.xMin, s.xMax, s.yMin, s.yMax, esInicio, esJefe, esTienda);
+
+                if (esTienda)
+                {
+                    // La tienda se instancia ÚNICAMENTE en el centro de su habitación designada y como hija de ella
+                    PuestitoTienda.CrearPuestito(new Vector2(s.cx, s.cy), salaObj.transform);
+                }
 
                 // Colocar Antorchas en las esquinas interiores de la sala
                 var posAntorchas = new List<Vector2>
@@ -567,8 +570,8 @@ namespace SoulKnight
                     ctrl.AsignarMuroSalidaJefe(muroSalida);
                 }
 
-                // Columnas Tácticas
-                if (s.numColumnas > 0 && datos.spriteColumna != null)
+                // Columnas Tácticas (no generar en la tienda para no obstruir el puesto)
+                if (s.numColumnas > 0 && datos.spriteColumna != null && !esTienda)
                 {
                     float w = s.xMax - s.xMin + 1;
                     float h = s.yMax - s.yMin + 1;

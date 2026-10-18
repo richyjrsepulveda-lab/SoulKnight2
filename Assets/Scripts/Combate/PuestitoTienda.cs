@@ -37,6 +37,15 @@ namespace SoulKnight
             Todos.Remove(this);
         }
 
+        void OnDestroy()
+        {
+            Todos.Remove(this);
+            if (HUDJugador.Instancia != null && HUDJugador.Instancia.PuestitoActivo == this)
+            {
+                HUDJugador.Instancia.CerrarTienda();
+            }
+        }
+
         void Awake()
         {
             InicializarArticulos();
@@ -188,11 +197,38 @@ namespace SoulKnight
             }
         }
 
-        public static PuestitoTienda CrearPuestito(Vector2 posicion)
+        public static PuestitoTienda CrearPuestito(Vector2 posicion, Transform parent = null)
         {
             var go = new GameObject("PuestitoTienda");
+            if (parent != null)
+            {
+                go.transform.SetParent(parent, false);
+            }
             go.transform.position = (Vector3)posicion;
             return go.AddComponent<PuestitoTienda>();
+        }
+
+        public static void DestruirTodos()
+        {
+            for (int i = Todos.Count - 1; i >= 0; i--)
+            {
+                if (Todos[i] != null)
+                {
+                    if (Application.isPlaying) Destroy(Todos[i].gameObject);
+                    else DestroyImmediate(Todos[i].gameObject);
+                }
+            }
+            Todos.Clear();
+
+            var huerfanos = Object.FindObjectsOfType<PuestitoTienda>();
+            for (int i = 0; i < huerfanos.Length; i++)
+            {
+                if (huerfanos[i] != null)
+                {
+                    if (Application.isPlaying) Destroy(huerfanos[i].gameObject);
+                    else DestroyImmediate(huerfanos[i].gameObject);
+                }
+            }
         }
 
         private static Sprite ObtenerSpritePuestito()

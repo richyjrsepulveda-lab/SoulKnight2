@@ -369,6 +369,8 @@ namespace SoulKnight
                     Destroy(z.gameObject);
                 }
             }
+
+            PuestitoTienda.DestruirTodos();
         }
 
         public void EnemigoEliminado(EnemigoBase enemigo)
@@ -557,6 +559,8 @@ namespace SoulKnight
                 }
             }
 
+            PuestitoTienda.DestruirTodos();
+
             _enemigosActivos.Clear();
             _salaActivaEnCombate = null;
             _oleadaActualSala = 0;
@@ -627,17 +631,8 @@ namespace SoulKnight
 
         public void SpawnearTiendasEnSalas()
         {
-            if (prefabItemMejoraRun == null || NetworkManager.Singleton == null || !NetworkManager.Singleton.IsServer) return;
-
-            var salas = FindObjectsOfType<ControladorSala>();
-            foreach (var sala in salas)
-            {
-                if (sala != null && sala.esSalaTienda)
-                {
-                    Vector2 centro = sala.limitesSala.center;
-                    PuestitoTienda.CrearPuestito(centro);
-                }
-            }
+            // La tienda se instancia limpiamente en GeneradorMazmorra dentro de su sala asignada
+            // y queda emparentada a la sala para asegurar destrucción y sincronización determinista.
         }
 
         private void SpawnearRecompensaFinSala(ControladorSala sala)

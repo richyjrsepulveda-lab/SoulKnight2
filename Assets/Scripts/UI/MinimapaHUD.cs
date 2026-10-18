@@ -285,6 +285,18 @@ namespace SoulKnight
                 }
             }
 
+            // Puestos de Tienda (aparecen en color dorado tras explorar la sala)
+            for (int i = 0; i < PuestitoTienda.Todos.Count; i++)
+            {
+                var tienda = PuestitoTienda.Todos[i];
+                if (tienda == null || !tienda.gameObject.activeInHierarchy) continue;
+                Vector2 posT = tienda.transform.position;
+                if (vision == null || vision.EstaPuntoExplorado(posT))
+                {
+                    DibujarPuntoMundo(posT, centroMundo, new Color32(255, 215, 0, 255), 3);
+                }
+            }
+
             // Pociones / Mejoras en el suelo (visibles si el punto ha sido explorado)
             for (int i = 0; i < ItemMejoraRun.Todos.Count; i++)
             {
