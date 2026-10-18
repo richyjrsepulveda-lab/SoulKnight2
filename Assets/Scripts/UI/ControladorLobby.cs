@@ -603,6 +603,9 @@ namespace SoulKnight
                 Destroy(hijo.gameObject);
             }
 
+            // Obtener fuente pixel art del juego
+            Font fuentePixel = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+
             // Obtener habilidades del personaje
             var todasHabilidades = CatalogoHabilidades.ObtenerHabilidadesPersonaje(pj);
             if (_habilidadSeleccionadaCuarto == IdHabilidad.Ninguna && todasHabilidades.Count > 0)
@@ -612,7 +615,7 @@ namespace SoulKnight
 
             string[] teclas = new string[] { "CLICK IZQ", "E", "Q", "R" };
 
-            // Construir lista vertical: Icono a la izquierda, nombre a la derecha, y al hacer click se despliega su descripción
+            // Construir lista vertical: Icono grande, nombre a la derecha con tipografía pixel y descripción que no se solapa
             for (int i = 0; i < todasHabilidades.Count && i < 4; i++)
             {
                 var hab = todasHabilidades[i];
@@ -624,7 +627,7 @@ namespace SoulKnight
                 slotObj.transform.SetParent(contenedorSlotsHabilidades, false);
 
                 var rtSlot = slotObj.AddComponent<RectTransform>();
-                float altoSlot = seleccionada ? 84f : 44f;
+                float altoSlot = seleccionada ? 98f : 56f;
                 rtSlot.sizeDelta = new Vector2(620f, altoSlot);
 
                 var le = slotObj.AddComponent<LayoutElement>();
@@ -638,7 +641,7 @@ namespace SoulKnight
                     ? new Color(0.28f, 0.78f, 1.0f, 0.95f) // Borde cyan brillante si está seleccionada
                     : new Color(0.18f, 0.22f, 0.30f, 0.70f); // Borde neutro si no
 
-                // Fondo interior
+                // Fondo interior con marco pixel-art
                 var fondoInt = new GameObject("FondoInterno");
                 fondoInt.transform.SetParent(slotObj.transform, false);
                 var rtFi = fondoInt.AddComponent<RectTransform>();
@@ -652,59 +655,87 @@ namespace SoulKnight
                     : new Color(0.07f, 0.09f, 0.13f, 0.95f);
                 imgFi.raycastTarget = false;
 
-                // 1. Icono a la izquierda
-                var icoBox = new GameObject("IconoBox");
-                icoBox.transform.SetParent(fondoInt.transform, false);
-                var rtIco = icoBox.AddComponent<RectTransform>();
-                rtIco.anchorMin = new Vector2(0f, 0.5f);
-                rtIco.anchorMax = new Vector2(0f, 0.5f);
-                rtIco.pivot = new Vector2(0f, 0.5f);
-                rtIco.anchoredPosition = new Vector2(10f, seleccionada ? 18f : 0f);
-                rtIco.sizeDelta = new Vector2(32f, 32f);
+                // 1. Icono grande a la izquierda (48x48) con marco propio
+                var icoMarco = new GameObject("IconoMarco");
+                icoMarco.transform.SetParent(fondoInt.transform, false);
+                var rtIcoMarco = icoMarco.AddComponent<RectTransform>();
+                rtIcoMarco.anchorMin = new Vector2(0f, 0.5f);
+                rtIcoMarco.anchorMax = new Vector2(0f, 0.5f);
+                rtIcoMarco.pivot = new Vector2(0f, 0.5f);
+                rtIcoMarco.anchoredPosition = new Vector2(10f, 0f);
+                rtIcoMarco.sizeDelta = new Vector2(48f, 48f);
 
-                var imgIco = icoBox.AddComponent<Image>();
+                var imgMarco = icoMarco.AddComponent<Image>();
+                imgMarco.color = seleccionada
+                    ? new Color(0.25f, 0.65f, 0.90f, 0.85f)
+                    : new Color(0.16f, 0.20f, 0.28f, 0.80f);
+                imgMarco.raycastTarget = false;
+
+                var icoImgObj = new GameObject("Icono");
+                icoImgObj.transform.SetParent(icoMarco.transform, false);
+                var rtIco = icoImgObj.AddComponent<RectTransform>();
+                rtIco.anchorMin = Vector2.zero;
+                rtIco.anchorMax = Vector2.one;
+                rtIco.offsetMin = new Vector2(2f, 2f);
+                rtIco.offsetMax = new Vector2(-2f, -2f);
+
+                var imgIco = icoImgObj.AddComponent<Image>();
                 imgIco.sprite = CatalogoHabilidades.ObtenerSpriteHabilidad(hab.id);
                 imgIco.preserveAspect = true;
                 imgIco.color = Color.white;
                 imgIco.raycastTarget = false;
 
-                // 2. Nombre de la habilidad a la derecha del icono
+                // 2. Textos (inician a X=68 para dejar espacio holgado y no solapar jamás con el icono)
                 var txtNombreObj = new GameObject("TextoNombre");
                 txtNombreObj.transform.SetParent(fondoInt.transform, false);
                 var rtTxtNom = txtNombreObj.AddComponent<RectTransform>();
-                rtTxtNom.anchorMin = new Vector2(0f, 0.5f);
-                rtTxtNom.anchorMax = new Vector2(1f, 0.5f);
-                rtTxtNom.pivot = new Vector2(0f, 0.5f);
-                rtTxtNom.anchoredPosition = new Vector2(52f, seleccionada ? 18f : 0f);
-                rtTxtNom.sizeDelta = new Vector2(-60f, 30f);
 
                 var txtNom = txtNombreObj.AddComponent<Text>();
-                txtNom.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-                txtNom.fontSize = 12;
-                txtNom.alignment = TextAnchor.MiddleLeft;
+                txtNom.font = fuentePixel;
+                txtNom.fontSize = 11;
+                txtNom.horizontalOverflow = HorizontalWrapMode.Wrap;
+                txtNom.verticalOverflow = VerticalWrapMode.Overflow;
                 txtNom.raycastTarget = false;
-                txtNom.text = seleccionada
-                    ? $"<b><size=13><color=#5ce1e6>{hab.nombre.ToUpper()}</color></size></b>  <color=#ffd700>({teclaStr})</color>"
-                    : $"<b>{hab.nombre.ToUpper()}</b>  <color=#94a3b8>({teclaStr})</color>";
 
-                // 3. Descripción técnica que aparece al hacer clic (desplegada)
-                if (seleccionada)
+                if (!seleccionada)
                 {
+                    // Fila no seleccionada: Nombre centrado verticalmente
+                    rtTxtNom.anchorMin = new Vector2(0f, 0f);
+                    rtTxtNom.anchorMax = new Vector2(1f, 1f);
+                    rtTxtNom.offsetMin = new Vector2(68f, 0f);
+                    rtTxtNom.offsetMax = new Vector2(-12f, 0f);
+                    txtNom.alignment = TextAnchor.MiddleLeft;
+                    txtNom.text = $"<b>{hab.nombre.ToUpper()}</b>  <color=#ffd700>({teclaStr})</color>";
+                }
+                else
+                {
+                    // Fila seleccionada: Nombre anclado en la parte superior (zona 1)
+                    rtTxtNom.anchorMin = new Vector2(0f, 1f);
+                    rtTxtNom.anchorMax = new Vector2(1f, 1f);
+                    rtTxtNom.pivot = new Vector2(0f, 1f);
+                    rtTxtNom.anchoredPosition = new Vector2(68f, -10f);
+                    rtTxtNom.sizeDelta = new Vector2(-80f, 20f);
+                    txtNom.alignment = TextAnchor.MiddleLeft;
+                    txtNom.text = $"<b><color=#5ce1e6>{hab.nombre.ToUpper()}</color></b>  <color=#ffd700>({teclaStr})</color>";
+
+                    // 3. Descripción técnica desplegada en zona inferior (zona 2, separada físicamente para no solaparse)
                     var txtDescObj = new GameObject("TextoDescripcion");
                     txtDescObj.transform.SetParent(fondoInt.transform, false);
                     var rtTxtDesc = txtDescObj.AddComponent<RectTransform>();
                     rtTxtDesc.anchorMin = new Vector2(0f, 0f);
-                    rtTxtDesc.anchorMax = new Vector2(1f, 0f);
+                    rtTxtDesc.anchorMax = new Vector2(1f, 1f);
                     rtTxtDesc.pivot = new Vector2(0f, 0f);
-                    rtTxtDesc.anchoredPosition = new Vector2(52f, 8f);
-                    rtTxtDesc.sizeDelta = new Vector2(-60f, 40f);
+                    rtTxtDesc.offsetMin = new Vector2(68f, 8f);
+                    rtTxtDesc.offsetMax = new Vector2(-14f, -34f);
 
                     var txtDesc = txtDescObj.AddComponent<Text>();
-                    txtDesc.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-                    txtDesc.fontSize = 11;
-                    txtDesc.lineSpacing = 1.2f;
+                    txtDesc.font = fuentePixel;
+                    txtDesc.fontSize = 9;
+                    txtDesc.lineSpacing = 1.35f;
                     txtDesc.alignment = TextAnchor.UpperLeft;
-                    txtDesc.color = new Color(0.85f, 0.90f, 0.96f);
+                    txtDesc.horizontalOverflow = HorizontalWrapMode.Wrap;
+                    txtDesc.verticalOverflow = VerticalWrapMode.Truncate;
+                    txtDesc.color = new Color(0.85f, 0.92f, 1.0f);
                     txtDesc.raycastTarget = false;
                     txtDesc.text = desc;
                 }
