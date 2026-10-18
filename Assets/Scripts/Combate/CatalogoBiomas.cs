@@ -51,12 +51,12 @@ namespace SoulKnight
                     break;
 
                 case TipoBioma.Fuego:
-                    b.nombreBioma = "Fortaleza Volcánica de Magma";
+                    b.nombreBioma = "Fortaleza Volcánica de Basalto";
                     b.spriteSuelo = CrearSueloFuego();
                     b.spriteMuro = CrearMuroFuego();
                     b.spriteColumna = CrearColumnaFuego();
-                    b.colorLuzAntorcha = new Color(1f, 0.42f, 0.16f, 1f);
-                    b.spriteLlamaAntorcha = CrearLlamaPixel(new Color(1f, 0.94f, 0.48f), new Color(1f, 0.44f, 0.09f), new Color(0.88f, 0.12f, 0.08f));
+                    b.colorLuzAntorcha = new Color(1f, 0.76f, 0.42f, 0.70f);
+                    b.spriteLlamaAntorcha = CrearLlamaPixel(new Color(1f, 0.96f, 0.65f), new Color(1f, 0.62f, 0.16f), new Color(0.85f, 0.26f, 0.08f));
                     break;
 
                 case TipoBioma.Planta:
@@ -341,6 +341,8 @@ namespace SoulKnight
         // ========================================================
         // 3. BIOMA: FUEGO (Fortaleza de Magma)
         // ========================================================
+        // 3. BIOMA: FUEGO (Fortaleza Volcánica de Basalto Oscuro)
+        // ========================================================
         private static Sprite CrearSueloFuego()
         {
             int s = 32;
@@ -348,32 +350,33 @@ namespace SoulKnight
             tex.filterMode = FilterMode.Point;
             tex.wrapMode = TextureWrapMode.Repeat;
 
-            Color cObsidiana = new Color(0.10f, 0.08f, 0.11f, 1f);
-            Color cBasalto = new Color(0.16f, 0.13f, 0.18f, 1f);
-            Color cCeniza = new Color(0.24f, 0.18f, 0.22f, 1f);
-            Color cLavaOscura = new Color(0.45f, 0.10f, 0.05f, 1f);
-            Color cMagma = new Color(0.75f, 0.22f, 0.05f, 1f);
+            // Paleta oscura y descansada: basalto volcánico carbón, losas de obsidiana y ceniza fría
+            Color cObsidiana = new Color(0.08f, 0.07f, 0.08f, 1f);   // Hendiduras profundas
+            Color cBasaltoOscuro = new Color(0.13f, 0.12f, 0.14f, 1f); // Losa base
+            Color cBasaltoMedio = new Color(0.17f, 0.16f, 0.18f, 1f);  // Losa de basalto
+            Color cCeniza = new Color(0.22f, 0.21f, 0.23f, 1f);        // Textura de ceniza fría
+            Color cBrasaSutil = new Color(0.32f, 0.16f, 0.10f, 1f);    // Veta sutil de brasa oscura tenue (no brillante)
 
-            // Generador continuo toroidal (sin bordes de bloque como Minecraft)
+            // Generador continuo toroidal isotrópico (sin diagonales molestas)
             for (int y = 0; y < s; y++)
             {
                 for (int x = 0; x < s; x++)
                 {
                     float angX = (x * 2.0f * Mathf.PI) / s;
                     float angY = (y * 2.0f * Mathf.PI) / s;
-                    float u = Mathf.Cos(angX), v = Mathf.Sin(angX);
-                    float sy = Mathf.Cos(angY), ty = Mathf.Sin(angY);
+                    float u = Mathf.Cos(angX);
+                    float sy = Mathf.Cos(angY);
 
-                    float val = Mathf.Sin(u * 3.5f + sy * 3.0f) + 
-                                Mathf.Cos(v * 3.0f - ty * 3.5f) + 
-                                0.6f * Mathf.Sin(angX * 3f - angY * 3f);
+                    float val = Mathf.Sin(u * 3.5f) * Mathf.Cos(sy * 3.5f) + 
+                                0.5f * Mathf.Cos(u * 2.0f + sy * 2.0f) * Mathf.Sin(u * 2.0f - sy * 2.0f) +
+                                0.35f * Mathf.Sin(angX * 3.0f) + 0.35f * Mathf.Cos(angY * 3.0f);
 
                     Color c;
-                    if (val < -0.6f) c = cObsidiana;
-                    else if (val < 0.2f) c = cBasalto;
-                    else if (val < 0.9f) c = cCeniza;
-                    else if (val < 1.5f) c = cLavaOscura;
-                    else c = cMagma;
+                    if (val < -0.55f) c = cObsidiana;
+                    else if (val < -0.05f) c = cBasaltoOscuro;
+                    else if (val < 0.45f) c = cBasaltoMedio;
+                    else if (val < 0.95f) c = cCeniza;
+                    else c = cBrasaSutil;
 
                     tex.SetPixel(x, y, c);
                 }
@@ -389,13 +392,14 @@ namespace SoulKnight
             tex.filterMode = FilterMode.Point;
             tex.wrapMode = TextureWrapMode.Repeat;
 
-            Color cJunta = new Color(0.06f, 0.04f, 0.06f);
-            Color cLuz = new Color(0.42f, 0.32f, 0.38f);
-            Color cSombra = new Color(0.15f, 0.12f, 0.16f);
-            Color cBasalto = new Color(0.24f, 0.18f, 0.22f);
-            Color cMagma = new Color(1f, 0.45f, 0.08f);
+            // 1 SOLO BLOQUE SÓLIDO (32x32) de roca volcánica oscura monolítica
+            Color cJunta = new Color(0.06f, 0.05f, 0.06f);
+            Color cLuz = new Color(0.28f, 0.26f, 0.28f);
+            Color cSombra = new Color(0.10f, 0.09f, 0.10f);
+            Color cBasalto = new Color(0.17f, 0.16f, 0.18f);
+            Color cRelieve = new Color(0.25f, 0.20f, 0.18f);
+            Color cCentro = new Color(0.32f, 0.18f, 0.12f);
 
-            // 1 SOLO BLOQUE SÓLIDO (32x32) de basalto volcánico con fisura ardiente central
             for (int y = 0; y < s; y++)
             {
                 for (int x = 0; x < s; x++)
@@ -417,9 +421,9 @@ namespace SoulKnight
                         Color c = cBasalto;
                         int dx = Mathf.Abs(x - 15);
                         int dy = Mathf.Abs(y - 15);
-                        if ((dx <= 2 && dy <= 6) || (dy <= 2 && dx <= 6)) c = cMagma;
+                        if (dx + dy == 6) c = cRelieve;
+                        else if (dx + dy < 6) c = cCentro;
                         else if ((x * 3 + y * 7) % 9 == 0) c = cLuz;
-                        else if ((x + y) % 5 == 0) c = cSombra;
                         tex.SetPixel(x, y, c);
                     }
                 }
@@ -434,9 +438,9 @@ namespace SoulKnight
             Texture2D tex = new Texture2D(w, h, TextureFormat.RGBA32, false);
             tex.filterMode = FilterMode.Point;
 
-            Color cObs = new Color(0.20f, 0.18f, 0.22f);
-            Color cLava = new Color(1f, 0.55f, 0.10f);
-            Color cSombra = new Color(0.08f, 0.07f, 0.10f);
+            Color cLuz = new Color(0.26f, 0.24f, 0.26f);
+            Color cSombra = new Color(0.10f, 0.09f, 0.10f);
+            Color cRuna = new Color(0.40f, 0.25f, 0.15f);
 
             for (int y = 0; y < h; y++)
             {
@@ -450,8 +454,8 @@ namespace SoulKnight
                     else
                     {
                         float nx = (float)(x - margen) / (w - margen * 2 - 1);
-                        Color c = Color.Lerp(cObs, cSombra, nx);
-                        if (x == w / 2 && y >= 10 && y <= 36) c = cLava; // Vena central de magma
+                        Color c = Color.Lerp(cLuz, cSombra, nx);
+                        if (x == w / 2 && (y == 20 || y == 35)) c = cRuna; // Runa grabada de bronce cálido
                         tex.SetPixel(x, y, c);
                     }
                 }

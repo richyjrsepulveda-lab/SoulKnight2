@@ -160,28 +160,28 @@ namespace SoulKnight
                     vidaMax = Mathf.RoundToInt(240 * multDificultad);
                     velocidadBase = 2.4f;
                     dano = Mathf.RoundToInt(15 * multDificultad);
-                    rangoAtaque = 2.2f;
+                    rangoAtaque = 1.35f;
                     EscalaVisualNet.Value = 1.95f;
                     break;
                 case RolEnemigo.MeleeRapido:
                     vidaMax = Mathf.RoundToInt(85 * multDificultad);
                     velocidadBase = 4.7f;
                     dano = Mathf.RoundToInt(9 * multDificultad);
-                    rangoAtaque = 2.0f;
+                    rangoAtaque = 1.15f;
                     EscalaVisualNet.Value = 1.45f;
                     break;
                 case RolEnemigo.Rango:
                     vidaMax = Mathf.RoundToInt(110 * multDificultad);
                     velocidadBase = 2.7f;
                     dano = Mathf.RoundToInt(12 * multDificultad);
-                    rangoAtaque = 8.5f;
+                    rangoAtaque = 1.0f; // Los enemigos de rango disparan proyectiles via EnemigoMago
                     EscalaVisualNet.Value = 1.55f;
                     break;
                 case RolEnemigo.Especial:
                     vidaMax = Mathf.RoundToInt(135 * multDificultad);
                     velocidadBase = 3.3f;
                     dano = Mathf.RoundToInt(14 * multDificultad);
-                    rangoAtaque = 4.0f;
+                    rangoAtaque = 1.25f;
                     EscalaVisualNet.Value = 1.60f;
                     break;
                 case RolEnemigo.Spawner:
@@ -462,15 +462,26 @@ namespace SoulKnight
                 _tiempoAtaqueActual -= Time.deltaTime;
             }
 
+            // Si el enemigo es de Rango o Spawner, NO hace ataques melee cuerpo a cuerpo en Update()
+            if (RolActualNet.Value == (int)RolEnemigo.Rango || RolActualNet.Value == (int)RolEnemigo.Spawner)
+            {
+                return;
+            }
+
             Personaje jugadorCercano = ObtenerJugadorMasCercano();
             if (jugadorCercano != null && _tiempoAtaqueActual <= 0f)
             {
                 float dist = Vector2.Distance(transform.position, jugadorCercano.transform.position);
                 if (dist <= rangoAtaque)
                 {
+                    Vector2 dirAtaque = ((Vector2)jugadorCercano.transform.position - (Vector2)transform.position).normalized;
+                    Vector2 posZarpazo = (Vector2)transform.position + dirAtaque * 0.65f;
+
+                    // Mostrar zarpazo / ataque melee visible en todos los clientes
+                    MostrarZarpazoClientRpc(posZarpazo, dirAtaque, BiomaActualNet.Value);
+
                     jugadorCercano.RecibirDano(dano);
-                    Vector2 dirEmpuje = ((Vector2)jugadorCercano.transform.position - (Vector2)transform.position).normalized;
-                    jugadorCercano.AplicarKnockback(dirEmpuje, 350f);
+                    jugadorCercano.AplicarKnockback(dirAtaque, 350f);
 
                     // Efectos de estado de bioma al golpear a un jugador
                     if (BiomaActualNet.Value == (int)TipoBioma.Hielo)
@@ -499,7 +510,7 @@ namespace SoulKnight
                     // Al golpear, retrocede un momento para dar respiro
                     _modoActual = ModoMovimiento.Retroceder;
                     _timerDecision = 1.2f;
-                    _direccionMovimiento = -dirEmpuje;
+                    _direccionMovimiento = -dirAtaque;
                     _factorVelocidad = 0.7f;
                 }
             }
@@ -743,6 +754,91 @@ namespace SoulKnight
             }
 
             return masCercano;
+        }
+
+        [ClientRpc]
+        private void MostrarZarpazoClientRpc(Vector2 pos, Vector2 dir, int bioma)
+        {
+            var swipeObj = new GameObject("ZarpazoEnemigo");
+            swipeObj.transform.position = new Vector3(pos.x, pos.y, -0.45f);
+
+            float angulo = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
+            swipeObj.transform.rotation = Quaternion.Euler(0, 0, angulo);
+
+            var lr = swipeObj.AddComponent<LineRenderer>();
+            lr.material = new Material(Shader.Find("Sprites/Default"));
+            lr.sortingOrder = 10;
+            lr.startWidth = 0.18f;
+            lr.endWidth = 0.05f;
+
+            Color cInicio, cFin;
+            if (bioma == (int)TipoBioma.Fuego)
+            {
+                cInicio = new Color(1f, 0.45f, 0.08f, 0.95f);
+                cFin = new Color(1f, 0.90f, 0.20f, 0.20f);
+            }
+            else if (bioma == (int)TipoBioma.Hielo)
+            {
+                cInicio = new Color(0.35f, 0.88f, 1f, 0.95f);
+                cFin = new Color(0.90f, 0.98f, 1f, 0.20f);
+            }
+            else if (bioma == (int)TipoBioma.Planta)
+            {
+                cInicio = new Color(0.40f, 0.95f, 0.25f, 0.95f);
+                cFin = new Color(0.85f, 0.35f, 0.95f, 0.20f);
+            }
+            else
+            {
+                cInicio = new Color(1f, 0.20f, 0.20f, 0.95f);
+                cFin = new Color(1f, 0.85f, 0.40f, 0.20f);
+            }
+
+            lr.startColor = cInicio;
+            lr.endColor = cFin;
+
+            const int seg = 8;
+            lr.positionCount = seg;
+            float radioArco = 0.75f;
+            float apertura = 95f * Mathf.Deg2Rad;
+            for (int i = 0; i < seg; i++)
+            {
+                float t = ((float)i / (seg - 1)) - 0.5f;
+                float a = t * apertura;
+                Vector3 p = new Vector3(Mathf.Cos(a) * radioArco, Mathf.Sin(a) * radioArco, 0f);
+                lr.SetPosition(i, p);
+            }
+
+            swipeObj.AddComponent<AnimacionZarpazo>().Inicializar(0.24f);
+        }
+    }
+
+    public class AnimacionZarpazo : MonoBehaviour
+    {
+        private LineRenderer _lr;
+        private float _duracion = 0.24f;
+        private float _tiempo = 0f;
+
+        public void Inicializar(float duracion)
+        {
+            _lr = GetComponent<LineRenderer>();
+            _duracion = duracion;
+            Destroy(gameObject, _duracion + 0.02f);
+        }
+
+        void Update()
+        {
+            if (_lr == null) return;
+            _tiempo += Time.deltaTime;
+            float alfa = Mathf.Clamp01(1f - (_tiempo / _duracion));
+            Color c1 = _lr.startColor;
+            c1.a = alfa * 0.95f;
+            _lr.startColor = c1;
+
+            Color c2 = _lr.endColor;
+            c2.a = alfa * 0.20f;
+            _lr.endColor = c2;
+
+            transform.localScale = Vector3.one * (1.0f + (_tiempo / _duracion) * 0.35f);
         }
     }
 }

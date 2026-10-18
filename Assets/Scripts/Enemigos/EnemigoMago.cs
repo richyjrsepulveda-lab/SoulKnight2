@@ -64,7 +64,42 @@ namespace SoulKnight
                 // Iniciar casteo
                 _tiempoCasteo = 0.35f;
                 _timerDisparo = tiempoEntreDisparos + UnityEngine.Random.Range(-0.4f, 0.5f);
+                Vector2 dirCasteo = ((Vector2)jugador.transform.position - (Vector2)transform.position).normalized;
+                MostrarCasteoClientRpc((Vector2)transform.position + dirCasteo * 0.60f, BiomaActualNet.Value);
             }
+        }
+
+        [ClientRpc]
+        private void MostrarCasteoClientRpc(Vector2 pos, int bioma)
+        {
+            var sparkObj = new GameObject("CasteoMagico");
+            sparkObj.transform.position = new Vector3(pos.x, pos.y, -0.4f);
+
+            var lr = sparkObj.AddComponent<LineRenderer>();
+            lr.material = new Material(Shader.Find("Sprites/Default"));
+            lr.sortingOrder = 10;
+            lr.startWidth = 0.14f;
+            lr.endWidth = 0.02f;
+            lr.loop = true;
+
+            Color c;
+            if (bioma == (int)TipoBioma.Fuego) c = new Color(1f, 0.55f, 0.10f, 0.95f);
+            else if (bioma == (int)TipoBioma.Hielo) c = new Color(0.35f, 0.88f, 1f, 0.95f);
+            else if (bioma == (int)TipoBioma.Planta) c = new Color(0.45f, 1f, 0.25f, 0.95f);
+            else c = new Color(1f, 0.85f, 0.30f, 0.95f);
+
+            lr.startColor = c;
+            lr.endColor = c;
+
+            const int seg = 12;
+            lr.positionCount = seg;
+            for (int i = 0; i < seg; i++)
+            {
+                float a = (float)i / seg * Mathf.PI * 2f;
+                lr.SetPosition(i, new Vector3(Mathf.Cos(a) * 0.35f, Mathf.Sin(a) * 0.35f, 0f));
+            }
+
+            sparkObj.AddComponent<AnimacionZarpazo>().Inicializar(0.35f);
         }
 
         private void DispararAlJugador(Personaje jugador)
