@@ -33,6 +33,7 @@ namespace SoulKnight
 
         private readonly List<Vector2> _fuentesJugadores = new List<Vector2>(8);
         private readonly List<FuenteAntorcha> _fuentesAntorchas = new List<FuenteAntorcha>(24);
+        private readonly List<Rect> _salasDescubiertasEnCamara = new List<Rect>(16);
 
         private byte[,] _gridReferencia;
         private bool[,] _celdasExploradas;
@@ -233,13 +234,29 @@ namespace SoulKnight
         }
 
         /// <summary>
-        /// Devuelve true ÚNICAMENTE si el punto está dentro del círculo de visión del jugador (sin atravesar paredes).
+        /// Devuelve true si el punto es visible (dentro de una sala descubierta o en el círculo de luz del jugador/antorchas en pasillos).
         /// </summary>
         public bool TieneVisionEnPunto(Vector2 pos)
         {
             var gen = GeneradorMazmorra.Instancia;
             ControladorSala salaCerrada = ObtenerSalaBloqueadaActiva();
 
+            // 1. Visión total del 100% en cualquier sala que haya sido descubierta/ingresada
+            if (gen != null && gen.salasGeneradas != null)
+            {
+                for (int i = 0; i < gen.salasGeneradas.Count; i++)
+                {
+                    var s = gen.salasGeneradas[i];
+                    if (s == null || !s.descubierta) continue;
+                    if (salaCerrada != null && salaCerrada != s) continue;
+                    if (s.limitesSala.Contains(pos))
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            // 2. En pasillos: visión circular del jugador (no atraviesa paredes)
             float rJugSq = radioLuzJugador * radioLuzJugador;
             for (int i = 0; i < Personaje.Todos.Count; i++)
             {
@@ -255,15 +272,14 @@ namespace SoulKnight
                 }
             }
 
-            if (gen != null)
+            // 3. Antorchas
+            if (gen != null && gen.salasGeneradas != null)
             {
                 float rAntSq = radioLuzAntorcha * radioLuzAntorcha;
                 for (int i = 0; i < gen.salasGeneradas.Count; i++)
                 {
                     var s = gen.salasGeneradas[i];
                     if (s == null || !s.descubierta) continue;
-
-                    // Las antorchas solo iluminan su rincón si estamos dentro de esa misma sala
                     if (salaCerrada != null && salaCerrada != s) continue;
 
                     for (int a = 0; a < s.posicionesAntorchas.Count; a++)
@@ -313,11 +329,13 @@ namespace SoulKnight
                 }
             }
 
-            // 3. Recolectar antorchas encendidas de las salas descubiertas cercanas a la cámara
+            // 3. Recolectar salas descubiertas y antorchas encendidas cercanas a la cámara
+            _salasDescubiertasEnCamara.Clear();
             _fuentesAntorchas.Clear();
             ControladorSala salaCerrada = ObtenerSalaBloqueadaActiva();
             float xMinCam = posCam.x - anchoCam * 0.5f;
             float yMinCam = posCam.y - altoCam * 0.5f;
+            Rect rectCam = new Rect(xMinCam, yMinCam, anchoCam, altoCam);
             Rect rectCamLuz = new Rect(
                 xMinCam - radioLuzAntorcha - 1f,
                 yMinCam - radioLuzAntorcha - 1f,
@@ -329,16 +347,26 @@ namespace SoulKnight
 
             if (gen != null && gen.gridActual != null)
             {
-                // Recolectar antorchas activas
                 for (int i = 0; i < gen.salasGeneradas.Count; i++)
                 {
                     var s = gen.salasGeneradas[i];
                     if (s == null || !s.descubierta) continue;
 
-                    // Si hay una sala bloqueada en combate, no iluminar antorchas de otras salas
+                    // Si hay una sala en combate bloqueada, solo iluminar la sala del encuentro
                     if (salaCerrada != null && salaCerrada != s) continue;
 
-                    float factorEncendido = Mathf.Max(0.15f, s.ProgresoEncendido);
+                    // Iluminar toda la sala por completo (con margen para cubrir la cara de las paredes internas)
+                    Rect rSala = new Rect(
+                        s.limitesSala.xMin - 0.45f,
+                        s.limitesSala.yMin - 0.45f,
+                        s.limitesSala.width + 0.90f,
+                        s.limitesSala.height + 0.90f
+                    );
+                    if (rSala.Overlaps(rectCamLuz))
+                    {
+                        _salasDescubiertasEnCamara.Add(rSala);
+                    }
+
                     for (int a = 0; a < s.posicionesAntorchas.Count; a++)
                     {
                         Vector2 posAnt = s.posicionesAntorchas[a];
@@ -348,14 +376,14 @@ namespace SoulKnight
                             _fuentesAntorchas.Add(new FuenteAntorcha
                             {
                                 pos = posAnt,
-                                radioEfectivo = radioLuzAntorcha * factorEncendido * pulso
+                                radioEfectivo = radioLuzAntorcha * pulso
                             });
                         }
                     }
                 }
             }
 
-            // 4. Pintar la máscara negra con el círculo de luz alrededor del personaje y de las antorchas
+            // 4. Pintar la máscara de niebla/oscuridad
             float rJug = radioLuzJugador;
             float rJugInterno = rJug * 0.82f;
             float rJugSq = rJug * rJug;
@@ -372,23 +400,36 @@ namespace SoulKnight
 
                     float luzMax = 0f;
 
-                    // Círculo de visión del jugador (no atraviesa paredes)
-                    for (int j = 0; j < _fuentesJugadores.Count; j++)
+                    // 1. Si el punto pertenece a una sala descubierta: ILUMINAR EL 100% DE LA SALA COMPLETA
+                    for (int s = 0; s < _salasDescubiertasEnCamara.Count; s++)
                     {
-                        Vector2 orig = _fuentesJugadores[j];
-                        float dSq = (orig - pt).sqrMagnitude;
-                        if (dSq <= rJugSq)
+                        if (_salasDescubiertasEnCamara[s].Contains(pt))
                         {
-                            if (HayLineaDeVisionSinAtravesarPared(orig, pt, gen, salaCerrada))
+                            luzMax = 1f;
+                            break;
+                        }
+                    }
+
+                    // 2. Si no está en una sala descubierta (pasillos de conexión): visión circular del jugador
+                    if (luzMax < 1f)
+                    {
+                        for (int j = 0; j < _fuentesJugadores.Count; j++)
+                        {
+                            Vector2 orig = _fuentesJugadores[j];
+                            float dSq = (orig - pt).sqrMagnitude;
+                            if (dSq <= rJugSq)
                             {
-                                float d = Mathf.Sqrt(dSq);
-                                float l = (d <= rJugInterno) ? 1f : 1f - ((d - rJugInterno) / (rJug - rJugInterno));
-                                if (l > luzMax) luzMax = l;
+                                if (HayLineaDeVisionSinAtravesarPared(orig, pt, gen, salaCerrada))
+                                {
+                                    float d = Mathf.Sqrt(dSq);
+                                    float l = (d <= rJugInterno) ? 1f : 1f - ((d - rJugInterno) / (rJug - rJugInterno));
+                                    if (l > luzMax) luzMax = l;
+                                }
                             }
                         }
                     }
 
-                    // Iluminación intensa y definida de las antorchas encendidas (no atraviesa paredes)
+                    // 3. Antorchas en pasillos o entradas
                     if (luzMax < 1f)
                     {
                         for (int a = 0; a < _fuentesAntorchas.Count; a++)
@@ -410,7 +451,7 @@ namespace SoulKnight
                         }
                     }
 
-                    // Fuera del círculo: 100% NEGRO ABSOLUTO (alpha = 255)
+                    // Fuera del área iluminada: 100% NEGRO ABSOLUTO (alpha = 255)
                     byte alpha = (byte)Mathf.RoundToInt(Mathf.Lerp(255f, 0f, Mathf.Clamp01(luzMax)));
                     _pixelesNiebla[rowOffset + px] = new Color32(0, 0, 0, alpha);
                 }
@@ -419,7 +460,7 @@ namespace SoulKnight
             _texNiebla.SetPixels32(_pixelesNiebla);
             _texNiebla.Apply(false);
 
-            // 5. Ocultar enemigos que estén fuera del círculo de luz
+            // 5. Ocultar enemigos que estén fuera del área iluminada
             for (int i = 0; i < EnemigoBase.Todos.Count; i++)
             {
                 var e = EnemigoBase.Todos[i];

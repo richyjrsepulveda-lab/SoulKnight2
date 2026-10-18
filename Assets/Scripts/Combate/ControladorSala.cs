@@ -132,16 +132,8 @@ namespace SoulKnight
 
         public void EncenderAntorchas(bool encender)
         {
-            bool recienEncendida = (!descubierta && encender);
             descubierta = encender;
-            if (recienEncendida)
-            {
-                _progresoEncendido = 0.08f;
-            }
-            else if (encender)
-            {
-                _progresoEncendido = 1f;
-            }
+            _progresoEncendido = encender ? 1f : 0f;
 
             foreach (var l in _llamasAntorchas)
             {
@@ -212,8 +204,8 @@ namespace SoulKnight
                 }
             }
 
-            // Encender antorchas de la tienda al entrar el jugador
-            if (esSalaTienda && !descubierta)
+            // Encender e iluminar por completo la sala al entrar cualquier jugador
+            if (!descubierta)
             {
                 for (int i = 0; i < Personaje.Todos.Count; i++)
                 {
