@@ -47,7 +47,9 @@ namespace SoulKnight
         ImpactoHielo,
         GatoDano1,
         GatoDano2,
-        GatoDano3
+        GatoDano3,
+        EraDeHielo,
+        EraHieloHit
     }
 
     public class MarcadorAudioBoton : MonoBehaviour { }
@@ -204,6 +206,8 @@ namespace SoulKnight
             RegistrarSFX(TipoSFX.GatoDano1, "Audio/SFX/GatoDano1");
             RegistrarSFX(TipoSFX.GatoDano2, "Audio/SFX/GatoDano2");
             RegistrarSFX(TipoSFX.GatoDano3, "Audio/SFX/GatoDano3");
+            RegistrarSFX(TipoSFX.EraDeHielo, "Audio/SFX/EraDeHielo");
+            RegistrarSFX(TipoSFX.EraHieloHit, "Audio/SFX/EraHieloHit1");
         }
 
         private void RegistrarMusica(TipoMusica tipo, string rutaResources)

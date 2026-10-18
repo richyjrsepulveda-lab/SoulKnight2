@@ -49,15 +49,49 @@ namespace SoulKnight
             base.OnNetworkDespawn();
         }
 
-        void OnDisable()
-        {
-            Todas.Remove(this);
-        }
+        private AudioSource _fuenteAudioEra;
 
         void Awake()
         {
             _escalaObjetivo = transform.localScale;
             transform.localScale = Vector3.one * 0.1f; // Comienza pequeño para expandirse
+        }
+
+        void Start()
+        {
+            _fuenteAudioEra = gameObject.AddComponent<AudioSource>();
+            _fuenteAudioEra.loop = true;
+            _fuenteAudioEra.spatialBlend = 0f;
+            _fuenteAudioEra.playOnAwake = false;
+
+            var clip = Resources.Load<AudioClip>("Audio/SFX/EraDeHielo");
+            if (clip != null)
+            {
+                _fuenteAudioEra.clip = clip;
+                float vol = GestorAudio.Instancia != null 
+                    ? GestorAudio.Instancia.VolumenMaster * GestorAudio.Instancia.VolumenSFX * 0.9f 
+                    : 0.8f;
+                _fuenteAudioEra.volume = vol;
+                _fuenteAudioEra.Play();
+            }
+        }
+
+        void OnDisable()
+        {
+            Todas.Remove(this);
+            if (_fuenteAudioEra != null && _fuenteAudioEra.isPlaying)
+            {
+                _fuenteAudioEra.Stop();
+            }
+        }
+
+        void OnDestroy()
+        {
+            Todas.Remove(this);
+            if (_fuenteAudioEra != null && _fuenteAudioEra.isPlaying)
+            {
+                _fuenteAudioEra.Stop();
+            }
         }
 
         void Update()
@@ -126,6 +160,7 @@ namespace SoulKnight
         [ClientRpc]
         private void ActivarPulsoTickClientRpc()
         {
+            GestorAudio.PlaySFX(TipoSFX.EraHieloHit, 1.0f);
             if (destelloTick != null)
             {
                 destelloTick.color = new Color(0.85f, 0.98f, 1f, 0.55f);

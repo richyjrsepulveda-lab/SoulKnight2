@@ -12,10 +12,10 @@ namespace SoulKnight
     }
 
     /// <summary>
-    /// Panel de Opciones unificado con pestañas:
-    /// - Pestaña 1: Audio (Volumen General, Música, Efectos de sonido con sliders interactivos y prueba).
-    /// - Pestaña 2: Controles (Reasignación dinámica de teclas y restauración por defecto).
-    /// Funciona tanto en componentes serializados en escenas (como MenuPrincipal) como en instancias creadas dinámicamente.
+    /// Panel de Opciones y Configuración unificado y espacioso:
+    /// - Pestaña 1: Audio (Sliders Master, Música, SFX) + Consola de Códigos de Admin/Dev para testeo rápido.
+    /// - Pestaña 2: Controles (Reasignación dinámica de teclas con nombres legibles).
+    /// - Diseño ampliado, moderno, márgenes limpios y botones cómodos para Sala, Lobby y Run.
     /// </summary>
     public class PanelOpcionesControles : MonoBehaviour
     {
@@ -44,6 +44,10 @@ namespace SoulKnight
         private Text _txtPctMaster;
         private Text _txtPctMusica;
         private Text _txtPctSFX;
+
+        // Comandos Admin
+        private InputField _inputCodigoAdmin;
+        private Text _txtFeedbackComando;
 
         private PestanaOpciones _pestanaActual = PestanaOpciones.Audio;
 
@@ -84,14 +88,10 @@ namespace SoulKnight
         {
             if (_panelAudio != null && _panelControles != null) return;
 
-            // Si es un objeto serializado de escena previa (ej. MenuPrincipal.unity), limpiar elementos hijos antiguos
+            // Limpiar hijos residuales antiguos para garantizar diseño renovado espacioso
             for (int i = transform.childCount - 1; i >= 0; i--)
             {
-                var child = transform.GetChild(i);
-                if (child.name != "VentanaModal")
-                {
-                    Destroy(child.gameObject);
-                }
+                Destroy(transform.GetChild(i).gameObject);
             }
 
             panelContenedor = gameObject;
@@ -105,41 +105,41 @@ namespace SoulKnight
 
             var imgFondo = GetComponent<Image>();
             if (imgFondo == null) imgFondo = gameObject.AddComponent<Image>();
-            imgFondo.color = new Color(0.04f, 0.05f, 0.08f, 0.96f);
+            imgFondo.color = new Color(0.03f, 0.04f, 0.07f, 0.95f); // Fondo translúcido oscuro
 
-            // Ventana Principal
+            // ==================== VENTANA PRINCIPAL AMPLIADA ====================
             var ventanaObj = new GameObject("VentanaModal");
             ventanaObj.transform.SetParent(transform, false);
             var rtVentana = ventanaObj.AddComponent<RectTransform>();
             rtVentana.anchorMin = new Vector2(0.5f, 0.5f);
             rtVentana.anchorMax = new Vector2(0.5f, 0.5f);
             rtVentana.pivot = new Vector2(0.5f, 0.5f);
-            rtVentana.sizeDelta = new Vector2(580f, 520f);
+            rtVentana.sizeDelta = new Vector2(860f, 660f); // Tamaño generoso y no apretado
 
             var imgVentana = ventanaObj.AddComponent<Image>();
-            imgVentana.color = new Color(0.09f, 0.11f, 0.16f, 0.98f);
+            imgVentana.color = new Color(0.08f, 0.10f, 0.16f, 0.99f);
 
-            // Borde superior
+            // Borde superior / Cabecera
             var barraTop = new GameObject("BarraSuperior");
             barraTop.transform.SetParent(ventanaObj.transform, false);
             var rtBarra = barraTop.AddComponent<RectTransform>();
             rtBarra.anchorMin = new Vector2(0f, 1f);
             rtBarra.anchorMax = new Vector2(1f, 1f);
             rtBarra.pivot = new Vector2(0.5f, 1f);
-            rtBarra.sizeDelta = new Vector2(0f, 44f);
+            rtBarra.sizeDelta = new Vector2(0f, 48f);
             var imgBarra = barraTop.AddComponent<Image>();
-            imgBarra.color = new Color(0.14f, 0.18f, 0.28f, 1f);
+            imgBarra.color = new Color(0.13f, 0.17f, 0.27f, 1f);
 
             // Título
             var titObj = new GameObject("Titulo");
             titObj.transform.SetParent(barraTop.transform, false);
             var txtTit = titObj.AddComponent<Text>();
             txtTit.font = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            txtTit.fontSize = 18;
+            txtTit.fontSize = 17;
             txtTit.fontStyle = FontStyle.Bold;
             txtTit.alignment = TextAnchor.MiddleCenter;
             txtTit.color = new Color(1f, 0.85f, 0.25f, 1f);
-            txtTit.text = "⚙️ CONFIGURACIÓN Y OPCIONES";
+            txtTit.text = "⚙️ MENÚ DE OPCIONES & CONFIGURACIÓN";
             var rtTit = titObj.GetComponent<RectTransform>();
             rtTit.anchorMin = Vector2.zero;
             rtTit.anchorMax = Vector2.one;
@@ -152,62 +152,62 @@ namespace SoulKnight
             rtTabs.anchorMin = new Vector2(0.5f, 1f);
             rtTabs.anchorMax = new Vector2(0.5f, 1f);
             rtTabs.pivot = new Vector2(0.5f, 1f);
-            rtTabs.anchoredPosition = new Vector2(0f, -54f);
-            rtTabs.sizeDelta = new Vector2(520f, 40f);
+            rtTabs.anchoredPosition = new Vector2(0f, -56f);
+            rtTabs.sizeDelta = new Vector2(800f, 42f);
 
-            // Botón Tab Audio
-            _btnTabAudio = CrearBotonTab(barraTabs.transform, "TabAudio", "🔊 AUDIO", new Vector2(-135f, 0f), out _imgTabAudio, out _txtTabAudio);
-            _btnTabControles = CrearBotonTab(barraTabs.transform, "TabControles", "🎮 CONTROLES", new Vector2(135f, 0f), out _imgTabControles, out _txtTabControles);
+            _btnTabAudio = CrearBotonTab(barraTabs.transform, "TabAudio", "🔊 AUDIO Y CÓDIGOS ADMIN", new Vector2(-205f, 0f), 390f, out _imgTabAudio, out _txtTabAudio);
+            _btnTabControles = CrearBotonTab(barraTabs.transform, "TabControles", "🎮 CONTROLES DE JUEGO", new Vector2(205f, 0f), 390f, out _imgTabControles, out _txtTabControles);
 
-            // ==================== PANEL AUDIO ====================
+            // ==================== PANEL AUDIO Y COMANDOS ADMIN ====================
             _panelAudio = new GameObject("PanelAudio");
             _panelAudio.transform.SetParent(ventanaObj.transform, false);
             var rtAudio = _panelAudio.AddComponent<RectTransform>();
             rtAudio.anchorMin = new Vector2(0.5f, 0.5f);
             rtAudio.anchorMax = new Vector2(0.5f, 0.5f);
             rtAudio.pivot = new Vector2(0.5f, 0.5f);
-            rtAudio.anchoredPosition = new Vector2(0f, -5f);
-            rtAudio.sizeDelta = new Vector2(520f, 320f);
+            rtAudio.anchoredPosition = new Vector2(0f, -12f);
+            rtAudio.sizeDelta = new Vector2(800f, 490f);
 
             // Subtítulo Audio
             var subAudio = new GameObject("SubtituloAudio");
             subAudio.transform.SetParent(_panelAudio.transform, false);
             var txtSubAudio = subAudio.AddComponent<Text>();
             txtSubAudio.font = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            txtSubAudio.fontSize = 11;
-            txtSubAudio.alignment = TextAnchor.MiddleCenter;
-            txtSubAudio.color = new Color(0.70f, 0.80f, 0.95f, 1f);
-            txtSubAudio.text = "Ajusta los niveles de volumen. Se guardan y aplican al instante.";
+            txtSubAudio.fontSize = 12;
+            txtSubAudio.fontStyle = FontStyle.Bold;
+            txtSubAudio.alignment = TextAnchor.MiddleLeft;
+            txtSubAudio.color = new Color(0.40f, 0.85f, 1f, 1f);
+            txtSubAudio.text = "🔊 NIVELES DE VOLUMEN (SE GUARDAN AUTOMÁTICAMENTE)";
             var rtSubAudio = subAudio.GetComponent<RectTransform>();
-            rtSubAudio.anchorMin = new Vector2(0.5f, 1f);
-            rtSubAudio.anchorMax = new Vector2(0.5f, 1f);
-            rtSubAudio.pivot = new Vector2(0.5f, 1f);
-            rtSubAudio.anchoredPosition = new Vector2(0f, -10f);
-            rtSubAudio.sizeDelta = new Vector2(500f, 24f);
+            rtSubAudio.anchorMin = new Vector2(0f, 1f);
+            rtSubAudio.anchorMax = new Vector2(1f, 1f);
+            rtSubAudio.pivot = new Vector2(0f, 1f);
+            rtSubAudio.anchoredPosition = new Vector2(10f, -6f);
+            rtSubAudio.sizeDelta = new Vector2(0f, 22f);
 
             // Contenedor Sliders
             var contSliders = new GameObject("ContenedorSliders");
             contSliders.transform.SetParent(_panelAudio.transform, false);
             var rtContSliders = contSliders.AddComponent<RectTransform>();
-            rtContSliders.anchorMin = new Vector2(0.5f, 0.5f);
-            rtContSliders.anchorMax = new Vector2(0.5f, 0.5f);
-            rtContSliders.pivot = new Vector2(0.5f, 0.5f);
-            rtContSliders.anchoredPosition = new Vector2(0f, 15f);
-            rtContSliders.sizeDelta = new Vector2(500f, 190f);
+            rtContSliders.anchorMin = new Vector2(0.5f, 1f);
+            rtContSliders.anchorMax = new Vector2(0.5f, 1f);
+            rtContSliders.pivot = new Vector2(0.5f, 1f);
+            rtContSliders.anchoredPosition = new Vector2(0f, -32f);
+            rtContSliders.sizeDelta = new Vector2(780f, 125f);
 
             var vlgSliders = contSliders.AddComponent<VerticalLayoutGroup>();
             vlgSliders.childAlignment = TextAnchor.UpperCenter;
-            vlgSliders.spacing = 16f;
+            vlgSliders.spacing = 8f;
             vlgSliders.childControlWidth = false;
             vlgSliders.childControlHeight = false;
 
-            _sliderMaster = CrearSliderFila(contSliders.transform, "SliderMaster", "Volumen General", GestorAudio.Instancia.VolumenMaster,
+            _sliderMaster = CrearSliderFila(contSliders.transform, "SliderMaster", "Volumen General (Master)", GestorAudio.Instancia.VolumenMaster,
                 (val) => GestorAudio.Instancia.SetVolumenMaster(val), out _txtPctMaster);
 
-            _sliderMusica = CrearSliderFila(contSliders.transform, "SliderMusica", "Música de Fondo", GestorAudio.Instancia.VolumenMusica,
+            _sliderMusica = CrearSliderFila(contSliders.transform, "SliderMusica", "Música de Fondo (BGM)", GestorAudio.Instancia.VolumenMusica,
                 (val) => GestorAudio.Instancia.SetVolumenMusica(val), out _txtPctMusica);
 
-            _sliderSFX = CrearSliderFila(contSliders.transform, "SliderSFX", "Efectos (SFX)", GestorAudio.Instancia.VolumenSFX,
+            _sliderSFX = CrearSliderFila(contSliders.transform, "SliderSFX", "Efectos de Sonido (SFX)", GestorAudio.Instancia.VolumenSFX,
                 (val) => GestorAudio.Instancia.SetVolumenSFX(val), out _txtPctSFX);
 
             // Botón Probar Sonido
@@ -216,11 +216,11 @@ namespace SoulKnight
             var imgProbar = btnProbarObj.AddComponent<Image>();
             imgProbar.color = new Color(0.18f, 0.35f, 0.55f, 1f);
             var rtProbar = btnProbarObj.GetComponent<RectTransform>();
-            rtProbar.anchorMin = new Vector2(0.5f, 0f);
-            rtProbar.anchorMax = new Vector2(0.5f, 0f);
-            rtProbar.pivot = new Vector2(0.5f, 0f);
-            rtProbar.anchoredPosition = new Vector2(0f, 18f);
-            rtProbar.sizeDelta = new Vector2(240f, 36f);
+            rtProbar.anchorMin = new Vector2(1f, 1f);
+            rtProbar.anchorMax = new Vector2(1f, 1f);
+            rtProbar.pivot = new Vector2(1f, 1f);
+            rtProbar.anchoredPosition = new Vector2(-10f, -162f);
+            rtProbar.sizeDelta = new Vector2(230f, 32f);
             var btnProbar = btnProbarObj.AddComponent<Button>();
 
             var txtProbarObj = new GameObject("Texto");
@@ -231,50 +231,220 @@ namespace SoulKnight
             txtProbar.fontStyle = FontStyle.Bold;
             txtProbar.alignment = TextAnchor.MiddleCenter;
             txtProbar.color = Color.white;
-            txtProbar.text = "🎯 PROBAR EFECTO DE SONIDO";
+            txtProbar.text = "🎯 PROBAR EFECTO (SFX)";
             var rtTxtProbar = txtProbarObj.GetComponent<RectTransform>();
             rtTxtProbar.anchorMin = Vector2.zero;
             rtTxtProbar.anchorMax = Vector2.one;
             rtTxtProbar.sizeDelta = Vector2.zero;
+            btnProbar.onClick.AddListener(() => GestorAudio.PlaySFX(TipoSFX.Mejora, 1.0f));
 
-            btnProbar.onClick.AddListener(() =>
+            // Divisor Visual
+            var divisorObj = new GameObject("Divisor");
+            divisorObj.transform.SetParent(_panelAudio.transform, false);
+            var rtDiv = divisorObj.AddComponent<RectTransform>();
+            rtDiv.anchorMin = new Vector2(0.5f, 1f);
+            rtDiv.anchorMax = new Vector2(0.5f, 1f);
+            rtDiv.pivot = new Vector2(0.5f, 1f);
+            rtDiv.anchoredPosition = new Vector2(0f, -202f);
+            rtDiv.sizeDelta = new Vector2(780f, 2f);
+            var imgDiv = divisorObj.AddComponent<Image>();
+            imgDiv.color = new Color(0.20f, 0.26f, 0.38f, 0.8f);
+
+            // ==================== SECCIÓN DE COMANDOS / CÓDIGOS DE ADMIN ====================
+            var titAdmin = new GameObject("TituloAdmin");
+            titAdmin.transform.SetParent(_panelAudio.transform, false);
+            var txtTitAdmin = titAdmin.AddComponent<Text>();
+            txtTitAdmin.font = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            txtTitAdmin.fontSize = 12;
+            txtTitAdmin.fontStyle = FontStyle.Bold;
+            txtTitAdmin.alignment = TextAnchor.MiddleLeft;
+            txtTitAdmin.color = new Color(1f, 0.85f, 0.25f, 1f);
+            txtTitAdmin.text = "⚡ CONSOLA DE CÓDIGOS & COMANDOS DE ADMIN / DEV";
+            var rtTitAdmin = titAdmin.GetComponent<RectTransform>();
+            rtTitAdmin.anchorMin = new Vector2(0f, 1f);
+            rtTitAdmin.anchorMax = new Vector2(1f, 1f);
+            rtTitAdmin.pivot = new Vector2(0f, 1f);
+            rtTitAdmin.anchoredPosition = new Vector2(10f, -212f);
+            rtTitAdmin.sizeDelta = new Vector2(0f, 22f);
+
+            var descAdmin = new GameObject("DescAdmin");
+            descAdmin.transform.SetParent(_panelAudio.transform, false);
+            var txtDescAdmin = descAdmin.AddComponent<Text>();
+            txtDescAdmin.font = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            txtDescAdmin.fontSize = 10;
+            txtDescAdmin.alignment = TextAnchor.MiddleLeft;
+            txtDescAdmin.color = new Color(0.70f, 0.78f, 0.90f, 1f);
+            txtDescAdmin.text = "Haz clic en los accesos rápidos o escribe un código manual para testear instantáneamente:";
+            var rtDescAdmin = descAdmin.GetComponent<RectTransform>();
+            rtDescAdmin.anchorMin = new Vector2(0f, 1f);
+            rtDescAdmin.anchorMax = new Vector2(1f, 1f);
+            rtDescAdmin.pivot = new Vector2(0f, 1f);
+            rtDescAdmin.anchoredPosition = new Vector2(10f, -234f);
+            rtDescAdmin.sizeDelta = new Vector2(0f, 18f);
+
+            // Botones de Acceso Rápido Fila 1
+            CrearBotonCheat(_panelAudio.transform, "BtnCheatLvl5", "⭐ +5 NIVELES", new Vector2(-290f, -270f), new Color(0.18f, 0.40f, 0.65f, 1f), () => EjecutarCheat("lvl 5"));
+            CrearBotonCheat(_panelAudio.transform, "BtnCheatMaxLvl", "👑 MAX NIVEL (10)", new Vector2(-95f, -270f), new Color(0.20f, 0.45f, 0.75f, 1f), () => EjecutarCheat("maxlvl"));
+            CrearBotonCheat(_panelAudio.transform, "BtnCheatUnlock", "🔓 UNLOCK ALL (ALL SKILLS)", new Vector2(100f, -270f), new Color(0.65f, 0.45f, 0.15f, 1f), () => EjecutarCheat("unlockall"));
+            CrearBotonCheat(_panelAudio.transform, "BtnCheatMaestria", "✨ +1000 MAESTRÍA", new Vector2(295f, -270f), new Color(0.55f, 0.35f, 0.65f, 1f), () => EjecutarCheat("maestria 1000"));
+
+            // Botones de Acceso Rápido Fila 2
+            CrearBotonCheat(_panelAudio.transform, "BtnCheatGod", "❤️ MODO DIOS (9999 HP)", new Vector2(-290f, -310f), new Color(0.75f, 0.20f, 0.25f, 1f), () => EjecutarCheat("god"));
+            CrearBotonCheat(_panelAudio.transform, "BtnCheatKill", "💀 MATAR ENEMIGOS", new Vector2(-95f, -310f), new Color(0.45f, 0.18f, 0.22f, 1f), () => EjecutarCheat("killall"));
+            CrearBotonCheat(_panelAudio.transform, "BtnCheatSkip", "🌀 SALTAR NIVEL (Skip)", new Vector2(100f, -310f), new Color(0.20f, 0.50f, 0.45f, 1f), () => EjecutarCheat("skip"));
+            CrearBotonCheat(_panelAudio.transform, "BtnCheatNoCD", "⚡ RESET COOLDOWNS", new Vector2(295f, -310f), new Color(0.25f, 0.45f, 0.30f, 1f), () => EjecutarCheat("resetcd"));
+
+            // Barra de Input de Texto
+            var inputBarObj = new GameObject("BarraInputCodigo");
+            inputBarObj.transform.SetParent(_panelAudio.transform, false);
+            var rtInputBar = inputBarObj.AddComponent<RectTransform>();
+            rtInputBar.anchorMin = new Vector2(0.5f, 1f);
+            rtInputBar.anchorMax = new Vector2(0.5f, 1f);
+            rtInputBar.pivot = new Vector2(0.5f, 1f);
+            rtInputBar.anchoredPosition = new Vector2(0f, -355f);
+            rtInputBar.sizeDelta = new Vector2(780f, 38f);
+
+            // InputField
+            var inputObj = new GameObject("InputFieldCodigo");
+            inputObj.transform.SetParent(inputBarObj.transform, false);
+            var rtInput = inputObj.AddComponent<RectTransform>();
+            rtInput.anchorMin = new Vector2(0f, 0.5f);
+            rtInput.anchorMax = new Vector2(0f, 0.5f);
+            rtInput.pivot = new Vector2(0f, 0.5f);
+            rtInput.anchoredPosition = new Vector2(0f, 0f);
+            rtInput.sizeDelta = new Vector2(560f, 36f);
+
+            var imgInput = inputObj.AddComponent<Image>();
+            imgInput.color = new Color(0.05f, 0.07f, 0.11f, 1f);
+
+            _inputCodigoAdmin = inputObj.AddComponent<InputField>();
+
+            // Placeholder
+            var placeholderObj = new GameObject("Placeholder");
+            placeholderObj.transform.SetParent(inputObj.transform, false);
+            var txtPlaceholder = placeholderObj.AddComponent<Text>();
+            txtPlaceholder.font = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            txtPlaceholder.fontSize = 11;
+            txtPlaceholder.fontStyle = FontStyle.Italic;
+            txtPlaceholder.color = new Color(0.48f, 0.55f, 0.65f, 0.75f);
+            txtPlaceholder.text = "Escribe un código o comando (ej: unlockall, nivel 10, god, killall, ayuda)...";
+            txtPlaceholder.alignment = TextAnchor.MiddleLeft;
+            var rtPlace = placeholderObj.GetComponent<RectTransform>();
+            rtPlace.anchorMin = Vector2.zero;
+            rtPlace.anchorMax = Vector2.one;
+            rtPlace.offsetMin = new Vector2(10f, 0f);
+            rtPlace.offsetMax = new Vector2(-10f, 0f);
+
+            // Texto Input
+            var textObj = new GameObject("Text");
+            textObj.transform.SetParent(inputObj.transform, false);
+            var txtInput = textObj.AddComponent<Text>();
+            txtInput.font = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            txtInput.fontSize = 12;
+            txtInput.color = Color.white;
+            txtInput.alignment = TextAnchor.MiddleLeft;
+            txtInput.supportRichText = false;
+            var rtText = textObj.GetComponent<RectTransform>();
+            rtText.anchorMin = Vector2.zero;
+            rtText.anchorMax = Vector2.one;
+            rtText.offsetMin = new Vector2(10f, 0f);
+            rtText.offsetMax = new Vector2(-10f, 0f);
+
+            _inputCodigoAdmin.textComponent = txtInput;
+            _inputCodigoAdmin.placeholder = txtPlaceholder;
+            _inputCodigoAdmin.onEndEdit.AddListener((val) =>
             {
-                GestorAudio.PlaySFX(TipoSFX.Mejora, 1.0f);
+                if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter))
+                {
+                    EjecutarCheat(val);
+                }
             });
 
-            // ==================== PANEL CONTROLES ====================
+            // Botón Ejecutar Código
+            var btnEjecutarObj = new GameObject("BotonEjecutar");
+            btnEjecutarObj.transform.SetParent(inputBarObj.transform, false);
+            var rtBtnEj = btnEjecutarObj.AddComponent<RectTransform>();
+            rtBtnEj.anchorMin = new Vector2(1f, 0.5f);
+            rtBtnEj.anchorMax = new Vector2(1f, 0.5f);
+            rtBtnEj.pivot = new Vector2(1f, 0.5f);
+            rtBtnEj.anchoredPosition = new Vector2(0f, 0f);
+            rtBtnEj.sizeDelta = new Vector2(210f, 36f);
+
+            var imgEj = btnEjecutarObj.AddComponent<Image>();
+            imgEj.color = new Color(0.12f, 0.55f, 0.32f, 1f);
+            var btnEj = btnEjecutarObj.AddComponent<Button>();
+
+            var txtBtnEjObj = new GameObject("Texto");
+            txtBtnEjObj.transform.SetParent(btnEjecutarObj.transform, false);
+            var txtBtnEj = txtBtnEjObj.AddComponent<Text>();
+            txtBtnEj.font = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            txtBtnEj.fontSize = 11;
+            txtBtnEj.fontStyle = FontStyle.Bold;
+            txtBtnEj.alignment = TextAnchor.MiddleCenter;
+            txtBtnEj.color = Color.white;
+            txtBtnEj.text = "⚡ CANJEAR / EJECUTAR";
+            var rtTxtBtnEj = txtBtnEjObj.GetComponent<RectTransform>();
+            rtTxtBtnEj.anchorMin = Vector2.zero;
+            rtTxtBtnEj.anchorMax = Vector2.one;
+            rtTxtBtnEj.sizeDelta = Vector2.zero;
+
+            btnEj.onClick.AddListener(() =>
+            {
+                if (_inputCodigoAdmin != null)
+                {
+                    EjecutarCheat(_inputCodigoAdmin.text);
+                }
+            });
+
+            // Feedback de Ejecución
+            var feedbackObj = new GameObject("FeedbackComando");
+            feedbackObj.transform.SetParent(_panelAudio.transform, false);
+            _txtFeedbackComando = feedbackObj.AddComponent<Text>();
+            _txtFeedbackComando.font = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            _txtFeedbackComando.fontSize = 11;
+            _txtFeedbackComando.alignment = TextAnchor.MiddleCenter;
+            _txtFeedbackComando.color = new Color(0.45f, 0.85f, 1f, 1f);
+            _txtFeedbackComando.text = "💡 Escribe 'ayuda' para ver la lista completa de comandos o pulsa los botones de arriba.";
+            var rtFeedback = feedbackObj.GetComponent<RectTransform>();
+            rtFeedback.anchorMin = new Vector2(0.5f, 1f);
+            rtFeedback.anchorMax = new Vector2(0.5f, 1f);
+            rtFeedback.pivot = new Vector2(0.5f, 1f);
+            rtFeedback.anchoredPosition = new Vector2(0f, -405f);
+            rtFeedback.sizeDelta = new Vector2(780f, 40f);
+
+            // ==================== PANEL CONTROLES AMPLIADO ====================
             _panelControles = new GameObject("PanelControles");
             _panelControles.transform.SetParent(ventanaObj.transform, false);
             var rtContr = _panelControles.AddComponent<RectTransform>();
             rtContr.anchorMin = new Vector2(0.5f, 0.5f);
             rtContr.anchorMax = new Vector2(0.5f, 0.5f);
             rtContr.pivot = new Vector2(0.5f, 0.5f);
-            rtContr.anchoredPosition = new Vector2(0f, -5f);
-            rtContr.sizeDelta = new Vector2(520f, 320f);
+            rtContr.anchoredPosition = new Vector2(0f, -12f);
+            rtContr.sizeDelta = new Vector2(800f, 490f);
 
             // Subtítulo Controles
             var estObj = new GameObject("TextoEstado");
             estObj.transform.SetParent(_panelControles.transform, false);
             var txtEst = estObj.AddComponent<Text>();
             txtEst.font = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            txtEst.fontSize = 11;
+            txtEst.fontSize = 12;
             txtEst.alignment = TextAnchor.MiddleCenter;
             txtEst.color = new Color(0.75f, 0.85f, 1f, 1f);
-            txtEst.text = "Haz clic en una tecla para cambiarla. Presiona ESC para cancelar.";
+            txtEst.text = "Haz clic en una tecla para cambiarla. Presiona ESC para cancelar la espera.";
             var rtEst = estObj.GetComponent<RectTransform>();
             rtEst.anchorMin = new Vector2(0.5f, 1f);
             rtEst.anchorMax = new Vector2(0.5f, 1f);
             rtEst.pivot = new Vector2(0.5f, 1f);
-            rtEst.anchoredPosition = new Vector2(0f, -6f);
-            rtEst.sizeDelta = new Vector2(500f, 24f);
+            rtEst.anchoredPosition = new Vector2(0f, -8f);
+            rtEst.sizeDelta = new Vector2(760f, 24f);
             textoEstado = txtEst;
 
-            // Scroll / Contenedor Filas Controles
+            // Scroll / Contenedor Filas Controles Espacioso
             var contFilasObj = new GameObject("ContenedorFilas");
             contFilasObj.transform.SetParent(_panelControles.transform, false);
             var vlg = contFilasObj.AddComponent<VerticalLayoutGroup>();
             vlg.childAlignment = TextAnchor.UpperCenter;
-            vlg.spacing = 4f;
+            vlg.spacing = 6f;
             vlg.childControlWidth = false;
             vlg.childControlHeight = false;
 
@@ -282,21 +452,31 @@ namespace SoulKnight
             rtFilas.anchorMin = new Vector2(0.5f, 0.5f);
             rtFilas.anchorMax = new Vector2(0.5f, 0.5f);
             rtFilas.pivot = new Vector2(0.5f, 0.5f);
-            rtFilas.anchoredPosition = new Vector2(0f, 10f);
-            rtFilas.sizeDelta = new Vector2(480f, 220f);
+            rtFilas.anchoredPosition = new Vector2(0f, -10f);
+            rtFilas.sizeDelta = new Vector2(760f, 430f);
             contenedorFilas = contFilasObj.transform;
+
+            // ==================== BARRA INFERIOR DE ACCIÓN GLOBAL ====================
+            var barraInferior = new GameObject("BarraInferior");
+            barraInferior.transform.SetParent(ventanaObj.transform, false);
+            var rtBarraInf = barraInferior.AddComponent<RectTransform>();
+            rtBarraInf.anchorMin = new Vector2(0.5f, 0f);
+            rtBarraInf.anchorMax = new Vector2(0.5f, 0f);
+            rtBarraInf.pivot = new Vector2(0.5f, 0f);
+            rtBarraInf.anchoredPosition = new Vector2(0f, 18f);
+            rtBarraInf.sizeDelta = new Vector2(800f, 44f);
 
             // Botón Restaurar Controles
             var btnRestObj = new GameObject("BotonRestaurar");
-            btnRestObj.transform.SetParent(_panelControles.transform, false);
+            btnRestObj.transform.SetParent(barraInferior.transform, false);
             var imgRest = btnRestObj.AddComponent<Image>();
-            imgRest.color = new Color(0.45f, 0.22f, 0.22f, 1f);
+            imgRest.color = new Color(0.48f, 0.22f, 0.22f, 1f);
             var rtRest = btnRestObj.GetComponent<RectTransform>();
-            rtRest.anchorMin = new Vector2(0.5f, 0f);
-            rtRest.anchorMax = new Vector2(0.5f, 0f);
-            rtRest.pivot = new Vector2(0.5f, 0f);
-            rtRest.anchoredPosition = new Vector2(0f, 14f);
-            rtRest.sizeDelta = new Vector2(230f, 32f);
+            rtRest.anchorMin = new Vector2(0f, 0.5f);
+            rtRest.anchorMax = new Vector2(0f, 0.5f);
+            rtRest.pivot = new Vector2(0f, 0.5f);
+            rtRest.anchoredPosition = new Vector2(0f, 0f);
+            rtRest.sizeDelta = new Vector2(250f, 40f);
             botonRestaurar = btnRestObj.AddComponent<Button>();
 
             var txtRestObj = new GameObject("Texto");
@@ -313,17 +493,17 @@ namespace SoulKnight
             rtTxtRest.anchorMax = Vector2.one;
             rtTxtRest.sizeDelta = Vector2.zero;
 
-            // ==================== BOTÓN CERRAR GLOBAL ====================
+            // Botón Cerrar Global
             var btnCerrarObj = new GameObject("BotonCerrar");
-            btnCerrarObj.transform.SetParent(ventanaObj.transform, false);
+            btnCerrarObj.transform.SetParent(barraInferior.transform, false);
             var imgCerrar = btnCerrarObj.AddComponent<Image>();
-            imgCerrar.color = new Color(0.18f, 0.48f, 0.28f, 1f);
+            imgCerrar.color = new Color(0.18f, 0.52f, 0.32f, 1f);
             var rtCerrar = btnCerrarObj.GetComponent<RectTransform>();
-            rtCerrar.anchorMin = new Vector2(0.5f, 0f);
-            rtCerrar.anchorMax = new Vector2(0.5f, 0f);
-            rtCerrar.pivot = new Vector2(0.5f, 0f);
-            rtCerrar.anchoredPosition = new Vector2(0f, 16f);
-            rtCerrar.sizeDelta = new Vector2(260f, 38f);
+            rtCerrar.anchorMin = new Vector2(1f, 0.5f);
+            rtCerrar.anchorMax = new Vector2(1f, 0.5f);
+            rtCerrar.pivot = new Vector2(1f, 0.5f);
+            rtCerrar.anchoredPosition = new Vector2(0f, 0f);
+            rtCerrar.sizeDelta = new Vector2(270f, 40f);
             botonCerrar = btnCerrarObj.AddComponent<Button>();
 
             var txtCerrarObj = new GameObject("Texto");
@@ -350,7 +530,63 @@ namespace SoulKnight
             CambiarPestana(PestanaOpciones.Audio);
         }
 
-        private static Button CrearBotonTab(Transform parent, string nombre, string texto, Vector2 pos, out Image img, out Text txt)
+        private void EjecutarCheat(string codigo)
+        {
+            if (string.IsNullOrWhiteSpace(codigo)) return;
+            string resultado = ComandosAdmin.EjecutarComando(codigo);
+            if (_txtFeedbackComando != null)
+            {
+                _txtFeedbackComando.text = resultado;
+                _txtFeedbackComando.color = resultado.StartsWith("✓") 
+                    ? new Color(0.40f, 1f, 0.55f, 1f) 
+                    : new Color(1f, 0.55f, 0.55f, 1f);
+            }
+            if (_inputCodigoAdmin != null)
+            {
+                _inputCodigoAdmin.text = "";
+            }
+            GestorAudio.PlaySFX(TipoSFX.Mejora, 0.8f);
+        }
+
+        private static void CrearBotonCheat(Transform parent, string nombre, string texto, Vector2 pos, Color colorBase, Action onClick)
+        {
+            var btnObj = new GameObject(nombre);
+            btnObj.transform.SetParent(parent, false);
+            var rt = btnObj.AddComponent<RectTransform>();
+            rt.anchorMin = new Vector2(0.5f, 1f);
+            rt.anchorMax = new Vector2(0.5f, 1f);
+            rt.pivot = new Vector2(0.5f, 1f);
+            rt.anchoredPosition = pos;
+            rt.sizeDelta = new Vector2(185f, 32f);
+
+            var img = btnObj.AddComponent<Image>();
+            img.color = colorBase;
+
+            var btn = btnObj.AddComponent<Button>();
+            var colors = btn.colors;
+            colors.highlightedColor = colorBase * 1.25f;
+            colors.pressedColor = colorBase * 0.75f;
+            btn.colors = colors;
+
+            var txtObj = new GameObject("Texto");
+            txtObj.transform.SetParent(btnObj.transform, false);
+            var txt = txtObj.AddComponent<Text>();
+            txt.font = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            txt.fontSize = 10;
+            txt.fontStyle = FontStyle.Bold;
+            txt.alignment = TextAnchor.MiddleCenter;
+            txt.color = Color.white;
+            txt.text = texto;
+
+            var rtTxt = txtObj.GetComponent<RectTransform>();
+            rtTxt.anchorMin = Vector2.zero;
+            rtTxt.anchorMax = Vector2.one;
+            rtTxt.sizeDelta = Vector2.zero;
+
+            btn.onClick.AddListener(() => onClick?.Invoke());
+        }
+
+        private static Button CrearBotonTab(Transform parent, string nombre, string texto, Vector2 pos, float ancho, out Image img, out Text txt)
         {
             var btnObj = new GameObject(nombre);
             btnObj.transform.SetParent(parent, false);
@@ -359,7 +595,7 @@ namespace SoulKnight
             rt.anchorMax = new Vector2(0.5f, 0.5f);
             rt.pivot = new Vector2(0.5f, 0.5f);
             rt.anchoredPosition = pos;
-            rt.sizeDelta = new Vector2(250f, 36f);
+            rt.sizeDelta = new Vector2(ancho, 38f);
 
             img = btnObj.AddComponent<Image>();
             img.color = new Color(0.18f, 0.22f, 0.32f, 1f);
@@ -388,7 +624,7 @@ namespace SoulKnight
             var filaObj = new GameObject(nombre);
             filaObj.transform.SetParent(parent, false);
             var rtFila = filaObj.AddComponent<RectTransform>();
-            rtFila.sizeDelta = new Vector2(480f, 38f);
+            rtFila.sizeDelta = new Vector2(760f, 34f);
 
             // Label
             var lblObj = new GameObject("Label");
@@ -404,8 +640,8 @@ namespace SoulKnight
             rtLbl.anchorMin = new Vector2(0f, 0.5f);
             rtLbl.anchorMax = new Vector2(0f, 0.5f);
             rtLbl.pivot = new Vector2(0f, 0.5f);
-            rtLbl.anchoredPosition = new Vector2(8f, 0f);
-            rtLbl.sizeDelta = new Vector2(160f, 34f);
+            rtLbl.anchoredPosition = new Vector2(10f, 0f);
+            rtLbl.sizeDelta = new Vector2(250f, 32f);
 
             // Porcentaje
             var pctObj = new GameObject("Porcentaje");
@@ -421,8 +657,8 @@ namespace SoulKnight
             rtPct.anchorMin = new Vector2(1f, 0.5f);
             rtPct.anchorMax = new Vector2(1f, 0.5f);
             rtPct.pivot = new Vector2(1f, 0.5f);
-            rtPct.anchoredPosition = new Vector2(-8f, 0f);
-            rtPct.sizeDelta = new Vector2(55f, 34f);
+            rtPct.anchoredPosition = new Vector2(-10f, 0f);
+            rtPct.sizeDelta = new Vector2(60f, 32f);
             txtPorcentaje = txtPct;
 
             // Slider Component
@@ -432,8 +668,8 @@ namespace SoulKnight
             rtSlider.anchorMin = new Vector2(0f, 0.5f);
             rtSlider.anchorMax = new Vector2(0f, 0.5f);
             rtSlider.pivot = new Vector2(0f, 0.5f);
-            rtSlider.anchoredPosition = new Vector2(175f, 0f);
-            rtSlider.sizeDelta = new Vector2(235f, 20f);
+            rtSlider.anchoredPosition = new Vector2(270f, 0f);
+            rtSlider.sizeDelta = new Vector2(400f, 20f);
 
             var slider = sliderObj.AddComponent<Slider>();
             slider.minValue = 0f;
@@ -592,28 +828,29 @@ namespace SoulKnight
                 var fila = new GameObject($"Fila_{accion}");
                 fila.transform.SetParent(contenedorFilas, false);
                 var rtFila = fila.AddComponent<RectTransform>();
-                rtFila.sizeDelta = new Vector2(460, 32);
+                rtFila.sizeDelta = new Vector2(740, 34);
 
                 // Nombre de la acción
                 var txtNomObj = new GameObject("NombreAccion");
                 txtNomObj.transform.SetParent(fila.transform, false);
                 var txtNom = txtNomObj.AddComponent<Text>();
                 txtNom.font = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-                txtNom.fontSize = 11;
+                txtNom.fontSize = 12;
+                txtNom.fontStyle = FontStyle.Bold;
                 txtNom.alignment = TextAnchor.MiddleLeft;
                 txtNom.color = Color.white;
-                txtNom.rectTransform.anchoredPosition = new Vector2(-110, 0);
-                txtNom.rectTransform.sizeDelta = new Vector2(220, 30);
+                txtNom.rectTransform.anchoredPosition = new Vector2(-150, 0);
+                txtNom.rectTransform.sizeDelta = new Vector2(360, 32);
                 txtNom.text = ObtenerNombreLegible(accion);
 
                 // Botón con la tecla actual
                 var btnObj = new GameObject("BotonTecla");
                 btnObj.transform.SetParent(fila.transform, false);
                 var img = btnObj.AddComponent<Image>();
-                img.color = new Color(0.2f, 0.25f, 0.35f, 0.9f);
+                img.color = new Color(0.2f, 0.25f, 0.35f, 0.95f);
                 var rtBtn = btnObj.GetComponent<RectTransform>();
-                rtBtn.anchoredPosition = new Vector2(130, 0);
-                rtBtn.sizeDelta = new Vector2(140, 28);
+                rtBtn.anchoredPosition = new Vector2(190, 0);
+                rtBtn.sizeDelta = new Vector2(220, 30);
 
                 var btn = btnObj.AddComponent<Button>();
 
@@ -621,10 +858,10 @@ namespace SoulKnight
                 txtTeclaObj.transform.SetParent(btnObj.transform, false);
                 var txtTecla = txtTeclaObj.AddComponent<Text>();
                 txtTecla.font = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-                txtTecla.fontSize = 11;
+                txtTecla.fontSize = 12;
                 txtTecla.alignment = TextAnchor.MiddleCenter;
                 txtTecla.color = Color.yellow;
-                txtTecla.rectTransform.sizeDelta = new Vector2(140, 28);
+                txtTecla.rectTransform.sizeDelta = new Vector2(220, 30);
 
                 AccionControl act = accion;
                 btn.onClick.AddListener(() => IniciarEsperaTecla(act, txtTecla));
@@ -671,16 +908,16 @@ namespace SoulKnight
         {
             return accion switch
             {
-                AccionControl.MoverArriba => "Mover Arriba",
-                AccionControl.MoverAbajo => "Mover Abajo",
-                AccionControl.MoverIzquierda => "Mover Izquierda",
-                AccionControl.MoverDerecha => "Mover Derecha",
-                AccionControl.Correr => "Correr (Sprint)",
-                AccionControl.AtaquePrincipal => "Ataque Principal",
-                AccionControl.Habilidad1 => "Habilidad 1 (E)",
-                AccionControl.Habilidad2 => "Habilidad 2 (Q)",
-                AccionControl.Ultimate => "Ultimate (R)",
-                AccionControl.Pausa => "Pausa (Esc)",
+                AccionControl.MoverArriba => "Mover Arriba (W)",
+                AccionControl.MoverAbajo => "Mover Abajo (S)",
+                AccionControl.MoverIzquierda => "Mover Izquierda (A)",
+                AccionControl.MoverDerecha => "Mover Derecha (D)",
+                AccionControl.Correr => "Correr / Sprint (Shift)",
+                AccionControl.AtaquePrincipal => "Ataque Básico (Click Izquierdo)",
+                AccionControl.Habilidad1 => "Habilidad 1 (Tecla E)",
+                AccionControl.Habilidad2 => "Habilidad 2 (Tecla Q)",
+                AccionControl.Ultimate => "Definitiva / Ultimate (Tecla R)",
+                AccionControl.Pausa => "Menú / Opciones (Escape)",
                 _ => accion.ToString()
             };
         }

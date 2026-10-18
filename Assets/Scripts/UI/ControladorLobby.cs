@@ -250,33 +250,39 @@ namespace SoulKnight
             Canvas canvas = GetComponentInChildren<Canvas>() ?? FindObjectOfType<Canvas>();
             if (canvas == null) return;
 
-            Transform cont = panelVistaGeneral != null ? panelVistaGeneral.transform : canvas.transform;
-            if (cont.Find("BotonOpcionesLobby") != null) return;
+            Transform cont = canvas.transform;
+            var existente = cont.Find("BotonOpcionesLobby");
+            if (existente != null)
+            {
+                existente.SetAsLastSibling();
+                return;
+            }
 
             var go = new GameObject("BotonOpcionesLobby");
             go.transform.SetParent(cont, false);
+            go.transform.SetAsLastSibling();
 
             var rt = go.AddComponent<RectTransform>();
             rt.anchorMin = new Vector2(1f, 1f);
             rt.anchorMax = new Vector2(1f, 1f);
             rt.pivot = new Vector2(1f, 1f);
-            rt.anchoredPosition = new Vector2(-20f, -20f);
-            rt.sizeDelta = new Vector2(160f, 38f);
+            rt.anchoredPosition = new Vector2(-25f, -25f);
+            rt.sizeDelta = new Vector2(175f, 42f);
 
             var img = go.AddComponent<Image>();
-            img.color = new Color(0.18f, 0.22f, 0.32f, 0.95f);
+            img.color = new Color(0.18f, 0.24f, 0.36f, 0.98f);
 
             var btn = go.AddComponent<Button>();
             var colors = btn.colors;
-            colors.highlightedColor = new Color(0.28f, 0.36f, 0.52f, 1f);
-            colors.pressedColor = new Color(0.12f, 0.15f, 0.22f, 1f);
+            colors.highlightedColor = new Color(0.28f, 0.38f, 0.58f, 1f);
+            colors.pressedColor = new Color(0.12f, 0.16f, 0.25f, 1f);
             btn.colors = colors;
 
             var txtObj = new GameObject("Texto");
             txtObj.transform.SetParent(go.transform, false);
             var txt = txtObj.AddComponent<Text>();
             txt.font = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            txt.fontSize = 12;
+            txt.fontSize = 13;
             txt.fontStyle = FontStyle.Bold;
             txt.alignment = TextAnchor.MiddleCenter;
             txt.color = Color.white;

@@ -850,9 +850,21 @@ namespace SoulKnight
                 if (PuedeUsarHabilidad(IdHabilidad.Hielo_EraHielo, out string motivo))
                 {
                     _cdEraHieloRestante = cooldownEraHielo;
-                    GestorAudio.PlaySFX(TipoSFX.Congelar, 1.4f);
+                    GestorAudio.PlaySFX(TipoSFX.EraDeHielo, 1.15f);
                     NotificarAtaqueLocal(0.5f);
-                    ActivarEraHieloServerRpc();
+                    if (NetworkManager != null && NetworkManager.IsListening)
+                    {
+                        ActivarEraHieloServerRpc();
+                    }
+                    else if (prefabEraHielo != null)
+                    {
+                        GameObject era = Instantiate(prefabEraHielo, transform.position, Quaternion.identity);
+                        var eraComponente = era.GetComponent<ZonaEraHielo>();
+                        if (eraComponente != null)
+                        {
+                            eraComponente.Configurar(duracionEraHielo, danoTickEraHielo);
+                        }
+                    }
                 }
                 else
                 {

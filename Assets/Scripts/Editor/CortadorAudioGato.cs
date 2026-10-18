@@ -8,38 +8,32 @@ namespace SoulKnight.Editor
 {
     public static class CortadorAudioGato
     {
-        public static void AnalizarRayoHielo()
+        public static void ProcesarAudioEraHielo()
         {
-            string rutaRelativa = "Assets/Resources/Audio/SFX/RayoHielo.mp3";
-            AssetDatabase.ImportAsset(rutaRelativa, ImportAssetOptions.ForceUpdate);
-            AudioClip clip = AssetDatabase.LoadAssetAtPath<AudioClip>(rutaRelativa);
-            if (clip == null)
+            string rutaM4a = "Assets/Resources/Audio/SFX/EraHieloHit1.m4a";
+            AssetDatabase.ImportAsset(rutaM4a, ImportAssetOptions.ForceUpdate);
+            AudioClip clip = AssetDatabase.LoadAssetAtPath<AudioClip>(rutaM4a);
+            if (clip != null)
             {
-                Debug.LogError("[AnalizarRayoHielo] No se pudo cargar " + rutaRelativa);
-                return;
+                Debug.Log($"[ProcesarAudioEraHielo] M4A cargado con éxito: {clip.length:F2}s. Convirtiendo a WAV...");
+                float[] samples = new float[clip.samples * clip.channels];
+                clip.GetData(samples, 0);
+                GuardarComoWav("Assets/Resources/Audio/SFX/EraHieloHit1.wav", samples, clip.channels, clip.frequency);
+                AssetDatabase.Refresh();
+                Debug.Log("[ProcesarAudioEraHielo] ¡EraHieloHit1.wav guardado exitosamente!");
             }
-            Debug.Log($"[AnalizarRayoHielo] Duración={clip.length:F2}s, Canales={clip.channels}, Frecuencia={clip.frequency}, TotalSamples={clip.samples}");
-            
-            int channels = clip.channels;
-            int frequency = clip.frequency;
-            int totalSamples = clip.samples * channels;
-            float[] samples = new float[totalSamples];
-            clip.GetData(samples, 0);
-
-            int ventanaSamples = frequency / 10 * channels; // 100ms
-            int totalVentanas = totalSamples / ventanaSamples;
-            for (int w = 0; w < totalVentanas; w++)
+            else
             {
-                float max = 0f;
-                int inicio = w * ventanaSamples;
-                for (int i = 0; i < ventanaSamples; i++)
+                Debug.LogWarning("[ProcesarAudioEraHielo] Unity no pudo importar .m4a directamente. Verificando HitEraDeHielo.mp3...");
+                string rutaMp3 = "Assets/Resources/Audio/SFX/HitEraDeHielo.mp3";
+                AssetDatabase.ImportAsset(rutaMp3, ImportAssetOptions.ForceUpdate);
+                AudioClip clipMp3 = AssetDatabase.LoadAssetAtPath<AudioClip>(rutaMp3);
+                if (clipMp3 != null)
                 {
-                    float val = Mathf.Abs(samples[inicio + i]);
-                    if (val > max) max = val;
-                }
-                if (max > 0.05f)
-                {
-                    Debug.Log($"[AnalizarRayoHielo] Tiempo {w * 0.1f:F1}s: Max={max:F3}");
+                    float[] samples = new float[clipMp3.samples * clipMp3.channels];
+                    clipMp3.GetData(samples, 0);
+                    GuardarComoWav("Assets/Resources/Audio/SFX/EraHieloHit1.wav", samples, clipMp3.channels, clipMp3.frequency);
+                    AssetDatabase.Refresh();
                 }
             }
         }
