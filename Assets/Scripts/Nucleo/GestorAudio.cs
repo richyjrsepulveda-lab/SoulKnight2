@@ -43,7 +43,10 @@ namespace SoulKnight
         FuegoDisparo,
         FuegoLlamas,
         HieloDisparo,
-        ImpactoHielo
+        ImpactoHielo,
+        GatoDano1,
+        GatoDano2,
+        GatoDano3
     }
 
     public class MarcadorAudioBoton : MonoBehaviour { }
@@ -196,6 +199,9 @@ namespace SoulKnight
             RegistrarSFX(TipoSFX.FuegoLlamas, "Audio/SFX/FuegoLlamas");
             RegistrarSFX(TipoSFX.HieloDisparo, "Audio/SFX/HieloDisparo");
             RegistrarSFX(TipoSFX.ImpactoHielo, "Audio/SFX/ImpactoHielo");
+            RegistrarSFX(TipoSFX.GatoDano1, "Audio/SFX/GatoDano1");
+            RegistrarSFX(TipoSFX.GatoDano2, "Audio/SFX/GatoDano2");
+            RegistrarSFX(TipoSFX.GatoDano3, "Audio/SFX/GatoDano3");
         }
 
         private void RegistrarMusica(TipoMusica tipo, string rutaResources)
@@ -262,6 +268,20 @@ namespace SoulKnight
             }
         }
 
+        private static int _indiceDanoGato = 0;
+
+        public static void PlayDanoGatoRotativo(float volumenMultiplicador = 1.0f)
+        {
+            _indiceDanoGato = (_indiceDanoGato % 3) + 1;
+            TipoSFX sfx = _indiceDanoGato switch
+            {
+                1 => TipoSFX.GatoDano1,
+                2 => TipoSFX.GatoDano2,
+                _ => TipoSFX.GatoDano3
+            };
+            PlaySFX(sfx, volumenMultiplicador, 0.03f);
+        }
+
         public static void PlaySFX(TipoSFX tipo, float volumenMultiplicador = 1.0f, float pitchRandom = 0.06f)
         {
             Instancia.ReproducirSFXInterno(tipo, volumenMultiplicador, pitchRandom);
@@ -274,6 +294,28 @@ namespace SoulKnight
 
         private void ReproducirSFXInterno(TipoSFX tipo, float volMult, float pitchRnd)
         {
+            // Rotación automática si se invoca TipoSFX.DanoJugador
+            if (tipo == TipoSFX.DanoJugador)
+            {
+                _indiceDanoGato = (_indiceDanoGato % 3) + 1;
+                tipo = _indiceDanoGato switch
+                {
+                    1 => TipoSFX.GatoDano1,
+                    2 => TipoSFX.GatoDano2,
+                    _ => TipoSFX.GatoDano3
+                };
+            }
+
+            // Realce de impacto para golpes contundentes a enemigos
+            if (tipo == TipoSFX.ImpactoEnemigo)
+            {
+                volMult *= 1.35f;
+            }
+            else if (tipo == TipoSFX.ImpactoHielo)
+            {
+                volMult *= 1.25f;
+            }
+
             if (!_clipsSFX.TryGetValue(tipo, out AudioClip clip) || clip == null) return;
 
             AudioSource fuenteDisponible = null;

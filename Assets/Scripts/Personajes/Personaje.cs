@@ -758,9 +758,16 @@ namespace SoulKnight
         private void MostrarDanoClientRpc(int cantidad, Color color)
         {
             TextoFlotante.Crear(transform.position + new Vector3(0, 1.25f, 0), cantidad.ToString(), color);
-            if (color != Color.green && IsOwner)
+            if (color != Color.green)
             {
-                GestorAudio.PlaySFX(TipoSFX.DanoJugador);
+                if (IsOwner)
+                {
+                    GestorAudio.PlayDanoGatoRotativo(1.0f);
+                }
+                else
+                {
+                    GestorAudio.PlayDanoGatoRotativo(0.6f);
+                }
             }
         }
 

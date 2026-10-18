@@ -282,6 +282,16 @@ namespace SoulKnight
         }
 
         private float _tiempoSonidoLaser = 0f;
+        private AudioSource _fuenteAudioRayo;
+
+        protected override void OnDisable()
+        {
+            base.OnDisable();
+            if (_fuenteAudioRayo != null && _fuenteAudioRayo.isPlaying)
+            {
+                _fuenteAudioRayo.Stop();
+            }
+        }
 
         public override void OnNetworkSpawn()
         {
@@ -315,6 +325,7 @@ namespace SoulKnight
                 if (rayoHieloHalo != null && rayoHieloHalo.enabled) rayoHieloHalo.enabled = false;
                 _rayoActivoAnterior = false;
                 OcultarVisualesExtraRayoHielo();
+                if (_fuenteAudioRayo != null && _fuenteAudioRayo.isPlaying) _fuenteAudioRayo.Stop();
                 return;
             }
 
@@ -344,11 +355,25 @@ namespace SoulKnight
 
                 if (disparandoVisual)
                 {
-                    _tiempoSonidoLaser -= Time.deltaTime;
-                    if (_tiempoSonidoLaser <= 0f)
+                    if (_fuenteAudioRayo == null)
                     {
-                        _tiempoSonidoLaser = 0.28f;
-                        GestorAudio.PlaySFX(TipoSFX.Laser, 0.65f);
+                        _fuenteAudioRayo = gameObject.AddComponent<AudioSource>();
+                        _fuenteAudioRayo.loop = true;
+                        _fuenteAudioRayo.playOnAwake = false;
+                        _fuenteAudioRayo.spatialBlend = 0f;
+                        _fuenteAudioRayo.clip = Resources.Load<AudioClip>("Audio/SFX/RayoHielo") ?? Resources.Load<AudioClip>("Audio/SFX/Laser");
+                    }
+
+                    if (_fuenteAudioRayo != null)
+                    {
+                        float volSFX = GestorAudio.Instancia != null 
+                            ? (GestorAudio.Instancia.VolumenMaster * GestorAudio.Instancia.VolumenSFX * 0.85f) 
+                            : 0.75f;
+                        _fuenteAudioRayo.volume = volSFX;
+                        if (!_fuenteAudioRayo.isPlaying && _fuenteAudioRayo.clip != null)
+                        {
+                            _fuenteAudioRayo.Play();
+                        }
                     }
 
                     AsegurarVisualesRayoHielo();
@@ -463,6 +488,10 @@ namespace SoulKnight
                 {
                     _rayoActivoAnterior = false;
                     OcultarVisualesExtraRayoHielo();
+                    if (_fuenteAudioRayo != null && _fuenteAudioRayo.isPlaying)
+                    {
+                        _fuenteAudioRayo.Stop();
+                    }
                 }
             }
 
@@ -976,6 +1005,10 @@ namespace SoulKnight
                 rayoHieloHalo.enabled = false;
             }
             OcultarVisualesExtraRayoHielo();
+            if (_fuenteAudioRayo != null && _fuenteAudioRayo.isPlaying)
+            {
+                _fuenteAudioRayo.Stop();
+            }
         }
     }
 }
