@@ -13120,8 +13120,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5614a7bc10c545b4b8818400dbde5052, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  radioLuzJugador: 7.4
-  radioLuzAntorcha: 10.8
+  radioLuzJugador: 26
+  radioLuzAntorcha: 25
 --- !u!1 &279298058
 GameObject:
   m_ObjectHideFlags: 0

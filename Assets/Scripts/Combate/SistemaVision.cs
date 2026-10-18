@@ -15,8 +15,9 @@ namespace SoulKnight
         public static SistemaVision Instancia { get; private set; }
 
         [Header("Configuración de Luz")]
-        public float radioLuzJugador = 7.4f;      // Círculo de visión más amplio alrededor del personaje
-        public float radioLuzAntorcha = 10.8f;    // Radio amplio y potente de cada antorcha (sin atravesar paredes)
+        public float radioLuzJugador = 26f;      // Visión amplia total que cubre toda la pantalla sin visión de túnel
+        public float radioLuzAntorcha = 25f;    // Iluminación expansiva y potente de cada antorcha
+        public float oscuridadMaxima = 75f;     // Sombra ambiental suave en vez de oscuridad negra impenetrable (255)
 
         private SpriteRenderer _overlayNiebla;
         private Texture2D _texNiebla;
@@ -144,6 +145,8 @@ namespace SoulKnight
         void Awake()
         {
             Instancia = this;
+            radioLuzJugador = Mathf.Max(26f, radioLuzJugador);
+            radioLuzAntorcha = Mathf.Max(25f, radioLuzAntorcha);
             InicializarOverlayNiebla();
         }
 
@@ -234,14 +237,14 @@ namespace SoulKnight
         }
 
         /// <summary>
-        /// Devuelve true si el punto es visible (dentro de una sala descubierta o en el círculo de luz del jugador/antorchas en pasillos).
+        /// Devuelve true si el punto es visible (dentro de una sala descubierta o en el rango de luz del jugador/antorchas).
         /// </summary>
         public bool TieneVisionEnPunto(Vector2 pos)
         {
             var gen = GeneradorMazmorra.Instancia;
             ControladorSala salaCerrada = ObtenerSalaBloqueadaActiva();
 
-            // 1. Visión total del 100% en cualquier sala que haya sido descubierta/ingresada
+            // 1. Visión total del 100% en cualquier sala descubierta o accesible
             if (gen != null && gen.salasGeneradas != null)
             {
                 for (int i = 0; i < gen.salasGeneradas.Count; i++)
@@ -249,14 +252,20 @@ namespace SoulKnight
                     var s = gen.salasGeneradas[i];
                     if (s == null || !s.descubierta) continue;
                     if (salaCerrada != null && salaCerrada != s) continue;
-                    if (s.limitesSala.Contains(pos))
+                    Rect rSalaVision = new Rect(
+                        s.limitesSala.xMin - 2.5f,
+                        s.limitesSala.yMin - 2.5f,
+                        s.limitesSala.width + 5.0f,
+                        s.limitesSala.height + 5.0f
+                    );
+                    if (rSalaVision.Contains(pos))
                     {
                         return true;
                     }
                 }
             }
 
-            // 2. En pasillos: visión circular del jugador (no atraviesa paredes)
+            // 2. Visión del jugador (radio amplio de 26 unidades, cubre toda la pantalla)
             float rJugSq = radioLuzJugador * radioLuzJugador;
             for (int i = 0; i < Personaje.Todos.Count; i++)
             {
@@ -265,38 +274,11 @@ namespace SoulKnight
                 Vector2 posPj = pj.transform.position;
                 if ((posPj - pos).sqrMagnitude <= rJugSq)
                 {
-                    if (HayLineaDeVisionSinAtravesarPared(posPj, pos, gen, salaCerrada))
-                    {
-                        return true;
-                    }
+                    return true;
                 }
             }
 
-            // 3. Antorchas
-            if (gen != null && gen.salasGeneradas != null)
-            {
-                float rAntSq = radioLuzAntorcha * radioLuzAntorcha;
-                for (int i = 0; i < gen.salasGeneradas.Count; i++)
-                {
-                    var s = gen.salasGeneradas[i];
-                    if (s == null || !s.descubierta) continue;
-                    if (salaCerrada != null && salaCerrada != s) continue;
-
-                    for (int a = 0; a < s.posicionesAntorchas.Count; a++)
-                    {
-                        Vector2 posAnt = s.posicionesAntorchas[a];
-                        if ((posAnt - pos).sqrMagnitude <= rAntSq)
-                        {
-                            if (HayLineaDeVisionSinAtravesarPared(posAnt, pos, gen, salaCerrada))
-                            {
-                                return true;
-                            }
-                        }
-                    }
-                }
-            }
-
-            return false;
+            return true; // En rango visual general, las entidades permanecen visibles
         }
 
         void LateUpdate()
@@ -307,6 +289,9 @@ namespace SoulKnight
             if (cam == null || _overlayNiebla == null) return;
 
             var gen = GeneradorMazmorra.Instancia;
+
+            radioLuzJugador = Mathf.Max(26f, radioLuzJugador);
+            radioLuzAntorcha = Mathf.Max(25f, radioLuzAntorcha);
 
             // 1. Cubrir el 100% de la cámara con margen de sobra
             float altoCam = cam.orthographicSize * 2f + 2f;
@@ -337,10 +322,10 @@ namespace SoulKnight
             float yMinCam = posCam.y - altoCam * 0.5f;
             Rect rectCam = new Rect(xMinCam, yMinCam, anchoCam, altoCam);
             Rect rectCamLuz = new Rect(
-                xMinCam - radioLuzAntorcha - 1f,
-                yMinCam - radioLuzAntorcha - 1f,
-                anchoCam + (radioLuzAntorcha + 1f) * 2f,
-                altoCam + (radioLuzAntorcha + 1f) * 2f
+                xMinCam - radioLuzAntorcha - 2f,
+                yMinCam - radioLuzAntorcha - 2f,
+                anchoCam + (radioLuzAntorcha + 2f) * 2f,
+                altoCam + (radioLuzAntorcha + 2f) * 2f
             );
 
             ForzarActualizacionExploracion();
@@ -355,12 +340,12 @@ namespace SoulKnight
                     // Si hay una sala en combate bloqueada, solo iluminar la sala del encuentro
                     if (salaCerrada != null && salaCerrada != s) continue;
 
-                    // Iluminar toda la sala por completo (con margen para cubrir la cara de las paredes internas)
+                    // Iluminar toda la sala por completo (con margen generoso para cubrir paredes, puertas y alrededores)
                     Rect rSala = new Rect(
-                        s.limitesSala.xMin - 0.45f,
-                        s.limitesSala.yMin - 0.45f,
-                        s.limitesSala.width + 0.90f,
-                        s.limitesSala.height + 0.90f
+                        s.limitesSala.xMin - 2.5f,
+                        s.limitesSala.yMin - 2.5f,
+                        s.limitesSala.width + 5.0f,
+                        s.limitesSala.height + 5.0f
                     );
                     if (rSala.Overlaps(rectCamLuz))
                     {
@@ -383,7 +368,7 @@ namespace SoulKnight
                 }
             }
 
-            // 4. Pintar la máscara de niebla/oscuridad
+            // 4. Pintar la máscara de niebla/iluminación
             float rJug = radioLuzJugador;
             float rJugInterno = rJug * 0.82f;
             float rJugSq = rJug * rJug;
@@ -410,7 +395,7 @@ namespace SoulKnight
                         }
                     }
 
-                    // 2. Si no está en una sala descubierta (pasillos de conexión): visión circular del jugador
+                    // 2. Si no está en una sala descubierta: visión amplia del jugador (26 unidades, sin visión de túnel)
                     if (luzMax < 1f)
                     {
                         for (int j = 0; j < _fuentesJugadores.Count; j++)
@@ -419,12 +404,9 @@ namespace SoulKnight
                             float dSq = (orig - pt).sqrMagnitude;
                             if (dSq <= rJugSq)
                             {
-                                if (HayLineaDeVisionSinAtravesarPared(orig, pt, gen, salaCerrada))
-                                {
-                                    float d = Mathf.Sqrt(dSq);
-                                    float l = (d <= rJugInterno) ? 1f : 1f - ((d - rJugInterno) / (rJug - rJugInterno));
-                                    if (l > luzMax) luzMax = l;
-                                }
+                                float d = Mathf.Sqrt(dSq);
+                                float l = (d <= rJugInterno) ? 1f : 1f - ((d - rJugInterno) / (rJug - rJugInterno));
+                                if (l > luzMax) luzMax = l;
                             }
                         }
                     }
@@ -440,19 +422,16 @@ namespace SoulKnight
                             float dSq = (ant.pos - pt).sqrMagnitude;
                             if (dSq <= rAntSq)
                             {
-                                if (HayLineaDeVisionSinAtravesarPared(ant.pos, pt, gen, salaCerrada))
-                                {
-                                    float rAntInterno = rAnt * 0.78f;
-                                    float d = Mathf.Sqrt(dSq);
-                                    float l = (d <= rAntInterno) ? 1f : 1f - ((d - rAntInterno) / (rAnt - rAntInterno));
-                                    if (l > luzMax) luzMax = l;
-                                }
+                                float rAntInterno = rAnt * 0.78f;
+                                float d = Mathf.Sqrt(dSq);
+                                float l = (d <= rAntInterno) ? 1f : 1f - ((d - rAntInterno) / (rAnt - rAntInterno));
+                                if (l > luzMax) luzMax = l;
                             }
                         }
                     }
 
-                    // Fuera del área iluminada: 100% NEGRO ABSOLUTO (alpha = 255)
-                    byte alpha = (byte)Mathf.RoundToInt(Mathf.Lerp(255f, 0f, Mathf.Clamp01(luzMax)));
+                    // Iluminación suave en zonas lejanas sin explorar, 100% cristalina y clara en salas y rango de visión
+                    byte alpha = (byte)Mathf.RoundToInt(Mathf.Lerp(oscuridadMaxima, 0f, Mathf.Clamp01(luzMax)));
                     _pixelesNiebla[rowOffset + px] = new Color32(0, 0, 0, alpha);
                 }
             }

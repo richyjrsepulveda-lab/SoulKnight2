@@ -182,7 +182,7 @@ namespace SoulKnight
 
                     if (i < _lucesAntorchas.Count && _lucesAntorchas[i] != null)
                     {
-                        float escHalo = 13.5f * _progresoEncendido * flicker;
+                        float escHalo = 18.5f * _progresoEncendido * flicker;
                         _lucesAntorchas[i].transform.localScale = new Vector3(escHalo, escHalo, 1f);
                     }
                 }
@@ -204,13 +204,20 @@ namespace SoulKnight
                 }
             }
 
-            // Encender e iluminar por completo la sala al entrar cualquier jugador
+            // Encender e iluminar por completo la sala al acercarse o entrar cualquier jugador
             if (!descubierta)
             {
+                Rect limitesDeteccion = new Rect(
+                    limitesSala.xMin - 5f,
+                    limitesSala.yMin - 5f,
+                    limitesSala.width + 10f,
+                    limitesSala.height + 10f
+                );
+
                 for (int i = 0; i < Personaje.Todos.Count; i++)
                 {
                     var pj = Personaje.Todos[i];
-                    if (pj != null && limitesSala.Contains(pj.transform.position))
+                    if (pj != null && limitesDeteccion.Contains(pj.transform.position))
                     {
                         EncenderAntorchas(true);
                         break;

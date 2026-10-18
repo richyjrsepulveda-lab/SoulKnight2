@@ -902,7 +902,7 @@ namespace SoulKnight
             var haloObj = new GameObject("HaloLuzCalida");
             haloObj.transform.SetParent(antObj.transform, false);
             haloObj.transform.localPosition = new Vector3(0f, 0.25f, 0f);
-            haloObj.transform.localScale = Vector3.one * 9.5f;
+            haloObj.transform.localScale = Vector3.one * 15.0f;
             var srHalo = haloObj.AddComponent<SpriteRenderer>();
             srHalo.sprite = _spriteHaloLuzCalida;
             srHalo.sortingOrder = 0;
