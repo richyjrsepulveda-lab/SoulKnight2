@@ -79,6 +79,28 @@ namespace SoulKnight
             {
                 proj.proyectilEnemigo = true;
                 proj.Configurar(dir, danoProyectil, 999999);
+
+                int elem = 0;
+                if (BiomaActualNet.Value == (int)TipoBioma.Planta)
+                {
+                    proj.aplicaEsporas = true;
+                    elem = 3;
+                }
+                else if (BiomaActualNet.Value == (int)TipoBioma.Fuego)
+                {
+                    proj.aplicaQuemadura = true;
+                    elem = 1;
+                }
+                else if (BiomaActualNet.Value == (int)TipoBioma.Hielo)
+                {
+                    proj.aplicaRalentizacion = true;
+                    elem = 2;
+                }
+                else if (BiomaActualNet.Value == (int)TipoBioma.Arena)
+                {
+                    elem = 4;
+                }
+                proj.TipoElemento.Value = elem;
             }
 
             var netObj = bola.GetComponent<NetworkObject>();

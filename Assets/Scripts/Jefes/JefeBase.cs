@@ -679,6 +679,13 @@ namespace SoulKnight
                 proj.aplicaCongelacion = congelacion;
                 proj.aplicaRalentizacion = ralentizacion;
                 proj.aplicaEsporas = esporas;
+
+                int elem = 0;
+                if (esporas) elem = 3;
+                else if (quemadura) elem = 1;
+                else if (congelacion || ralentizacion) elem = 2;
+                else if (tipoJefe == TipoJefe.FaraonEterno) elem = 4;
+                proj.TipoElemento.Value = elem;
             }
             var no = p.GetComponent<NetworkObject>();
             if (no != null) no.Spawn();

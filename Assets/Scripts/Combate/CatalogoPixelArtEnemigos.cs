@@ -94,7 +94,7 @@ namespace SoulKnight
                         }
                         if (tieneVecinoOpaco)
                         {
-                            pixelesConBorde[y * w + x] = Color.white;
+                            pixelesConBorde[y * w + x] = new Color(0.96f, 0.15f, 0.15f, 1f); // Trazo rojo de alto contraste y peligro
                         }
                     }
                 }

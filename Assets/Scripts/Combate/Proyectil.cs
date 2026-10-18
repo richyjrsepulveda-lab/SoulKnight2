@@ -38,6 +38,11 @@ namespace SoulKnight
             NetworkVariableReadPermission.Everyone,
             NetworkVariableWritePermission.Server);
 
+        public NetworkVariable<int> TipoElemento = new NetworkVariable<int>(
+            0,
+            NetworkVariableReadPermission.Everyone,
+            NetworkVariableWritePermission.Server);
+
         private Vector2 _direccion = Vector2.right;
         private ulong _lanzadorId;
         private float _tiempoVivo = 0f;
@@ -50,7 +55,7 @@ namespace SoulKnight
             var sr = GetComponent<SpriteRenderer>();
             if (sr != null)
             {
-                sr.sortingOrder = 8;
+                sr.sortingOrder = 9;
             }
 
             // Adelantar Z para estar al frente de la cámara ortográfica
@@ -74,6 +79,9 @@ namespace SoulKnight
                 _direccion = act;
                 ActualizarRotacion(act);
             };
+
+            TipoElemento.OnValueChanged += (prev, act) => ActualizarVisualElemento(act);
+            ActualizarVisualElemento(TipoElemento.Value);
         }
 
         public void Configurar(Vector2 direccion, int danoBase, ulong lanzadorId, bool quemadura = false, bool congelacion = false, float probCong = 1f)
@@ -142,6 +150,10 @@ namespace SoulKnight
                 _tiempoVivo += Time.deltaTime;
                 if (_tiempoVivo >= tiempoVida)
                 {
+                    if (proyectilEnemigo)
+                    {
+                        DetonarImpactoEnemigo();
+                    }
                     DestruirProyectil();
                 }
             }
@@ -181,7 +193,11 @@ namespace SoulKnight
 
             if (destruirConPared && esPared)
             {
-                if (aplicaCongelacion || tieneExplosionArea)
+                if (proyectilEnemigo)
+                {
+                    DetonarImpactoEnemigo();
+                }
+                else if (aplicaCongelacion || tieneExplosionArea)
                 {
                     DetonarExplosionArea(null);
                 }
@@ -213,6 +229,7 @@ namespace SoulKnight
                     {
                         personaje.AplicarEsporasVeneno(4.0f, Mathf.Max(3, Mathf.RoundToInt(dano * 0.3f)));
                     }
+                    DetonarImpactoEnemigo();
                     DestruirProyectil();
                     return true;
                 }
@@ -339,6 +356,276 @@ namespace SoulKnight
             lr.positionCount = puntos;
 
             efectoObj.AddComponent<AnimacionAnilloExplosion>().Inicializar(radioArea, esHielo);
+        }
+
+        private void DetonarImpactoEnemigo()
+        {
+            if (!IsServer || !proyectilEnemigo) return;
+
+            Vector2 pos = transform.position;
+            if (aplicaEsporas || TipoElemento.Value == 3)
+            {
+                ZonaPeligroPiso.Instanciar(pos, 2.0f, TipoZonaPeligro.Esporas, 6.5f, esServidor: true, danoTick: 5);
+                SpawnearZonaPeligroClientRpc(pos, 2.0f, (int)TipoZonaPeligro.Esporas, 6.5f);
+            }
+            else if (aplicaQuemadura || TipoElemento.Value == 1)
+            {
+                ZonaPeligroPiso.Instanciar(pos, 1.5f, TipoZonaPeligro.Fuego, 5.0f, esServidor: true, danoTick: 5);
+                SpawnearZonaPeligroClientRpc(pos, 1.5f, (int)TipoZonaPeligro.Fuego, 5.0f);
+            }
+            else if (aplicaCongelacion || aplicaRalentizacion || TipoElemento.Value == 2)
+            {
+                ZonaPeligroPiso.Instanciar(pos, 1.6f, TipoZonaPeligro.Hielo, 5.5f, esServidor: true, danoTick: 3);
+                SpawnearZonaPeligroClientRpc(pos, 1.6f, (int)TipoZonaPeligro.Hielo, 5.5f);
+            }
+        }
+
+        [ClientRpc]
+        private void SpawnearZonaPeligroClientRpc(Vector2 pos, float radio, int tipoZona, float duracion)
+        {
+            if (IsServer) return;
+            ZonaPeligroPiso.Instanciar(pos, radio, (TipoZonaPeligro)tipoZona, duracion, esServidor: false);
+        }
+
+        private static Sprite _spriteProjEsporas;
+        private static Sprite _spriteProjFuego;
+        private static Sprite _spriteProjHielo;
+        private static Sprite _spriteProjArena;
+        private static Sprite _spriteProjArcano;
+        private static Sprite _spriteHaloBase;
+        private GameObject _haloBrillo;
+
+        public void ActualizarVisualElemento(int elem)
+        {
+            var sr = GetComponent<SpriteRenderer>();
+            if (sr == null) return;
+            sr.sortingOrder = 9;
+
+            if (proyectilEnemigo)
+            {
+                // Escala generosa visible de alto impacto
+                transform.localScale = Vector3.one * 1.35f;
+
+                Color colorHalo;
+                switch (elem)
+                {
+                    case 3: // Planta / Esporas
+                        if (_spriteProjEsporas == null) _spriteProjEsporas = GenerarSpriteBalaEsporas();
+                        sr.sprite = _spriteProjEsporas;
+                        colorHalo = new Color(0.48f, 1f, 0.22f, 0.85f);
+                        aplicaEsporas = true;
+                        break;
+                    case 1: // Fuego
+                        if (_spriteProjFuego == null) _spriteProjFuego = GenerarSpriteBalaFuego();
+                        sr.sprite = _spriteProjFuego;
+                        colorHalo = new Color(1f, 0.45f, 0.10f, 0.85f);
+                        aplicaQuemadura = true;
+                        break;
+                    case 2: // Hielo
+                        if (_spriteProjHielo == null) _spriteProjHielo = GenerarSpriteBalaHielo();
+                        sr.sprite = _spriteProjHielo;
+                        colorHalo = new Color(0.35f, 0.85f, 1f, 0.85f);
+                        aplicaRalentizacion = true;
+                        break;
+                    case 4: // Arena
+                        if (_spriteProjArena == null) _spriteProjArena = GenerarSpriteBalaArena();
+                        sr.sprite = _spriteProjArena;
+                        colorHalo = new Color(1f, 0.80f, 0.25f, 0.85f);
+                        break;
+                    default: // Normal / Piedra
+                        if (_spriteProjArcano == null) _spriteProjArcano = GenerarSpriteBalaArcana();
+                        sr.sprite = _spriteProjArcano;
+                        colorHalo = new Color(1f, 0.20f, 0.20f, 0.85f);
+                        break;
+                }
+
+                if (_haloBrillo == null)
+                {
+                    _haloBrillo = new GameObject("HaloBrilloProyectil");
+                    _haloBrillo.transform.SetParent(transform, false);
+                    _haloBrillo.transform.localPosition = new Vector3(0f, 0f, 0.05f);
+                    _haloBrillo.transform.localScale = Vector3.one * 1.45f;
+                    var srHalo = _haloBrillo.AddComponent<SpriteRenderer>();
+                    if (_spriteHaloBase == null) _spriteHaloBase = GenerarSpriteHalo();
+                    srHalo.sprite = _spriteHaloBase;
+                    srHalo.sortingOrder = 8;
+                    srHalo.color = colorHalo;
+                }
+            }
+        }
+
+        private static Sprite GenerarSpriteBalaEsporas()
+        {
+            int s = 24;
+            Texture2D tex = new Texture2D(s, s, TextureFormat.RGBA32, false);
+            tex.filterMode = FilterMode.Point;
+
+            Color cBordeRojo = new Color(0.96f, 0.15f, 0.15f, 1f); // Trazo rojo de peligro
+            Color cVioleta = new Color(0.55f, 0.15f, 0.65f, 1f);
+            Color cLima = new Color(0.50f, 1f, 0.25f, 1f);
+            Color cNucleo = Color.white;
+
+            for (int y = 0; y < s; y++)
+            {
+                for (int x = 0; x < s; x++)
+                {
+                    int dx = Mathf.Abs(x - 11);
+                    int dy = Mathf.Abs(y - 11);
+                    int dist = dx + dy;
+                    if (dist == 8) tex.SetPixel(x, y, cBordeRojo);
+                    else if (dist < 8 && dist >= 6) tex.SetPixel(x, y, cVioleta);
+                    else if (dist < 6 && dist >= 3) tex.SetPixel(x, y, cLima);
+                    else if (dist < 3) tex.SetPixel(x, y, cNucleo);
+                    else tex.SetPixel(x, y, Color.clear);
+                }
+            }
+            tex.Apply();
+            return Sprite.Create(tex, new Rect(0, 0, s, s), new Vector2(0.5f, 0.5f), 32f);
+        }
+
+        private static Sprite GenerarSpriteBalaFuego()
+        {
+            int s = 24;
+            Texture2D tex = new Texture2D(s, s, TextureFormat.RGBA32, false);
+            tex.filterMode = FilterMode.Point;
+
+            Color cBordeRojo = new Color(0.96f, 0.15f, 0.15f, 1f);
+            Color cFuego = new Color(1f, 0.40f, 0.05f, 1f);
+            Color cOro = new Color(1f, 0.90f, 0.20f, 1f);
+            Color cNucleo = Color.white;
+
+            for (int y = 0; y < s; y++)
+            {
+                for (int x = 0; x < s; x++)
+                {
+                    int dx = Mathf.Abs(x - 11);
+                    int dy = Mathf.Abs(y - 11);
+                    int dist = dx + dy;
+                    if (dist == 8) tex.SetPixel(x, y, cBordeRojo);
+                    else if (dist < 8 && dist >= 5) tex.SetPixel(x, y, cFuego);
+                    else if (dist < 5 && dist >= 2) tex.SetPixel(x, y, cOro);
+                    else if (dist < 2) tex.SetPixel(x, y, cNucleo);
+                    else tex.SetPixel(x, y, Color.clear);
+                }
+            }
+            tex.Apply();
+            return Sprite.Create(tex, new Rect(0, 0, s, s), new Vector2(0.5f, 0.5f), 32f);
+        }
+
+        private static Sprite GenerarSpriteBalaHielo()
+        {
+            int s = 24;
+            Texture2D tex = new Texture2D(s, s, TextureFormat.RGBA32, false);
+            tex.filterMode = FilterMode.Point;
+
+            Color cBordeRojo = new Color(0.96f, 0.15f, 0.15f, 1f);
+            Color cCianOscuro = new Color(0.15f, 0.45f, 0.85f, 1f);
+            Color cCianClaro = new Color(0.45f, 0.92f, 1f, 1f);
+            Color cNucleo = Color.white;
+
+            for (int y = 0; y < s; y++)
+            {
+                for (int x = 0; x < s; x++)
+                {
+                    int dx = Mathf.Abs(x - 11);
+                    int dy = Mathf.Abs(y - 11);
+                    int dist = dx + dy;
+                    if (dist == 8) tex.SetPixel(x, y, cBordeRojo);
+                    else if (dist < 8 && dist >= 5) tex.SetPixel(x, y, cCianOscuro);
+                    else if (dist < 5 && dist >= 2) tex.SetPixel(x, y, cCianClaro);
+                    else if (dist < 2) tex.SetPixel(x, y, cNucleo);
+                    else tex.SetPixel(x, y, Color.clear);
+                }
+            }
+            tex.Apply();
+            return Sprite.Create(tex, new Rect(0, 0, s, s), new Vector2(0.5f, 0.5f), 32f);
+        }
+
+        private static Sprite GenerarSpriteBalaArena()
+        {
+            int s = 24;
+            Texture2D tex = new Texture2D(s, s, TextureFormat.RGBA32, false);
+            tex.filterMode = FilterMode.Point;
+
+            Color cBordeRojo = new Color(0.96f, 0.15f, 0.15f, 1f);
+            Color cArena = new Color(0.85f, 0.55f, 0.15f, 1f);
+            Color cOro = new Color(1f, 0.85f, 0.35f, 1f);
+            Color cNucleo = Color.white;
+
+            for (int y = 0; y < s; y++)
+            {
+                for (int x = 0; x < s; x++)
+                {
+                    int dx = Mathf.Abs(x - 11);
+                    int dy = Mathf.Abs(y - 11);
+                    int dist = dx + dy;
+                    if (dist == 8) tex.SetPixel(x, y, cBordeRojo);
+                    else if (dist < 8 && dist >= 5) tex.SetPixel(x, y, cArena);
+                    else if (dist < 5 && dist >= 2) tex.SetPixel(x, y, cOro);
+                    else if (dist < 2) tex.SetPixel(x, y, cNucleo);
+                    else tex.SetPixel(x, y, Color.clear);
+                }
+            }
+            tex.Apply();
+            return Sprite.Create(tex, new Rect(0, 0, s, s), new Vector2(0.5f, 0.5f), 32f);
+        }
+
+        private static Sprite GenerarSpriteBalaArcana()
+        {
+            int s = 24;
+            Texture2D tex = new Texture2D(s, s, TextureFormat.RGBA32, false);
+            tex.filterMode = FilterMode.Point;
+
+            Color cBordeRojo = new Color(0.96f, 0.15f, 0.15f, 1f);
+            Color cPurpura = new Color(0.40f, 0.10f, 0.55f, 1f);
+            Color cRojoVivo = new Color(0.90f, 0.20f, 0.35f, 1f);
+            Color cNucleo = Color.white;
+
+            for (int y = 0; y < s; y++)
+            {
+                for (int x = 0; x < s; x++)
+                {
+                    int dx = Mathf.Abs(x - 11);
+                    int dy = Mathf.Abs(y - 11);
+                    int dist = dx + dy;
+                    if (dist == 8) tex.SetPixel(x, y, cBordeRojo);
+                    else if (dist < 8 && dist >= 5) tex.SetPixel(x, y, cPurpura);
+                    else if (dist < 5 && dist >= 2) tex.SetPixel(x, y, cRojoVivo);
+                    else if (dist < 2) tex.SetPixel(x, y, cNucleo);
+                    else tex.SetPixel(x, y, Color.clear);
+                }
+            }
+            tex.Apply();
+            return Sprite.Create(tex, new Rect(0, 0, s, s), new Vector2(0.5f, 0.5f), 32f);
+        }
+
+        private static Sprite GenerarSpriteHalo()
+        {
+            int s = 16;
+            Texture2D tex = new Texture2D(s, s, TextureFormat.RGBA32, false);
+            tex.filterMode = FilterMode.Bilinear;
+
+            float rMax = s * 0.48f;
+            for (int y = 0; y < s; y++)
+            {
+                for (int x = 0; x < s; x++)
+                {
+                    float dx = x - 7.5f;
+                    float dy = y - 7.5f;
+                    float d = Mathf.Sqrt(dx * dx + dy * dy);
+                    if (d <= rMax)
+                    {
+                        float a = Mathf.Clamp01(1f - (d / rMax));
+                        tex.SetPixel(x, y, new Color(1f, 1f, 1f, a * a * 0.65f));
+                    }
+                    else
+                    {
+                        tex.SetPixel(x, y, Color.clear);
+                    }
+                }
+            }
+            tex.Apply();
+            return Sprite.Create(tex, new Rect(0, 0, s, s), new Vector2(0.5f, 0.5f), 32f);
         }
 
         private void DestruirProyectil()

@@ -256,6 +256,7 @@ namespace SoulKnight
         private void PulsoCuracionPlanta()
         {
             if (!IsServer || VidaActual.Value <= 0) return;
+            MostrarOndaCuracionClientRpc(transform.position, 6.5f);
             // Curar a aliados cercanos en 6 metros
             Collider2D[] aliados = Physics2D.OverlapCircleAll(transform.position, 6.5f);
             foreach (var col in aliados)
@@ -268,6 +269,55 @@ namespace SoulKnight
                     TextoFlotante.Crear(e.transform.position + new Vector3(0, 1.2f, 0), $"+{heal} HP", Color.green);
                 }
             }
+        }
+
+        private void SoltarEsporasEnPiso()
+        {
+            if (!IsServer || VidaActual.Value <= 0) return;
+            Vector2 pos = transform.position;
+            ZonaPeligroPiso.Instanciar(pos, 2.1f, TipoZonaPeligro.Esporas, 6.5f, esServidor: true, danoTick: 5);
+            CrearZonaPeligroClientRpc(pos, 2.1f, (int)TipoZonaPeligro.Esporas, 6.5f);
+        }
+
+        private void SoltarFuegoEnPiso()
+        {
+            if (!IsServer || VidaActual.Value <= 0) return;
+            Vector2 pos = transform.position;
+            ZonaPeligroPiso.Instanciar(pos, 1.6f, TipoZonaPeligro.Fuego, 5.0f, esServidor: true, danoTick: 5);
+            CrearZonaPeligroClientRpc(pos, 1.6f, (int)TipoZonaPeligro.Fuego, 5.0f);
+        }
+
+        private void SoltarHieloEnPiso()
+        {
+            if (!IsServer || VidaActual.Value <= 0) return;
+            Vector2 pos = transform.position;
+            ZonaPeligroPiso.Instanciar(pos, 1.8f, TipoZonaPeligro.Hielo, 5.5f, esServidor: true, danoTick: 3);
+            CrearZonaPeligroClientRpc(pos, 1.8f, (int)TipoZonaPeligro.Hielo, 5.5f);
+        }
+
+        [ClientRpc]
+        public void CrearZonaPeligroClientRpc(Vector2 pos, float radio, int tipoZona, float duracion)
+        {
+            if (IsServer) return;
+            ZonaPeligroPiso.Instanciar(pos, radio, (TipoZonaPeligro)tipoZona, duracion, esServidor: false);
+        }
+
+        [ClientRpc]
+        private void MostrarOndaCuracionClientRpc(Vector2 pos, float radio)
+        {
+            var ondaObj = new GameObject("OndaCuracion");
+            ondaObj.transform.position = new Vector3(pos.x, pos.y, -0.2f);
+            var lr = ondaObj.AddComponent<LineRenderer>();
+            lr.material = new Material(Shader.Find("Sprites/Default"));
+            lr.sortingOrder = 4;
+            lr.startWidth = 0.12f;
+            lr.endWidth = 0.02f;
+            lr.startColor = new Color(0.35f, 1f, 0.45f, 0.95f);
+            lr.endColor = new Color(0.85f, 1f, 0.5f, 0f);
+            lr.loop = true;
+            const int seg = 24;
+            lr.positionCount = seg;
+            ondaObj.AddComponent<AnimacionAnilloExplosion>().Inicializar(radio, false);
         }
 
         private void InvocarEsbirroAtaud()
@@ -364,6 +414,30 @@ namespace SoulKnight
                     {
                         _timerHabilidadRol = 0f;
                         PulsoCuracionPlanta();
+                    }
+                }
+                else if (BiomaActualNet.Value == (int)TipoBioma.Planta && RolActualNet.Value == (int)RolEnemigo.Especial)
+                {
+                    if (_timerHabilidadRol >= 4.0f)
+                    {
+                        _timerHabilidadRol = 0f;
+                        SoltarEsporasEnPiso();
+                    }
+                }
+                else if (BiomaActualNet.Value == (int)TipoBioma.Fuego && RolActualNet.Value == (int)RolEnemigo.Especial)
+                {
+                    if (_timerHabilidadRol >= 4.5f)
+                    {
+                        _timerHabilidadRol = 0f;
+                        SoltarFuegoEnPiso();
+                    }
+                }
+                else if (BiomaActualNet.Value == (int)TipoBioma.Hielo && RolActualNet.Value == (int)RolEnemigo.Especial)
+                {
+                    if (_timerHabilidadRol >= 4.5f)
+                    {
+                        _timerHabilidadRol = 0f;
+                        SoltarHieloEnPiso();
                     }
                 }
                 else if (RolActualNet.Value == (int)RolEnemigo.Spawner)
@@ -621,6 +695,16 @@ namespace SoulKnight
                 if (BiomaActualNet.Value == (int)TipoBioma.Arena && RolActualNet.Value == (int)RolEnemigo.Tanque)
                 {
                     GestorPartida.Instancia.SpawnearEsbirroEmergente(transform.position, TipoBioma.Arena, RolEnemigo.MeleeRapido);
+                }
+                // Si era Hongo de Esporas, al morir estalla en una nube de esporas
+                if (BiomaActualNet.Value == (int)TipoBioma.Planta && RolActualNet.Value == (int)RolEnemigo.Especial)
+                {
+                    SoltarEsporasEnPiso();
+                }
+                // Si era Fatuo Volcánico, al morir estalla en llamas
+                if (BiomaActualNet.Value == (int)TipoBioma.Fuego && RolActualNet.Value == (int)RolEnemigo.Especial)
+                {
+                    SoltarFuegoEnPiso();
                 }
 
                 GestorPartida.Instancia.EnemigoEliminado(this);

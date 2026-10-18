@@ -30,22 +30,24 @@ namespace SoulKnight
             var go = new GameObject("TextoFlotante");
             go.transform.position = posicion + offset;
 
-            // Contorno blanco de alto contraste en 4 direcciones cardinales
-            float bOff = 0.024f;
+            // Contorno negro sólido de alto contraste en 8 direcciones
+            float bOff = 0.026f;
             Vector3[] offsetsBorde = new Vector3[]
             {
                 new Vector3(-bOff, 0f, 0f),
                 new Vector3(bOff, 0f, 0f),
                 new Vector3(0f, -bOff, 0f),
                 new Vector3(0f, bOff, 0f),
-                new Vector3(-bOff * 0.7f, -bOff * 0.7f, 0f),
-                new Vector3(bOff * 0.7f, bOff * 0.7f, 0f)
+                new Vector3(-bOff * 0.72f, -bOff * 0.72f, 0f),
+                new Vector3(bOff * 0.72f, bOff * 0.72f, 0f),
+                new Vector3(-bOff * 0.72f, bOff * 0.72f, 0f),
+                new Vector3(bOff * 0.72f, -bOff * 0.72f, 0f)
             };
 
             var listaBordes = new List<TextMesh>();
             foreach (var off in offsetsBorde)
             {
-                var subGo = new GameObject("BordeBlanco");
+                var subGo = new GameObject("BordeNegro");
                 subGo.transform.SetParent(go.transform, false);
                 subGo.transform.localPosition = off;
                 var subTm = subGo.AddComponent<TextMesh>();
@@ -56,7 +58,7 @@ namespace SoulKnight
                 subTm.fontStyle = FontStyle.Bold;
                 subTm.anchor = TextAnchor.MiddleCenter;
                 subTm.alignment = TextAlignment.Center;
-                subTm.color = Color.white;
+                subTm.color = Color.black;
                 var subMr = subGo.GetComponent<MeshRenderer>();
                 subMr.sharedMaterial = _fuente.material;
                 subMr.sortingOrder = 99; // Detrás del texto coloreado
@@ -95,13 +97,13 @@ namespace SoulKnight
             _vx = Mathf.MoveTowards(_vx, 0f, 0.35f * Time.deltaTime);
             transform.position += new Vector3(_vx, _vy, 0f) * Time.deltaTime;
 
-            // Desvanecimiento suave tanto del texto central como de su borde blanco
+            // Desvanecimiento suave tanto del texto central como de su borde negro
             float alfa = Mathf.Clamp01(1f - (_tiempo / Duracion));
             Color c = _color;
             c.a = alfa;
             _texto.color = c;
 
-            Color cBorde = Color.white;
+            Color cBorde = Color.black;
             cBorde.a = alfa;
             for (int i = 0; i < _bordesBlanco.Count; i++)
             {
