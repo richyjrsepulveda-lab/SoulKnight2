@@ -256,7 +256,7 @@ namespace SoulKnight
                 }
                 else if (!string.IsNullOrEmpty(motivo))
                 {
-                    TextoFlotante.Crear(transform.position + Vector3.up * 1.2f, motivo, Color.yellow);
+                    NotificarHabilidadBloqueada(motivo, Color.yellow, Controles.PrincipalPresionado);
                 }
             }
 
@@ -272,7 +272,7 @@ namespace SoulKnight
                 }
                 else
                 {
-                    TextoFlotante.Crear(transform.position + Vector3.up * 1.2f, motivo, Color.yellow);
+                    NotificarHabilidadBloqueada(motivo, Color.yellow, Controles.Presionada(Controles.Habilidad1));
                 }
             }
 
@@ -286,7 +286,7 @@ namespace SoulKnight
                 }
                 else
                 {
-                    TextoFlotante.Crear(transform.position + Vector3.up * 1.2f, motivo, Color.yellow);
+                    NotificarHabilidadBloqueada(motivo, Color.yellow, Controles.Presionada(Controles.Habilidad2));
                 }
             }
 
@@ -300,7 +300,7 @@ namespace SoulKnight
                 }
                 else
                 {
-                    TextoFlotante.Crear(transform.position + Vector3.up * 1.2f, motivo, Color.yellow);
+                    NotificarHabilidadBloqueada(motivo, Color.yellow, Controles.Presionada(Controles.Ultimate));
                 }
             }
         }

@@ -344,7 +344,7 @@ namespace SoulKnight
                     }
                     else if (!string.IsNullOrEmpty(motivo))
                     {
-                        TextoFlotante.Crear(transform.position + Vector3.up * 1.2f, motivo, Color.red);
+                        NotificarHabilidadBloqueada(motivo, Color.red, Controles.PrincipalPresionado);
                     }
                 }
             }
@@ -359,7 +359,7 @@ namespace SoulKnight
                 }
                 else
                 {
-                    TextoFlotante.Crear(transform.position + Vector3.up * 1.2f, motivo, Color.red);
+                    NotificarHabilidadBloqueada(motivo, Color.red, Controles.Presionada(Controles.Habilidad1));
                 }
             }
 
@@ -373,7 +373,7 @@ namespace SoulKnight
                 }
                 else
                 {
-                    TextoFlotante.Crear(transform.position + Vector3.up * 1.2f, motivo, Color.red);
+                    NotificarHabilidadBloqueada(motivo, Color.red, Controles.Presionada(Controles.Habilidad2));
                 }
             }
         }

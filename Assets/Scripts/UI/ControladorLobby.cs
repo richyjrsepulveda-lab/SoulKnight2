@@ -627,7 +627,7 @@ namespace SoulKnight
                 slotObj.transform.SetParent(contenedorSlotsHabilidades, false);
 
                 var rtSlot = slotObj.AddComponent<RectTransform>();
-                float altoSlot = seleccionada ? 116f : 52f;
+                float altoSlot = seleccionada ? 124f : 52f;
                 rtSlot.sizeDelta = new Vector2(620f, altoSlot);
 
                 var le = slotObj.AddComponent<LayoutElement>();
@@ -719,7 +719,7 @@ namespace SoulKnight
                     txtNom.fontSize = 12;
                     txtNom.text = $"<b><color=#5ce1e6>{hab.nombre.ToUpper()}</color></b>  <color=#ffd700>({teclaStr})</color>";
 
-                    // 3. Descripción técnica desplegada en zona inferior (zona 2 amplia, limpia y sin aplastamiento)
+                    // 3. Descripción técnica desplegada en zona inferior con interlineado amplio
                     var txtDescObj = new GameObject("TextoDescripcion");
                     txtDescObj.transform.SetParent(fondoInt.transform, false);
                     var rtTxtDesc = txtDescObj.AddComponent<RectTransform>();
@@ -727,12 +727,12 @@ namespace SoulKnight
                     rtTxtDesc.anchorMax = new Vector2(1f, 1f);
                     rtTxtDesc.pivot = new Vector2(0f, 0f);
                     rtTxtDesc.offsetMin = new Vector2(68f, 10f);
-                    rtTxtDesc.offsetMax = new Vector2(-14f, -38f);
+                    rtTxtDesc.offsetMax = new Vector2(-14f, -40f);
 
                     var txtDesc = txtDescObj.AddComponent<Text>();
                     txtDesc.font = fuentePixel;
                     txtDesc.fontSize = 11;
-                    txtDesc.lineSpacing = 1.2f;
+                    txtDesc.lineSpacing = 1.5f;
                     txtDesc.alignment = TextAnchor.UpperLeft;
                     txtDesc.horizontalOverflow = HorizontalWrapMode.Wrap;
                     txtDesc.verticalOverflow = VerticalWrapMode.Overflow;

@@ -659,10 +659,15 @@ namespace SoulKnight
         protected override void ProcesarInputsHabilidadesLocales()
         {
             // Rayo de Hielo (Click Izquierdo sostenido)
-            bool disparando = Controles.PrincipalMantenido && PuedeUsarHabilidad(IdHabilidad.Hielo_RayoHielo, out _);
+            bool puedeRayo = PuedeUsarHabilidad(IdHabilidad.Hielo_RayoHielo, out string motivoRayo);
+            bool disparando = Controles.PrincipalMantenido && puedeRayo;
             if (disparando != DisparandoRayo.Value)
             {
                 SetDisparandoRayoServerRpc(disparando);
+            }
+            if (Controles.PrincipalMantenido && !puedeRayo)
+            {
+                NotificarHabilidadBloqueada(motivoRayo, Color.cyan, Controles.PrincipalPresionado);
             }
 
             // Bola de Hielo (E) - Auto-casteo continuo al mantener presionado
@@ -678,7 +683,7 @@ namespace SoulKnight
                 }
                 else
                 {
-                    TextoFlotante.Crear(transform.position + Vector3.up * 1.2f, motivo, Color.cyan);
+                    NotificarHabilidadBloqueada(motivo, Color.cyan, Controles.Presionada(Controles.Habilidad1));
                 }
             }
 
@@ -692,7 +697,7 @@ namespace SoulKnight
                 }
                 else
                 {
-                    TextoFlotante.Crear(transform.position + Vector3.up * 1.2f, motivo, Color.cyan);
+                    NotificarHabilidadBloqueada(motivo, Color.cyan, Controles.Presionada(Controles.Habilidad2));
                 }
             }
 
@@ -707,7 +712,7 @@ namespace SoulKnight
                 }
                 else
                 {
-                    TextoFlotante.Crear(transform.position + Vector3.up * 1.2f, motivo, Color.cyan);
+                    NotificarHabilidadBloqueada(motivo, Color.cyan, Controles.Presionada(Controles.Ultimate));
                 }
             }
         }

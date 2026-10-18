@@ -147,6 +147,21 @@ namespace SoulKnight
 
         public bool PuedeUsarHabilidad(IdHabilidad id) => PuedeUsarHabilidad(id, out _);
 
+        private float _tiempoUltimoAvisoBloqueo;
+
+        /// <summary>
+        /// Emite un aviso cuando una habilidad no puede usarse, exactamente 1 vez por pulsación (evita spam al mantener presionada la tecla).
+        /// </summary>
+        public void NotificarHabilidadBloqueada(string motivo, Color color, bool fuePresionada)
+        {
+            if (string.IsNullOrEmpty(motivo)) return;
+            if (fuePresionada && Time.time - _tiempoUltimoAvisoBloqueo > 0.5f)
+            {
+                _tiempoUltimoAvisoBloqueo = Time.time;
+                TextoFlotante.Crear(transform.position + Vector3.up * 1.2f, motivo, color);
+            }
+        }
+
         public static readonly System.Collections.Generic.List<Personaje> Todos = new System.Collections.Generic.List<Personaje>();
 
         protected virtual void OnEnable()
