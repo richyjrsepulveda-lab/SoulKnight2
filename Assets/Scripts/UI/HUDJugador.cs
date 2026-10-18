@@ -3446,11 +3446,9 @@ namespace SoulKnight
             }
             else
             {
-                int recamara = (GestorPartida.Instancia != null) ? GestorPartida.Instancia.ObtenerNumeroRecamara(nivel) : 1;
-                int nivelEnRecamara = ((nivel - 1) % 10) + 1;
                 int loop = (GestorPartida.Instancia != null) ? GestorPartida.Instancia.LoopActual : 0;
                 string extraLoop = loop > 0 ? $" [BUCLE +{loop}]" : "";
-                textoBanner = $"RECÁMARA {recamara} (NIVEL {nivelEnRecamara}/10)\n{bioma}{extraLoop}";
+                textoBanner = $"NIVEL {nivel}{extraLoop}";
             }
 
             IniciarFadeAclarar(0.8f, textoBanner, () =>

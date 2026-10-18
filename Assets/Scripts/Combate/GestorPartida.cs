@@ -286,15 +286,16 @@ namespace SoulKnight
                 }
                 else
                 {
-                    // Nivel normal (1, 2, 4, 5, 7, 8, 9): Sala final con oleadas de guardianes que al derrotarlos abren el muro al hoyo
+                    // Nivel normal (1, 2, 4, 5, 7, 8, 9): ¡Cámara de Guardianes Élite!
+                    // Muchas oleadas con los enemigos más fuertes de cada bioma
                     sala.MostrarPortalesSpawn(false);
                     if (SalaRed.Instancia != null)
                     {
                         SalaRed.Instancia.MostrarPortalesSalaClientRpc(indiceSala, false);
-                        SalaRed.Instancia.EnviarAvisoTodos($"⚔️ ¡Cámara de salida bloqueada! Despejen la sala para abrir el hoyo.");
+                        SalaRed.Instancia.EnviarAvisoTodos($"⚔️ ¡CÁMARA DE GUARDIANES! Despejen las oleadas de élite para abrir el pasadizo.");
                     }
                     _oleadaActualSala = 1;
-                    StartCoroutine(RutinaSpawnearOleada(sala, sala.puntosSpawnOleada1, esPrimeraOleada: true));
+                    StartCoroutine(RutinaSpawnearOleada(sala, sala.puntosSpawnOleada1, esPrimeraOleada: true, esGuardianes: true));
                 }
             }
             else
@@ -307,30 +308,52 @@ namespace SoulKnight
                     SalaRed.Instancia.EnviarAvisoTodos($"⚔️ ¡Sala bloqueada! Prepárense...");
                 }
                 _oleadaActualSala = 1;
-                StartCoroutine(RutinaSpawnearOleada(sala, sala.puntosSpawnOleada1, esPrimeraOleada: true));
+                StartCoroutine(RutinaSpawnearOleada(sala, sala.puntosSpawnOleada1, esPrimeraOleada: true, esGuardianes: false));
             }
         }
 
-        private List<RolEnemigo> ObtenerRolesOleada(TipoBioma bioma, int oleada, int cantidad)
+        private List<RolEnemigo> ObtenerRolesOleada(TipoBioma bioma, int oleada, int cantidad, bool esGuardianes = false)
         {
             List<RolEnemigo> resultado = new List<RolEnemigo>();
             RolEnemigo[] catalogo = null;
 
-            if (oleada == 1)
+            if (esGuardianes)
             {
-                // Oleada 1 (Vanguardia): Tanques, combate melé y hostigadores frontales
-                catalogo = new RolEnemigo[] { RolEnemigo.Tanque, RolEnemigo.MeleeRapido, RolEnemigo.Especial };
-            }
-            else
-            {
-                // Oleada 2 (Retaguardia & Apoyo): Daño a distancia, invocadores y apoyo táctico
-                if (bioma == TipoBioma.Arena)
+                // En la cámara final de guardianes se seleccionan los enemigos más duros e impactantes de cada bioma
+                if (oleada == 1)
                 {
-                    catalogo = new RolEnemigo[] { RolEnemigo.Spawner, RolEnemigo.Especial, RolEnemigo.MeleeRapido };
+                    // Oleada 1: Vanguardia pesada con tanques y atacantes especiales
+                    catalogo = new RolEnemigo[] { RolEnemigo.Tanque, RolEnemigo.Tanque, RolEnemigo.Especial, RolEnemigo.MeleeRapido };
+                }
+                else if (oleada == 2)
+                {
+                    // Oleada 2: Generadores (Spawners), artillería mágica a distancia y hostigadores
+                    catalogo = new RolEnemigo[] { RolEnemigo.Spawner, RolEnemigo.Rango, RolEnemigo.Especial, RolEnemigo.Spawner };
                 }
                 else
                 {
-                    catalogo = new RolEnemigo[] { RolEnemigo.Rango, RolEnemigo.Especial, RolEnemigo.Tanque };
+                    // Oleada 3 (Asalto Élite Definitivo): Combinación de Tanques + Generadores + Magos + Especiales
+                    catalogo = new RolEnemigo[] { RolEnemigo.Tanque, RolEnemigo.Spawner, RolEnemigo.Rango, RolEnemigo.Especial, RolEnemigo.MeleeRapido };
+                }
+            }
+            else
+            {
+                if (oleada == 1)
+                {
+                    // Oleada 1 (Vanguardia): Tanques, combate melé y hostigadores frontales
+                    catalogo = new RolEnemigo[] { RolEnemigo.Tanque, RolEnemigo.MeleeRapido, RolEnemigo.Especial };
+                }
+                else
+                {
+                    // Oleada 2 (Retaguardia & Apoyo): Daño a distancia, invocadores y apoyo táctico
+                    if (bioma == TipoBioma.Arena)
+                    {
+                        catalogo = new RolEnemigo[] { RolEnemigo.Spawner, RolEnemigo.Especial, RolEnemigo.MeleeRapido };
+                    }
+                    else
+                    {
+                        catalogo = new RolEnemigo[] { RolEnemigo.Rango, RolEnemigo.Especial, RolEnemigo.Tanque };
+                    }
                 }
             }
 
@@ -346,7 +369,7 @@ namespace SoulKnight
             return resultado;
         }
 
-        private IEnumerator RutinaSpawnearOleada(ControladorSala sala, List<Vector2> puntosSpawn, bool esPrimeraOleada)
+        private IEnumerator RutinaSpawnearOleada(ControladorSala sala, List<Vector2> puntosSpawn, bool esPrimeraOleada, bool esGuardianes = false)
         {
             _spawneandoOleada = true;
 
@@ -359,7 +382,8 @@ namespace SoulKnight
                 if (SalaRed.Instancia != null)
                 {
                     SalaRed.Instancia.MostrarPortalesSalaClientRpc(sala.indiceSala, true);
-                    SalaRed.Instancia.EnviarAvisoTodos("🌀 ¡Portales abiertos! Oleada 1/2");
+                    string msgOleada = esGuardianes ? "🌀 ¡Portales abiertos! Oleada de Guardianes 1/3" : "🌀 ¡Portales abiertos! Oleada 1/2";
+                    SalaRed.Instancia.EnviarAvisoTodos(msgOleada);
                 }
 
                 yield return new WaitForSeconds(1.0f);
@@ -370,11 +394,11 @@ namespace SoulKnight
             }
 
             TipoBioma biomaActual = ObtenerBiomaPorNivel(NivelActual);
-            float multDificultad = 1.0f + (LoopActual * 0.55f);
+            float multDificultad = (1.0f + (LoopActual * 0.55f)) * (esGuardianes ? 1.25f : 1.0f);
 
             if (puntosSpawn != null && puntosSpawn.Count > 0)
             {
-                var roles = ObtenerRolesOleada(biomaActual, _oleadaActualSala, puntosSpawn.Count);
+                var roles = ObtenerRolesOleada(biomaActual, _oleadaActualSala, puntosSpawn.Count, esGuardianes);
                 for (int i = 0; i < puntosSpawn.Count; i++)
                 {
                     if (PartidaTerminada) break;
@@ -566,15 +590,43 @@ namespace SoulKnight
             // 2. Gestionar progreso de la sala activa
             if (_salaActivaEnCombate != null && !_spawneandoOleada && _enemigosActivos.Count == 0)
             {
-                if (!_salaActivaEnCombate.esSalaJefe && _oleadaActualSala == 1)
+                bool esCamaraGuardianes = _salaActivaEnCombate.esSalaJefe && !EsNivelDeJefe(NivelActual);
+                int maxOleadas = esCamaraGuardianes ? 3 : 2;
+                bool esJefeReal = _salaActivaEnCombate.esSalaJefe && EsNivelDeJefe(NivelActual);
+
+                if (!esJefeReal && _oleadaActualSala < maxOleadas)
                 {
-                    // Pasar a la segunda mini-oleada
-                    _oleadaActualSala = 2;
-                    if (SalaRed.Instancia != null)
+                    _oleadaActualSala++;
+                    List<Vector2> siguientesSpawns = null;
+                    if (_oleadaActualSala == 2)
                     {
-                        SalaRed.Instancia.EnviarAvisoTodos("🌀 ¡Oleada 2/2 saliendo de los portales!");
+                        siguientesSpawns = _salaActivaEnCombate.puntosSpawnOleada2;
+                        if (SalaRed.Instancia != null)
+                        {
+                            if (esCamaraGuardianes)
+                                SalaRed.Instancia.EnviarAvisoTodos("🌀 ¡Oleada 2/3: Invocadores y hostigadores a distancia!");
+                            else
+                                SalaRed.Instancia.EnviarAvisoTodos("🌀 ¡Oleada 2/2 saliendo de los portales!");
+                        }
                     }
-                    StartCoroutine(RutinaSpawnearOleada(_salaActivaEnCombate, _salaActivaEnCombate.puntosSpawnOleada2, esPrimeraOleada: false));
+                    else if (_oleadaActualSala == 3)
+                    {
+                        siguientesSpawns = _salaActivaEnCombate.puntosSpawnOleada3;
+                        if (siguientesSpawns == null || siguientesSpawns.Count == 0)
+                            siguientesSpawns = _salaActivaEnCombate.puntosSpawnOleada2;
+
+                        if (SalaRed.Instancia != null)
+                        {
+                            SalaRed.Instancia.EnviarAvisoTodos("🔥 ¡Oleada FINAL 3/3: Asalto de guardianes de élite!");
+                        }
+                    }
+
+                    if (siguientesSpawns == null || siguientesSpawns.Count == 0)
+                    {
+                        siguientesSpawns = _salaActivaEnCombate.puntosSpawnOleada1;
+                    }
+
+                    StartCoroutine(RutinaSpawnearOleada(_salaActivaEnCombate, siguientesSpawns, esPrimeraOleada: false, esGuardianes: esCamaraGuardianes));
                 }
                 else
                 {
@@ -589,14 +641,29 @@ namespace SoulKnight
 
                     if (salaCompletada.esSalaJefe)
                     {
-                        // Se mató al jefe: abrir el pasillo final y activar el hoyo
+                        // Se mató al jefe o se completó la cámara de guardianes: abrir el pasillo final y activar el hoyo
                         salaCompletada.AbrirMuroSalidaJefe();
                         ActivarPasajeSiguienteNivel();
+
+                        // En la cámara de guardianes también otorgamos cofre de recompensas por superar el desafío
+                        SpawnearRecompensaFinSala(salaCompletada);
+
+                        if (SalaRed.Instancia != null)
+                        {
+                            if (esCamaraGuardianes)
+                                SalaRed.Instancia.EnviarAvisoTodos("✅ ¡Cámara de guardianes superada! Pasillo final abierto.");
+                            else
+                                SalaRed.Instancia.EnviarAvisoTodos("👑 ¡Jefe derrotado! Pasillo final abierto.");
+                        }
                     }
                     else
                     {
-                        // Recompensas de mejoras permanentes y compras al despejar la sala
+                        // Sala normal
                         SpawnearRecompensaFinSala(salaCompletada);
+                        if (SalaRed.Instancia != null)
+                        {
+                            SalaRed.Instancia.EnviarAvisoTodos("✅ ¡Sala despejada! Portales cerrados y puertas abiertas.");
+                        }
                     }
 
                     if (SalaRed.Instancia != null)
@@ -608,11 +675,6 @@ namespace SoulKnight
                             bloqueada: false,
                             despejada: true
                         );
-
-                        if (!salaCompletada.esSalaJefe)
-                        {
-                            SalaRed.Instancia.EnviarAvisoTodos("✅ ¡Sala despejada! Portales cerrados y puertas abiertas.");
-                        }
                     }
                 }
             }
@@ -765,10 +827,8 @@ namespace SoulKnight
             }
             else
             {
-                int recamara = ObtenerNumeroRecamara(NivelActual);
-                int nivelEnRecamara = ((NivelActual - 1) % 10) + 1;
                 string extraLoop = LoopActual > 0 ? $" [BUCLE +{LoopActual}]" : "";
-                textoBannerFinal = $"RECÁMARA {recamara} (NIVEL {nivelEnRecamara}/10)\n{bioma.ToString().ToUpper()}{extraLoop}";
+                textoBannerFinal = $"NIVEL {NivelActual}{extraLoop}";
             }
 
             if (SalaRed.Instancia != null)

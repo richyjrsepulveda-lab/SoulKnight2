@@ -124,7 +124,11 @@ namespace SoulKnight
 
             EstaCongelado.OnValueChanged += (prev, act) =>
             {
-                if (spriteCongelado != null) spriteCongelado.SetActive(act);
+                if (spriteCongelado != null)
+                {
+                    spriteCongelado.SetActive(act);
+                    if (act) AjustarVisualCongelado();
+                }
                 ActualizarTinteVisual();
             };
 
@@ -143,7 +147,11 @@ namespace SoulKnight
             EscalaVisualNet.OnValueChanged += (prev, act) => ActualizarVisualPixelArt();
 
             if (barraVida != null) barraVida.Establecer(VidaActual.Value, vidaMax);
-            if (spriteCongelado != null) spriteCongelado.SetActive(EstaCongelado.Value);
+            if (spriteCongelado != null)
+            {
+                spriteCongelado.SetActive(EstaCongelado.Value);
+                if (EstaCongelado.Value) AjustarVisualCongelado();
+            }
             ActualizarTinteVisual();
             ActualizarVisualPixelArt();
         }
@@ -210,6 +218,68 @@ namespace SoulKnight
             float esc = EscalaVisualNet.Value > 0.1f ? EscalaVisualNet.Value : 1.45f;
             transform.localScale = new Vector3(esc, esc, 1f);
             AjustarHitboxPrecisa((RolEnemigo)RolActualNet.Value);
+            if (EstaCongelado.Value && spriteCongelado != null)
+            {
+                AjustarVisualCongelado();
+            }
+        }
+
+        public void AjustarVisualCongelado()
+        {
+            if (spriteCongelado == null) return;
+
+            var sr = GetComponent<SpriteRenderer>();
+            var srCong = spriteCongelado.GetComponent<SpriteRenderer>();
+            if (srCong == null) srCong = spriteCongelado.AddComponent<SpriteRenderer>();
+
+            float w = 1f;
+            float h = 1f;
+            float offsetX = 0f;
+            float offsetY = 0.12f;
+
+            if (sr != null && sr.sprite != null)
+            {
+                Sprite sp = sr.sprite;
+                float ppu = sp.pixelsPerUnit > 0 ? sp.pixelsPerUnit : 32f;
+                w = sp.rect.width / ppu;
+                h = sp.rect.height / ppu;
+                offsetX = (sp.rect.width * 0.5f - sp.pivot.x) / ppu;
+                offsetY = (sp.rect.height * 0.5f - sp.pivot.y) / ppu;
+            }
+            else
+            {
+                var box = GetComponent<BoxCollider2D>();
+                if (box != null)
+                {
+                    w = box.size.x;
+                    h = box.size.y;
+                    offsetX = box.offset.x;
+                    offsetY = box.offset.y;
+                }
+            }
+
+            float congW = 2.0f;
+            float congH = 2.0f;
+            if (srCong.sprite != null)
+            {
+                float ppuCong = srCong.sprite.pixelsPerUnit > 0 ? srCong.sprite.pixelsPerUnit : 32f;
+                congW = srCong.sprite.rect.width / ppuCong;
+                congH = srCong.sprite.rect.height / ppuCong;
+            }
+
+            // Escalar el bloque de hielo para que envuelva al enemigo con un 16% de holgura exacta
+            float escalaX = (w * 1.16f) / Mathf.Max(0.1f, congW);
+            float escalaY = (h * 1.16f) / Mathf.Max(0.1f, congH);
+            float escalaBase = Mathf.Max(escalaX, escalaY);
+
+            spriteCongelado.transform.localScale = new Vector3(Mathf.Max(escalaBase * 0.85f, escalaX), Mathf.Max(escalaBase * 0.85f, escalaY), 1f);
+            spriteCongelado.transform.localPosition = new Vector3(offsetX, offsetY, -0.15f);
+
+            if (sr != null)
+            {
+                srCong.sortingOrder = sr.sortingOrder + 1;
+            }
+            srCong.color = new Color(0.85f, 0.95f, 1f, 0.88f);
         }
 
         private void AjustarHitboxPrecisa(RolEnemigo rol)

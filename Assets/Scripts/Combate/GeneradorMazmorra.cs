@@ -551,15 +551,16 @@ namespace SoulKnight
             {
                 var s = salas[idx];
                 bool esInicio = s.esSalaInicio;
-                bool esJefe = (idx == totalSalasCaminoPrincipal - 1);
-                bool esTienda = (idx == indiceSalaTienda && !esInicio && !esJefe);
+                bool esSalaFinal = (idx == totalSalasCaminoPrincipal - 1);
+                bool esJefe = esSalaFinal && tieneJefe;
+                bool esTienda = (idx == indiceSalaTienda && !esInicio && !esSalaFinal);
 
                 var salaObj = new GameObject($"Sala_{idx}");
                 salaObj.transform.SetParent(contenedorMapa);
                 salaObj.transform.position = new Vector3(s.cx, s.cy, 0f);
 
                 var ctrl = salaObj.AddComponent<ControladorSala>();
-                ctrl.Inicializar(idx, s.xMin, s.xMax, s.yMin, s.yMax, esInicio, esJefe, esTienda);
+                ctrl.Inicializar(idx, s.xMin, s.xMax, s.yMin, s.yMax, esInicio, esSalaFinal, esTienda);
 
                 if (esTienda)
                 {
@@ -625,43 +626,84 @@ namespace SoulKnight
                     }
                 }
 
-                // Portales de Invocación (2 o 4 portales por sala) y Oleadas que salen de ellos
-                if (!esInicio && !esJefe && !esTienda)
+                // Portales de Invocación y Oleadas de enemigos
+                if (!esInicio && !esTienda)
                 {
-                    int numPortales = (UnityEngine.Random.value < 0.5f) ? 2 : 4;
-                    float wSala = s.xMax - s.xMin;
-                    float hSala = s.yMax - s.yMin;
-                    float pxOff = Mathf.Max(3.0f, wSala * 0.22f);
-                    float pyOff = Mathf.Max(2.5f, hSala * 0.22f);
+                    if (esSalaFinal && !tieneJefe)
+                    {
+                        // ¡Cámara de Guardianes Élite para niveles sin jefe (1, 2, 4, 5, 7, 8, 9)!
+                        // Generar 4 portales luminosos en las esquinas de esta gran sala
+                        float wSala = s.xMax - s.xMin;
+                        float hSala = s.yMax - s.yMin;
+                        float pxOff = Mathf.Max(4.0f, wSala * 0.28f);
+                        float pyOff = Mathf.Max(3.5f, hSala * 0.28f);
 
-                    if (numPortales == 2)
-                    {
-                        CrearPortalSpawnEnSala(ctrl, new Vector2(s.cx - pxOff, s.cy));
-                        CrearPortalSpawnEnSala(ctrl, new Vector2(s.cx + pxOff, s.cy));
-                    }
-                    else
-                    {
                         CrearPortalSpawnEnSala(ctrl, new Vector2(s.cx - pxOff, s.cy + pyOff));
                         CrearPortalSpawnEnSala(ctrl, new Vector2(s.cx + pxOff, s.cy + pyOff));
                         CrearPortalSpawnEnSala(ctrl, new Vector2(s.cx - pxOff, s.cy - pyOff));
                         CrearPortalSpawnEnSala(ctrl, new Vector2(s.cx + pxOff, s.cy - pyOff));
-                    }
 
-                    // Los enemigos de cada oleada emergen directamente de los portales de la sala
-                    int cantOleada1 = (numPortales == 4) ? 4 : UnityEngine.Random.Range(3, 5);
-                    int cantOleada2 = (numPortales == 4) ? 4 : UnityEngine.Random.Range(3, 5);
+                        // Oleada 1 (Vanguardia de choque pesada: 6 guardianes)
+                        for (int i = 0; i < 6; i++)
+                        {
+                            Vector2 pPortal = ctrl.posicionesPortales[i % ctrl.posicionesPortales.Count];
+                            Vector2 jitter = new Vector2((i % 2 == 0 ? 0.4f : -0.4f), (i >= 2 ? 0.35f : -0.35f));
+                            ctrl.puntosSpawnOleada1.Add(pPortal + jitter);
+                        }
 
-                    for (int i = 0; i < cantOleada1; i++)
-                    {
-                        Vector2 pPortal = ctrl.posicionesPortales[i % ctrl.posicionesPortales.Count];
-                        Vector2 jitter = new Vector2((i % 2 == 0 ? 0.25f : -0.25f), (i >= 2 ? 0.2f : -0.2f));
-                        ctrl.puntosSpawnOleada1.Add(pPortal + jitter);
+                        // Oleada 2 (Invocadores y proyectiles mágicos: 6 guardianes)
+                        for (int i = 0; i < 6; i++)
+                        {
+                            Vector2 pPortal = ctrl.posicionesPortales[(i + 1) % ctrl.posicionesPortales.Count];
+                            Vector2 jitter = new Vector2((i % 2 == 0 ? -0.4f : 0.4f), (i >= 2 ? -0.35f : 0.35f));
+                            ctrl.puntosSpawnOleada2.Add(pPortal + jitter);
+                        }
+
+                        // Oleada 3 (Asalto Élite Definitivo: 8 guardianes)
+                        for (int i = 0; i < 8; i++)
+                        {
+                            Vector2 pPortal = ctrl.posicionesPortales[(i + 2) % ctrl.posicionesPortales.Count];
+                            Vector2 jitter = new Vector2((i % 2 == 0 ? 0.5f : -0.5f), (i >= 3 ? -0.4f : 0.4f));
+                            ctrl.puntosSpawnOleada3.Add(pPortal + jitter);
+                        }
                     }
-                    for (int i = 0; i < cantOleada2; i++)
+                    else if (!esJefe)
                     {
-                        Vector2 pPortal = ctrl.posicionesPortales[(i + 1) % ctrl.posicionesPortales.Count];
-                        Vector2 jitter = new Vector2((i % 2 == 0 ? -0.25f : 0.25f), (i >= 2 ? -0.2f : 0.2f));
-                        ctrl.puntosSpawnOleada2.Add(pPortal + jitter);
+                        int numPortales = (UnityEngine.Random.value < 0.5f) ? 2 : 4;
+                        float wSala = s.xMax - s.xMin;
+                        float hSala = s.yMax - s.yMin;
+                        float pxOff = Mathf.Max(3.0f, wSala * 0.22f);
+                        float pyOff = Mathf.Max(2.5f, hSala * 0.22f);
+
+                        if (numPortales == 2)
+                        {
+                            CrearPortalSpawnEnSala(ctrl, new Vector2(s.cx - pxOff, s.cy));
+                            CrearPortalSpawnEnSala(ctrl, new Vector2(s.cx + pxOff, s.cy));
+                        }
+                        else
+                        {
+                            CrearPortalSpawnEnSala(ctrl, new Vector2(s.cx - pxOff, s.cy + pyOff));
+                            CrearPortalSpawnEnSala(ctrl, new Vector2(s.cx + pxOff, s.cy + pyOff));
+                            CrearPortalSpawnEnSala(ctrl, new Vector2(s.cx - pxOff, s.cy - pyOff));
+                            CrearPortalSpawnEnSala(ctrl, new Vector2(s.cx + pxOff, s.cy - pyOff));
+                        }
+
+                        // Los enemigos de cada oleada emergen directamente de los portales de la sala
+                        int cantOleada1 = (numPortales == 4) ? 4 : UnityEngine.Random.Range(3, 5);
+                        int cantOleada2 = (numPortales == 4) ? 4 : UnityEngine.Random.Range(3, 5);
+
+                        for (int i = 0; i < cantOleada1; i++)
+                        {
+                            Vector2 pPortal = ctrl.posicionesPortales[i % ctrl.posicionesPortales.Count];
+                            Vector2 jitter = new Vector2((i % 2 == 0 ? 0.25f : -0.25f), (i >= 2 ? 0.2f : -0.2f));
+                            ctrl.puntosSpawnOleada1.Add(pPortal + jitter);
+                        }
+                        for (int i = 0; i < cantOleada2; i++)
+                        {
+                            Vector2 pPortal = ctrl.posicionesPortales[(i + 1) % ctrl.posicionesPortales.Count];
+                            Vector2 jitter = new Vector2((i % 2 == 0 ? -0.25f : 0.25f), (i >= 2 ? -0.2f : 0.2f));
+                            ctrl.puntosSpawnOleada2.Add(pPortal + jitter);
+                        }
                     }
                 }
 

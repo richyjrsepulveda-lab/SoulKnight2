@@ -25,6 +25,7 @@ namespace SoulKnight
 
         public List<Vector2> puntosSpawnOleada1 = new List<Vector2>();
         public List<Vector2> puntosSpawnOleada2 = new List<Vector2>();
+        public List<Vector2> puntosSpawnOleada3 = new List<Vector2>();
         public List<Vector2> posicionesAntorchas = new List<Vector2>();
         public List<Vector2> posicionesPortales = new List<Vector2>();
 
