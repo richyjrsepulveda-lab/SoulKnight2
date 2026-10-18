@@ -91,7 +91,7 @@ namespace SoulKnight
             anilloObj.transform.localPosition = new Vector3(0f, 0f, -0.05f);
 
             _lrAnillo = anilloObj.AddComponent<LineRenderer>();
-            _lrAnillo.material = new Material(Shader.Find("Sprites/Default"));
+            _lrAnillo.material = MaterialUtil.SpritesDefault;
             _lrAnillo.sortingOrder = 3;
             _lrAnillo.startWidth = 0.08f;
             _lrAnillo.endWidth = 0.08f;
@@ -212,12 +212,14 @@ namespace SoulKnight
             }
         }
 
+        private static readonly Collider2D[] _colsBuffer = new Collider2D[16];
+
         private void AplicarEfectosJugadoresEnArea()
         {
-            Collider2D[] cols = Physics2D.OverlapCircleAll(transform.position, radio);
-            for (int i = 0; i < cols.Length; i++)
+            int hits = Physics2D.OverlapCircleNonAlloc(transform.position, radio, _colsBuffer);
+            for (int i = 0; i < hits; i++)
             {
-                var col = cols[i];
+                var col = _colsBuffer[i];
                 if (col == null) continue;
 
                 var pj = col.GetComponent<Personaje>();

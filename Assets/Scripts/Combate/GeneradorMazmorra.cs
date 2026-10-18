@@ -116,7 +116,7 @@ namespace SoulKnight
             biomaActual = bioma;
             DatosBioma datos = ObtenerDatosBioma(biomaActual);
 
-            var cam = Camera.main;
+            var cam = CamaraUtil.Principal;
             if (cam != null)
             {
                 cam.clearFlags = CameraClearFlags.SolidColor;

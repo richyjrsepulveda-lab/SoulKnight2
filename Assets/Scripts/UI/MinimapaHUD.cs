@@ -185,9 +185,9 @@ namespace SoulKnight
             {
                 centroMundo = pjLocal.transform.position;
             }
-            else if (Camera.main != null)
+            else if (CamaraUtil.Principal != null)
             {
-                centroMundo = Camera.main.transform.position;
+                centroMundo = CamaraUtil.Principal.transform.position;
             }
 
             int minX = gen.gridMinX;

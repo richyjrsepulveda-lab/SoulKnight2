@@ -64,10 +64,13 @@ namespace SoulKnight
         public static bool Mantenida(KeyCode tecla) => !Bloqueado && Input.GetKey(tecla);
         public static bool AutoDisparo(KeyCode tecla) => !Bloqueado && (Input.GetKey(tecla) || Input.GetKeyDown(tecla));
 
+        private static PointerEventData _pointerDataCache;
+        private static readonly System.Collections.Generic.List<RaycastResult> _uiRaycastResultsCache = new System.Collections.Generic.List<RaycastResult>(16);
+
         /// <summary>Posición del mouse en coordenadas del mundo (equivale a get_global_mouse_position()).</summary>
         public static Vector2 PosicionMouseMundo()
         {
-            Camera cam = Camera.main;
+            Camera cam = CamaraUtil.Principal;
             if (cam == null) return Vector2.zero;
             return cam.ScreenToWorldPoint(Input.mousePosition);
         }
@@ -76,11 +79,17 @@ namespace SoulKnight
         {
             if (EventSystem.current == null || !EventSystem.current.IsPointerOverGameObject()) return false;
 
-            var pointerData = new PointerEventData(EventSystem.current) { position = Input.mousePosition };
-            var results = new System.Collections.Generic.List<RaycastResult>();
-            EventSystem.current.RaycastAll(pointerData, results);
-            foreach (var r in results)
+            if (_pointerDataCache == null)
             {
+                _pointerDataCache = new PointerEventData(EventSystem.current);
+            }
+            _pointerDataCache.position = Input.mousePosition;
+
+            _uiRaycastResultsCache.Clear();
+            EventSystem.current.RaycastAll(_pointerDataCache, _uiRaycastResultsCache);
+            for (int i = 0; i < _uiRaycastResultsCache.Count; i++)
+            {
+                var r = _uiRaycastResultsCache[i];
                 if (r.gameObject != null && r.gameObject.GetComponentInParent<UnityEngine.UI.Selectable>() != null)
                 {
                     return true;

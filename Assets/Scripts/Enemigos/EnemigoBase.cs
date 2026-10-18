@@ -346,14 +346,18 @@ namespace SoulKnight
             }
         }
 
+        private static readonly Collider2D[] _aliadosBuffer = new Collider2D[24];
+
         private void PulsoCuracionPlanta()
         {
             if (!IsServer || VidaActual.Value <= 0) return;
             MostrarOndaCuracionClientRpc(transform.position, 6.5f);
-            // Curar a aliados cercanos en 6 metros
-            Collider2D[] aliados = Physics2D.OverlapCircleAll(transform.position, 6.5f);
-            foreach (var col in aliados)
+            // Curar a aliados cercanos sin asignaciones de memoria
+            int count = Physics2D.OverlapCircleNonAlloc(transform.position, 6.5f, _aliadosBuffer);
+            for (int i = 0; i < count; i++)
             {
+                var col = _aliadosBuffer[i];
+                if (col == null) continue;
                 var e = col.GetComponent<EnemigoBase>();
                 if (e != null && e.gameObject.activeInHierarchy && e.VidaActual.Value > 0)
                 {
@@ -401,7 +405,7 @@ namespace SoulKnight
             var ondaObj = new GameObject("OndaCuracion");
             ondaObj.transform.position = new Vector3(pos.x, pos.y, -0.2f);
             var lr = ondaObj.AddComponent<LineRenderer>();
-            lr.material = new Material(Shader.Find("Sprites/Default"));
+            lr.material = MaterialUtil.SpritesDefault;
             lr.sortingOrder = 4;
             lr.startWidth = 0.12f;
             lr.endWidth = 0.02f;
@@ -828,16 +832,17 @@ namespace SoulKnight
             }
 
             Personaje masCercano = null;
-            float menorDist = rangoMaximoDeteccion; // No detecta jugadores fuera de su rango de visión
+            float menorDistSq = rangoMaximoDeteccion * rangoMaximoDeteccion;
+            Vector2 miPos = transform.position;
 
             for (int i = 0; i < Personaje.Todos.Count; i++)
             {
                 var j = Personaje.Todos[i];
                 if (j == null || j.EstaMuerto.Value || !j.gameObject.activeInHierarchy) continue;
-                float d = Vector2.Distance(transform.position, j.transform.position);
-                if (d <= menorDist)
+                float dSq = ((Vector2)j.transform.position - miPos).sqrMagnitude;
+                if (dSq <= menorDistSq)
                 {
-                    menorDist = d;
+                    menorDistSq = dSq;
                     masCercano = j;
                 }
             }
@@ -855,7 +860,7 @@ namespace SoulKnight
             swipeObj.transform.rotation = Quaternion.Euler(0, 0, angulo);
 
             var lr = swipeObj.AddComponent<LineRenderer>();
-            lr.material = new Material(Shader.Find("Sprites/Default"));
+            lr.material = MaterialUtil.SpritesDefault;
             lr.sortingOrder = 10;
             lr.startWidth = 0.18f;
             lr.endWidth = 0.05f;

@@ -101,14 +101,17 @@ namespace SoulKnight
             }
         }
 
+        private static readonly Collider2D[] _colsBuffer = new Collider2D[16];
+
         private void AplicarDanoEnArea()
         {
             if (Unity.Netcode.NetworkManager.Singleton != null && !Unity.Netcode.NetworkManager.Singleton.IsServer)
                 return;
 
-            Collider2D[] cols = Physics2D.OverlapCircleAll(transform.position, 0.85f);
-            foreach (var col in cols)
+            int hits = Physics2D.OverlapCircleNonAlloc(transform.position, 0.85f, _colsBuffer);
+            for (int i = 0; i < hits; i++)
             {
+                var col = _colsBuffer[i];
                 if (col == null || col.isTrigger) continue;
                 var enemigo = col.GetComponent<EnemigoBase>();
                 if (enemigo != null && enemigo.VidaActual.Value > 0)

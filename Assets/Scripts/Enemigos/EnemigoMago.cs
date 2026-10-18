@@ -76,7 +76,7 @@ namespace SoulKnight
             sparkObj.transform.position = new Vector3(pos.x, pos.y, -0.4f);
 
             var lr = sparkObj.AddComponent<LineRenderer>();
-            lr.material = new Material(Shader.Find("Sprites/Default"));
+            lr.material = MaterialUtil.SpritesDefault;
             lr.sortingOrder = 10;
             lr.startWidth = 0.14f;
             lr.endWidth = 0.02f;

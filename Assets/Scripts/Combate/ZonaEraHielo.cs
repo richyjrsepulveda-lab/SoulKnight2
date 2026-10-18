@@ -29,10 +29,29 @@ namespace SoulKnight
         private Vector3 _escalaObjetivo;
         private float _tiempoAparicion = 0f;
 
+        public static readonly List<ZonaEraHielo> Todas = new List<ZonaEraHielo>();
+
         public void Configurar(float duracion, int danoTick)
         {
             _duracion = duracion;
             _danoPorTick = danoTick;
+        }
+
+        public override void OnNetworkSpawn()
+        {
+            base.OnNetworkSpawn();
+            if (!Todas.Contains(this)) Todas.Add(this);
+        }
+
+        public override void OnNetworkDespawn()
+        {
+            Todas.Remove(this);
+            base.OnNetworkDespawn();
+        }
+
+        void OnDisable()
+        {
+            Todas.Remove(this);
         }
 
         void Awake()

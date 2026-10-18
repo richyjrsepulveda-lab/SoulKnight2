@@ -218,10 +218,10 @@ namespace SoulKnight
                 _heliceEscarcha = goHelice.AddComponent<LineRenderer>();
                 Material matRayo = (rayoHielo != null && rayoHielo.sharedMaterial != null) 
                     ? rayoHielo.sharedMaterial 
-                    : new Material(Shader.Find("Sprites/Default"));
-                if (rayoHielo != null && rayoHielo.sharedMaterial == null) rayoHielo.material = matRayo;
-                if (rayoHieloHalo != null && rayoHieloHalo.sharedMaterial == null) rayoHieloHalo.material = matRayo;
-                _heliceEscarcha.material = matRayo;
+                    : MaterialUtil.SpritesDefault;
+                if (rayoHielo != null && rayoHielo.sharedMaterial == null) rayoHielo.sharedMaterial = matRayo;
+                if (rayoHieloHalo != null && rayoHieloHalo.sharedMaterial == null) rayoHieloHalo.sharedMaterial = matRayo;
+                _heliceEscarcha.sharedMaterial = matRayo;
                 _heliceEscarcha.sortingOrder = rayoHielo.sortingOrder + 1;
                 _heliceEscarcha.startWidth = 0.14f;
                 _heliceEscarcha.endWidth = 0.14f;
@@ -369,9 +369,10 @@ namespace SoulKnight
 
                     // El rayo penetra enemigos y se frena en su alcance dinámico o si choca con una pared sólida
                     Vector2 destino = origen + dir * alcanceDinamico;
-                    RaycastHit2D[] hits = Physics2D.RaycastAll(origen, dir, alcanceDinamico);
-                    foreach (var h in hits)
+                    int hitCount = Physics2D.RaycastNonAlloc(origen, dir, _rayHitsBuffer, alcanceDinamico);
+                    for (int hIdx = 0; hIdx < hitCount; hIdx++)
                     {
+                        var h = _rayHitsBuffer[hIdx];
                         if (h.collider != null && h.collider.gameObject != gameObject)
                         {
                             bool esPared = false;
@@ -818,17 +819,20 @@ namespace SoulKnight
             DisparandoRayo.Value = disparando;
         }
 
+        private static readonly RaycastHit2D[] _rayHitsBuffer = new RaycastHit2D[24];
+
         private void EjecutarRaycastRayoHielo()
         {
             Vector2 dir = DireccionApuntado.Value;
             if (dir.sqrMagnitude < 0.001f) dir = Vector2.right;
             Vector2 origen = ObtenerPosicionBoca(dir);
 
-            // Daña y ralentiza a los enemigos hasta el alcance dinámico recortado al cursor
+            // Daña y ralentiza a los enemigos hasta el alcance dinámico recortado al cursor sin asignaciones de memoria
             float alcanceEfectivo = Mathf.Min(AlcanceEfectivoRayoSincronizado.Value, rangoRayo);
-            RaycastHit2D[] hits = Physics2D.RaycastAll(origen, dir, alcanceEfectivo);
-            foreach (var hit in hits)
+            int hitCount = Physics2D.RaycastNonAlloc(origen, dir, _rayHitsBuffer, alcanceEfectivo);
+            for (int i = 0; i < hitCount; i++)
             {
+                var hit = _rayHitsBuffer[i];
                 if (hit.collider == null || hit.collider.gameObject == gameObject) continue;
 
                 var enemigo = hit.collider.GetComponent<EnemigoBase>();

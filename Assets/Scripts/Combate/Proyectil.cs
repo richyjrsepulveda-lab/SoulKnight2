@@ -43,6 +43,20 @@ namespace SoulKnight
             NetworkVariableReadPermission.Everyone,
             NetworkVariableWritePermission.Server);
 
+        public static readonly System.Collections.Generic.List<Proyectil> Todos = new System.Collections.Generic.List<Proyectil>(64);
+        private static readonly RaycastHit2D[] _circleCastBuffer = new RaycastHit2D[16];
+        private static readonly Collider2D[] _overlapBuffer = new Collider2D[24];
+
+        protected virtual void OnEnable()
+        {
+            if (!Todos.Contains(this)) Todos.Add(this);
+        }
+
+        protected virtual void OnDisable()
+        {
+            Todos.Remove(this);
+        }
+
         private Vector2 _direccion = Vector2.right;
         private ulong _lanzadorId;
         private float _tiempoVivo = 0f;
@@ -128,10 +142,11 @@ namespace SoulKnight
 
             if (IsServer)
             {
-                // Detección continua para evitar traspasar muros o enemigos a alta velocidad
-                RaycastHit2D[] hits = Physics2D.CircleCastAll(transform.position, 0.28f, dir, paso);
-                foreach (var hit in hits)
+                // Detección continua optimizada sin asignaciones de memoria
+                int hitsCount = Physics2D.CircleCastNonAlloc(transform.position, 0.28f, dir, _circleCastBuffer, paso);
+                for (int i = 0; i < hitsCount; i++)
                 {
+                    var hit = _circleCastBuffer[i];
                     if (hit.collider == null || hit.collider.gameObject == gameObject) continue;
                     if (ProcesarImpacto(hit.collider))
                     {
@@ -309,9 +324,10 @@ namespace SoulKnight
             Vector2 centro = transform.position;
             int danoCercanos = danoArea > 0 ? danoArea : Mathf.RoundToInt(dano * 0.55f);
 
-            Collider2D[] cols = Physics2D.OverlapCircleAll(centro, radioArea);
-            foreach (var col in cols)
+            int count = Physics2D.OverlapCircleNonAlloc(centro, radioArea, _overlapBuffer);
+            for (int i = 0; i < count; i++)
             {
+                var col = _overlapBuffer[i];
                 if (col == null || col.gameObject == gameObject) continue;
                 var enCercano = col.GetComponent<EnemigoBase>();
                 if (enCercano != null && enCercano != enemigoDirecto)
@@ -345,7 +361,7 @@ namespace SoulKnight
             efectoObj.transform.position = new Vector3(pos.x, pos.y, -0.6f);
 
             var lr = efectoObj.AddComponent<LineRenderer>();
-            lr.material = new Material(Shader.Find("Sprites/Default"));
+            lr.material = MaterialUtil.SpritesDefault;
             lr.sortingOrder = 12;
             lr.startWidth = 0.22f;
             lr.endWidth = 0.02f;

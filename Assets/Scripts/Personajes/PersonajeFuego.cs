@@ -100,9 +100,9 @@ namespace SoulKnight
                 _nucleoLanzallamas = goNucleo.AddComponent<LineRenderer>();
                 Material matFuego = (rayoCabezaFuego != null && rayoCabezaFuego.sharedMaterial != null)
                     ? rayoCabezaFuego.sharedMaterial
-                    : new Material(Shader.Find("Sprites/Default"));
-                if (rayoCabezaFuego != null && rayoCabezaFuego.sharedMaterial == null) rayoCabezaFuego.material = matFuego;
-                _nucleoLanzallamas.material = matFuego;
+                    : MaterialUtil.SpritesDefault;
+                if (rayoCabezaFuego != null && rayoCabezaFuego.sharedMaterial == null) rayoCabezaFuego.sharedMaterial = matFuego;
+                _nucleoLanzallamas.sharedMaterial = matFuego;
                 _nucleoLanzallamas.sortingOrder = rayoCabezaFuego.sortingOrder + 1;
                 _nucleoLanzallamas.numCapVertices = 4;
                 _nucleoLanzallamas.numCornerVertices = 4;
@@ -567,15 +567,19 @@ namespace SoulKnight
             StartCoroutine(RutinaSupernova());
         }
 
+        private static readonly Collider2D[] _fireOverlapBuffer = new Collider2D[32];
+        private static readonly HashSet<EnemigoBase> _danadosCache = new HashSet<EnemigoBase>();
+
         private void DetonarSupernova()
         {
             // 1. Onda de choque 360° con daño y knockback
-            Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, 5.0f);
             int danoExp = Mathf.RoundToInt(danoSupernovaExplosion * MultiplicadorDanoTotal);
             int danoQuem = Mathf.RoundToInt(30 * MultiplicadorDanoTotal);
+            int hitCount = Physics2D.OverlapCircleNonAlloc(transform.position, 5.0f, _fireOverlapBuffer);
 
-            foreach (var h in hits)
+            for (int i = 0; i < hitCount; i++)
             {
+                var h = _fireOverlapBuffer[i];
                 if (h == null || h.isTrigger || h.gameObject == gameObject) continue;
                 var enemigo = h.GetComponent<EnemigoBase>();
                 if (enemigo != null && enemigo.VidaActual.Value > 0)
@@ -707,21 +711,21 @@ namespace SoulKnight
 
         private void EjecutarLanzallamasFuego()
         {
-            var danados = new HashSet<EnemigoBase>();
+            _danadosCache.Clear();
 
             for (int i = 0; i < NUM_NODOS_LLAMA; i++)
             {
                 Vector2 posNodo = _posicionesLlamas[i];
                 float radioNodo = 0.5f + (float)i / NUM_NODOS_LLAMA * 0.95f;
 
-                Collider2D[] cols = Physics2D.OverlapCircleAll(posNodo, radioNodo);
-                foreach (var col in cols)
+                int hitCount = Physics2D.OverlapCircleNonAlloc(posNodo, radioNodo, _fireOverlapBuffer);
+                for (int c = 0; c < hitCount; c++)
                 {
+                    var col = _fireOverlapBuffer[c];
                     if (col == null || col.gameObject == gameObject) continue;
                     var enemigo = col.GetComponent<EnemigoBase>();
-                    if (enemigo != null && !danados.Contains(enemigo))
+                    if (enemigo != null && _danadosCache.Add(enemigo))
                     {
-                        danados.Add(enemigo);
                         int danoEscalado = Mathf.RoundToInt(danoCabezaFuego * MultiplicadorDanoTotal);
                         enemigo.RecibirDano(danoEscalado, new Color(0.96f, 0.40f, 0.05f, 1f)); // Naranja oscuro
                         int danoQuemaduraEscalado = Mathf.RoundToInt(18 * MultiplicadorDanoTotal);

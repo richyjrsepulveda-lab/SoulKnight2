@@ -24,6 +24,8 @@ namespace SoulKnight
 
         private const int TEX_W = 120;
         private const int TEX_H = 75;
+        private float _timerNiebla = 0f;
+        private const float INTERVALO_NIEBLA = 0.04f; // 25 Hz para máxima fluidez y mínimo uso de CPU
 
         private struct FuenteAntorcha
         {
@@ -303,12 +305,12 @@ namespace SoulKnight
         {
             InicializarOverlayNiebla();
 
-            var cam = Camera.main;
+            var cam = CamaraUtil.Principal;
             if (cam == null || _overlayNiebla == null) return;
 
             var gen = GeneradorMazmorra.Instancia;
 
-            // 1. Cubrir el 100% de la cámara con margen de sobra
+            // 1. Cubrir el 100% de la cámara con margen de sobra (ajuste de transform suave cada frame)
             float altoCam = cam.orthographicSize * 2f + 2f;
             float anchoCam = altoCam * cam.aspect + 2f;
             Vector3 posCam = cam.transform.position;
@@ -317,6 +319,14 @@ namespace SoulKnight
             float spriteW = TEX_W / 10f;
             float spriteH = TEX_H / 10f;
             _overlayNiebla.transform.localScale = new Vector3(anchoCam / spriteW, altoCam / spriteH, 1f);
+
+            // Optimización de rendimiento: refresco de textura a 25 Hz para evitar recalcular 9000 píxeles cada frame
+            _timerNiebla += Time.deltaTime;
+            if (_timerNiebla < INTERVALO_NIEBLA)
+            {
+                return;
+            }
+            _timerNiebla = 0f;
 
             // 2. Recolectar posición de los jugadores
             _fuentesJugadores.Clear();

@@ -5,112 +5,167 @@ namespace SoulKnight
 {
     /// <summary>
     /// Número de daño que sube y se desvanece (era danoflotante.tscn en Godot).
-    /// Cuenta con contorno blanco brillante de alto contraste para máxima legibilidad sobre fondos oscuros.
+    /// Optimizado con Object Pooling para evitar asignaciones de memoria y destrucciones en combate.
+    /// Cuenta con contorno negro nítido de alto contraste para máxima legibilidad.
     /// </summary>
     public class TextoFlotante : MonoBehaviour
     {
-        const float Duracion = 1.0f;
-        const float Gravedad = 5.2f;
+        private const float Duracion = 0.95f;
+        private const float Gravedad = 5.2f;
 
-        TextMesh _texto;
-        List<TextMesh> _bordesBlanco = new List<TextMesh>();
-        Color _color;
-        float _tiempo;
-        float _vx;
-        float _vy;
+        private static readonly Queue<TextoFlotante> _pool = new Queue<TextoFlotante>(64);
+        private const int MAX_POOL = 80;
 
-        static Font _fuente;
+        private TextMesh _texto;
+        private TextMesh[] _bordes;
+        private Color _color;
+        private float _tiempo;
+        private float _vx;
+        private float _vy;
+
+        private static Font _fuente;
 
         public static void Crear(Vector3 posicion, string texto, Color color)
         {
             if (_fuente == null) _fuente = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
 
-            // Desfase aleatorio para evitar que los textos se encimen directamente unos sobre otros
             Vector3 offset = new Vector3(Random.Range(-0.35f, 0.35f), Random.Range(-0.1f, 0.2f), 0f);
-            var go = new GameObject("TextoFlotante");
-            go.transform.position = posicion + offset;
+            Vector3 spawnPos = posicion + offset;
 
-            // Contorno negro sólido de alto contraste en 8 direcciones
+            TextoFlotante tf = null;
+            while (_pool.Count > 0 && tf == null)
+            {
+                tf = _pool.Dequeue();
+            }
+
+            if (tf == null)
+            {
+                tf = InstanciarNuevo();
+            }
+
+            tf.transform.position = spawnPos;
+            tf.gameObject.SetActive(true);
+            tf.Reiniciar(texto, color);
+        }
+
+        private static TextoFlotante InstanciarNuevo()
+        {
+            var go = new GameObject("TextoFlotante");
+
+            // Contorno negro de alto contraste en 4 puntos cardinales (50% menos drawcalls y sub-objetos)
             float bOff = 0.026f;
-            Vector3[] offsetsBorde = new Vector3[]
+            Vector3[] offsets = new Vector3[]
             {
                 new Vector3(-bOff, 0f, 0f),
                 new Vector3(bOff, 0f, 0f),
                 new Vector3(0f, -bOff, 0f),
-                new Vector3(0f, bOff, 0f),
-                new Vector3(-bOff * 0.72f, -bOff * 0.72f, 0f),
-                new Vector3(bOff * 0.72f, bOff * 0.72f, 0f),
-                new Vector3(-bOff * 0.72f, bOff * 0.72f, 0f),
-                new Vector3(bOff * 0.72f, -bOff * 0.72f, 0f)
+                new Vector3(0f, bOff, 0f)
             };
 
-            var listaBordes = new List<TextMesh>();
-            foreach (var off in offsetsBorde)
+            var bordes = new TextMesh[offsets.Length];
+            for (int i = 0; i < offsets.Length; i++)
             {
                 var subGo = new GameObject("BordeNegro");
                 subGo.transform.SetParent(go.transform, false);
-                subGo.transform.localPosition = off;
+                subGo.transform.localPosition = offsets[i];
                 var subTm = subGo.AddComponent<TextMesh>();
                 subTm.font = _fuente;
-                subTm.text = texto;
                 subTm.fontSize = 52;
                 subTm.characterSize = 0.092f;
                 subTm.fontStyle = FontStyle.Bold;
                 subTm.anchor = TextAnchor.MiddleCenter;
                 subTm.alignment = TextAlignment.Center;
                 subTm.color = Color.black;
+
                 var subMr = subGo.GetComponent<MeshRenderer>();
                 subMr.sharedMaterial = _fuente.material;
-                subMr.sortingOrder = 99; // Detrás del texto coloreado
-                listaBordes.Add(subTm);
+                subMr.sortingOrder = 99;
+                bordes[i] = subTm;
             }
 
             var tm = go.AddComponent<TextMesh>();
             tm.font = _fuente;
-            tm.text = texto;
             tm.fontSize = 52;
             tm.characterSize = 0.092f;
             tm.fontStyle = FontStyle.Bold;
             tm.anchor = TextAnchor.MiddleCenter;
             tm.alignment = TextAlignment.Center;
-            tm.color = color;
 
             var mr = go.GetComponent<MeshRenderer>();
             mr.sharedMaterial = _fuente.material;
-            mr.sortingOrder = 100; // Por encima de sprites y entidades
+            mr.sortingOrder = 100;
 
             var tf = go.AddComponent<TextoFlotante>();
             tf._texto = tm;
-            tf._bordesBlanco = listaBordes;
-            tf._color = color;
-            // Físicas: arco con velocidad horizontal suave y subida con caída/rebote
-            tf._vx = Random.Range(-0.75f, 0.75f);
-            tf._vy = Random.Range(2.2f, 2.7f);
+            tf._bordes = bordes;
+
+            return tf;
+        }
+
+        private void Reiniciar(string texto, Color color)
+        {
+            _color = color;
+            _tiempo = 0f;
+            _vx = Random.Range(-0.75f, 0.75f);
+            _vy = Random.Range(2.2f, 2.7f);
+
+            if (_texto != null)
+            {
+                _texto.text = texto;
+                _texto.color = color;
+            }
+
+            if (_bordes != null)
+            {
+                for (int i = 0; i < _bordes.Length; i++)
+                {
+                    if (_bordes[i] != null)
+                    {
+                        _bordes[i].text = texto;
+                        _bordes[i].color = Color.black;
+                    }
+                }
+            }
         }
 
         void Update()
         {
             _tiempo += Time.deltaTime;
 
-            // Físicas de arco parabólico (sube y luego baja por gravedad)
             _vy -= Gravedad * Time.deltaTime;
             _vx = Mathf.MoveTowards(_vx, 0f, 0.35f * Time.deltaTime);
             transform.position += new Vector3(_vx, _vy, 0f) * Time.deltaTime;
 
-            // Desvanecimiento suave tanto del texto central como de su borde negro
             float alfa = Mathf.Clamp01(1f - (_tiempo / Duracion));
-            Color c = _color;
-            c.a = alfa;
-            _texto.color = c;
-
-            Color cBorde = Color.black;
-            cBorde.a = alfa;
-            for (int i = 0; i < _bordesBlanco.Count; i++)
+            if (_texto != null)
             {
-                if (_bordesBlanco[i] != null) _bordesBlanco[i].color = cBorde;
+                Color c = _color;
+                c.a = alfa;
+                _texto.color = c;
             }
 
-            if (_tiempo >= Duracion) Destroy(gameObject);
+            if (_bordes != null)
+            {
+                Color cBorde = Color.black;
+                cBorde.a = alfa;
+                for (int i = 0; i < _bordes.Length; i++)
+                {
+                    if (_bordes[i] != null) _bordes[i].color = cBorde;
+                }
+            }
+
+            if (_tiempo >= Duracion)
+            {
+                if (_pool.Count < MAX_POOL)
+                {
+                    gameObject.SetActive(false);
+                    _pool.Enqueue(this);
+                }
+                else
+                {
+                    Destroy(gameObject);
+                }
+            }
         }
     }
 }

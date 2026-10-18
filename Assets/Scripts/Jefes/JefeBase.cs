@@ -464,9 +464,11 @@ namespace SoulKnight
 
             float radioTerremoto = 5.4f + (_numJugadoresAlSpawn * 0.5f);
             int danoSismo = Mathf.Clamp(Mathf.RoundToInt(dano * 1.1f), 14, 24);
-            Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, radioTerremoto);
-            foreach (var hit in hits)
+            int hitCount = Physics2D.OverlapCircleNonAlloc(transform.position, radioTerremoto, _hitsBuffer);
+            for (int i = 0; i < hitCount; i++)
             {
+                var hit = _hitsBuffer[i];
+                if (hit == null) continue;
                 var pj = hit.GetComponent<Personaje>();
                 if (pj != null && !pj.EstaMuerto.Value)
                 {
@@ -494,6 +496,8 @@ namespace SoulKnight
             }
         }
 
+        private static readonly Collider2D[] _hitsBuffer = new Collider2D[24];
+
         private IEnumerator PatronColosoPiedra()
         {
             Personaje obj = ObtenerJugadorMasCercano();
@@ -508,9 +512,11 @@ namespace SoulKnight
 
             float radioTerremoto = 5.2f + (_numJugadoresAlSpawn * 0.4f);
             int danoSismo = Mathf.Clamp(Mathf.RoundToInt(dano * 1.15f), 14, 28);
-            Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, radioTerremoto);
-            foreach (var hit in hits)
+            int colHits = Physics2D.OverlapCircleNonAlloc(transform.position, radioTerremoto, _hitsBuffer);
+            for (int i = 0; i < colHits; i++)
             {
+                var hit = _hitsBuffer[i];
+                if (hit == null) continue;
                 var pj = hit.GetComponent<Personaje>();
                 if (pj != null && !pj.EstaMuerto.Value)
                 {
@@ -696,9 +702,9 @@ namespace SoulKnight
         {
             if (IsServer)
             {
-                var jugadores = FindObjectsOfType<Personaje>();
-                foreach (var pj in jugadores)
+                for (int i = 0; i < Personaje.Todos.Count; i++)
                 {
+                    var pj = Personaje.Todos[i];
                     if (pj != null)
                     {
                         if (pj.nivelProgreso != null) pj.nivelProgreso.AgregarXP(350);

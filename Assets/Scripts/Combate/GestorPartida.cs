@@ -531,22 +531,16 @@ namespace SoulKnight
                 }
             }
 
-            var proyectiles = FindObjectsOfType<Proyectil>();
-            foreach (var p in proyectiles)
+            for (int i = Proyectil.Todos.Count - 1; i >= 0; i--)
             {
-                if (p != null)
-                {
-                    Destroy(p.gameObject);
-                }
+                var p = Proyectil.Todos[i];
+                if (p != null) Destroy(p.gameObject);
             }
 
-            var zonas = FindObjectsOfType<ZonaEraHielo>();
-            foreach (var z in zonas)
+            for (int i = ZonaEraHielo.Todas.Count - 1; i >= 0; i--)
             {
-                if (z != null)
-                {
-                    Destroy(z.gameObject);
-                }
+                var z = ZonaEraHielo.Todas[i];
+                if (z != null) Destroy(z.gameObject);
             }
 
             PuestitoTienda.DestruirTodos();
@@ -756,15 +750,15 @@ namespace SoulKnight
                 NivelActual++;
             }
 
-            var proyectiles = FindObjectsOfType<Proyectil>();
-            foreach (var p in proyectiles)
+            for (int i = Proyectil.Todos.Count - 1; i >= 0; i--)
             {
+                var p = Proyectil.Todos[i];
                 if (p != null) Destroy(p.gameObject);
             }
 
-            var itemsLoot = FindObjectsOfType<ItemMejoraRun>();
-            foreach (var item in itemsLoot)
+            for (int i = ItemMejoraRun.Todos.Count - 1; i >= 0; i--)
             {
+                var item = ItemMejoraRun.Todos[i];
                 if (item != null)
                 {
                     var no = item.GetComponent<NetworkObject>();
@@ -773,9 +767,9 @@ namespace SoulKnight
                 }
             }
 
-            var zonasHielo = FindObjectsOfType<ZonaEraHielo>();
-            foreach (var zh in zonasHielo)
+            for (int i = ZonaEraHielo.Todas.Count - 1; i >= 0; i--)
             {
+                var zh = ZonaEraHielo.Todas[i];
                 if (zh != null)
                 {
                     var no = zh.GetComponent<NetworkObject>();

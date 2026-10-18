@@ -63,6 +63,9 @@ namespace SoulKnight
         private float _timerTickRayo = 0f;
         private float _tiempoRayoActivo = 0f;
 
+        private static readonly RaycastHit2D[] _rayHitsBuffer = new RaycastHit2D[32];
+        private static readonly Collider2D[] _colHitsBuffer = new Collider2D[32];
+
         protected override float ObtenerVelocidadCorrer() => velocidadBase * 2.0f; // Correr = 800 px/s
 
         public override void OnNetworkSpawn()
@@ -200,9 +203,10 @@ namespace SoulKnight
                 float pasoDist = velocidadDash * Time.fixedDeltaTime;
 
                 // Raycast para detectar muros del mapa antes de avanzar (evita salir del mapa)
-                RaycastHit2D[] rayHits = Physics2D.RaycastAll(_rb.position, _dirDash, pasoDist + 0.45f);
-                foreach (var rh in rayHits)
+                int rayCount = Physics2D.RaycastNonAlloc(_rb.position, _dirDash, _rayHitsBuffer, pasoDist + 0.45f);
+                for (int i = 0; i < rayCount; i++)
                 {
+                    var rh = _rayHitsBuffer[i];
                     if (rh.collider != null && rh.collider.gameObject != gameObject && EsMuroDelMapa(rh.collider))
                     {
                         // Detenerse exactamente frente al muro del mapa
@@ -219,9 +223,11 @@ namespace SoulKnight
                 _distanciaRecorridaDash += avance.magnitude;
 
                 // Daño en el camino del Dash (atraviesa enemigos y estructuras comunes)
-                Collider2D[] hits = Physics2D.OverlapCircleAll(_rb.position, 0.8f);
-                foreach (var hit in hits)
+                int colCount = Physics2D.OverlapCircleNonAlloc(_rb.position, 0.8f, _colHitsBuffer);
+                for (int i = 0; i < colCount; i++)
                 {
+                    var hit = _colHitsBuffer[i];
+                    if (hit == null || hit.gameObject == gameObject) continue;
                     var enemigo = hit.GetComponent<EnemigoBase>();
                     if (enemigo != null)
                     {
@@ -312,9 +318,10 @@ namespace SoulKnight
             if (dir.sqrMagnitude < 0.001f) dir = Vector2.right;
 
             Vector2 centroCorte = (Vector2)transform.position + dir * 1.5f;
-            Collider2D[] hits = Physics2D.OverlapCircleAll(centroCorte, 1.8f);
-            foreach (var col in hits)
+            int count = Physics2D.OverlapCircleNonAlloc(centroCorte, 1.8f, _colHitsBuffer);
+            for (int i = 0; i < count; i++)
             {
+                var col = _colHitsBuffer[i];
                 if (col == null || col.gameObject == gameObject) continue;
                 var enemigo = col.GetComponent<EnemigoBase>();
                 if (enemigo != null)
@@ -400,9 +407,10 @@ namespace SoulKnight
             {
                 Vector2 dir = delta.normalized;
                 // Raycast a lo largo del trayecto de teleportación para no atravesar muros del mapa
-                RaycastHit2D[] hitsMuro = Physics2D.RaycastAll(origen, dir, dist);
-                foreach (var hm in hitsMuro)
+                int rayCount = Physics2D.RaycastNonAlloc(origen, dir, _rayHitsBuffer, dist);
+                for (int i = 0; i < rayCount; i++)
                 {
+                    var hm = _rayHitsBuffer[i];
                     if (hm.collider != null && hm.collider.gameObject != gameObject && EsMuroDelMapa(hm.collider))
                     {
                         // Detener la teleportación justo antes del muro del mapa
@@ -413,9 +421,10 @@ namespace SoulKnight
             }
 
             // Validar que el destino no quede empotrado dentro de un muro del mapa
-            Collider2D[] puntoHits = Physics2D.OverlapCircleAll(targetPos, 0.4f);
-            foreach (var ph in puntoHits)
+            int puntoCount = Physics2D.OverlapCircleNonAlloc(targetPos, 0.4f, _colHitsBuffer);
+            for (int i = 0; i < puntoCount; i++)
             {
+                var ph = _colHitsBuffer[i];
                 if (ph != null && ph.gameObject != gameObject && EsMuroDelMapa(ph))
                 {
                     // Si el destino quedó dentro de la pared, cancelar teleport
@@ -453,9 +462,11 @@ namespace SoulKnight
 
         private void AplicarImpactoTeleport(Vector2 pos)
         {
-            Collider2D[] hits = Physics2D.OverlapCircleAll(pos, radioTeleport);
-            foreach (var hit in hits)
+            int count = Physics2D.OverlapCircleNonAlloc(pos, radioTeleport, _colHitsBuffer);
+            for (int i = 0; i < count; i++)
             {
+                var hit = _colHitsBuffer[i];
+                if (hit == null || hit.gameObject == gameObject) continue;
                 var enemigo = hit.GetComponent<EnemigoBase>();
                 if (enemigo != null)
                 {
@@ -500,9 +511,10 @@ namespace SoulKnight
             if (dir.sqrMagnitude < 0.001f) dir = Vector2.right;
 
             // Atraviesa todo (muros, obstáculos y enemigos) hasta la distancia máxima
-            RaycastHit2D[] hits = Physics2D.CircleCastAll(transform.position, 1.1f, dir, _longitudRayoActual);
-            foreach (var hit in hits)
+            int count = Physics2D.CircleCastNonAlloc(transform.position, 1.1f, dir, _rayHitsBuffer, _longitudRayoActual);
+            for (int i = 0; i < count; i++)
             {
+                var hit = _rayHitsBuffer[i];
                 if (hit.collider == null || hit.collider.gameObject == gameObject) continue;
                 var enemigo = hit.collider.GetComponent<EnemigoBase>();
                 if (enemigo != null)
