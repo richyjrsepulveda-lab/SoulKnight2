@@ -1145,7 +1145,7 @@ namespace SoulKnight
             // 2. Columna izquierda: 4 botones verticales alineados a la izquierda
             AsegurarBotonControlesPausa();
             AjustarBotonPausaIndividual(botonReanudar, "▶ REANUDAR", -235f, 75f);
-            AjustarBotonPausaIndividual(botonControlesPausa, "⚙️ CONTROLES", -235f, 20f);
+            AjustarBotonPausaIndividual(botonControlesPausa, "⚙️ OPCIONES", -235f, 20f);
             AjustarBotonPausaIndividual(botonVolverLobbyPausa, "🏠 VOLVER AL LOBBY", -235f, -35f);
             AjustarBotonPausaIndividual(botonSalirPartida, "🚪 SALIR AL MENÚ", -235f, -90f);
 
@@ -1630,7 +1630,7 @@ namespace SoulKnight
                 txt.fontStyle = FontStyle.Bold;
                 txt.alignment = TextAnchor.MiddleCenter;
                 txt.color = Color.white;
-                txt.text = "⚙️ CONTROLES";
+                txt.text = "⚙️ OPCIONES";
                 var rtTxt = txtObj.GetComponent<RectTransform>();
                 rtTxt.anchorMin = Vector2.zero;
                 rtTxt.anchorMax = Vector2.one;

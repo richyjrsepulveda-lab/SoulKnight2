@@ -15,6 +15,7 @@ namespace SoulKnight
 
         void Start()
         {
+            GestorAudio.PlayBGM(TipoMusica.Sala);
             if (inputNombre != null && Global.Instancia != null && Global.Instancia.HayNombreGuardado && !string.IsNullOrWhiteSpace(Global.Instancia.NombreLocal))
             {
                 inputNombre.text = Global.Instancia.NombreLocal.Trim();
@@ -34,6 +35,7 @@ namespace SoulKnight
 
         private void AlContinuar()
         {
+            GestorAudio.PlaySFX(TipoSFX.ClickUI);
             string nombre = inputNombre != null ? inputNombre.text.Trim() : "";
             if (string.IsNullOrEmpty(nombre))
             {

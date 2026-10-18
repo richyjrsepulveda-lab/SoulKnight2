@@ -17,9 +17,18 @@ namespace SoulKnight
 
         void Start()
         {
+            GestorAudio.PlayBGM(TipoMusica.Sala);
             if (textoError) textoError.text = "";
-            if (botonConfirmar) botonConfirmar.onClick.AddListener(AlConfirmar);
-            if (botonVolver) botonVolver.onClick.AddListener(() => SceneManager.LoadScene(Escenas.MenuJugar));
+            if (botonConfirmar) botonConfirmar.onClick.AddListener(() =>
+            {
+                GestorAudio.PlaySFX(TipoSFX.ClickUI);
+                AlConfirmar();
+            });
+            if (botonVolver) botonVolver.onClick.AddListener(() =>
+            {
+                GestorAudio.PlaySFX(TipoSFX.ClickUI);
+                SceneManager.LoadScene(Escenas.MenuJugar);
+            });
 
             if (Global.Instancia != null)
             {

@@ -71,7 +71,10 @@ namespace SoulKnight
         public override void OnNetworkSpawn()
         {
             base.OnNetworkSpawn();
-            RayoCargando.OnValueChanged += (prev, act) => { if (visualCargaRayo) visualCargaRayo.enabled = act; };
+            RayoCargando.OnValueChanged += (prev, act) => {
+                if (visualCargaRayo) visualCargaRayo.enabled = act;
+                if (act) GestorAudio.PlaySFX(TipoSFX.RayoElectrico, 0.5f, 0.15f);
+            };
             RayoLanzado.OnValueChanged += (prev, act) => {
                 if (visualRayoElectrico) visualRayoElectrico.enabled = act;
                 if (act) GestorAudio.PlaySFX(TipoSFX.RayoElectrico);

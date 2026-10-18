@@ -126,6 +126,7 @@ namespace SoulKnight
             ActualizarUI();
             ActualizarPersonajesLobbyServer();
             GestorAudio.PlayBGM(TipoMusica.Lobby);
+            AsegurarBotonOpcionesLobby();
 
             // Si este jugador aún no ha pulsado "Volver al Lobby" tras caer todo el equipo,
             // mantener su pantalla de fin de partida activa hasta que lo pulse individualmente
@@ -221,7 +222,11 @@ namespace SoulKnight
 
             if (Input.GetKeyDown(KeyCode.Escape))
             {
-                if (_modalMaestriaLobby != null && _modalMaestriaLobby.activeSelf)
+                if (PanelOpcionesControles.Instancia != null && PanelOpcionesControles.Instancia.panelContenedor != null && PanelOpcionesControles.Instancia.panelContenedor.activeSelf)
+                {
+                    PanelOpcionesControles.Instancia.Cerrar();
+                }
+                else if (_modalMaestriaLobby != null && _modalMaestriaLobby.activeSelf)
                 {
                     _modalMaestriaLobby.SetActive(false);
                 }
@@ -229,7 +234,63 @@ namespace SoulKnight
                 {
                     VolverDeCuarto();
                 }
+                else
+                {
+                    Canvas canvas = GetComponentInChildren<Canvas>() ?? FindObjectOfType<Canvas>();
+                    if (canvas != null)
+                    {
+                        PanelOpcionesControles.ObtenerOCrear(canvas.transform).Abrir();
+                    }
+                }
             }
+        }
+
+        private void AsegurarBotonOpcionesLobby()
+        {
+            Canvas canvas = GetComponentInChildren<Canvas>() ?? FindObjectOfType<Canvas>();
+            if (canvas == null) return;
+
+            Transform cont = panelVistaGeneral != null ? panelVistaGeneral.transform : canvas.transform;
+            if (cont.Find("BotonOpcionesLobby") != null) return;
+
+            var go = new GameObject("BotonOpcionesLobby");
+            go.transform.SetParent(cont, false);
+
+            var rt = go.AddComponent<RectTransform>();
+            rt.anchorMin = new Vector2(1f, 1f);
+            rt.anchorMax = new Vector2(1f, 1f);
+            rt.pivot = new Vector2(1f, 1f);
+            rt.anchoredPosition = new Vector2(-20f, -20f);
+            rt.sizeDelta = new Vector2(160f, 38f);
+
+            var img = go.AddComponent<Image>();
+            img.color = new Color(0.18f, 0.22f, 0.32f, 0.95f);
+
+            var btn = go.AddComponent<Button>();
+            var colors = btn.colors;
+            colors.highlightedColor = new Color(0.28f, 0.36f, 0.52f, 1f);
+            colors.pressedColor = new Color(0.12f, 0.15f, 0.22f, 1f);
+            btn.colors = colors;
+
+            var txtObj = new GameObject("Texto");
+            txtObj.transform.SetParent(go.transform, false);
+            var txt = txtObj.AddComponent<Text>();
+            txt.font = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            txt.fontSize = 12;
+            txt.fontStyle = FontStyle.Bold;
+            txt.alignment = TextAnchor.MiddleCenter;
+            txt.color = Color.white;
+            txt.text = "⚙️ OPCIONES";
+
+            var rtTxt = txtObj.GetComponent<RectTransform>();
+            rtTxt.anchorMin = Vector2.zero;
+            rtTxt.anchorMax = Vector2.one;
+            rtTxt.sizeDelta = Vector2.zero;
+
+            btn.onClick.AddListener(() =>
+            {
+                PanelOpcionesControles.ObtenerOCrear(canvas.transform).Abrir();
+            });
         }
 
         void OnDestroy()

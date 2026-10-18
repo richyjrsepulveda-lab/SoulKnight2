@@ -281,10 +281,19 @@ namespace SoulKnight
             }
         }
 
+        private float _tiempoSonidoLaser = 0f;
+
         public override void OnNetworkSpawn()
         {
             base.OnNetworkSpawn();
-            ArmaduraActiva.OnValueChanged += (prev, act) => { if (visualArmaduraHielo) visualArmaduraHielo.SetActive(act); };
+            ArmaduraActiva.OnValueChanged += (prev, act) => {
+                if (visualArmaduraHielo) visualArmaduraHielo.SetActive(act);
+                if (act)
+                {
+                    GestorAudio.PlaySFX(TipoSFX.Escudo);
+                    GestorAudio.PlaySFX(TipoSFX.Congelar, 0.85f);
+                }
+            };
             DisparandoRayo.OnValueChanged += (prev, act) => 
             { 
                 if (rayoHielo) rayoHielo.enabled = act; 
@@ -335,6 +344,13 @@ namespace SoulKnight
 
                 if (disparandoVisual)
                 {
+                    _tiempoSonidoLaser -= Time.deltaTime;
+                    if (_tiempoSonidoLaser <= 0f)
+                    {
+                        _tiempoSonidoLaser = 0.28f;
+                        GestorAudio.PlaySFX(TipoSFX.Laser, 0.65f);
+                    }
+
                     AsegurarVisualesRayoHielo();
                     if (_heliceEscarcha != null) _heliceEscarcha.enabled = true;
 
@@ -773,6 +789,7 @@ namespace SoulKnight
                     _cdBolaHieloRestante = cooldownBolaHielo;
                     Vector2 dir = ((Vector2)Controles.PosicionMouseMundo() - (Vector2)transform.position).normalized;
                     if (dir.sqrMagnitude < 0.001f) dir = Vector2.right;
+                    GestorAudio.PlaySFX(TipoSFX.HieloDisparo, 0.95f);
                     NotificarAtaqueLocal(0.45f);
                     LanzarBolaHieloServerRpc(dir);
                 }
@@ -788,6 +805,8 @@ namespace SoulKnight
                 if (PuedeUsarHabilidad(IdHabilidad.Hielo_Armadura, out string motivo))
                 {
                     _cdArmaduraRestante = cooldownArmadura;
+                    GestorAudio.PlaySFX(TipoSFX.Escudo);
+                    GestorAudio.PlaySFX(TipoSFX.Congelar, 0.9f);
                     ActivarArmaduraServerRpc();
                 }
                 else
@@ -802,6 +821,7 @@ namespace SoulKnight
                 if (PuedeUsarHabilidad(IdHabilidad.Hielo_EraHielo, out string motivo))
                 {
                     _cdEraHieloRestante = cooldownEraHielo;
+                    GestorAudio.PlaySFX(TipoSFX.Congelar, 1.4f);
                     NotificarAtaqueLocal(0.5f);
                     ActivarEraHieloServerRpc();
                 }

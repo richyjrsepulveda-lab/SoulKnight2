@@ -76,13 +76,18 @@ namespace SoulKnight
             transform.position = new Vector3(transform.position.x, transform.position.y, -0.4f);
 
             bool esProyHielo = aplicaCongelacion || aplicaRalentizacion || TipoElemento.Value == 2;
+            bool esProyFuego = aplicaQuemadura || TipoElemento.Value == 1;
             if (esProyHielo)
             {
-                GestorAudio.PlaySFX(TipoSFX.Laser, 0.55f);
+                GestorAudio.PlaySFX(TipoSFX.HieloDisparo, 0.65f);
+            }
+            else if (esProyFuego)
+            {
+                GestorAudio.PlaySFX(TipoSFX.FuegoDisparo, 0.65f);
             }
             else
             {
-                GestorAudio.PlaySFX(TipoSFX.Disparo, 0.55f);
+                GestorAudio.PlaySFX(TipoSFX.Disparo, 0.65f);
             }
 
             if (IsServer)

@@ -1,15 +1,19 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
 namespace SoulKnight
 {
     public enum TipoMusica
     {
         Ninguna,
-        Lobby,
-        Mazmorra,
-        Jefe
+        Sala,       // Menú principal y pantallas de crear/unirse a sala
+        Lobby,      // Lobby de espera y selección de héroes
+        Mazmorra,   // Recámaras normales de la run
+        Jefe        // Jefe y oleadas pesadas
     }
 
     public enum TipoSFX
@@ -34,12 +38,18 @@ namespace SoulKnight
         Victoria,
         Mejora,
         ClickUI,
-        RugidoJefe
+        RugidoJefe,
+        Escudo,
+        FuegoDisparo,
+        FuegoLlamas,
+        HieloDisparo
     }
+
+    public class MarcadorAudioBoton : MonoBehaviour { }
 
     /// <summary>
     /// Gestor centralizado de audio con soporte para música de fondo (BGM) en bucle con fade,
-    /// y un pool dinámico de canales de efectos de sonido (SFX).
+    /// pool dinámico de canales de efectos de sonido (SFX) y ajuste de volúmenes persistentes.
     /// </summary>
     public class GestorAudio : MonoBehaviour
     {
@@ -71,7 +81,7 @@ namespace SoulKnight
         private readonly Dictionary<TipoMusica, AudioClip> _clipsMusica = new Dictionary<TipoMusica, AudioClip>();
 
         public float VolumenMaster { get; private set; } = 1.0f;
-        public float VolumenMusica { get; private set; } = 0.75f;
+        public float VolumenMusica { get; private set; } = 0.70f;
         public float VolumenSFX { get; private set; } = 0.85f;
 
         private TipoMusica _musicaActual = TipoMusica.Ninguna;
@@ -91,6 +101,41 @@ namespace SoulKnight
             InicializarFuentes();
             CargarClipsAudio();
             CargarPreferenciasVolumen();
+        }
+
+        private void OnEnable()
+        {
+            SceneManager.sceneLoaded += AlCargarEscena;
+        }
+
+        private void OnDisable()
+        {
+            SceneManager.sceneLoaded -= AlCargarEscena;
+        }
+
+        private void AlCargarEscena(Scene scene, LoadSceneMode mode)
+        {
+            StartCoroutine(RutinaAsignarClicksBotones());
+        }
+
+        private IEnumerator RutinaAsignarClicksBotones()
+        {
+            yield return null; // Esperar un frame a que los canvases despierten
+            VincularClicksEnTodosLosBotones();
+        }
+
+        public static void VincularClicksEnTodosLosBotones(GameObject raiz = null)
+        {
+            Button[] botones = raiz != null ? raiz.GetComponentsInChildren<Button>(true) : FindObjectsOfType<Button>(true);
+            foreach (var btn in botones)
+            {
+                if (btn == null) continue;
+                if (btn.GetComponent<MarcadorAudioBoton>() == null)
+                {
+                    btn.gameObject.AddComponent<MarcadorAudioBoton>();
+                    btn.onClick.AddListener(() => PlaySFX(TipoSFX.ClickUI));
+                }
+            }
         }
 
         private void InicializarFuentes()
@@ -118,6 +163,7 @@ namespace SoulKnight
         private void CargarClipsAudio()
         {
             // BGM
+            RegistrarMusica(TipoMusica.Sala, "Audio/Musica/MusicaSala");
             RegistrarMusica(TipoMusica.Lobby, "Audio/Musica/MusicaLobby");
             RegistrarMusica(TipoMusica.Mazmorra, "Audio/Musica/MusicaDungeon");
             RegistrarMusica(TipoMusica.Jefe, "Audio/Musica/MusicaBoss");
@@ -144,6 +190,10 @@ namespace SoulKnight
             RegistrarSFX(TipoSFX.Mejora, "Audio/SFX/Mejora");
             RegistrarSFX(TipoSFX.ClickUI, "Audio/SFX/ClickUI");
             RegistrarSFX(TipoSFX.RugidoJefe, "Audio/SFX/RugidoJefe");
+            RegistrarSFX(TipoSFX.Escudo, "Audio/SFX/Escudo");
+            RegistrarSFX(TipoSFX.FuegoDisparo, "Audio/SFX/FuegoDisparo");
+            RegistrarSFX(TipoSFX.FuegoLlamas, "Audio/SFX/FuegoLlamas");
+            RegistrarSFX(TipoSFX.HieloDisparo, "Audio/SFX/HieloDisparo");
         }
 
         private void RegistrarMusica(TipoMusica tipo, string rutaResources)
@@ -165,6 +215,29 @@ namespace SoulKnight
             VolumenSFX = PlayerPrefs.GetFloat("VolumenSFX", 0.85f);
         }
 
+        public void SetVolumenMaster(float v)
+        {
+            VolumenMaster = Mathf.Clamp01(v);
+            PlayerPrefs.SetFloat("VolumenMaster", VolumenMaster);
+            PlayerPrefs.Save();
+            ActualizarVolumenMusica();
+        }
+
+        public void SetVolumenMusica(float v)
+        {
+            VolumenMusica = Mathf.Clamp01(v);
+            PlayerPrefs.SetFloat("VolumenMusica", VolumenMusica);
+            PlayerPrefs.Save();
+            ActualizarVolumenMusica();
+        }
+
+        public void SetVolumenSFX(float v)
+        {
+            VolumenSFX = Mathf.Clamp01(v);
+            PlayerPrefs.SetFloat("VolumenSFX", VolumenSFX);
+            PlayerPrefs.Save();
+        }
+
         public void AjustarVolumen(float master, float musica, float sfx)
         {
             VolumenMaster = Mathf.Clamp01(master);
@@ -176,7 +249,12 @@ namespace SoulKnight
             PlayerPrefs.SetFloat("VolumenSFX", VolumenSFX);
             PlayerPrefs.Save();
 
-            if (_fuenteMusicaPrincipal != null)
+            ActualizarVolumenMusica();
+        }
+
+        private void ActualizarVolumenMusica()
+        {
+            if (_fuenteMusicaPrincipal != null && _rutinaFadeMusica == null)
             {
                 _fuenteMusicaPrincipal.volume = VolumenMaster * VolumenMusica;
             }
@@ -208,7 +286,7 @@ namespace SoulKnight
 
             if (fuenteDisponible == null)
             {
-                fuenteDisponible = _poolSFX[0]; // Reutilizar la más antigua
+                fuenteDisponible = _poolSFX[0];
             }
 
             fuenteDisponible.clip = clip;
@@ -271,6 +349,8 @@ namespace SoulKnight
                 }
                 _fuenteMusicaPrincipal.volume = volDestino;
             }
+
+            _rutinaFadeMusica = null;
         }
     }
 }

@@ -176,12 +176,18 @@ namespace SoulKnight
                 if (rayoCabezaFuego) rayoCabezaFuego.enabled = act;
                 if (!act) OcultarVisualesExtraLanzallamas();
             };
+            ArmaduraActiva.OnValueChanged += (prev, act) =>
+            {
+                if (act) GestorAudio.PlaySFX(TipoSFX.Escudo);
+            };
             SupernovaActiva.OnValueChanged += (prev, act) =>
             {
                 AsegurarAuraSupernova();
                 if (_auraSupernova != null) _auraSupernova.SetActive(act);
             };
         }
+
+        private float _tiempoSonidoLlamas = 0f;
 
         protected override float ObtenerVelocidadCorrer()
         {
@@ -288,6 +294,13 @@ namespace SoulKnight
             AsegurarVisualesLanzallamas();
             rayoCabezaFuego.enabled = true;
             if (_nucleoLanzallamas != null) _nucleoLanzallamas.enabled = true;
+
+            _tiempoSonidoLlamas -= Time.deltaTime;
+            if (_tiempoSonidoLlamas <= 0f)
+            {
+                _tiempoSonidoLlamas = 0.32f;
+                GestorAudio.PlaySFX(TipoSFX.FuegoLlamas, 0.75f);
+            }
 
             Vector2 origen = transform.position;
             Vector2 dirActual = IsOwner ? ((Vector2)Controles.PosicionMouseMundo() - origen).normalized : DireccionApuntado.Value;
@@ -421,12 +434,14 @@ namespace SoulKnight
                         {
                             // MODO ESCOPETA TRIPLE DE FUEGO (Cadencia rápida 0.28s)
                             _cdBolaFuegoRestante = 0.28f;
+                            GestorAudio.PlaySFX(TipoSFX.FuegoDisparo, 1.15f);
                             LanzarEscopetaFuegoServerRpc(dir);
                         }
                         else
                         {
                             // Disparo estándar
                             _cdBolaFuegoRestante = cooldownBolaFuego;
+                            GestorAudio.PlaySFX(TipoSFX.FuegoDisparo, 0.95f);
                             LanzarBolaFuegoServerRpc(dir);
                         }
                     }
@@ -446,6 +461,7 @@ namespace SoulKnight
                     if (PuedeUsarHabilidad(IdHabilidad.Fuego_Lanzallamas, out string motivoE))
                     {
                         bool activar = !CabezaFuegoActiva.Value;
+                        if (activar) GestorAudio.PlaySFX(TipoSFX.FuegoLlamas, 0.8f);
                         ToggleCabezaFuegoSupernovaServerRpc(activar);
                     }
                     else
@@ -462,6 +478,7 @@ namespace SoulKnight
                     if (PuedeUsarHabilidad(IdHabilidad.Fuego_Lanzallamas, out string motivo))
                     {
                         _cdCabezaFuegoRestante = cooldownCabezaFuego;
+                        GestorAudio.PlaySFX(TipoSFX.FuegoLlamas, 0.8f);
                         ActivarCabezaFuegoServerRpc();
                     }
                     else
@@ -480,6 +497,7 @@ namespace SoulKnight
                     if (PuedeUsarHabilidad(IdHabilidad.Fuego_Armadura, out string motivo))
                     {
                         _cdArmaduraRestante = cooldownArmadura;
+                        GestorAudio.PlaySFX(TipoSFX.Escudo);
                         ActivarArmaduraServerRpc();
                     }
                     else
@@ -500,6 +518,7 @@ namespace SoulKnight
                 if (PuedeUsarHabilidad(IdHabilidad.Fuego_Meteorito, out string motivoUlti))
                 {
                     _cdSupernovaRestante = cooldownSupernova;
+                    GestorAudio.PlaySFX(TipoSFX.Explosion, 1.25f);
                     ActivarSupernovaServerRpc();
                 }
                 else

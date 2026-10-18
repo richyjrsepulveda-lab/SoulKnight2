@@ -35,7 +35,7 @@ namespace SoulKnight
             if (botonOpciones) botonOpciones.onClick.AddListener(AlPresionarOpciones);
             if (botonSalir) botonSalir.onClick.AddListener(AlPresionarSalir);
 
-            GestorAudio.PlayBGM(TipoMusica.Lobby);
+            GestorAudio.PlayBGM(TipoMusica.Sala);
             AsegurarBotonCambiarNombre();
         }
 
@@ -134,9 +134,9 @@ namespace SoulKnight
             {
                 panelOpciones.Abrir();
             }
-            else if (PanelOpcionesControles.Instancia != null)
+            else
             {
-                PanelOpcionesControles.Instancia.Abrir();
+                PanelOpcionesControles.ObtenerOCrear(transform).Abrir();
             }
         }
 
