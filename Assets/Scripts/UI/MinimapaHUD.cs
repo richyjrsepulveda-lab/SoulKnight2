@@ -20,8 +20,9 @@ namespace SoulKnight
         public Texture2D TextureMapa => _texMapa;
         private Color32[] _pixeles;
 
-        private const int MAP_W = 120;
-        private const int MAP_H = 84;
+        private const int MAP_W = 160;
+        private const int MAP_H = 112;
+        private const float ESCALA_PIXELS_POR_TILE = 1.35f;
 
         private float _timerActualizacion = 0f;
 
@@ -103,6 +104,7 @@ namespace SoulKnight
         {
             Instancia = this;
             _rawImage = raw;
+            if (_texMapa != null) Destroy(_texMapa);
             _texMapa = new Texture2D(MAP_W, MAP_H, TextureFormat.RGBA32, false);
             _texMapa.filterMode = FilterMode.Point;
             _texMapa.wrapMode = TextureWrapMode.Clamp;
@@ -117,7 +119,7 @@ namespace SoulKnight
         void Awake()
         {
             if (Instancia == null) Instancia = this;
-            if (_texMapa == null)
+            if (_texMapa == null || _texMapa.width != MAP_W || _texMapa.height != MAP_H)
             {
                 if (_rawImage == null) _rawImage = GetComponentInChildren<RawImage>(true);
                 if (_rawImage != null)
@@ -147,7 +149,7 @@ namespace SoulKnight
         {
             var gen = GeneradorMazmorra.Instancia;
             var vision = SistemaVision.Instancia;
-            if (_texMapa == null || _pixeles == null)
+            if (_texMapa == null || _pixeles == null || _texMapa.width != MAP_W || _texMapa.height != MAP_H)
             {
                 if (_rawImage == null) _rawImage = GetComponentInChildren<RawImage>(true);
                 if (_rawImage != null) Inicializar(_rawImage);
@@ -167,28 +169,51 @@ namespace SoulKnight
                 return;
             }
 
-            int minX = gen.gridMinX;
-            int maxX = gen.gridMaxX;
-            int minY = gen.gridMinY;
-            int maxY = gen.gridMaxY;
-            float spanX = Mathf.Max(1f, maxX - minX);
-            float spanY = Mathf.Max(1f, maxY - minY);
+            // Centro dinámico centrado en el jugador local (navegación fluida según avanza por el mapa)
+            Vector2 centroMundo = Vector2.zero;
+            Personaje pjLocal = null;
+            for (int i = 0; i < Personaje.Todos.Count; i++)
+            {
+                var p = Personaje.Todos[i];
+                if (p != null && p.EsControlLocal && p.gameObject.activeInHierarchy)
+                {
+                    pjLocal = p;
+                    break;
+                }
+            }
+            if (pjLocal != null)
+            {
+                centroMundo = pjLocal.transform.position;
+            }
+            else if (Camera.main != null)
+            {
+                centroMundo = Camera.main.transform.position;
+            }
 
+            int minX = gen.gridMinX;
+            int minY = gen.gridMinY;
             int gridW = gen.gridActual.GetLength(0);
             int gridH = gen.gridActual.GetLength(1);
 
-            // Colores: Bloques de los bordes siempre visibles; suelo explorado y objetos con total normalidad
+            // Colores limpios y estéticos
             Color32 colSueloNormal = new Color32(78, 104, 136, 255);
             Color32 colSueloCombate = new Color32(115, 52, 52, 255);
             Color32 colMuroNormal = new Color32(180, 200, 225, 255);
 
-            ControladorSala salaCerrada = vision != null ? vision.ObtenerSalaBloqueadaActiva() : null;
+            ControladorSala salaCerrada = (vision != null) ? vision.ObtenerSalaBloqueadaActiva() : null;
             bool haySalaCerrada = (salaCerrada != null);
             Rect rectSalaCerrada = haySalaCerrada ? salaCerrada.limitesSala : default;
 
+            float centroPX = (MAP_W - 1) * 0.5f;
+            float centroPY = (MAP_H - 1) * 0.5f;
+
+            int[] dx8 = { -1, 0, 1, -1, 1, -1, 0, 1 };
+            int[] dy8 = { -1, -1, -1, 0, 0, 1, 1, 1 };
+
+            // Renderizado centrado 1:1 sin distorsión por relación de aspecto
             for (int py = 0; py < MAP_H; py++)
             {
-                float wy = minY + ((py + 0.5f) / MAP_H) * spanY;
+                float wy = centroMundo.y + (py - centroPY) / ESCALA_PIXELS_POR_TILE;
                 int gy = Mathf.RoundToInt(wy) - minY;
                 if (gy < 0 || gy >= gridH) continue;
 
@@ -196,18 +221,15 @@ namespace SoulKnight
 
                 for (int px = 0; px < MAP_W; px++)
                 {
-                    float wx = minX + ((px + 0.5f) / MAP_W) * spanX;
+                    float wx = centroMundo.x + (px - centroPX) / ESCALA_PIXELS_POR_TILE;
                     int gx = Mathf.RoundToInt(wx) - minX;
                     if (gx < 0 || gx >= gridW) continue;
 
                     byte celda = gen.gridActual[gx, gy];
                     if (celda == 0) continue;
 
-                    if (celda == 2) // Todos los bloques de los bordes siempre visibles sin importar la luz
-                    {
-                        _pixeles[rowOffset + px] = colMuroNormal;
-                    }
-                    else if (celda == 1) // El mapa se va revelando con total normalidad según vas explorando
+                    // El mapa NO se desbloquea de golpe: se revela estrictamente conforme el jugador avanza
+                    if (celda == 1) // Suelo
                     {
                         bool explorada = (vision == null) || vision.EstaCeldaExplorada(gx, gy);
                         if (explorada)
@@ -217,35 +239,72 @@ namespace SoulKnight
                             _pixeles[rowOffset + px] = enSalaCombate ? colSueloCombate : colSueloNormal;
                         }
                     }
+                    else if (celda == 2) // Muro: Solo visible si el muro o suelo colindante fue explorado
+                    {
+                        bool muroRevelado = false;
+                        if (vision == null)
+                        {
+                            muroRevelado = true;
+                        }
+                        else if (vision.EstaCeldaExplorada(gx, gy))
+                        {
+                            muroRevelado = true;
+                        }
+                        else
+                        {
+                            for (int k = 0; k < 8; k++)
+                            {
+                                int nx = gx + dx8[k];
+                                int ny = gy + dy8[k];
+                                if (nx >= 0 && nx < gridW && ny >= 0 && ny < gridH)
+                                {
+                                    if (gen.gridActual[nx, ny] == 1 && vision.EstaCeldaExplorada(nx, ny))
+                                    {
+                                        muroRevelado = true;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+
+                        if (muroRevelado)
+                        {
+                            _pixeles[rowOffset + px] = colMuroNormal;
+                        }
+                    }
                 }
             }
 
-            // Pasadizo / Hoyo final (aparece con normalidad al explorar)
+            // Pasadizo / Hoyo final (aparece al haber explorado su posición)
             if (PasajeSiguienteNivel.Instancia != null)
             {
                 Vector2 posHoyo = PasajeSiguienteNivel.Instancia.transform.position;
                 if (vision == null || vision.EstaPuntoExplorado(posHoyo))
                 {
-                    DibujarPuntoMundo(posHoyo, minX, minY, spanX, spanY, new Color32(235, 195, 95, 255), 2);
+                    DibujarPuntoMundo(posHoyo, centroMundo, new Color32(235, 195, 95, 255), 2);
                 }
             }
 
-            // Pociones / Mejoras en el suelo (aparecen con total normalidad)
+            // Pociones / Mejoras en el suelo (visibles si el punto ha sido explorado)
             for (int i = 0; i < ItemMejoraRun.Todos.Count; i++)
             {
                 var item = ItemMejoraRun.Todos[i];
                 if (item == null || !item.gameObject.activeInHierarchy) continue;
-                Color32 col = (item.CostoOro != null && item.CostoOro.Value > 0)
-                    ? new Color32(255, 215, 0, 255)   // Dorado para tienda
-                    : new Color32(80, 255, 220, 255);  // Cian para mejora libre
-                DibujarPuntoMundo(item.transform.position, minX, minY, spanX, spanY, col, 2);
+                Vector2 posItem = item.transform.position;
+                if (vision == null || vision.EstaPuntoExplorado(posItem))
+                {
+                    Color32 col = (item.CostoOro != null && item.CostoOro.Value > 0)
+                        ? new Color32(255, 215, 0, 255)   // Dorado para tienda
+                        : new Color32(80, 255, 220, 255);  // Cian para mejora libre
+                    DibujarPuntoMundo(posItem, centroMundo, col, 2);
+                }
             }
 
-            // Enemigos (en el mapa la visión SOLO aplica para mostrar u ocultar a los enemigos)
+            // Enemigos (SOLO visibles si están dentro de nuestro radio de visión activa en el momento)
             for (int i = 0; i < EnemigoBase.Todos.Count; i++)
             {
                 var e = EnemigoBase.Todos[i];
-                if (e == null) continue;
+                if (e == null || !e.gameObject.activeInHierarchy) continue;
                 Vector2 posE = e.transform.position;
 
                 if (vision == null || vision.TieneVisionEnPunto(posE))
@@ -253,41 +312,46 @@ namespace SoulKnight
                     bool esJefe = (e is JefeBase);
                     Color32 colEnem = esJefe ? new Color32(255, 50, 220, 255) : new Color32(255, 55, 55, 255);
                     int radio = esJefe ? 3 : 2;
-                    DibujarPuntoMundo(posE, minX, minY, spanX, spanY, colEnem, radio);
+                    DibujarPuntoMundo(posE, centroMundo, colEnem, radio);
                 }
             }
 
-            // Jugadores Aliados
+            // Jugadores Aliados (si hay otros jugadores en red)
             for (int i = 0; i < Personaje.Todos.Count; i++)
             {
                 var pj = Personaje.Todos[i];
-                if (pj == null || !pj.gameObject.activeInHierarchy) continue;
+                if (pj == null || !pj.gameObject.activeInHierarchy || pj.EsControlLocal) continue;
+                DibujarPuntoMundo(pj.transform.position, centroMundo, new Color32(70, 200, 255, 255), 2);
+            }
 
-                Color32 colPj = pj.EsControlLocal
-                    ? new Color32(60, 255, 100, 255)
-                    : new Color32(70, 200, 255, 255);
-
-                DibujarPuntoMundo(pj.transform.position, minX, minY, spanX, spanY, colPj, 2);
+            // Jugador Local: Punto verde brillante en el centro del minimapa
+            if (pjLocal != null)
+            {
+                DibujarPuntoMundo(pjLocal.transform.position, centroMundo, new Color32(60, 255, 100, 255), 2);
             }
 
             _texMapa.SetPixels32(_pixeles);
             _texMapa.Apply(false);
         }
 
-        private void DibujarPuntoMundo(Vector2 posMundo, int minX, int minY, float spanX, float spanY, Color32 color, int radio)
+        private void DibujarPuntoMundo(Vector2 posMundo, Vector2 centroMundo, Color32 color, int radio)
         {
-            int cx = Mathf.RoundToInt(((posMundo.x - minX) / spanX) * (MAP_W - 1));
-            int cy = Mathf.RoundToInt(((posMundo.y - minY) / spanY) * (MAP_H - 1));
+            float centroPX = (MAP_W - 1) * 0.5f;
+            float centroPY = (MAP_H - 1) * 0.5f;
+
+            int cx = Mathf.RoundToInt(centroPX + (posMundo.x - centroMundo.x) * ESCALA_PIXELS_POR_TILE);
+            int cy = Mathf.RoundToInt(centroPY + (posMundo.y - centroMundo.y) * ESCALA_PIXELS_POR_TILE);
 
             for (int dy = -radio; dy <= radio; dy++)
             {
                 int py = cy + dy;
                 if (py < 0 || py >= MAP_H) continue;
+                int rowOffset = py * MAP_W;
                 for (int dx = -radio; dx <= radio; dx++)
                 {
                     int px = cx + dx;
                     if (px < 0 || px >= MAP_W) continue;
-                    _pixeles[py * MAP_W + px] = color;
+                    _pixeles[rowOffset + px] = color;
                 }
             }
         }

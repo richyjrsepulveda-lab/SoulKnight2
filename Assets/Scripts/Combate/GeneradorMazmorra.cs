@@ -180,13 +180,13 @@ namespace SoulKnight
             List<SalaInfo> salas = new List<SalaInfo>();
             List<PasilloInfo> pasillos = new List<PasilloInfo>();
 
-            // Sala 0: Entrada segura (siempre al inicio / izquierda)
-            salas.Add(CrearSala(0, 0, 14, 12, 0, 0, esInicio: true, esJefe: false));
+            // Sala 0: Entrada segura (más amplia y cómoda)
+            salas.Add(CrearSala(0, 0, 26, 20, 0, 0, esInicio: true, esJefe: false));
 
-            puntosSpawnJugadores.Add(new Vector2(-2.5f, 1.5f));
-            puntosSpawnJugadores.Add(new Vector2(-2.5f, -1.5f));
-            puntosSpawnJugadores.Add(new Vector2(-4.5f, 1.5f));
-            puntosSpawnJugadores.Add(new Vector2(-4.5f, -1.5f));
+            puntosSpawnJugadores.Add(new Vector2(-4.0f, 2.0f));
+            puntosSpawnJugadores.Add(new Vector2(-4.0f, -2.0f));
+            puntosSpawnJugadores.Add(new Vector2(-7.0f, 2.0f));
+            puntosSpawnJugadores.Add(new Vector2(-7.0f, -2.0f));
 
             int totalSalasCaminoPrincipal = 5;
             int currX = 0;
@@ -195,34 +195,34 @@ namespace SoulKnight
             for (int k = 1; k < totalSalasCaminoPrincipal; k++)
             {
                 bool esJefe = (k == totalSalasCaminoPrincipal - 1);
-                int ancho = esJefe ? 20 : UnityEngine.Random.Range(16, 22);
-                int alto = esJefe ? 16 : UnityEngine.Random.Range(14, 18);
-                int numCols = esJefe ? 2 : (UnityEngine.Random.Range(1, 3) * 2);
-                int numEnems = esJefe ? 0 : UnityEngine.Random.Range(4, 7);
+                int ancho = esJefe ? 42 : UnityEngine.Random.Range(32, 38);
+                int alto = esJefe ? 32 : UnityEngine.Random.Range(24, 30);
+                int numCols = esJefe ? 4 : (UnityEngine.Random.Range(2, 4) * 2);
+                int numEnems = esJefe ? 0 : UnityEngine.Random.Range(5, 8);
 
                 int chance = UnityEngine.Random.Range(0, 100);
-                int stepX = 28;
+                int stepX = 50;
                 int stepY = 0;
 
                 if (esJefe)
                 {
-                    stepX = 30;
+                    stepX = 54;
                     stepY = 0;
                 }
                 else if (chance < 50)
                 {
-                    stepX = UnityEngine.Random.Range(26, 30);
-                    stepY = UnityEngine.Random.Range(-4, 5);
+                    stepX = UnityEngine.Random.Range(46, 54);
+                    stepY = UnityEngine.Random.Range(-6, 7);
                 }
                 else if (chance < 75)
                 {
-                    stepX = UnityEngine.Random.Range(8, 16);
-                    stepY = UnityEngine.Random.Range(20, 25);
+                    stepX = UnityEngine.Random.Range(14, 22);
+                    stepY = UnityEngine.Random.Range(38, 46);
                 }
                 else
                 {
-                    stepX = UnityEngine.Random.Range(8, 16);
-                    stepY = -UnityEngine.Random.Range(20, 25);
+                    stepX = UnityEngine.Random.Range(14, 22);
+                    stepY = -UnityEngine.Random.Range(38, 46);
                 }
 
                 int candX = currX + stepX;
@@ -231,8 +231,8 @@ namespace SoulKnight
                 bool colisiona = false;
                 foreach (var s in salas)
                 {
-                    if (Mathf.Abs(candX - s.cx) < (ancho + s.xMax - s.xMin) * 0.5f + 6 &&
-                        Mathf.Abs(candY - s.cy) < (alto + s.yMax - s.yMin) * 0.5f + 6)
+                    if (Mathf.Abs(candX - s.cx) < (ancho + s.xMax - s.xMin) * 0.5f + 10 &&
+                        Mathf.Abs(candY - s.cy) < (alto + s.yMax - s.yMin) * 0.5f + 10)
                     {
                         colisiona = true;
                         break;
@@ -241,7 +241,7 @@ namespace SoulKnight
 
                 if (colisiona)
                 {
-                    candX = currX + 30;
+                    candX = currX + 54;
                     candY = currY;
                 }
 
@@ -263,28 +263,28 @@ namespace SoulKnight
             var salaFinal = salas[totalSalasCaminoPrincipal - 1];
             puntoSpawnJefe = new Vector2(salaFinal.cx, salaFinal.cy);
 
-            // Pasillito de salida después de la sala del jefe (8 bloques hacia la derecha)
+            // Pasillito de salida después de la sala del jefe (12 bloques hacia la derecha)
             int pasilloJefeXMin = salaFinal.xMax + 1;
-            int pasilloJefeXMax = salaFinal.xMax + 9;
+            int pasilloJefeXMax = salaFinal.xMax + 12;
             int pasilloJefeY = salaFinal.cy;
             posicionPortal = new Vector2(pasilloJefeXMax - 1.2f, pasilloJefeY + 0.5f);
 
-            // Cuartos Extra sin salida (ramificaciones laterales que no llevan a ningún lado, solo tienen más enemigos para pelear)
+            // Cuartos Extra sin salida (ramificaciones laterales más amplias)
             Vector2Int[] dirsRamificacion = new Vector2Int[]
             {
-                new Vector2Int(0, 25),
-                new Vector2Int(0, -25),
-                new Vector2Int(-25, 22),
-                new Vector2Int(-25, -22),
-                new Vector2Int(24, 24),
-                new Vector2Int(24, -24)
+                new Vector2Int(0, 44),
+                new Vector2Int(0, -44),
+                new Vector2Int(-44, 40),
+                new Vector2Int(-44, -40),
+                new Vector2Int(44, 44),
+                new Vector2Int(44, -44)
             };
 
             for (int idxPadre = 1; idxPadre <= 3; idxPadre++)
             {
                 var padre = salas[idxPadre];
-                int anchoExtra = UnityEngine.Random.Range(16, 20);
-                int altoExtra = UnityEngine.Random.Range(14, 18);
+                int anchoExtra = UnityEngine.Random.Range(28, 34);
+                int altoExtra = UnityEngine.Random.Range(22, 28);
                 int numColsExtra = (UnityEngine.Random.Range(1, 3) * 2);
 
                 int offsetInicial = UnityEngine.Random.Range(0, dirsRamificacion.Length);
@@ -295,14 +295,14 @@ namespace SoulKnight
                     int candY = padre.cy + offset.y;
 
                     // Evitar invadir la zona del pasillo de salida del jefe
-                    if (candX + anchoExtra / 2 > salaFinal.xMin - 4 && Mathf.Abs(candY - salaFinal.cy) < 18)
+                    if (candX + anchoExtra / 2 > salaFinal.xMin - 6 && Mathf.Abs(candY - salaFinal.cy) < 24)
                         continue;
 
                     bool colisiona = false;
                     foreach (var s in salas)
                     {
-                        if (Mathf.Abs(candX - s.cx) < (anchoExtra + s.xMax - s.xMin) * 0.5f + 6 &&
-                            Mathf.Abs(candY - s.cy) < (altoExtra + s.yMax - s.yMin) * 0.5f + 6)
+                        if (Mathf.Abs(candX - s.cx) < (anchoExtra + s.xMax - s.xMin) * 0.5f + 10 &&
+                            Mathf.Abs(candY - s.cy) < (altoExtra + s.yMax - s.yMin) * 0.5f + 10)
                         {
                             colisiona = true;
                             break;
@@ -311,7 +311,7 @@ namespace SoulKnight
 
                     if (!colisiona)
                     {
-                        var cuartoExtra = CrearSala(candX, candY, anchoExtra, altoExtra, numColsExtra, 6, esInicio: false, esJefe: false);
+                        var cuartoExtra = CrearSala(candX, candY, anchoExtra, altoExtra, numColsExtra, 7, esInicio: false, esJefe: false);
                         salas.Add(cuartoExtra);
                         pasillos.Add(new PasilloInfo
                         {
@@ -531,14 +531,22 @@ namespace SoulKnight
                 var ctrl = salaObj.AddComponent<ControladorSala>();
                 ctrl.Inicializar(idx, s.xMin, s.xMax, s.yMin, s.yMax, esInicio, esJefe, esTienda);
 
-                // Colocar 4 Antorchas en las esquinas interiores de la sala
-                Vector2[] posAntorchas = new Vector2[]
+                // Colocar Antorchas en las esquinas interiores de la sala
+                var posAntorchas = new List<Vector2>
                 {
-                    new Vector2(s.xMin + 2.2f, s.yMax - 2.2f),
-                    new Vector2(s.xMax - 2.2f, s.yMax - 2.2f),
-                    new Vector2(s.xMin + 2.2f, s.yMin + 2.2f),
-                    new Vector2(s.xMax - 2.2f, s.yMin + 2.2f)
+                    new Vector2(s.xMin + 2.5f, s.yMax - 2.5f),
+                    new Vector2(s.xMax - 2.5f, s.yMax - 2.5f),
+                    new Vector2(s.xMin + 2.5f, s.yMin + 2.5f),
+                    new Vector2(s.xMax - 2.5f, s.yMin + 2.5f)
                 };
+
+                // En salas amplias, añadir 2 antorchas intermedias en los laterales para excelente visibilidad
+                if (s.xMax - s.xMin >= 28)
+                {
+                    posAntorchas.Add(new Vector2(s.cx, s.yMax - 2.5f));
+                    posAntorchas.Add(new Vector2(s.cx, s.yMin + 2.5f));
+                }
+
                 foreach (var pa in posAntorchas)
                 {
                     CrearAntorchaEnSala(ctrl, pa);

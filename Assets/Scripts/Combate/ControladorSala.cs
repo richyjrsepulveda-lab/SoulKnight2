@@ -185,7 +185,7 @@ namespace SoulKnight
 
                     if (i < _lucesAntorchas.Count && _lucesAntorchas[i] != null)
                     {
-                        float escHalo = 9.5f * _progresoEncendido * flicker;
+                        float escHalo = 13.5f * _progresoEncendido * flicker;
                         _lucesAntorchas[i].transform.localScale = new Vector3(escHalo, escHalo, 1f);
                     }
                 }
