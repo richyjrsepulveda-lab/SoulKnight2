@@ -161,35 +161,35 @@ namespace SoulKnight
                     velocidadBase = 2.4f;
                     dano = Mathf.RoundToInt(15 * multDificultad);
                     rangoAtaque = 2.2f;
-                    EscalaVisualNet.Value = 1.35f;
+                    EscalaVisualNet.Value = 1.95f;
                     break;
                 case RolEnemigo.MeleeRapido:
                     vidaMax = Mathf.RoundToInt(85 * multDificultad);
                     velocidadBase = 4.7f;
                     dano = Mathf.RoundToInt(9 * multDificultad);
                     rangoAtaque = 2.0f;
-                    EscalaVisualNet.Value = 0.95f;
+                    EscalaVisualNet.Value = 1.45f;
                     break;
                 case RolEnemigo.Rango:
                     vidaMax = Mathf.RoundToInt(110 * multDificultad);
                     velocidadBase = 2.7f;
                     dano = Mathf.RoundToInt(12 * multDificultad);
                     rangoAtaque = 8.5f;
-                    EscalaVisualNet.Value = 1.05f;
+                    EscalaVisualNet.Value = 1.55f;
                     break;
                 case RolEnemigo.Especial:
                     vidaMax = Mathf.RoundToInt(135 * multDificultad);
                     velocidadBase = 3.3f;
                     dano = Mathf.RoundToInt(14 * multDificultad);
                     rangoAtaque = 4.0f;
-                    EscalaVisualNet.Value = 1.1f;
+                    EscalaVisualNet.Value = 1.60f;
                     break;
                 case RolEnemigo.Spawner:
                     vidaMax = Mathf.RoundToInt(320 * multDificultad);
                     velocidadBase = 0f;
                     dano = 0;
                     rangoAtaque = 0f;
-                    EscalaVisualNet.Value = 1.4f;
+                    EscalaVisualNet.Value = 2.05f;
                     if (_rb != null) _rb.isKinematic = true;
                     break;
             }
@@ -207,7 +207,7 @@ namespace SoulKnight
             {
                 sr.sprite = CatalogoPixelArtEnemigos.ObtenerSpriteEnemigo((TipoBioma)BiomaActualNet.Value, (RolEnemigo)RolActualNet.Value);
             }
-            float esc = EscalaVisualNet.Value > 0.1f ? EscalaVisualNet.Value : 1.0f;
+            float esc = EscalaVisualNet.Value > 0.1f ? EscalaVisualNet.Value : 1.45f;
             transform.localScale = new Vector3(esc, esc, 1f);
             AjustarHitboxPrecisa((RolEnemigo)RolActualNet.Value);
         }
@@ -220,27 +220,27 @@ namespace SoulKnight
                 switch (rol)
                 {
                     case RolEnemigo.Tanque:
-                        box.size = new Vector2(0.85f, 0.95f);
+                        box.size = new Vector2(0.70f, 0.75f);
                         box.offset = new Vector2(0f, -0.05f);
                         break;
                     case RolEnemigo.MeleeRapido:
-                        box.size = new Vector2(0.65f, 0.70f);
+                        box.size = new Vector2(0.55f, 0.60f);
                         box.offset = new Vector2(0f, -0.05f);
                         break;
                     case RolEnemigo.Rango:
-                        box.size = new Vector2(0.70f, 0.85f);
+                        box.size = new Vector2(0.55f, 0.65f);
                         box.offset = new Vector2(0f, -0.05f);
                         break;
                     case RolEnemigo.Especial:
-                        box.size = new Vector2(0.70f, 0.80f);
+                        box.size = new Vector2(0.55f, 0.65f);
                         box.offset = new Vector2(0f, -0.05f);
                         break;
                     case RolEnemigo.Spawner:
-                        box.size = new Vector2(0.95f, 1.15f);
+                        box.size = new Vector2(0.75f, 0.90f);
                         box.offset = new Vector2(0f, 0f);
                         break;
                     default:
-                        box.size = new Vector2(0.75f, 0.85f);
+                        box.size = new Vector2(0.60f, 0.70f);
                         box.offset = new Vector2(0f, -0.05f);
                         break;
                 }
@@ -248,7 +248,7 @@ namespace SoulKnight
             var circle = GetComponent<CircleCollider2D>();
             if (circle != null)
             {
-                circle.radius = 0.45f;
+                circle.radius = 0.35f;
                 circle.offset = new Vector2(0f, -0.05f);
             }
         }

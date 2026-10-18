@@ -132,48 +132,40 @@ namespace SoulKnight
             tex.filterMode = FilterMode.Point;
             tex.wrapMode = TextureWrapMode.Repeat;
 
-            Color cPiedra = new Color(0.34f, 0.36f, 0.42f);
-            Color cPiedraClara = new Color(0.46f, 0.48f, 0.56f);
-            Color cPiedraOscura = new Color(0.22f, 0.23f, 0.28f);
             Color cMortero = new Color(0.10f, 0.11f, 0.14f);
-            Color cBordeCap = new Color(0.54f, 0.56f, 0.64f);
+            Color cLuz = new Color(0.48f, 0.50f, 0.58f);
+            Color cSombra = new Color(0.22f, 0.23f, 0.28f);
+            Color cPiedra = new Color(0.34f, 0.36f, 0.42f);
+            Color cRuna = new Color(0.20f, 0.75f, 0.85f); // Detalle de runa antigua en el centro
 
+            // 1 SOLO BLOQUE SÓLIDO (32x32) con biselado perimetral y runa grabada
             for (int y = 0; y < s; y++)
             {
                 for (int x = 0; x < s; x++)
                 {
-                    // Cornisa superior del muro (cap 3D)
-                    if (y >= 28)
+                    if (x == 0 || y == 0 || x == s - 1 || y == s - 1)
                     {
-                        if (y == 31) tex.SetPixel(x, y, cBordeCap);
-                        else if (y == 28) tex.SetPixel(x, y, cMortero);
-                        else tex.SetPixel(x, y, cPiedraClara);
-                        continue;
+                        tex.SetPixel(x, y, cMortero); // Borde exterior / hendidura
                     }
-
-                    // 2 filas de bloques de 16x14 con desfase
-                    int fila = (y < 14) ? 0 : 1;
-                    int ly = (y < 14) ? y : (y - 14);
-                    int desfase = (fila == 1) ? 8 : 0;
-                    int lx = (x + desfase) % 16;
-
-                    if (lx == 0 || ly == 0)
+                    else if (x == 1 || y == s - 2)
                     {
-                        tex.SetPixel(x, y, cMortero);
+                        tex.SetPixel(x, y, cLuz); // Bisel superior e izquierdo
                     }
-                    else if (ly == 13 || lx == 1)
+                    else if (x == s - 2 || y == 1)
                     {
-                        tex.SetPixel(x, y, cPiedraClara);
-                    }
-                    else if (ly == 1 || lx == 15)
-                    {
-                        tex.SetPixel(x, y, cPiedraOscura);
+                        tex.SetPixel(x, y, cSombra); // Bisel inferior y derecho
                     }
                     else
                     {
+                        // Centro del bloque monolítico
                         Color c = cPiedra;
-                        if ((x * 7 + y * 3) % 13 == 0) c = cPiedraClara;
-                        else if ((x * 5 + y * 11) % 17 == 0) c = cPiedraOscura;
+                        // Glifo rúnico grabado en el centro del bloque
+                        if ((x >= 14 && x <= 17 && y >= 10 && y <= 21) || (y >= 14 && y <= 17 && x >= 10 && x <= 21))
+                        {
+                            c = cRuna;
+                        }
+                        else if ((x + y) % 7 == 0) c = cLuz;
+                        else if ((x * 3 + y * 5) % 11 == 0) c = cSombra;
                         tex.SetPixel(x, y, c);
                     }
                 }
@@ -236,10 +228,10 @@ namespace SoulKnight
             Color cAbismo = new Color(0.07f, 0.13f, 0.20f, 1f);   // #122133 Base muy oscura
             Color cHielo = new Color(0.10f, 0.18f, 0.28f, 1f);    // #1a2e47 Tono medio hielo profundo
             Color cVeta = new Color(0.15f, 0.26f, 0.38f, 1f);     // #264261 Fracturas cristalinas internas
-            Color cEscarcha = new Color(0.20f, 0.34f, 0.48f, 1f); // #33577a Escarcha sutil en grieta
+            Color cEscarcha = new Color(0.20f, 0.34f, 0.48f, 1f); // #33577a Escarcha sutil
             Color cGlint = new Color(0.28f, 0.44f, 0.60f, 1f);    // #477099 Destellos mínimos dispersos
 
-            // Generador de textura continua toroidal (100% seamless, sin bordes de bloque como Minecraft)
+            // Generador de textura continua toroidal no-diagonal (sin bandas oblicuas ni bordes)
             for (int y = 0; y < s; y++)
             {
                 for (int x = 0; x < s; x++)
@@ -249,17 +241,16 @@ namespace SoulKnight
                     float u = Mathf.Cos(angX), v = Mathf.Sin(angX);
                     float sy = Mathf.Cos(angY), ty = Mathf.Sin(angY);
 
-                    // Ondas armónicas toroidales con fracturas diagonales de permafrost
-                    float val = Mathf.Sin(u * 3.2f + sy * 2.8f) + 
-                                Mathf.Cos(v * 2.8f - ty * 3.2f) + 
-                                0.6f * Mathf.Sin(angX * 3f + angY * 2f) +
-                                0.3f * Mathf.Cos(angX * 5f - angY * 4f);
+                    // Armónicos isotrópicos sin sesgo diagonal (patrón moteado natural de hielo permafrost)
+                    float val = Mathf.Sin(u * 3.5f) * Mathf.Cos(sy * 3.5f) + 
+                                Mathf.Cos(v * 3.5f) * Mathf.Sin(ty * 3.5f) + 
+                                0.4f * (Mathf.Sin(angX * 4f) + Mathf.Cos(angY * 4f));
 
                     Color c;
-                    if (val < -0.8f) c = cAbismo;
+                    if (val < -0.6f) c = cAbismo;
                     else if (val < 0.1f) c = cHielo;
-                    else if (val < 0.9f) c = cVeta;
-                    else if (val < 1.6f) c = cEscarcha;
+                    else if (val < 0.7f) c = cVeta;
+                    else if (val < 1.3f) c = cEscarcha;
                     else c = cGlint;
 
                     tex.SetPixel(x, y, c);
@@ -276,46 +267,37 @@ namespace SoulKnight
             tex.filterMode = FilterMode.Point;
             tex.wrapMode = TextureWrapMode.Repeat;
 
-            Color cCristal = new Color(0.24f, 0.50f, 0.76f);
-            Color cEscarcha = new Color(0.85f, 0.96f, 1f);
-            Color cAbismo = new Color(0.08f, 0.20f, 0.38f);
-            Color cJunta = new Color(0.05f, 0.12f, 0.25f);
+            Color cJunta = new Color(0.05f, 0.10f, 0.18f);
+            Color cLuz = new Color(0.70f, 0.88f, 1f);
+            Color cSombra = new Color(0.12f, 0.28f, 0.48f);
+            Color cCristal = new Color(0.25f, 0.50f, 0.74f);
+            Color cNucleo = new Color(0.85f, 0.98f, 1f);
 
+            // 1 SOLO BLOQUE SÓLIDO (32x32) de hielo glaciar monolítico
             for (int y = 0; y < s; y++)
             {
                 for (int x = 0; x < s; x++)
                 {
-                    // Témpanos y capa de escarcha superior
-                    if (y >= 28)
-                    {
-                        if (y == 31) tex.SetPixel(x, y, Color.white);
-                        else if (y == 28) tex.SetPixel(x, y, cJunta);
-                        else tex.SetPixel(x, y, cEscarcha);
-                        continue;
-                    }
-
-                    int fila = (y < 14) ? 0 : 1;
-                    int ly = (y < 14) ? y : (y - 14);
-                    int desfase = (fila == 1) ? 8 : 0;
-                    int lx = (x + desfase) % 16;
-
-                    if (lx == 0 || ly == 0)
+                    if (x == 0 || y == 0 || x == s - 1 || y == s - 1)
                     {
                         tex.SetPixel(x, y, cJunta);
                     }
-                    else if (ly == 13 || lx == 1)
+                    else if (x == 1 || y == s - 2)
                     {
-                        tex.SetPixel(x, y, cEscarcha);
+                        tex.SetPixel(x, y, cLuz);
                     }
-                    else if (ly == 1 || lx == 15)
+                    else if (x == s - 2 || y == 1)
                     {
-                        tex.SetPixel(x, y, cAbismo);
+                        tex.SetPixel(x, y, cSombra);
                     }
                     else
                     {
                         Color c = cCristal;
-                        if ((x + y * 2) % 7 == 0) c = cEscarcha;
-                        else if ((x * 3 + y) % 11 == 0) c = cAbismo;
+                        int dx = Mathf.Abs(x - 15);
+                        int dy = Mathf.Abs(y - 15);
+                        if (dx + dy == 6) c = cNucleo;
+                        else if (dx + dy < 6) c = cLuz;
+                        else if ((x + y) % 6 == 0) c = cSombra;
                         tex.SetPixel(x, y, c);
                     }
                 }
@@ -407,43 +389,38 @@ namespace SoulKnight
             tex.filterMode = FilterMode.Point;
             tex.wrapMode = TextureWrapMode.Repeat;
 
-            Color cObsidiana = new Color(0.16f, 0.14f, 0.18f);
-            Color cObsidianaBrillo = new Color(0.32f, 0.28f, 0.35f);
-            Color cLava = new Color(1f, 0.50f, 0.08f);
-            Color cMortero = new Color(0.08f, 0.06f, 0.09f);
+            Color cJunta = new Color(0.06f, 0.04f, 0.06f);
+            Color cLuz = new Color(0.42f, 0.32f, 0.38f);
+            Color cSombra = new Color(0.15f, 0.12f, 0.16f);
+            Color cBasalto = new Color(0.24f, 0.18f, 0.22f);
+            Color cMagma = new Color(1f, 0.45f, 0.08f);
 
+            // 1 SOLO BLOQUE SÓLIDO (32x32) de basalto volcánico con fisura ardiente central
             for (int y = 0; y < s; y++)
             {
                 for (int x = 0; x < s; x++)
                 {
-                    if (y >= 28)
+                    if (x == 0 || y == 0 || x == s - 1 || y == s - 1)
                     {
-                        if (y == 31) tex.SetPixel(x, y, cObsidianaBrillo);
-                        else if (y == 28) tex.SetPixel(x, y, cLava);
-                        else tex.SetPixel(x, y, cObsidiana);
-                        continue;
+                        tex.SetPixel(x, y, cJunta);
                     }
-
-                    int fila = (y < 14) ? 0 : 1;
-                    int ly = (y < 14) ? y : (y - 14);
-                    int desfase = (fila == 1) ? 8 : 0;
-                    int lx = (x + desfase) % 16;
-
-                    if (lx == 0 || ly == 0)
+                    else if (x == 1 || y == s - 2)
                     {
-                        tex.SetPixel(x, y, cMortero);
+                        tex.SetPixel(x, y, cLuz);
                     }
-                    else if ((lx == 7 && ly > 3 && ly < 10) || (ly == 6 && lx > 2 && lx < 8))
+                    else if (x == s - 2 || y == 1)
                     {
-                        tex.SetPixel(x, y, cLava); // Grieta de lava en el muro
-                    }
-                    else if (ly == 13 || lx == 1)
-                    {
-                        tex.SetPixel(x, y, cObsidianaBrillo);
+                        tex.SetPixel(x, y, cSombra);
                     }
                     else
                     {
-                        tex.SetPixel(x, y, cObsidiana);
+                        Color c = cBasalto;
+                        int dx = Mathf.Abs(x - 15);
+                        int dy = Mathf.Abs(y - 15);
+                        if ((dx <= 2 && dy <= 6) || (dy <= 2 && dx <= 6)) c = cMagma;
+                        else if ((x * 3 + y * 7) % 9 == 0) c = cLuz;
+                        else if ((x + y) % 5 == 0) c = cSombra;
+                        tex.SetPixel(x, y, c);
                     }
                 }
             }
@@ -534,40 +511,38 @@ namespace SoulKnight
             tex.filterMode = FilterMode.Point;
             tex.wrapMode = TextureWrapMode.Repeat;
 
-            Color cPiedra = new Color(0.26f, 0.30f, 0.26f);
-            Color cHiedra = new Color(0.18f, 0.52f, 0.22f);
-            Color cHoja = new Color(0.36f, 0.78f, 0.38f);
-            Color cJunta = new Color(0.10f, 0.12f, 0.10f);
+            Color cJunta = new Color(0.08f, 0.10f, 0.08f);
+            Color cLuz = new Color(0.42f, 0.50f, 0.38f);
+            Color cSombra = new Color(0.18f, 0.22f, 0.16f);
+            Color cPiedra = new Color(0.28f, 0.34f, 0.26f);
+            Color cMusgo = new Color(0.35f, 0.72f, 0.30f);
 
+            // 1 SOLO BLOQUE SÓLIDO (32x32) de roca antigua cubierta de enredaderas
             for (int y = 0; y < s; y++)
             {
                 for (int x = 0; x < s; x++)
                 {
-                    if (y >= 28)
-                    {
-                        if (y == 31) tex.SetPixel(x, y, cHoja);
-                        else if (y == 28) tex.SetPixel(x, y, cJunta);
-                        else tex.SetPixel(x, y, cHiedra);
-                        continue;
-                    }
-
-                    int fila = (y < 14) ? 0 : 1;
-                    int ly = (y < 14) ? y : (y - 14);
-                    int desfase = (fila == 1) ? 8 : 0;
-                    int lx = (x + desfase) % 16;
-
-                    if (lx == 0 || ly == 0)
+                    if (x == 0 || y == 0 || x == s - 1 || y == s - 1)
                     {
                         tex.SetPixel(x, y, cJunta);
                     }
-                    else if ((lx == ly) || (lx + ly == 14))
+                    else if (x == 1 || y == s - 2)
                     {
-                        // Enredaderas trepando por el muro
-                        tex.SetPixel(x, y, (x % 2 == 0) ? cHoja : cHiedra);
+                        tex.SetPixel(x, y, cLuz);
+                    }
+                    else if (x == s - 2 || y == 1)
+                    {
+                        tex.SetPixel(x, y, cSombra);
                     }
                     else
                     {
-                        tex.SetPixel(x, y, cPiedra);
+                        Color c = cPiedra;
+                        int dx = Mathf.Abs(x - 15);
+                        int dy = Mathf.Abs(y - 15);
+                        if (dx <= 4 && dy <= 4) c = cMusgo;
+                        else if ((x * 5 + y * 3) % 8 == 0) c = cMusgo;
+                        else if ((x + y) % 6 == 0) c = cLuz;
+                        tex.SetPixel(x, y, c);
                     }
                 }
             }
@@ -622,18 +597,17 @@ namespace SoulKnight
             Color cDuna = new Color(0.58f, 0.44f, 0.26f, 1f);
             Color cCresta = new Color(0.68f, 0.52f, 0.32f, 1f);
 
-            // Generador continuo toroidal (sin bordes de bloque como Minecraft)
+            // Generador continuo toroidal horizontal (ondulación de dunas sin bandas diagonales)
             for (int y = 0; y < s; y++)
             {
                 for (int x = 0; x < s; x++)
                 {
                     float angX = (x * 2.0f * Mathf.PI) / s;
                     float angY = (y * 2.0f * Mathf.PI) / s;
-                    float u = Mathf.Cos(angX), v = Mathf.Sin(angX);
-                    float sy = Mathf.Cos(angY), ty = Mathf.Sin(angY);
+                    float u = Mathf.Cos(angX);
 
-                    // Ondas de viento diagonales continuas
-                    float val = Mathf.Sin(angX * 3.0f + angY * 2.0f + u * 1.5f) + 0.3f * Mathf.Cos(v * 2f - sy * 2f);
+                    // Ondas horizontales de viento
+                    float val = Mathf.Sin(angY * 3.0f + u * 0.8f) + 0.3f * Mathf.Cos(angX * 2.0f);
 
                     Color c;
                     if (val < -0.4f) c = cSombra;
@@ -655,43 +629,38 @@ namespace SoulKnight
             tex.filterMode = FilterMode.Point;
             tex.wrapMode = TextureWrapMode.Repeat;
 
+            Color cJunta = new Color(0.22f, 0.15f, 0.08f);
+            Color cLuz = new Color(0.88f, 0.72f, 0.45f);
+            Color cSombra = new Color(0.48f, 0.35f, 0.18f);
             Color cArenisca = new Color(0.68f, 0.52f, 0.30f);
-            Color cOro = new Color(0.95f, 0.78f, 0.22f);
-            Color cSombra = new Color(0.45f, 0.32f, 0.16f);
-            Color cJunta = new Color(0.28f, 0.20f, 0.10f);
+            Color cOro = new Color(0.95f, 0.80f, 0.22f);
 
+            // 1 SOLO BLOQUE SÓLIDO (32x32) de arenisca con jeroglífico de escarabajo dorado
             for (int y = 0; y < s; y++)
             {
                 for (int x = 0; x < s; x++)
                 {
-                    if (y >= 28)
-                    {
-                        if (y == 31) tex.SetPixel(x, y, cOro); // Friso dorado superior
-                        else if (y == 28) tex.SetPixel(x, y, cJunta);
-                        else tex.SetPixel(x, y, cArenisca);
-                        continue;
-                    }
-
-                    int fila = (y < 14) ? 0 : 1;
-                    int ly = (y < 14) ? y : (y - 14);
-                    int desfase = (fila == 1) ? 8 : 0;
-                    int lx = (x + desfase) % 16;
-
-                    if (lx == 0 || ly == 0)
+                    if (x == 0 || y == 0 || x == s - 1 || y == s - 1)
                     {
                         tex.SetPixel(x, y, cJunta);
                     }
-                    else if (ly == 7 && lx >= 5 && lx <= 11)
+                    else if (x == 1 || y == s - 2)
                     {
-                        tex.SetPixel(x, y, cOro); // Jeroglífico dorado grabado
+                        tex.SetPixel(x, y, cLuz);
                     }
-                    else if (ly == 13 || lx == 1)
+                    else if (x == s - 2 || y == 1)
                     {
-                        tex.SetPixel(x, y, cOro);
+                        tex.SetPixel(x, y, cSombra);
                     }
                     else
                     {
-                        tex.SetPixel(x, y, (ly == 1 || lx == 15) ? cSombra : cArenisca);
+                        Color c = cArenisca;
+                        int dx = Mathf.Abs(x - 15);
+                        int dy = Mathf.Abs(y - 15);
+                        if ((dx <= 3 && dy <= 4) || (dx <= 5 && dy <= 1)) c = cOro;
+                        else if ((x + y) % 7 == 0) c = cLuz;
+                        else if ((x * 2 + y * 3) % 11 == 0) c = cSombra;
+                        tex.SetPixel(x, y, c);
                     }
                 }
             }

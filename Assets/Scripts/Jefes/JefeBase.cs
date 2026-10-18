@@ -77,18 +77,18 @@ namespace SoulKnight
             {
                 sr.sprite = CatalogoPixelArtEnemigos.ObtenerSpriteJefe(bioma);
             }
-            transform.localScale = Vector3.one * 1.85f;
+            transform.localScale = Vector3.one * 2.5f;
 
             var box = GetComponent<BoxCollider2D>();
             if (box != null)
             {
-                box.size = new Vector2(0.9f, 0.95f);
+                box.size = new Vector2(0.75f, 0.80f);
                 box.offset = new Vector2(0f, -0.05f);
             }
             var circle = GetComponent<CircleCollider2D>();
             if (circle != null)
             {
-                circle.radius = 0.5f;
+                circle.radius = 0.45f;
                 circle.offset = new Vector2(0f, -0.05f);
             }
         }

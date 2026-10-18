@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace SoulKnight
@@ -43,29 +43,64 @@ namespace SoulKnight
 
         private static Sprite CrearSpriteDeMapa(string[] mapa, Dictionary<char, Color> paleta, float ppu = 32f, float pivotY = 0.2f)
         {
-            int h = mapa.Length;
-            int w = mapa[0].Length;
+            int origH = mapa.Length;
+            int origW = mapa[0].Length;
+
+            // Margen de 1px a cada lado para el borde blanco brillante exterior
+            int w = origW + 2;
+            int h = origH + 2;
             Texture2D tex = new Texture2D(w, h, TextureFormat.RGBA32, false);
             tex.filterMode = FilterMode.Point;
             tex.wrapMode = TextureWrapMode.Clamp;
 
-            for (int y = 0; y < h; y++)
+            Color[] pixeles = new Color[w * h];
+            for (int i = 0; i < pixeles.Length; i++) pixeles[i] = Color.clear;
+
+            for (int y = 0; y < origH; y++)
             {
-                int texY = h - 1 - y;
+                int texY = (origH - 1 - y) + 1;
                 string fila = mapa[y];
-                for (int x = 0; x < w; x++)
+                for (int x = 0; x < origW; x++)
                 {
                     char c = x < fila.Length ? fila[x] : ' ';
                     if (paleta.TryGetValue(c, out Color col))
                     {
-                        tex.SetPixel(x, texY, col);
-                    }
-                    else
-                    {
-                        tex.SetPixel(x, texY, Color.clear);
+                        pixeles[texY * w + (x + 1)] = col;
                     }
                 }
             }
+
+            // Detección de silueta exterior para aplicar el borde blanco de alto contraste sobre fondo oscuro
+            int[] dx8 = { -1, 0, 1, -1, 1, -1, 0, 1 };
+            int[] dy8 = { -1, -1, -1, 0, 0, 1, 1, 1 };
+            Color[] pixelesConBorde = (Color[])pixeles.Clone();
+
+            for (int y = 0; y < h; y++)
+            {
+                for (int x = 0; x < w; x++)
+                {
+                    if (pixeles[y * w + x].a < 0.1f)
+                    {
+                        bool tieneVecinoOpaco = false;
+                        for (int k = 0; k < 8; k++)
+                        {
+                            int nx = x + dx8[k];
+                            int ny = y + dy8[k];
+                            if (nx >= 0 && nx < w && ny >= 0 && ny < h && pixeles[ny * w + nx].a > 0.5f)
+                            {
+                                tieneVecinoOpaco = true;
+                                break;
+                            }
+                        }
+                        if (tieneVecinoOpaco)
+                        {
+                            pixelesConBorde[y * w + x] = Color.white;
+                        }
+                    }
+                }
+            }
+
+            tex.SetPixels(pixelesConBorde);
             tex.Apply();
             return Sprite.Create(tex, new Rect(0, 0, w, h), new Vector2(0.5f, pivotY), ppu);
         }
