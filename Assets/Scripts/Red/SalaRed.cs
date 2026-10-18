@@ -511,7 +511,7 @@ namespace SoulKnight
         }
 
         [ClientRpc]
-        public void FinalizarTransicionNivelClientRpc(int nivel, FixedString64Bytes bioma)
+        public void FinalizarTransicionNivelClientRpc(int nivel, FixedString64Bytes textoBanner)
         {
             if (SistemaVision.Instancia != null)
             {
@@ -524,7 +524,8 @@ namespace SoulKnight
             if (HUDJugador.Instancia != null)
             {
                 HUDJugador.Instancia.PrecargarMenuPausa();
-                HUDJugador.Instancia.IniciarFadeAclarar(1.2f, $"NIVEL {nivel}\n{bioma}", () =>
+                string banner = textoBanner.IsEmpty ? $"NIVEL {nivel}" : textoBanner.ToString();
+                HUDJugador.Instancia.IniciarFadeAclarar(1.2f, banner, () =>
                 {
                     Controles.Bloqueado = false;
                 });
