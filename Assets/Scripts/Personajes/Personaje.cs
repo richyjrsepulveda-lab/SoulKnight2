@@ -185,16 +185,6 @@ namespace SoulKnight
 
         protected virtual void Start()
         {
-            // Halo de luz cálida alrededor del personaje para iluminar el suelo circundante
-            var haloPj = new GameObject("HaloLuzJugador");
-            haloPj.transform.SetParent(transform, false);
-            haloPj.transform.localPosition = Vector3.zero;
-            var srHalo = haloPj.AddComponent<SpriteRenderer>();
-            srHalo.sprite = GeneradorMazmorra.ObtenerSpriteHaloLuz();
-            srHalo.sortingOrder = 0;
-            srHalo.transform.localScale = Vector3.one * 18.0f;
-            srHalo.color = new Color(1f, 0.95f, 0.75f, 0.55f);
-
             if (NetworkManager.Singleton == null || !NetworkManager.Singleton.IsListening)
             {
                 Controles.Bloqueado = false;
