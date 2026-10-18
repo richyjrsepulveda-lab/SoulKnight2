@@ -49,7 +49,14 @@ namespace SoulKnight
         GatoDano2,
         GatoDano3,
         EraDeHielo,
-        EraHieloHit
+        EraHieloHit,
+        DashElectrico,
+        RecogerOro,
+        PasarNivel,
+        SubirNivel,
+        SubirMaestria,
+        CargandoUltiRayo,
+        LanzandoUltiRayo
     }
 
     public class MarcadorAudioBoton : MonoBehaviour { }
@@ -81,6 +88,7 @@ namespace SoulKnight
 
         private AudioSource _fuenteMusicaPrincipal;
         private AudioSource _fuenteMusicaSecundaria;
+        private AudioSource _fuenteLoopSFX;
         private readonly List<AudioSource> _poolSFX = new List<AudioSource>();
         private const int CANTIDAD_FUENTES_SFX = 16;
 
@@ -208,6 +216,13 @@ namespace SoulKnight
             RegistrarSFX(TipoSFX.GatoDano3, "Audio/SFX/GatoDano3");
             RegistrarSFX(TipoSFX.EraDeHielo, "Audio/SFX/EraDeHielo");
             RegistrarSFX(TipoSFX.EraHieloHit, "Audio/SFX/EraHieloHit1");
+            RegistrarSFX(TipoSFX.DashElectrico, "Audio/SFX/DashElectrico");
+            RegistrarSFX(TipoSFX.RecogerOro, "Audio/SFX/RecogerOro");
+            RegistrarSFX(TipoSFX.PasarNivel, "Audio/SFX/PasarNivel");
+            RegistrarSFX(TipoSFX.SubirNivel, "Audio/SFX/SubirNivel");
+            RegistrarSFX(TipoSFX.SubirMaestria, "Audio/SFX/SubirMaestria");
+            RegistrarSFX(TipoSFX.CargandoUltiRayo, "Audio/SFX/CargandoUltiRayo");
+            RegistrarSFX(TipoSFX.LanzandoUltiRayo, "Audio/SFX/LanzandoUltiRayo");
         }
 
         private void RegistrarMusica(TipoMusica tipo, string rutaResources)
@@ -250,6 +265,10 @@ namespace SoulKnight
             VolumenSFX = Mathf.Clamp01(v);
             PlayerPrefs.SetFloat("VolumenSFX", VolumenSFX);
             PlayerPrefs.Save();
+            if (_fuenteLoopSFX != null && _fuenteLoopSFX.isPlaying)
+            {
+                _fuenteLoopSFX.volume = VolumenMaster * VolumenSFX;
+            }
         }
 
         public void AjustarVolumen(float master, float musica, float sfx)
@@ -264,6 +283,10 @@ namespace SoulKnight
             PlayerPrefs.Save();
 
             ActualizarVolumenMusica();
+            if (_fuenteLoopSFX != null && _fuenteLoopSFX.isPlaying)
+            {
+                _fuenteLoopSFX.volume = VolumenMaster * VolumenSFX;
+            }
         }
 
         private void ActualizarVolumenMusica()
@@ -293,9 +316,45 @@ namespace SoulKnight
             Instancia.ReproducirSFXInterno(tipo, volumenMultiplicador, pitchRandom);
         }
 
+        public static void PlaySFXLoop(TipoSFX tipo, float volumenMultiplicador = 1.0f)
+        {
+            Instancia.ReproducirSFXLoopInterno(tipo, volumenMultiplicador);
+        }
+
+        public static void DetenerSFXLoop()
+        {
+            Instancia.DetenerSFXLoopInterno();
+        }
+
         public static void PlayBGM(TipoMusica tipo, float tiempoFade = 0.6f)
         {
             Instancia.ReproducirMusicaInterno(tipo, tiempoFade);
+        }
+
+        private void ReproducirSFXLoopInterno(TipoSFX tipo, float volMult)
+        {
+            if (!_clipsSFX.TryGetValue(tipo, out AudioClip clip) || clip == null) return;
+            if (_fuenteLoopSFX == null)
+            {
+                _fuenteLoopSFX = gameObject.AddComponent<AudioSource>();
+                _fuenteLoopSFX.loop = true;
+                _fuenteLoopSFX.playOnAwake = false;
+                _fuenteLoopSFX.spatialBlend = 0f;
+            }
+
+            _fuenteLoopSFX.clip = clip;
+            _fuenteLoopSFX.volume = VolumenMaster * VolumenSFX * volMult;
+            _fuenteLoopSFX.pitch = 1.0f;
+            _fuenteLoopSFX.Play();
+        }
+
+        private void DetenerSFXLoopInterno()
+        {
+            if (_fuenteLoopSFX != null && _fuenteLoopSFX.isPlaying)
+            {
+                _fuenteLoopSFX.Stop();
+                _fuenteLoopSFX.clip = null;
+            }
         }
 
         private void ReproducirSFXInterno(TipoSFX tipo, float volMult, float pitchRnd)

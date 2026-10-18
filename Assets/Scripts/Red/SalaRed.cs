@@ -507,6 +507,7 @@ namespace SoulKnight
         public void IniciarTransicionNivelClientRpc()
         {
             Controles.Bloqueado = true;
+            GestorAudio.PlaySFX(TipoSFX.PasarNivel);
             if (HUDJugador.Instancia != null)
             {
                 HUDJugador.Instancia.IniciarFadeOscurecer(1.0f);

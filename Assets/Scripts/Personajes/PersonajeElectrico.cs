@@ -34,7 +34,7 @@ namespace SoulKnight
         public GameObject prefabEfectoTeleport;
 
         [Header("Rayo Eléctrico (Ultimate)")]
-        public float tiempoCargaRayo = 2.0f;
+        public float tiempoCargaMaximo = 4.0f;
         public float cooldownRayo = 30.0f;
         public int danoRayo = 15;
         public float distanciaMaximaRayo = 18.0f; // Alcance medio-largo limitado para no atravesar infinito
@@ -46,6 +46,7 @@ namespace SoulKnight
         public NetworkVariable<bool> DashActivo = new NetworkVariable<bool>(false);
         public NetworkVariable<bool> RayoCargando = new NetworkVariable<bool>(false);
         public NetworkVariable<bool> RayoLanzado = new NetworkVariable<bool>(false);
+        public NetworkVariable<float> EscalaCargaRayo = new NetworkVariable<float>(1.0f);
 
         public float cooldownEspada = 0.25f;
 
@@ -54,11 +55,14 @@ namespace SoulKnight
         private float _cdDashRestante = 0f;
         private float _cdTeleportRestante = 0f;
         private float _cdRayoRestante = 0f;
+        private bool _cargandoLocal = false;
+        private float _tiempoCargaLocal = 0f;
 
         // Variables de ejecución en servidor
         private Vector2 _dirDash;
         private float _distanciaRecorridaDash = 0f;
         private float _tiempoCargaActual = 0f;
+        private float _timerRayoEntorno = 0f;
         private float _longitudRayoActual = 0f;
         private float _timerTickRayo = 0f;
         private float _tiempoRayoActivo = 0f;
@@ -73,14 +77,28 @@ namespace SoulKnight
             base.OnNetworkSpawn();
             RayoCargando.OnValueChanged += (prev, act) => {
                 if (visualCargaRayo) visualCargaRayo.enabled = act;
-                if (act) GestorAudio.PlaySFX(TipoSFX.RayoElectrico, 0.5f, 0.15f);
+                if (act)
+                {
+                    if (IsOwner) GestorAudio.PlaySFXLoop(TipoSFX.CargandoUltiRayo);
+                }
+                else
+                {
+                    if (IsOwner) GestorAudio.DetenerSFXLoop();
+                }
             };
             RayoLanzado.OnValueChanged += (prev, act) => {
                 if (visualRayoElectrico) visualRayoElectrico.enabled = act;
-                if (act) GestorAudio.PlaySFX(TipoSFX.RayoElectrico);
+                if (act)
+                {
+                    GestorAudio.PlaySFX(TipoSFX.LanzandoUltiRayo, 1.35f);
+                    if (CamaraSeguir.Instancia != null)
+                    {
+                        CamaraSeguir.Instancia.Sacudir(0.45f + EscalaCargaRayo.Value * 0.12f, 0.45f);
+                    }
+                }
             };
             DashActivo.OnValueChanged += (prev, act) => {
-                if (act) GestorAudio.PlaySFX(TipoSFX.Dash);
+                if (act) GestorAudio.PlaySFX(TipoSFX.DashElectrico);
             };
         }
 
@@ -121,16 +139,17 @@ namespace SoulKnight
             if (RayoCargando.Value && visualCargaRayo != null)
             {
                 visualCargaRayo.enabled = true;
-                const int pts = 12;
+                const int pts = 14;
                 if (visualCargaRayo.positionCount != pts) visualCargaRayo.positionCount = pts;
 
-                float progreso = Mathf.Clamp01(_tiempoCargaActual / tiempoCargaRayo);
-                float radio = 1.35f + Mathf.Sin(Time.time * 26f) * 0.25f;
+                float tiempoActual = IsOwner ? _tiempoCargaLocal : _tiempoCargaActual;
+                float progreso = Mathf.Clamp01(tiempoActual / tiempoCargaMaximo);
+                float radio = 1.35f + progreso * 0.9f + Mathf.Sin(Time.time * 26f) * 0.25f;
 
                 for (int i = 0; i < pts; i++)
                 {
-                    float ang = (float)i / pts * Mathf.PI * 2f + Time.time * (18f + progreso * 12f);
-                    float r = radio + (Mathf.PerlinNoise(i * 1.7f, Time.time * 24f) - 0.5f) * 0.45f;
+                    float ang = (float)i / pts * Mathf.PI * 2f + Time.time * (18f + progreso * 20f);
+                    float r = radio + (Mathf.PerlinNoise(i * 1.7f, Time.time * 24f) - 0.5f) * (0.45f + progreso * 0.35f);
                     Vector3 p = transform.position + new Vector3(Mathf.Cos(ang) * r, Mathf.Sin(ang) * r, -0.3f);
                     visualCargaRayo.SetPosition(i, p);
                 }
@@ -146,9 +165,32 @@ namespace SoulKnight
                 if (RayoCargando.Value)
                 {
                     _tiempoCargaActual += Time.deltaTime;
-                    if (_tiempoCargaActual >= tiempoCargaRayo)
+                    _timerRayoEntorno -= Time.deltaTime;
+                    if (_timerRayoEntorno <= 0f)
                     {
-                        LanzarRayoServer();
+                        _timerRayoEntorno = 0.28f;
+                        Vector2 offset = UnityEngine.Random.insideUnitCircle.normalized * UnityEngine.Random.Range(1.4f, 4.4f);
+                        Vector2 strikePos = (Vector2)transform.position + offset;
+                        SpawnRayoEntornoClientRpc(strikePos);
+
+                        int count = Physics2D.OverlapCircleNonAlloc(strikePos, 2.2f, _colHitsBuffer);
+                        for (int i = 0; i < count; i++)
+                        {
+                            var col = _colHitsBuffer[i];
+                            if (col == null || col.gameObject == gameObject) continue;
+                            var enemigo = col.GetComponent<EnemigoBase>();
+                            if (enemigo != null)
+                            {
+                                int danoEscalado = Mathf.RoundToInt(75 * MultiplicadorDanoTotal);
+                                enemigo.RecibirDano(danoEscalado, new Color(1f, 0.95f, 0.2f));
+                                enemigo.AplicarKnockback(((Vector2)enemigo.transform.position - strikePos).normalized, 320f);
+                            }
+                        }
+                    }
+
+                    if (_tiempoCargaActual >= tiempoCargaMaximo)
+                    {
+                        LanzarRayoServer(tiempoCargaMaximo);
                     }
                 }
 
@@ -175,11 +217,15 @@ namespace SoulKnight
             if (RayoLanzado.Value && visualRayoElectrico != null)
             {
                 visualRayoElectrico.enabled = true;
+                float escala = Mathf.Max(1.0f, EscalaCargaRayo.Value);
+                visualRayoElectrico.startWidth = 0.50f * escala;
+                visualRayoElectrico.endWidth = 0.85f * escala;
+
                 Vector2 origen = transform.position;
                 Vector2 dir = IsOwner ? ((Vector2)Controles.PosicionMouseMundo() - origen).normalized : DireccionApuntado.Value;
                 if (dir.sqrMagnitude < 0.001f) dir = Vector2.right;
 
-                const int segs = 16;
+                const int segs = 18;
                 if (visualRayoElectrico.positionCount != segs) visualRayoElectrico.positionCount = segs;
 
                 Vector2 normal = new Vector2(-dir.y, dir.x);
@@ -192,7 +238,7 @@ namespace SoulKnight
 
                     if (i > 0 && i < segs - 1)
                     {
-                        float jitter = (UnityEngine.Random.value - 0.5f) * 0.75f;
+                        float jitter = (UnityEngine.Random.value - 0.5f) * (0.80f * escala);
                         pt += normal * jitter;
                     }
 
@@ -297,13 +343,20 @@ namespace SoulKnight
                 if (PuedeUsarHabilidad(IdHabilidad.Elec_Teleport, out string motivo))
                 {
                     _cdTeleportRestante = cooldownTeleport;
+                    Vector2 origen = transform.position;
+                    Vector2 destino = Controles.PosicionMouseMundo();
+
+                    // 1 Rayo celestial donde está el jugador (origen) antes de ser teletransportado
+                    EfectoRayoTeleport.Crear(origen);
+                    GestorAudio.PlaySFX(TipoSFX.Teleport, 1.2f);
+
                     if (NetworkManager != null && NetworkManager.IsListening)
                     {
-                        TeleportServerRpc(Controles.PosicionMouseMundo());
+                        TeleportServerRpc(destino);
                     }
                     else
                     {
-                        EjecutarTeleportLocal(Controles.PosicionMouseMundo());
+                        EjecutarTeleportLocal(destino);
                     }
                 }
                 else
@@ -312,17 +365,46 @@ namespace SoulKnight
                 }
             }
 
-            // Rayo Eléctrico (R) - Auto-casteo continuo al mantener presionado
-            if (Controles.AutoDisparo(Controles.Ultimate) && _cdRayoRestante <= 0 && !RayoCargando.Value && !RayoLanzado.Value)
+            // Rayo Eléctrico (R) - Carga hasta 4 segundos manteniendo presionada la tecla R, se dispara al soltar
+            if (_cargandoLocal)
+            {
+                _tiempoCargaLocal += Time.deltaTime;
+                // Si el jugador suelta la tecla R o si se alcanza el tiempo máximo de carga (4.0s)
+                if (!Controles.Mantenida(Controles.Ultimate) || _tiempoCargaLocal >= tiempoCargaMaximo)
+                {
+                    _cargandoLocal = false;
+                    _cdRayoRestante = cooldownRayo;
+                    if (NetworkManager != null && NetworkManager.IsListening)
+                    {
+                        DispararRayoServerRpc(_tiempoCargaLocal);
+                    }
+                    else
+                    {
+                        LanzarRayoServer(_tiempoCargaLocal);
+                    }
+                }
+            }
+            else if (Controles.Presionada(Controles.Ultimate) && _cdRayoRestante <= 0 && !RayoCargando.Value && !RayoLanzado.Value)
             {
                 if (PuedeUsarHabilidad(IdHabilidad.Elec_Rayo, out string motivo))
                 {
-                    _cdRayoRestante = cooldownRayo;
-                    ComenzarCargaRayoServerRpc();
+                    _cargandoLocal = true;
+                    _tiempoCargaLocal = 0f;
+                    if (NetworkManager != null && NetworkManager.IsListening)
+                    {
+                        ComenzarCargaRayoServerRpc();
+                    }
+                    else
+                    {
+                        RayoCargando.Value = true;
+                        _tiempoCargaActual = 0f;
+                        _timerRayoEntorno = 0.08f;
+                        GestorAudio.PlaySFXLoop(TipoSFX.CargandoUltiRayo);
+                    }
                 }
                 else
                 {
-                    NotificarHabilidadBloqueada(motivo, Color.yellow, Controles.Presionada(Controles.Ultimate));
+                    NotificarHabilidadBloqueada(motivo, Color.yellow, true);
                 }
             }
         }
@@ -569,15 +651,36 @@ namespace SoulKnight
             if (rpcParams.Receive.SenderClientId != OwnerClientId) return;
             RayoCargando.Value = true;
             _tiempoCargaActual = 0f;
+            _timerRayoEntorno = 0.08f;
         }
 
-        private void LanzarRayoServer()
+        [ServerRpc(RequireOwnership = false)]
+        private void DispararRayoServerRpc(float tiempoCarga, ServerRpcParams rpcParams = default)
+        {
+            if (rpcParams.Receive.SenderClientId != OwnerClientId) return;
+            LanzarRayoServer(tiempoCarga);
+        }
+
+        private void LanzarRayoServer(float tiempoCarga)
         {
             RayoCargando.Value = false;
             RayoLanzado.Value = true;
+            float ratio = Mathf.Clamp01(tiempoCarga / tiempoCargaMaximo);
+            EscalaCargaRayo.Value = Mathf.Lerp(1.0f, 3.5f, ratio);
             _longitudRayoActual = 0f;
             _tiempoRayoActivo = 0f;
             _timerTickRayo = 0f;
+        }
+
+        [ClientRpc]
+        private void SpawnRayoEntornoClientRpc(Vector2 pos)
+        {
+            EfectoRayoTeleport.Crear(pos);
+            GestorAudio.PlaySFX(TipoSFX.RayoTP, 0.75f, 0.12f);
+            if (CamaraSeguir.Instancia != null)
+            {
+                CamaraSeguir.Instancia.Sacudir(0.12f, 0.15f);
+            }
         }
 
         private void AplicarDanoRayoServer()
@@ -585,8 +688,11 @@ namespace SoulKnight
             Vector2 dir = DireccionApuntado.Value;
             if (dir.sqrMagnitude < 0.001f) dir = Vector2.right;
 
+            float escala = Mathf.Max(1.0f, EscalaCargaRayo.Value);
+            float radioGolpe = 1.1f * escala;
+
             // Atraviesa todo (muros, obstáculos y enemigos) hasta la distancia máxima
-            int count = Physics2D.CircleCastNonAlloc(transform.position, 1.1f, dir, _rayHitsBuffer, _longitudRayoActual);
+            int count = Physics2D.CircleCastNonAlloc(transform.position, radioGolpe, dir, _rayHitsBuffer, _longitudRayoActual);
             for (int i = 0; i < count; i++)
             {
                 var hit = _rayHitsBuffer[i];
@@ -594,8 +700,10 @@ namespace SoulKnight
                 var enemigo = hit.collider.GetComponent<EnemigoBase>();
                 if (enemigo != null)
                 {
-                    int danoEscalado = Mathf.RoundToInt(danoRayo * MultiplicadorDanoTotal);
+                    float multiCarga = Mathf.Lerp(1.0f, 3.8f, (escala - 1f) / 2.5f);
+                    int danoEscalado = Mathf.RoundToInt(danoRayo * MultiplicadorDanoTotal * multiCarga);
                     enemigo.RecibirDano(danoEscalado, new Color(1f, 0.96f, 0.22f, 1f)); // Amarillo rayo
+                    enemigo.AplicarKnockback(dir, 380f * escala);
                 }
             }
         }
@@ -611,6 +719,9 @@ namespace SoulKnight
             _cdDashRestante = 0f;
             _cdTeleportRestante = 0f;
             _cdRayoRestante = 0f;
+            _cargandoLocal = false;
+            _tiempoCargaLocal = 0f;
+            GestorAudio.DetenerSFXLoop();
 
             if (EsControlLocal && HUDJugador.Instancia != null)
             {
@@ -631,13 +742,18 @@ namespace SoulKnight
                 DashActivo.Value = false;
                 RayoCargando.Value = false;
                 RayoLanzado.Value = false;
+                EscalaCargaRayo.Value = 1.0f;
                 _col.enabled = true;
                 _rb.velocity = Vector2.zero;
             }
 
+            _cargandoLocal = false;
+            _tiempoCargaLocal = 0f;
             _tiempoCargaActual = 0f;
             _longitudRayoActual = 0f;
             _distanciaRecorridaDash = 0f;
+
+            GestorAudio.DetenerSFXLoop();
 
             if (visualCargaRayo != null)
             {

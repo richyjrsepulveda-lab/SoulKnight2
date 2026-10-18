@@ -252,6 +252,13 @@ namespace SoulKnight
 
             VidaActual.OnValueChanged += AlCambiarVida;
             EstaMuerto.OnValueChanged += AlCambiarEstadoMuerte;
+            OroRun.OnValueChanged += (anterior, actual) =>
+            {
+                if (actual > anterior && (IsOwner || !NetworkManager.IsListening))
+                {
+                    GestorAudio.PlaySFX(TipoSFX.RecogerOro, 1.0f);
+                }
+            };
 
             if (!IsOwner && NetworkManager != null && NetworkManager.IsListening)
             {

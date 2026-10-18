@@ -54,9 +54,10 @@ namespace SoulKnight
             NivelActual.OnValueChanged += (anterior, actual) =>
             {
                 AlSubirNivel?.Invoke(actual);
-                if (IsOwner)
+                if (actual > anterior && (IsOwner || NetworkManager == null || !NetworkManager.IsListening))
                 {
                     TextoFlotante.Crear(transform.position + Vector3.up * 2f, $"¡NIVEL {actual}!", Color.yellow);
+                    GestorAudio.PlaySFX(TipoSFX.SubirNivel);
                 }
             };
         }

@@ -41,9 +41,17 @@ namespace SoulKnight
             int actual = ObtenerPuntos(pj);
             if (actual >= XP_MAXIMA_MAESTRIA) return; // Si ya alcanzó el nivel 20 máximo, no seguir acumulando ni disparar eventos innecesarios
 
+            int nivelPrevio = ObtenerNivelMaestria(pj);
             int nuevo = Mathf.Min(XP_MAXIMA_MAESTRIA, actual + puntos);
             PlayerPrefs.SetInt(PrefijoMaestria + pj.ToString(), nuevo);
             PlayerPrefs.Save();
+
+            int nivelNuevo = ObtenerNivelMaestria(pj);
+            if (nivelNuevo > nivelPrevio)
+            {
+                GestorAudio.PlaySFX(TipoSFX.SubirMaestria);
+            }
+
             AlGanarMaestria?.Invoke(pj, nuevo);
         }
 
