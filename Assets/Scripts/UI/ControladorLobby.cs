@@ -627,7 +627,7 @@ namespace SoulKnight
                 slotObj.transform.SetParent(contenedorSlotsHabilidades, false);
 
                 var rtSlot = slotObj.AddComponent<RectTransform>();
-                float altoSlot = seleccionada ? 98f : 56f;
+                float altoSlot = seleccionada ? 116f : 52f;
                 rtSlot.sizeDelta = new Vector2(620f, altoSlot);
 
                 var le = slotObj.AddComponent<LayoutElement>();
@@ -713,29 +713,30 @@ namespace SoulKnight
                     rtTxtNom.anchorMin = new Vector2(0f, 1f);
                     rtTxtNom.anchorMax = new Vector2(1f, 1f);
                     rtTxtNom.pivot = new Vector2(0f, 1f);
-                    rtTxtNom.anchoredPosition = new Vector2(68f, -10f);
-                    rtTxtNom.sizeDelta = new Vector2(-80f, 20f);
+                    rtTxtNom.anchoredPosition = new Vector2(68f, -12f);
+                    rtTxtNom.sizeDelta = new Vector2(-80f, 22f);
                     txtNom.alignment = TextAnchor.MiddleLeft;
+                    txtNom.fontSize = 12;
                     txtNom.text = $"<b><color=#5ce1e6>{hab.nombre.ToUpper()}</color></b>  <color=#ffd700>({teclaStr})</color>";
 
-                    // 3. Descripción técnica desplegada en zona inferior (zona 2, separada físicamente para no solaparse)
+                    // 3. Descripción técnica desplegada en zona inferior (zona 2 amplia, limpia y sin aplastamiento)
                     var txtDescObj = new GameObject("TextoDescripcion");
                     txtDescObj.transform.SetParent(fondoInt.transform, false);
                     var rtTxtDesc = txtDescObj.AddComponent<RectTransform>();
                     rtTxtDesc.anchorMin = new Vector2(0f, 0f);
                     rtTxtDesc.anchorMax = new Vector2(1f, 1f);
                     rtTxtDesc.pivot = new Vector2(0f, 0f);
-                    rtTxtDesc.offsetMin = new Vector2(68f, 8f);
-                    rtTxtDesc.offsetMax = new Vector2(-14f, -34f);
+                    rtTxtDesc.offsetMin = new Vector2(68f, 10f);
+                    rtTxtDesc.offsetMax = new Vector2(-14f, -38f);
 
                     var txtDesc = txtDescObj.AddComponent<Text>();
                     txtDesc.font = fuentePixel;
-                    txtDesc.fontSize = 9;
-                    txtDesc.lineSpacing = 1.35f;
+                    txtDesc.fontSize = 11;
+                    txtDesc.lineSpacing = 1.2f;
                     txtDesc.alignment = TextAnchor.UpperLeft;
                     txtDesc.horizontalOverflow = HorizontalWrapMode.Wrap;
-                    txtDesc.verticalOverflow = VerticalWrapMode.Truncate;
-                    txtDesc.color = new Color(0.85f, 0.92f, 1.0f);
+                    txtDesc.verticalOverflow = VerticalWrapMode.Overflow;
+                    txtDesc.color = new Color(0.90f, 0.94f, 1.0f);
                     txtDesc.raycastTarget = false;
                     txtDesc.text = desc;
                 }
