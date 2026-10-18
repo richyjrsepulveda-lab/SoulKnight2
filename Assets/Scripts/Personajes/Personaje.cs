@@ -195,6 +195,20 @@ namespace SoulKnight
             _spriteRenderer = GetComponent<SpriteRenderer>();
             _velocidadActual = velocidadBase;
             nivelProgreso = GetComponent<NivelEnPartida>() ?? gameObject.AddComponent<NivelEnPartida>();
+
+            // Calibrar hitbox precisa del jugador para evitar colisiones excesivas con puertas y esquinas
+            var box = GetComponent<BoxCollider2D>();
+            if (box != null)
+            {
+                box.size = new Vector2(0.65f, 0.85f);
+                box.offset = new Vector2(0f, -0.05f);
+            }
+            var circle = GetComponent<CircleCollider2D>();
+            if (circle != null)
+            {
+                circle.radius = 0.40f;
+                circle.offset = new Vector2(0f, -0.05f);
+            }
         }
 
         protected virtual void Start()

@@ -5,11 +5,8 @@ namespace SoulKnight
 {
     /// <summary>
     /// Catálogo central de Biomas y generador procedural de arte Pixel-Art de alta fidelidad:
-    /// - Piedra: Mazmorra medieval ancestral, cantería gris labrada y antorchas ámbar.
-    /// - Hielo: Cripta glacial con baldosas de escarcha, muros de cristal azur y fuego frío.
-    /// - Fuego: Fortaleza volcánica con losas de basalto, venas de magma incandescente y antorchas ardientes.
-    /// - Planta: Ruinas de la selva cubiertas de musgo esmeralda, enredaderas trepadoras y flores luminiscentes.
-    /// - Arena: Necrópolis desértica con losas doradas de arenisca, jeroglíficos y pebeteros sagrados.
+    /// - Texturas de 32x32 a 32 PPU para que cada celda de la cuadrícula coincida exactamente con 1 unidad de Unity.
+    /// - Bordes y biselados diseñados para repetición limpia (tiling) sin cortes, desniveles ni costuras visibles.
     /// </summary>
     public static class CatalogoBiomas
     {
@@ -40,8 +37,8 @@ namespace SoulKnight
                     b.spriteSuelo = CrearSueloPiedra();
                     b.spriteMuro = CrearMuroPiedra();
                     b.spriteColumna = CrearColumnaPiedra();
-                    b.colorLuzAntorcha = new Color(1f, 0.72f, 0.28f, 1f);
-                    b.spriteLlamaAntorcha = CrearLlamaPixel(new Color(1f, 0.95f, 0.65f), new Color(1f, 0.60f, 0.12f), new Color(0.95f, 0.25f, 0.08f));
+                    b.colorLuzAntorcha = new Color(1f, 0.75f, 0.32f, 1f);
+                    b.spriteLlamaAntorcha = CrearLlamaPixel(new Color(1f, 0.96f, 0.70f), new Color(1f, 0.62f, 0.14f), new Color(0.92f, 0.22f, 0.08f));
                     break;
 
                 case TipoBioma.Hielo:
@@ -49,8 +46,8 @@ namespace SoulKnight
                     b.spriteSuelo = CrearSueloHielo();
                     b.spriteMuro = CrearMuroHielo();
                     b.spriteColumna = CrearColumnaHielo();
-                    b.colorLuzAntorcha = new Color(0.35f, 0.85f, 1f, 1f);
-                    b.spriteLlamaAntorcha = CrearLlamaPixel(new Color(0.85f, 0.98f, 1f), new Color(0.28f, 0.78f, 1f), new Color(0.12f, 0.45f, 0.92f));
+                    b.colorLuzAntorcha = new Color(0.38f, 0.88f, 1f, 1f);
+                    b.spriteLlamaAntorcha = CrearLlamaPixel(new Color(0.88f, 0.98f, 1f), new Color(0.32f, 0.82f, 1f), new Color(0.14f, 0.48f, 0.94f));
                     break;
 
                 case TipoBioma.Fuego:
@@ -58,8 +55,8 @@ namespace SoulKnight
                     b.spriteSuelo = CrearSueloFuego();
                     b.spriteMuro = CrearMuroFuego();
                     b.spriteColumna = CrearColumnaFuego();
-                    b.colorLuzAntorcha = new Color(1f, 0.40f, 0.15f, 1f);
-                    b.spriteLlamaAntorcha = CrearLlamaPixel(new Color(1f, 0.92f, 0.45f), new Color(1f, 0.42f, 0.08f), new Color(0.90f, 0.12f, 0.08f));
+                    b.colorLuzAntorcha = new Color(1f, 0.42f, 0.16f, 1f);
+                    b.spriteLlamaAntorcha = CrearLlamaPixel(new Color(1f, 0.94f, 0.48f), new Color(1f, 0.44f, 0.09f), new Color(0.88f, 0.12f, 0.08f));
                     break;
 
                 case TipoBioma.Planta:
@@ -67,8 +64,8 @@ namespace SoulKnight
                     b.spriteSuelo = CrearSueloPlanta();
                     b.spriteMuro = CrearMuroPlanta();
                     b.spriteColumna = CrearColumnaPlanta();
-                    b.colorLuzAntorcha = new Color(0.40f, 1f, 0.45f, 1f);
-                    b.spriteLlamaAntorcha = CrearLlamaPixel(new Color(0.88f, 1f, 0.75f), new Color(0.35f, 0.95f, 0.42f), new Color(0.12f, 0.68f, 0.28f));
+                    b.colorLuzAntorcha = new Color(0.42f, 1f, 0.48f, 1f);
+                    b.spriteLlamaAntorcha = CrearLlamaPixel(new Color(0.90f, 1f, 0.78f), new Color(0.38f, 0.96f, 0.45f), new Color(0.14f, 0.70f, 0.30f));
                     break;
 
                 case TipoBioma.Arena:
@@ -76,17 +73,17 @@ namespace SoulKnight
                     b.spriteSuelo = CrearSueloArena();
                     b.spriteMuro = CrearMuroArena();
                     b.spriteColumna = CrearColumnaArena();
-                    b.colorLuzAntorcha = new Color(1f, 0.82f, 0.35f, 1f);
-                    b.spriteLlamaAntorcha = CrearLlamaPixel(new Color(1f, 0.98f, 0.75f), new Color(1f, 0.75f, 0.18f), new Color(0.85f, 0.48f, 0.10f));
+                    b.colorLuzAntorcha = new Color(1f, 0.84f, 0.38f, 1f);
+                    b.spriteLlamaAntorcha = CrearLlamaPixel(new Color(1f, 0.98f, 0.78f), new Color(1f, 0.76f, 0.20f), new Color(0.86f, 0.50f, 0.12f));
                     break;
             }
 
             return b;
         }
 
-        // ==========================================
-        // 1. BIOMA: PIEDRA (Mazmorra Medieval)
-        // ==========================================
+        // ========================================================
+        // 1. BIOMA: PIEDRA (Mazmorra Medieval Clásica)
+        // ========================================================
         private static Sprite CrearSueloPiedra()
         {
             int s = 32;
@@ -94,53 +91,51 @@ namespace SoulKnight
             tex.filterMode = FilterMode.Point;
             tex.wrapMode = TextureWrapMode.Repeat;
 
-            Color cBase = new Color(0.32f, 0.33f, 0.36f);
-            Color cClaro = new Color(0.40f, 0.41f, 0.44f);
-            Color cOscuro = new Color(0.24f, 0.25f, 0.27f);
-            Color cMortero = new Color(0.14f, 0.15f, 0.16f);
+            Color cBase = new Color(0.28f, 0.30f, 0.35f);
+            Color cLuz = new Color(0.38f, 0.40f, 0.46f);
+            Color cSombra = new Color(0.20f, 0.21f, 0.25f);
+            Color cJunta = new Color(0.12f, 0.13f, 0.16f);
+            Color cRuna = new Color(0.44f, 0.46f, 0.54f);
 
+            // 4 grandes losas cuadradas de 16x16 con biselado 3D
             for (int y = 0; y < s; y++)
             {
                 for (int x = 0; x < s; x++)
                 {
-                    // Cuadrícula de 4 grandes losas (16x16 cada una) con biselado
-                    bool juntaH = (y == 0 || y == 15 || y == 16 || y == 31);
-                    bool juntaV = (x == 0 || x == 15 || x == 16 || x == 31);
+                    int lx = x % 16;
+                    int ly = y % 16;
 
-                    if (juntaH || juntaV)
+                    if (lx == 0 || ly == 0)
                     {
-                        tex.SetPixel(x, y, cMortero);
+                        tex.SetPixel(x, y, cJunta);
+                    }
+                    else if (lx == 1 || ly == 15)
+                    {
+                        tex.SetPixel(x, y, cLuz); // Bisel superior e izquierdo
+                    }
+                    else if (lx == 15 || ly == 1)
+                    {
+                        tex.SetPixel(x, y, cSombra); // Bisel inferior y derecho
                     }
                     else
                     {
-                        int lx = x % 16;
-                        int ly = y % 16;
-                        // Biselado 3D
-                        if (ly == 14 || lx == 1)
+                        // Textura de piedra pulida
+                        Color c = cBase;
+                        if ((lx + ly) % 7 == 0) c = cLuz;
+                        else if ((lx * 3 + ly * 5) % 11 == 0) c = cSombra;
+
+                        // Runa tallada sutil en el centro de las losas
+                        if ((lx >= 7 && lx <= 9 && ly >= 5 && ly <= 11) || (ly >= 7 && ly <= 9 && lx >= 5 && lx <= 11))
                         {
-                            tex.SetPixel(x, y, cClaro);
+                            c = cRuna;
                         }
-                        else if (ly == 1 || lx == 14)
-                        {
-                            tex.SetPixel(x, y, cOscuro);
-                        }
-                        else
-                        {
-                            // Texturizado con ruido pixel art
-                            float n = Mathf.PerlinNoise(x * 0.45f, y * 0.45f);
-                            Color cPiedra = (n > 0.65f) ? cClaro : (n < 0.35f ? cOscuro : cBase);
-                            // Grieta ocasional
-                            if ((lx == 7 && ly > 4 && ly < 11) || (lx == 8 && ly == 8))
-                            {
-                                cPiedra = cMortero;
-                            }
-                            tex.SetPixel(x, y, cPiedra);
-                        }
+
+                        tex.SetPixel(x, y, c);
                     }
                 }
             }
             tex.Apply();
-            return Sprite.Create(tex, new Rect(0, 0, s, s), new Vector2(0.5f, 0.5f), 16f);
+            return Sprite.Create(tex, new Rect(0, 0, s, s), new Vector2(0.5f, 0.5f), 32f);
         }
 
         private static Sprite CrearMuroPiedra()
@@ -150,63 +145,74 @@ namespace SoulKnight
             tex.filterMode = FilterMode.Point;
             tex.wrapMode = TextureWrapMode.Repeat;
 
-            Color cLadrillo = new Color(0.42f, 0.44f, 0.48f);
-            Color cLadrilloClaro = new Color(0.52f, 0.54f, 0.58f);
-            Color cLadrilloOscuro = new Color(0.28f, 0.30f, 0.33f);
-            Color cJunta = new Color(0.12f, 0.13f, 0.15f);
+            Color cPiedra = new Color(0.34f, 0.36f, 0.42f);
+            Color cPiedraClara = new Color(0.46f, 0.48f, 0.56f);
+            Color cPiedraOscura = new Color(0.22f, 0.23f, 0.28f);
+            Color cMortero = new Color(0.10f, 0.11f, 0.14f);
+            Color cBordeCap = new Color(0.54f, 0.56f, 0.64f);
 
             for (int y = 0; y < s; y++)
             {
-                int fila = y / 8; // 4 filas de ladrillos
-                int ly = y % 8;
-                int desfaseX = (fila % 2 == 1) ? 8 : 0;
-
                 for (int x = 0; x < s; x++)
                 {
-                    int lx = (x + desfaseX) % 16; // Ladrillos de 16x8
-
-                    if (ly == 0 || lx == 0)
+                    // Cornisa superior del muro (cap 3D)
+                    if (y >= 28)
                     {
-                        tex.SetPixel(x, y, cJunta);
+                        if (y == 31) tex.SetPixel(x, y, cBordeCap);
+                        else if (y == 28) tex.SetPixel(x, y, cMortero);
+                        else tex.SetPixel(x, y, cPiedraClara);
+                        continue;
                     }
-                    else if (ly == 7 || lx == 1)
+
+                    // 2 filas de bloques de 16x14 con desfase
+                    int fila = (y < 14) ? 0 : 1;
+                    int ly = (y < 14) ? y : (y - 14);
+                    int desfase = (fila == 1) ? 8 : 0;
+                    int lx = (x + desfase) % 16;
+
+                    if (lx == 0 || ly == 0)
                     {
-                        tex.SetPixel(x, y, cLadrilloClaro);
+                        tex.SetPixel(x, y, cMortero);
+                    }
+                    else if (ly == 13 || lx == 1)
+                    {
+                        tex.SetPixel(x, y, cPiedraClara);
                     }
                     else if (ly == 1 || lx == 15)
                     {
-                        tex.SetPixel(x, y, cLadrilloOscuro);
+                        tex.SetPixel(x, y, cPiedraOscura);
                     }
                     else
                     {
-                        float ruido = Mathf.Sin(x * 12.3f + y * 7.7f);
-                        Color c = (ruido > 0.4f) ? cLadrilloClaro : (ruido < -0.4f ? cLadrilloOscuro : cLadrillo);
+                        Color c = cPiedra;
+                        if ((x * 7 + y * 3) % 13 == 0) c = cPiedraClara;
+                        else if ((x * 5 + y * 11) % 17 == 0) c = cPiedraOscura;
                         tex.SetPixel(x, y, c);
                     }
                 }
             }
             tex.Apply();
-            return Sprite.Create(tex, new Rect(0, 0, s, s), new Vector2(0.5f, 0.5f), 16f);
+            return Sprite.Create(tex, new Rect(0, 0, s, s), new Vector2(0.5f, 0.5f), 32f);
         }
 
         private static Sprite CrearColumnaPiedra()
         {
-            int w = 24, h = 36;
+            int w = 32, h = 48;
             Texture2D tex = new Texture2D(w, h, TextureFormat.RGBA32, false);
             tex.filterMode = FilterMode.Point;
 
-            Color cPiedra = new Color(0.44f, 0.46f, 0.50f);
-            Color cClaro = new Color(0.60f, 0.62f, 0.66f);
-            Color cOscuro = new Color(0.26f, 0.28f, 0.31f);
-            Color cSombra = new Color(0.14f, 0.15f, 0.17f);
+            Color cPiedra = new Color(0.40f, 0.42f, 0.48f);
+            Color cClaro = new Color(0.56f, 0.58f, 0.66f);
+            Color cOscuro = new Color(0.24f, 0.26f, 0.30f);
+            Color cSombra = new Color(0.12f, 0.13f, 0.16f);
 
             for (int y = 0; y < h; y++)
             {
                 for (int x = 0; x < w; x++)
                 {
-                    bool enCapitel = (y >= 30);
-                    bool enBase = (y <= 6);
-                    int margen = (enCapitel || enBase) ? 2 : 4;
+                    bool capitel = (y >= 40);
+                    bool baseCol = (y <= 8);
+                    int margen = (capitel || baseCol) ? 3 : 6;
 
                     if (x < margen || x >= w - margen)
                     {
@@ -215,24 +221,23 @@ namespace SoulKnight
                     else
                     {
                         float nx = (float)(x - margen) / (w - margen * 2 - 1);
-                        if (nx < 0.22f) tex.SetPixel(x, y, cClaro);
-                        else if (nx > 0.78f) tex.SetPixel(x, y, cSombra);
-                        else if (nx > 0.58f) tex.SetPixel(x, y, cOscuro);
+                        if (nx < 0.25f) tex.SetPixel(x, y, cClaro);
+                        else if (nx > 0.75f) tex.SetPixel(x, y, cSombra);
+                        else if (nx > 0.55f) tex.SetPixel(x, y, cOscuro);
                         else tex.SetPixel(x, y, cPiedra);
 
-                        // Molduras horizontales en base y capitel
-                        if (y == 31 || y == 5) tex.SetPixel(x, y, cClaro);
-                        if (y == 29 || y == 1) tex.SetPixel(x, y, cSombra);
+                        if (y == 47 || y == 7) tex.SetPixel(x, y, cClaro);
+                        if (y == 40 || y == 1) tex.SetPixel(x, y, cSombra);
                     }
                 }
             }
             tex.Apply();
-            return Sprite.Create(tex, new Rect(0, 0, w, h), new Vector2(0.5f, 0.5f), 16f);
+            return Sprite.Create(tex, new Rect(0, 0, w, h), new Vector2(0.5f, 0.35f), 32f);
         }
 
-        // ==========================================
+        // ========================================================
         // 2. BIOMA: HIELO (Cripta Glacial)
-        // ==========================================
+        // ========================================================
         private static Sprite CrearSueloHielo()
         {
             int s = 32;
@@ -240,44 +245,44 @@ namespace SoulKnight
             tex.filterMode = FilterMode.Point;
             tex.wrapMode = TextureWrapMode.Repeat;
 
-            Color cGlaciar = new Color(0.38f, 0.68f, 0.88f);
-            Color cBrillo = new Color(0.85f, 0.96f, 1f);
-            Color cProfundo = new Color(0.20f, 0.42f, 0.65f);
-            Color cGrieta = new Color(0.12f, 0.25f, 0.45f);
+            Color cGlaciar = new Color(0.32f, 0.62f, 0.82f);
+            Color cBrillo = new Color(0.78f, 0.94f, 1f);
+            Color cDestello = Color.white;
+            Color cProfundo = new Color(0.16f, 0.36f, 0.58f);
+            Color cGrieta = new Color(0.10f, 0.22f, 0.40f);
 
             for (int y = 0; y < s; y++)
             {
                 for (int x = 0; x < s; x++)
                 {
-                    bool bordeH = (y == 0 || y == 31);
-                    bool bordeV = (x == 0 || x == 31);
-                    if (bordeH || bordeV)
+                    int lx = x % 16;
+                    int ly = y % 16;
+
+                    if (lx == 0 || ly == 0)
                     {
                         tex.SetPixel(x, y, cGrieta);
-                        continue;
                     }
-
-                    // Cristales angulares de hielo
-                    float d1 = Mathf.Abs(x - y);
-                    float d2 = Mathf.Abs(x + y - 31);
-                    if (d1 == 0 || d2 == 0)
-                    {
-                        tex.SetPixel(x, y, cProfundo);
-                    }
-                    else if (d1 == 1 || d2 == 1)
+                    else if (lx == 1 || ly == 15)
                     {
                         tex.SetPixel(x, y, cBrillo);
                     }
+                    else if (lx == 15 || ly == 1)
+                    {
+                        tex.SetPixel(x, y, cProfundo);
+                    }
                     else
                     {
-                        float n = Mathf.PerlinNoise(x * 0.35f, y * 0.35f);
-                        Color c = (n > 0.6f) ? cBrillo : (n < 0.3f ? cProfundo : cGlaciar);
+                        Color c = cGlaciar;
+                        // Destellos cristalinos de escarcha
+                        if ((lx == 4 && ly == 12) || (lx == 11 && ly == 5)) c = cDestello;
+                        else if ((lx + ly) % 5 == 0) c = cBrillo;
+                        else if ((lx * 2 + ly * 3) % 9 == 0) c = cProfundo;
                         tex.SetPixel(x, y, c);
                     }
                 }
             }
             tex.Apply();
-            return Sprite.Create(tex, new Rect(0, 0, s, s), new Vector2(0.5f, 0.5f), 16f);
+            return Sprite.Create(tex, new Rect(0, 0, s, s), new Vector2(0.5f, 0.5f), 32f);
         }
 
         private static Sprite CrearMuroHielo()
@@ -287,82 +292,89 @@ namespace SoulKnight
             tex.filterMode = FilterMode.Point;
             tex.wrapMode = TextureWrapMode.Repeat;
 
-            Color cHielo = new Color(0.28f, 0.58f, 0.82f);
-            Color cEscarcha = new Color(0.82f, 0.95f, 1f);
-            Color cSombraAzul = new Color(0.15f, 0.32f, 0.52f);
-            Color cBordeOscuro = new Color(0.08f, 0.18f, 0.35f);
+            Color cCristal = new Color(0.24f, 0.50f, 0.76f);
+            Color cEscarcha = new Color(0.85f, 0.96f, 1f);
+            Color cAbismo = new Color(0.08f, 0.20f, 0.38f);
+            Color cJunta = new Color(0.05f, 0.12f, 0.25f);
 
             for (int y = 0; y < s; y++)
             {
-                int fila = y / 8;
-                int ly = y % 8;
-                int desf = (fila % 2 == 1) ? 8 : 0;
-
                 for (int x = 0; x < s; x++)
                 {
-                    int lx = (x + desf) % 16;
-                    if (ly == 0 || lx == 0)
+                    // Témpanos y capa de escarcha superior
+                    if (y >= 28)
                     {
-                        tex.SetPixel(x, y, cBordeOscuro);
+                        if (y == 31) tex.SetPixel(x, y, Color.white);
+                        else if (y == 28) tex.SetPixel(x, y, cJunta);
+                        else tex.SetPixel(x, y, cEscarcha);
+                        continue;
                     }
-                    else if (ly == 7 || lx == 1)
+
+                    int fila = (y < 14) ? 0 : 1;
+                    int ly = (y < 14) ? y : (y - 14);
+                    int desfase = (fila == 1) ? 8 : 0;
+                    int lx = (x + desfase) % 16;
+
+                    if (lx == 0 || ly == 0)
                     {
-                        // Brillo de escarcha superior
+                        tex.SetPixel(x, y, cJunta);
+                    }
+                    else if (ly == 13 || lx == 1)
+                    {
                         tex.SetPixel(x, y, cEscarcha);
                     }
                     else if (ly == 1 || lx == 15)
                     {
-                        tex.SetPixel(x, y, cSombraAzul);
+                        tex.SetPixel(x, y, cAbismo);
                     }
                     else
                     {
-                        float ruido = Mathf.Sin(x * 8.5f + y * 14.1f);
-                        tex.SetPixel(x, y, ruido > 0.35f ? cEscarcha : (ruido < -0.3f ? cSombraAzul : cHielo));
+                        Color c = cCristal;
+                        if ((x + y * 2) % 7 == 0) c = cEscarcha;
+                        else if ((x * 3 + y) % 11 == 0) c = cAbismo;
+                        tex.SetPixel(x, y, c);
                     }
                 }
             }
             tex.Apply();
-            return Sprite.Create(tex, new Rect(0, 0, s, s), new Vector2(0.5f, 0.5f), 16f);
+            return Sprite.Create(tex, new Rect(0, 0, s, s), new Vector2(0.5f, 0.5f), 32f);
         }
 
         private static Sprite CrearColumnaHielo()
         {
-            int w = 24, h = 36;
+            int w = 32, h = 48;
             Texture2D tex = new Texture2D(w, h, TextureFormat.RGBA32, false);
             tex.filterMode = FilterMode.Point;
 
-            Color cPuro = new Color(0.42f, 0.75f, 0.95f);
-            Color cReflejo = new Color(0.92f, 0.98f, 1f);
-            Color cOscuro = new Color(0.18f, 0.38f, 0.62f);
+            Color cCristal = new Color(0.30f, 0.60f, 0.85f);
+            Color cBrillo = new Color(0.85f, 0.98f, 1f);
+            Color cSombra = new Color(0.10f, 0.24f, 0.44f);
 
             for (int y = 0; y < h; y++)
             {
-                // Forma de estalagmita afilada
-                int anchoCuerpo = (y > 28) ? Mathf.RoundToInt(Mathf.Lerp(6f, 1f, (y - 28f) / 8f)) : Mathf.RoundToInt(Mathf.Lerp(9f, 6f, y / 28f));
-                int cx = w / 2;
-
                 for (int x = 0; x < w; x++)
                 {
-                    int dist = Mathf.Abs(x - cx);
-                    if (dist > anchoCuerpo)
+                    int margen = (y >= 38 || y <= 8) ? 3 : 5;
+                    if (x < margen || x >= w - margen)
                     {
                         tex.SetPixel(x, y, Color.clear);
                     }
                     else
                     {
-                        if (x < cx - 1) tex.SetPixel(x, y, cReflejo);
-                        else if (x > cx + 1) tex.SetPixel(x, y, cOscuro);
-                        else tex.SetPixel(x, y, cPuro);
+                        float nx = (float)(x - margen) / (w - margen * 2 - 1);
+                        Color c = Color.Lerp(cBrillo, cSombra, nx);
+                        if (y >= 44 || y == 7) c = Color.white;
+                        tex.SetPixel(x, y, c);
                     }
                 }
             }
             tex.Apply();
-            return Sprite.Create(tex, new Rect(0, 0, w, h), new Vector2(0.5f, 0.5f), 16f);
+            return Sprite.Create(tex, new Rect(0, 0, w, h), new Vector2(0.5f, 0.35f), 32f);
         }
 
-        // ==========================================
+        // ========================================================
         // 3. BIOMA: FUEGO (Fortaleza de Magma)
-        // ==========================================
+        // ========================================================
         private static Sprite CrearSueloFuego()
         {
             int s = 32;
@@ -370,42 +382,45 @@ namespace SoulKnight
             tex.filterMode = FilterMode.Point;
             tex.wrapMode = TextureWrapMode.Repeat;
 
-            Color cBasalto = new Color(0.18f, 0.16f, 0.18f);
-            Color cBasaltoClaro = new Color(0.28f, 0.24f, 0.26f);
-            Color cLavaViva = new Color(1f, 0.88f, 0.25f);
-            Color cLavaNaranja = new Color(1f, 0.42f, 0.05f);
-            Color cLavaRoja = new Color(0.78f, 0.12f, 0.05f);
+            Color cBasalto = new Color(0.18f, 0.16f, 0.20f);
+            Color cBasaltoClaro = new Color(0.28f, 0.24f, 0.28f);
+            Color cSombra = new Color(0.10f, 0.09f, 0.12f);
+            Color cLavaIntensa = new Color(1f, 0.88f, 0.20f);
+            Color cLavaMedia = new Color(1f, 0.45f, 0.05f);
+            Color cLavaBorde = new Color(0.65f, 0.12f, 0.05f);
 
             for (int y = 0; y < s; y++)
             {
                 for (int x = 0; x < s; x++)
                 {
-                    // Ríos de magma en las juntas de basalto
-                    bool lavaH = (y == 0 || y == 16);
-                    bool lavaV = (x == 0 || x == 16);
+                    int lx = x % 16;
+                    int ly = y % 16;
 
-                    if (lavaH || lavaV)
+                    // Canales de magma ardiente entre las losas
+                    if (lx == 0 || ly == 0)
                     {
-                        float pulso = Mathf.Sin(x * 0.8f + y * 0.8f);
-                        tex.SetPixel(x, y, pulso > 0.4f ? cLavaViva : (pulso < -0.3f ? cLavaRoja : cLavaNaranja));
+                        if (lx == 0 && ly == 0) tex.SetPixel(x, y, cLavaIntensa); // Cruce de lava brillante
+                        else if (lx == 0 || ly == 0) tex.SetPixel(x, y, cLavaMedia);
+                    }
+                    else if (lx == 1 || ly == 1)
+                    {
+                        tex.SetPixel(x, y, cLavaBorde); // Borde incandescente
+                    }
+                    else if (lx == 15 || ly == 15)
+                    {
+                        tex.SetPixel(x, y, cBasaltoClaro);
                     }
                     else
                     {
-                        float n = Mathf.PerlinNoise(x * 0.4f, y * 0.4f);
-                        // Grietas volcánicas internas
-                        if ((x == 6 && y > 3 && y < 13) || (x == 22 && y > 18 && y < 29))
-                        {
-                            tex.SetPixel(x, y, cLavaNaranja);
-                        }
-                        else
-                        {
-                            tex.SetPixel(x, y, n > 0.55f ? cBasaltoClaro : cBasalto);
-                        }
+                        Color c = cBasalto;
+                        if ((x * 3 + y * 7) % 13 == 0) c = cBasaltoClaro;
+                        else if ((x + y) % 9 == 0) c = cSombra;
+                        tex.SetPixel(x, y, c);
                     }
                 }
             }
             tex.Apply();
-            return Sprite.Create(tex, new Rect(0, 0, s, s), new Vector2(0.5f, 0.5f), 16f);
+            return Sprite.Create(tex, new Rect(0, 0, s, s), new Vector2(0.5f, 0.5f), 32f);
         }
 
         private static Sprite CrearMuroFuego()
@@ -415,87 +430,85 @@ namespace SoulKnight
             tex.filterMode = FilterMode.Point;
             tex.wrapMode = TextureWrapMode.Repeat;
 
-            Color cRoca = new Color(0.22f, 0.18f, 0.20f);
-            Color cBordeRojo = new Color(0.85f, 0.22f, 0.08f);
-            Color cBordeNaranja = new Color(1f, 0.55f, 0.12f);
-            Color cCeniza = new Color(0.10f, 0.08f, 0.10f);
+            Color cObsidiana = new Color(0.16f, 0.14f, 0.18f);
+            Color cObsidianaBrillo = new Color(0.32f, 0.28f, 0.35f);
+            Color cLava = new Color(1f, 0.50f, 0.08f);
+            Color cMortero = new Color(0.08f, 0.06f, 0.09f);
 
             for (int y = 0; y < s; y++)
             {
-                int fila = y / 8;
-                int ly = y % 8;
-                int desf = (fila % 2 == 1) ? 8 : 0;
-
                 for (int x = 0; x < s; x++)
                 {
-                    int lx = (x + desf) % 16;
-                    if (ly == 0 || lx == 0)
+                    if (y >= 28)
                     {
-                        tex.SetPixel(x, y, cBordeRojo);
+                        if (y == 31) tex.SetPixel(x, y, cObsidianaBrillo);
+                        else if (y == 28) tex.SetPixel(x, y, cLava);
+                        else tex.SetPixel(x, y, cObsidiana);
+                        continue;
                     }
-                    else if (ly == 1 || lx == 1)
+
+                    int fila = (y < 14) ? 0 : 1;
+                    int ly = (y < 14) ? y : (y - 14);
+                    int desfase = (fila == 1) ? 8 : 0;
+                    int lx = (x + desfase) % 16;
+
+                    if (lx == 0 || ly == 0)
                     {
-                        tex.SetPixel(x, y, cBordeNaranja);
+                        tex.SetPixel(x, y, cMortero);
                     }
-                    else if (ly == 7 || lx == 15)
+                    else if ((lx == 7 && ly > 3 && ly < 10) || (ly == 6 && lx > 2 && lx < 8))
                     {
-                        tex.SetPixel(x, y, cCeniza);
+                        tex.SetPixel(x, y, cLava); // Grieta de lava en el muro
+                    }
+                    else if (ly == 13 || lx == 1)
+                    {
+                        tex.SetPixel(x, y, cObsidianaBrillo);
                     }
                     else
                     {
-                        float r = Mathf.Sin(x * 9f + y * 13f);
-                        tex.SetPixel(x, y, r > 0.6f ? new Color(0.45f, 0.25f, 0.18f) : cRoca);
+                        tex.SetPixel(x, y, cObsidiana);
                     }
                 }
             }
             tex.Apply();
-            return Sprite.Create(tex, new Rect(0, 0, s, s), new Vector2(0.5f, 0.5f), 16f);
+            return Sprite.Create(tex, new Rect(0, 0, s, s), new Vector2(0.5f, 0.5f), 32f);
         }
 
         private static Sprite CrearColumnaFuego()
         {
-            int w = 24, h = 36;
+            int w = 32, h = 48;
             Texture2D tex = new Texture2D(w, h, TextureFormat.RGBA32, false);
             tex.filterMode = FilterMode.Point;
 
-            Color cBasalto = new Color(0.20f, 0.16f, 0.18f);
-            Color cLava = new Color(1f, 0.55f, 0.08f);
-            Color cLavaNucleo = new Color(1f, 0.92f, 0.35f);
+            Color cObs = new Color(0.20f, 0.18f, 0.22f);
+            Color cLava = new Color(1f, 0.55f, 0.10f);
+            Color cSombra = new Color(0.08f, 0.07f, 0.10f);
 
             for (int y = 0; y < h; y++)
             {
                 for (int x = 0; x < w; x++)
                 {
-                    int margen = (y <= 4 || y >= 32) ? 2 : 4;
+                    int margen = (y >= 38 || y <= 8) ? 3 : 5;
                     if (x < margen || x >= w - margen)
                     {
                         tex.SetPixel(x, y, Color.clear);
                     }
                     else
                     {
-                        // Grieta de magma vertical en el centro
-                        if (x == 11 || x == 12)
-                        {
-                            tex.SetPixel(x, y, (x == 11 && y % 3 == 0) ? cLavaNucleo : cLava);
-                        }
-                        else if (x == 10 || x == 13)
-                        {
-                            tex.SetPixel(x, y, new Color(0.75f, 0.18f, 0.05f));
-                        }
-                        else
-                        {
-                            tex.SetPixel(x, y, x < 10 ? new Color(0.35f, 0.28f, 0.30f) : cBasalto);
-                        }
+                        float nx = (float)(x - margen) / (w - margen * 2 - 1);
+                        Color c = Color.Lerp(cObs, cSombra, nx);
+                        if (x == w / 2 && y >= 10 && y <= 36) c = cLava; // Vena central de magma
+                        tex.SetPixel(x, y, c);
                     }
                 }
             }
             tex.Apply();
-            return Sprite.Create(tex, new Rect(0, 0, w, h), new Vector2(0.5f, 0.5f), 16f);
+            return Sprite.Create(tex, new Rect(0, 0, w, h), new Vector2(0.5f, 0.35f), 32f);
         }
 
-        // ==========================================
-        // 4. BIOMA: PLANTA (Santuario de Selva)
-        // ==========================================
+        // ========================================================
+        // 4. BIOMA: PLANTA (Santuario de Esporas)
+        // ========================================================
         private static Sprite CrearSueloPlanta()
         {
             int s = 32;
@@ -503,28 +516,38 @@ namespace SoulKnight
             tex.filterMode = FilterMode.Point;
             tex.wrapMode = TextureWrapMode.Repeat;
 
-            Color cTierra = new Color(0.25f, 0.18f, 0.12f);
-            Color cMusgo = new Color(0.22f, 0.52f, 0.20f);
-            Color cMusgoClaro = new Color(0.35f, 0.72f, 0.28f);
-            Color cFlor1 = new Color(1f, 0.45f, 0.65f); // Rosa
-            Color cFlor2 = new Color(0.95f, 0.88f, 0.25f); // Amarilla
+            Color cRoca = new Color(0.25f, 0.28f, 0.25f);
+            Color cMusgo = new Color(0.22f, 0.48f, 0.24f);
+            Color cMusgoClaro = new Color(0.35f, 0.70f, 0.38f);
+            Color cTierra = new Color(0.16f, 0.18f, 0.14f);
+            Color cEsporaFlor = new Color(0.85f, 0.35f, 0.85f);
 
             for (int y = 0; y < s; y++)
             {
                 for (int x = 0; x < s; x++)
                 {
-                    float ruido = Mathf.PerlinNoise(x * 0.3f, y * 0.3f);
-                    Color c = (ruido > 0.45f) ? cMusgoClaro : ((ruido > 0.25f) ? cMusgo : cTierra);
+                    int lx = x % 16;
+                    int ly = y % 16;
 
-                    // Flores esporádicas pixel art
-                    if ((x == 7 && y == 9) || (x == 23 && y == 19)) c = cFlor1;
-                    if ((x == 15 && y == 27) || (x == 28 && y == 6)) c = cFlor2;
-
-                    tex.SetPixel(x, y, c);
+                    if (lx == 0 || ly == 0)
+                    {
+                        tex.SetPixel(x, y, cTierra);
+                    }
+                    else if ((lx > 3 && lx < 13 && ly > 3 && ly < 13) && ((x + y) % 3 != 0))
+                    {
+                        tex.SetPixel(x, y, cRoca);
+                    }
+                    else
+                    {
+                        Color c = ((x * 5 + y * 7) % 7 == 0) ? cMusgoClaro : cMusgo;
+                        // Florecillas esporíferas
+                        if ((lx == 7 && ly == 7) || (lx == 12 && ly == 2)) c = cEsporaFlor;
+                        tex.SetPixel(x, y, c);
+                    }
                 }
             }
             tex.Apply();
-            return Sprite.Create(tex, new Rect(0, 0, s, s), new Vector2(0.5f, 0.5f), 16f);
+            return Sprite.Create(tex, new Rect(0, 0, s, s), new Vector2(0.5f, 0.5f), 32f);
         }
 
         private static Sprite CrearMuroPlanta()
@@ -534,101 +557,82 @@ namespace SoulKnight
             tex.filterMode = FilterMode.Point;
             tex.wrapMode = TextureWrapMode.Repeat;
 
-            Color cPiedraVerde = new Color(0.32f, 0.40f, 0.30f);
-            Color cPiedraClara = new Color(0.42f, 0.52f, 0.38f);
-            Color cEnredadera = new Color(0.14f, 0.45f, 0.15f);
-            Color cHoja = new Color(0.28f, 0.75f, 0.25f);
-            Color cSombra = new Color(0.12f, 0.18f, 0.12f);
+            Color cPiedra = new Color(0.26f, 0.30f, 0.26f);
+            Color cHiedra = new Color(0.18f, 0.52f, 0.22f);
+            Color cHoja = new Color(0.36f, 0.78f, 0.38f);
+            Color cJunta = new Color(0.10f, 0.12f, 0.10f);
 
             for (int y = 0; y < s; y++)
             {
-                int fila = y / 8;
-                int ly = y % 8;
-                int desf = (fila % 2 == 1) ? 8 : 0;
-
                 for (int x = 0; x < s; x++)
                 {
-                    int lx = (x + desf) % 16;
-                    if (ly == 0 || lx == 0)
+                    if (y >= 28)
                     {
-                        tex.SetPixel(x, y, cSombra);
+                        if (y == 31) tex.SetPixel(x, y, cHoja);
+                        else if (y == 28) tex.SetPixel(x, y, cJunta);
+                        else tex.SetPixel(x, y, cHiedra);
+                        continue;
+                    }
+
+                    int fila = (y < 14) ? 0 : 1;
+                    int ly = (y < 14) ? y : (y - 14);
+                    int desfase = (fila == 1) ? 8 : 0;
+                    int lx = (x + desfase) % 16;
+
+                    if (lx == 0 || ly == 0)
+                    {
+                        tex.SetPixel(x, y, cJunta);
+                    }
+                    else if ((lx == ly) || (lx + ly == 14))
+                    {
+                        // Enredaderas trepando por el muro
+                        tex.SetPixel(x, y, (x % 2 == 0) ? cHoja : cHiedra);
                     }
                     else
                     {
-                        // Enredaderas trepadoras orgánicas
-                        bool esRama = (Mathf.Sin(y * 0.45f) * 4f + 8f == lx) || (Mathf.Cos(x * 0.45f) * 3f + 4f == ly);
-                        if (esRama)
-                        {
-                            tex.SetPixel(x, y, (x % 2 == 0) ? cHoja : cEnredadera);
-                        }
-                        else if (ly == 7 || lx == 1)
-                        {
-                            tex.SetPixel(x, y, cPiedraClara);
-                        }
-                        else
-                        {
-                            tex.SetPixel(x, y, cPiedraVerde);
-                        }
+                        tex.SetPixel(x, y, cPiedra);
                     }
                 }
             }
             tex.Apply();
-            return Sprite.Create(tex, new Rect(0, 0, s, s), new Vector2(0.5f, 0.5f), 16f);
+            return Sprite.Create(tex, new Rect(0, 0, s, s), new Vector2(0.5f, 0.5f), 32f);
         }
 
         private static Sprite CrearColumnaPlanta()
         {
-            int w = 24, h = 36;
+            int w = 32, h = 48;
             Texture2D tex = new Texture2D(w, h, TextureFormat.RGBA32, false);
             tex.filterMode = FilterMode.Point;
 
-            Color cMadera = new Color(0.38f, 0.25f, 0.14f);
-            Color cCortezaClara = new Color(0.52f, 0.36f, 0.20f);
-            Color cSombra = new Color(0.22f, 0.14f, 0.08f);
-            Color cFollaje = new Color(0.25f, 0.68f, 0.22f);
+            Color cTronco = new Color(0.28f, 0.32f, 0.26f);
+            Color cVerde = new Color(0.25f, 0.65f, 0.28f);
+            Color cFlor = new Color(0.95f, 0.40f, 0.75f);
 
             for (int y = 0; y < h; y++)
             {
                 for (int x = 0; x < w; x++)
                 {
-                    // Corona de hojas arriba
-                    if (y >= 30)
-                    {
-                        int distH = Mathf.Abs(x - 12);
-                        if (distH <= 9)
-                        {
-                            tex.SetPixel(x, y, (x + y) % 2 == 0 ? cFollaje : new Color(0.38f, 0.82f, 0.30f));
-                        }
-                        else
-                        {
-                            tex.SetPixel(x, y, Color.clear);
-                        }
-                        continue;
-                    }
-
-                    // Raíces que se ensanchan en la base
-                    int ancho = (y < 8) ? Mathf.RoundToInt(Mathf.Lerp(9f, 6f, y / 8f)) : 6;
-                    int dist = Mathf.Abs(x - 12);
-
-                    if (dist > ancho)
+                    int margen = (y >= 38 || y <= 8) ? 3 : 5;
+                    if (x < margen || x >= w - margen)
                     {
                         tex.SetPixel(x, y, Color.clear);
                     }
                     else
                     {
-                        if (x < 10) tex.SetPixel(x, y, cCortezaClara);
-                        else if (x > 14) tex.SetPixel(x, y, cSombra);
-                        else tex.SetPixel(x, y, cMadera);
+                        Color c = cTronco;
+                        if ((x + y) % 6 == 0) c = cVerde;
+                        if (x == 16 && (y == 20 || y == 35)) c = cFlor;
+                        tex.SetPixel(x, y, c);
                     }
                 }
             }
             tex.Apply();
-            return Sprite.Create(tex, new Rect(0, 0, w, h), new Vector2(0.5f, 0.5f), 16f);
+            return Sprite.Create(tex, new Rect(0, 0, w, h), new Vector2(0.5f, 0.35f), 32f);
         }
 
-        // ==========================================
+        // ========================================================
         // 5. BIOMA: ARENA (Necrópolis del Desierto)
-        // ==========================================
+        // ========================================================
         private static Sprite CrearSueloArena()
         {
             int s = 32;
@@ -636,55 +640,44 @@ namespace SoulKnight
             tex.filterMode = FilterMode.Point;
             tex.wrapMode = TextureWrapMode.Repeat;
 
-            Color cArenisca = new Color(0.78f, 0.65f, 0.42f);
-            Color cAreniscaClara = new Color(0.88f, 0.76f, 0.52f);
-            Color cAreniscaOscura = new Color(0.62f, 0.48f, 0.28f);
-            Color cMorteroArena = new Color(0.48f, 0.36f, 0.20f);
-            Color cJeroglifico = new Color(0.52f, 0.40f, 0.22f);
+            Color cArenisca = new Color(0.72f, 0.56f, 0.32f);
+            Color cAreniscaLuz = new Color(0.85f, 0.70f, 0.45f);
+            Color cSombra = new Color(0.54f, 0.40f, 0.22f);
+            Color cJunta = new Color(0.35f, 0.25f, 0.14f);
+            Color cLapis = new Color(0.15f, 0.35f, 0.75f); // Lapis lazuli incrustado
 
             for (int y = 0; y < s; y++)
             {
                 for (int x = 0; x < s; x++)
                 {
-                    bool juntaH = (y == 0 || y == 16);
-                    bool juntaV = (x == 0 || x == 16);
+                    int lx = x % 16;
+                    int ly = y % 16;
 
-                    if (juntaH || juntaV)
+                    if (lx == 0 || ly == 0)
                     {
-                        tex.SetPixel(x, y, cMorteroArena);
+                        tex.SetPixel(x, y, cJunta);
+                    }
+                    else if (lx == 1 || ly == 15)
+                    {
+                        tex.SetPixel(x, y, cAreniscaLuz);
+                    }
+                    else if (lx == 15 || ly == 1)
+                    {
+                        tex.SetPixel(x, y, cSombra);
                     }
                     else
                     {
-                        int lx = x % 16;
-                        int ly = y % 16;
-
-                        if (ly == 15 || lx == 1)
-                        {
-                            tex.SetPixel(x, y, cAreniscaClara);
-                        }
-                        else if (ly == 1 || lx == 15)
-                        {
-                            tex.SetPixel(x, y, cAreniscaOscura);
-                        }
-                        else
-                        {
-                            // Grabado de escarabajo / ojo egipcio estilizado en el centro de la losa
-                            bool esGrabado = (lx >= 6 && lx <= 9 && ly == 8) || (lx == 8 && ly >= 6 && ly <= 10);
-                            if (esGrabado)
-                            {
-                                tex.SetPixel(x, y, cJeroglifico);
-                            }
-                            else
-                            {
-                                float n = Mathf.PerlinNoise(x * 0.4f, y * 0.4f);
-                                tex.SetPixel(x, y, n > 0.6f ? cAreniscaClara : (n < 0.35f ? cAreniscaOscura : cArenisca));
-                            }
-                        }
+                        Color c = cArenisca;
+                        // Gema de lapislázuli en el centro de las losas doradas
+                        if (lx >= 7 && lx <= 8 && ly >= 7 && ly <= 8) c = cLapis;
+                        else if ((lx + ly) % 7 == 0) c = cAreniscaLuz;
+                        else if ((lx * 3 + ly * 2) % 11 == 0) c = cSombra;
+                        tex.SetPixel(x, y, c);
                     }
                 }
             }
             tex.Apply();
-            return Sprite.Create(tex, new Rect(0, 0, s, s), new Vector2(0.5f, 0.5f), 16f);
+            return Sprite.Create(tex, new Rect(0, 0, s, s), new Vector2(0.5f, 0.5f), 32f);
         }
 
         private static Sprite CrearMuroArena()
@@ -694,108 +687,115 @@ namespace SoulKnight
             tex.filterMode = FilterMode.Point;
             tex.wrapMode = TextureWrapMode.Repeat;
 
-            Color cBloque = new Color(0.82f, 0.68f, 0.45f);
-            Color cBordeOro = new Color(0.95f, 0.82f, 0.55f);
-            Color cSombra = new Color(0.52f, 0.38f, 0.22f);
-            Color cFranjaTurquesa = new Color(0.22f, 0.65f, 0.68f);
+            Color cArenisca = new Color(0.68f, 0.52f, 0.30f);
+            Color cOro = new Color(0.95f, 0.78f, 0.22f);
+            Color cSombra = new Color(0.45f, 0.32f, 0.16f);
+            Color cJunta = new Color(0.28f, 0.20f, 0.10f);
 
             for (int y = 0; y < s; y++)
             {
-                int fila = y / 8;
-                int ly = y % 8;
-                int desf = (fila % 2 == 1) ? 8 : 0;
-
                 for (int x = 0; x < s; x++)
                 {
-                    int lx = (x + desf) % 16;
-                    if (ly == 0 || lx == 0)
+                    if (y >= 28)
                     {
-                        tex.SetPixel(x, y, cSombra);
+                        if (y == 31) tex.SetPixel(x, y, cOro); // Friso dorado superior
+                        else if (y == 28) tex.SetPixel(x, y, cJunta);
+                        else tex.SetPixel(x, y, cArenisca);
+                        continue;
                     }
-                    else if (fila == 2 && (ly == 3 || ly == 4))
+
+                    int fila = (y < 14) ? 0 : 1;
+                    int ly = (y < 14) ? y : (y - 14);
+                    int desfase = (fila == 1) ? 8 : 0;
+                    int lx = (x + desfase) % 16;
+
+                    if (lx == 0 || ly == 0)
                     {
-                        // Cenefa ceremonial dorada y turquesa
-                        tex.SetPixel(x, y, (lx % 4 == 0) ? cBordeOro : cFranjaTurquesa);
+                        tex.SetPixel(x, y, cJunta);
                     }
-                    else if (ly == 7 || lx == 1)
+                    else if (ly == 7 && lx >= 5 && lx <= 11)
                     {
-                        tex.SetPixel(x, y, cBordeOro);
+                        tex.SetPixel(x, y, cOro); // Jeroglífico dorado grabado
+                    }
+                    else if (ly == 13 || lx == 1)
+                    {
+                        tex.SetPixel(x, y, cOro);
                     }
                     else
                     {
-                        float r = Mathf.Sin(x * 11f + y * 9f);
-                        tex.SetPixel(x, y, r > 0.4f ? cBordeOro : (r < -0.4f ? cSombra : cBloque));
+                        tex.SetPixel(x, y, (ly == 1 || lx == 15) ? cSombra : cArenisca);
                     }
                 }
             }
             tex.Apply();
-            return Sprite.Create(tex, new Rect(0, 0, s, s), new Vector2(0.5f, 0.5f), 16f);
+            return Sprite.Create(tex, new Rect(0, 0, s, s), new Vector2(0.5f, 0.5f), 32f);
         }
 
         private static Sprite CrearColumnaArena()
         {
-            int w = 24, h = 36;
+            int w = 32, h = 48;
             Texture2D tex = new Texture2D(w, h, TextureFormat.RGBA32, false);
             tex.filterMode = FilterMode.Point;
 
-            Color cArenisca = new Color(0.80f, 0.66f, 0.42f);
-            Color cOro = new Color(0.95f, 0.82f, 0.35f);
-            Color cSombra = new Color(0.52f, 0.38f, 0.22f);
-            Color cTurquesa = new Color(0.18f, 0.65f, 0.68f);
+            Color cArenisca = new Color(0.70f, 0.54f, 0.32f);
+            Color cOro = new Color(0.95f, 0.80f, 0.25f);
+            Color cLapis = new Color(0.18f, 0.38f, 0.80f);
+            Color cSombra = new Color(0.42f, 0.30f, 0.15f);
 
             for (int y = 0; y < h; y++)
             {
                 for (int x = 0; x < w; x++)
                 {
-                    int margen = (y <= 5 || y >= 29) ? 2 : 4;
+                    int margen = (y >= 38 || y <= 8) ? 3 : 5;
                     if (x < margen || x >= w - margen)
                     {
                         tex.SetPixel(x, y, Color.clear);
                     }
                     else
                     {
-                        // Franjas de oro y turquesa en el capitel y base
-                        if (y == 28 || y == 6)
-                        {
-                            tex.SetPixel(x, y, cOro);
-                        }
-                        else if (y == 27 || y == 7)
-                        {
-                            tex.SetPixel(x, y, cTurquesa);
-                        }
-                        else
-                        {
-                            if (x < 8) tex.SetPixel(x, y, cOro);
-                            else if (x > 15) tex.SetPixel(x, y, cSombra);
-                            else tex.SetPixel(x, y, cArenisca);
-                        }
+                        Color c = cArenisca;
+                        if (y >= 42 || y == 6) c = cOro; // Capitel de flor de loto dorada
+                        if (y == 24 || y == 25) c = cLapis; // Banda sagrada de lapislázuli
+                        if (x == w - margen - 1) c = cSombra;
+                        tex.SetPixel(x, y, c);
                     }
                 }
             }
             tex.Apply();
-            return Sprite.Create(tex, new Rect(0, 0, w, h), new Vector2(0.5f, 0.5f), 16f);
+            return Sprite.Create(tex, new Rect(0, 0, w, h), new Vector2(0.5f, 0.35f), 32f);
         }
 
-        // ==========================================
-        // FLAMAS DE ANTORCHAS / PEBETEROS PIXEL ART
-        // ==========================================
-        private static Sprite CrearLlamaPixel(Color cNucleo, Color cCuerpo, Color cBorde)
+        // ========================================================
+        // ANTORCHA Y LLAMA PIXEL ART
+        // ========================================================
+        public static Sprite CrearLlamaPixel(Color cNucleo, Color cCuerpo, Color cBorde)
         {
-            int w = 12, h = 16;
+            int w = 16, h = 24;
             Texture2D tex = new Texture2D(w, h, TextureFormat.RGBA32, false);
             tex.filterMode = FilterMode.Point;
 
+            Vector2 basePos = new Vector2(7.5f, 4f);
             for (int y = 0; y < h; y++)
             {
                 for (int x = 0; x < w; x++)
                 {
-                    float dx = Mathf.Abs(x - 5.5f);
-                    float radioMax = (y < 6) ? 3.5f : Mathf.Lerp(3.5f, 0.5f, (y - 6f) / 9f);
-                    if (y >= 2 && y <= 14 && dx <= radioMax)
+                    float dx = Mathf.Abs(x - basePos.x);
+                    float dy = y - basePos.y;
+
+                    if (dy < 0f || dy > 18f)
                     {
-                        if (dx <= radioMax * 0.45f && y <= 9)
+                        tex.SetPixel(x, y, Color.clear);
+                        continue;
+                    }
+
+                    // Forma de llama ascendente cónica
+                    float anchoLlama = (dy < 6f) ? (3.5f + dy * 0.4f) : Mathf.Max(0.5f, 6.0f - (dy - 6f) * 0.45f);
+
+                    if (dx <= anchoLlama)
+                    {
+                        if (dx <= anchoLlama * 0.35f && dy <= 10f)
                             tex.SetPixel(x, y, cNucleo);
-                        else if (dx <= radioMax * 0.75f)
+                        else if (dx <= anchoLlama * 0.72f && dy <= 14f)
                             tex.SetPixel(x, y, cCuerpo);
                         else
                             tex.SetPixel(x, y, cBorde);
@@ -807,7 +807,7 @@ namespace SoulKnight
                 }
             }
             tex.Apply();
-            return Sprite.Create(tex, new Rect(0, 0, w, h), new Vector2(0.5f, 0.2f), 16f);
+            return Sprite.Create(tex, new Rect(0, 0, w, h), new Vector2(0.5f, 0.2f), 32f);
         }
     }
 }

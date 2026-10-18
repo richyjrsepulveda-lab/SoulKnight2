@@ -213,11 +213,13 @@ namespace SoulKnight
                 bool esJefe = tieneJefe && (k == totalSalasCaminoPrincipal - 1);
                 int ancho = esJefe ? 42 : UnityEngine.Random.Range(32, 38);
                 int alto = esJefe ? 32 : UnityEngine.Random.Range(24, 30);
+                ancho = (ancho / 2) * 2;
+                alto = (alto / 2) * 2;
                 int numCols = esJefe ? 4 : (UnityEngine.Random.Range(2, 4) * 2);
                 int numEnems = esJefe ? 0 : UnityEngine.Random.Range(5, 8);
 
                 int chance = UnityEngine.Random.Range(0, 100);
-                int stepX = 50;
+                int stepX = 52;
                 int stepY = 0;
 
                 if (esJefe)
@@ -225,20 +227,20 @@ namespace SoulKnight
                     stepX = 54;
                     stepY = 0;
                 }
-                else if (chance < 50)
+                else if (chance < 45)
                 {
-                    stepX = UnityEngine.Random.Range(46, 54);
-                    stepY = UnityEngine.Random.Range(-6, 7);
+                    stepX = 52;
+                    stepY = 0;
                 }
-                else if (chance < 75)
+                else if (chance < 72)
                 {
-                    stepX = UnityEngine.Random.Range(14, 22);
-                    stepY = UnityEngine.Random.Range(38, 46);
+                    stepX = 0;
+                    stepY = 44;
                 }
                 else
                 {
-                    stepX = UnityEngine.Random.Range(14, 22);
-                    stepY = -UnityEngine.Random.Range(38, 46);
+                    stepX = 0;
+                    stepY = -44;
                 }
 
                 int candX = currX + stepX;
@@ -285,13 +287,13 @@ namespace SoulKnight
             int pasilloJefeY = salaFinal.cy;
             posicionPortal = new Vector2(pasilloJefeXMax - 1.2f, pasilloJefeY + 0.5f);
 
-            // Cuartos Extra sin salida (ramificaciones laterales sin invadir zonas previas)
+            // Cuartos Extra sin salida (ramificaciones laterales ortogonales sin invadir zonas previas)
             Vector2Int[] dirsRamificacion = new Vector2Int[]
             {
-                new Vector2Int(0, 48),
-                new Vector2Int(0, -48),
-                new Vector2Int(48, 48),
-                new Vector2Int(48, -48)
+                new Vector2Int(0, 44),
+                new Vector2Int(0, -44),
+                new Vector2Int(48, 0),
+                new Vector2Int(-48, 0)
             };
 
             for (int idxPadre = 1; idxPadre <= 3; idxPadre++)
@@ -299,6 +301,8 @@ namespace SoulKnight
                 var padre = salas[idxPadre];
                 int anchoExtra = UnityEngine.Random.Range(28, 34);
                 int altoExtra = UnityEngine.Random.Range(22, 28);
+                anchoExtra = (anchoExtra / 2) * 2;
+                altoExtra = (altoExtra / 2) * 2;
                 int numColsExtra = (UnityEngine.Random.Range(1, 3) * 2);
 
                 int offsetInicial = UnityEngine.Random.Range(0, dirsRamificacion.Length);
@@ -462,35 +466,49 @@ namespace SoulKnight
                 }
             }
 
-            // 4. Instanciar Suelos
-            foreach (var s in salas)
+            // 4. Instanciar Suelos (unificado en cuadrícula exacta, sin solapes ni desniveles)
+            for (int gy = 0; gy < gridH; gy++)
             {
-                Vector2 tam = new Vector2(s.xMax - s.xMin + 1, s.yMax - s.yMin + 1);
-                Vector2 pos = new Vector2((s.xMin + s.xMax) * 0.5f, (s.yMin + s.yMax) * 0.5f);
-                CrearSueloVisual(pos, tam, datos.spriteSuelo);
+                int gxInicio = -1;
+                for (int gx = 0; gx < gridW; gx++)
+                {
+                    if (grid[gx, gy] == 1)
+                    {
+                        if (gxInicio == -1) gxInicio = gx;
+                    }
+                    else
+                    {
+                        if (gxInicio != -1)
+                        {
+                            CrearSueloSegmento(gxInicio, gx - 1, gy, minX, minY, datos.spriteSuelo);
+                            gxInicio = -1;
+                        }
+                    }
+                }
+                if (gxInicio != -1)
+                {
+                    CrearSueloSegmento(gxInicio, gridW - 1, gy, minX, minY, datos.spriteSuelo);
+                }
             }
 
+            // Registrar rectángulos de pasillos para consultas lógicas
             foreach (var p in pasillos)
             {
-                float anchoH = Mathf.Abs(p.x2 - p.x1) + radioPasillo * 2f;
-                float altoH = radioPasillo * 2f;
-                Vector2 posH = new Vector2((p.x1 + p.x2) * 0.5f, p.y1 + 0.5f);
-                CrearSueloVisual(posH, new Vector2(anchoH, altoH), datos.spriteSuelo);
-                rectPasillos.Add(new Rect(posH.x - anchoH * 0.5f, posH.y - altoH * 0.5f, anchoH, altoH));
+                int xDesde = Mathf.Min(p.x1, p.x2);
+                int xHasta = Mathf.Max(p.x1, p.x2);
+                int yDesde = Mathf.Min(p.y1, p.y2);
+                int yHasta = Mathf.Max(p.y1, p.y2);
 
-                float anchoV = radioPasillo * 2f;
-                float altoV = Mathf.Abs(p.y2 - p.y1) + radioPasillo * 2f;
-                Vector2 posV = new Vector2(p.x2 + 0.5f, (p.y1 + p.y2) * 0.5f);
-                CrearSueloVisual(posV, new Vector2(anchoV, altoV), datos.spriteSuelo);
-                rectPasillos.Add(new Rect(posV.x - anchoV * 0.5f, posV.y - altoV * 0.5f, anchoV, altoV));
+                if (xDesde != xHasta)
+                {
+                    rectPasillos.Add(new Rect(xDesde, p.y1 - radioPasillo + 1, xHasta - xDesde + 1, radioPasillo * 2));
+                }
+                if (yDesde != yHasta)
+                {
+                    rectPasillos.Add(new Rect(p.x2 - radioPasillo + 1, yDesde, radioPasillo * 2, yHasta - yDesde + 1));
+                }
             }
-
-            // Suelo visual del pasillito final del jefe
-            float anchoPasilloJefe = (pasilloJefeXMax - pasilloJefeXMin + 1);
-            float altoPasilloJefe = radioPasillo * 2f;
-            Vector2 posPasilloJefe = new Vector2((pasilloJefeXMin + pasilloJefeXMax) * 0.5f, pasilloJefeY + 0.5f);
-            CrearSueloVisual(posPasilloJefe, new Vector2(anchoPasilloJefe, altoPasilloJefe), datos.spriteSuelo);
-            rectPasillos.Add(new Rect(posPasilloJefe.x - anchoPasilloJefe * 0.5f, posPasilloJefe.y - altoPasilloJefe * 0.5f, anchoPasilloJefe, altoPasilloJefe));
+            rectPasillos.Add(new Rect(pasilloJefeXMin, pasilloJefeY - radioPasillo + 1, pasilloJefeXMax - pasilloJefeXMin + 1, radioPasillo * 2));
 
             // 5. Instanciar Muros Perimetrales
             for (int gy = 0; gy < gridH; gy++)
@@ -679,10 +697,12 @@ namespace SoulKnight
 
             int ancho = 34;
             int alto = 26;
-            int xMin = -ancho / 2;
-            int xMax = ancho / 2;
-            int yMin = -alto / 2;
-            int yMax = alto / 2;
+            int hx = ancho / 2;
+            int hy = alto / 2;
+            int xMin = -hx;
+            int xMax = hx;
+            int yMin = -hy;
+            int yMax = hy;
 
             gridMinX = xMin - 2;
             gridMaxX = xMax + 2;
@@ -692,11 +712,7 @@ namespace SoulKnight
             int gridH = gridMaxY - gridMinY + 1;
             gridActual = new byte[gridW, gridH];
 
-            // 1. Suelo central ceremonial
-            Vector2 centro = Vector2.zero;
-            Vector2 tamSuelo = new Vector2(ancho, alto);
-            CrearSueloVisual(centro, tamSuelo, datos.spriteSuelo);
-
+            // 1. Suelo central ceremonial en grid
             for (int x = xMin; x <= xMax; x++)
             {
                 for (int y = yMin; y <= yMax; y++)
@@ -705,13 +721,66 @@ namespace SoulKnight
                 }
             }
 
-            // 2. Muros perimetrales
-            CrearMuroSegmento(xMin, xMax, yMin - 1, gridMinX, gridMinY, datos.spriteMuro);
-            CrearMuroSegmento(xMin, xMax, yMax + 1, gridMinX, gridMinY, datos.spriteMuro);
+            // 2. Muros perimetrales en grid
+            for (int x = xMin - 1; x <= xMax + 1; x++)
+            {
+                gridActual[x - gridMinX, (yMin - 1) - gridMinY] = 2;
+                gridActual[x - gridMinX, (yMax + 1) - gridMinY] = 2;
+            }
             for (int y = yMin; y <= yMax; y++)
             {
-                CrearMuroSegmento(xMin - 1, xMin - 1, y, gridMinX, gridMinY, datos.spriteMuro);
-                CrearMuroSegmento(xMax + 1, xMax + 1, y, gridMinX, gridMinY, datos.spriteMuro);
+                gridActual[(xMin - 1) - gridMinX, y - gridMinY] = 2;
+                gridActual[(xMax + 1) - gridMinX, y - gridMinY] = 2;
+            }
+
+            // Instanciar Suelos uniformemente
+            for (int gy = 0; gy < gridH; gy++)
+            {
+                int gxInicio = -1;
+                for (int gx = 0; gx < gridW; gx++)
+                {
+                    if (gridActual[gx, gy] == 1)
+                    {
+                        if (gxInicio == -1) gxInicio = gx;
+                    }
+                    else
+                    {
+                        if (gxInicio != -1)
+                        {
+                            CrearSueloSegmento(gxInicio, gx - 1, gy, gridMinX, gridMinY, datos.spriteSuelo);
+                            gxInicio = -1;
+                        }
+                    }
+                }
+                if (gxInicio != -1)
+                {
+                    CrearSueloSegmento(gxInicio, gridW - 1, gy, gridMinX, gridMinY, datos.spriteSuelo);
+                }
+            }
+
+            // Instanciar Muros uniformemente
+            for (int gy = 0; gy < gridH; gy++)
+            {
+                int gxInicio = -1;
+                for (int gx = 0; gx < gridW; gx++)
+                {
+                    if (gridActual[gx, gy] == 2)
+                    {
+                        if (gxInicio == -1) gxInicio = gx;
+                    }
+                    else
+                    {
+                        if (gxInicio != -1)
+                        {
+                            CrearMuroSegmento(gxInicio, gx - 1, gy, gridMinX, gridMinY, datos.spriteMuro);
+                            gxInicio = -1;
+                        }
+                    }
+                }
+                if (gxInicio != -1)
+                {
+                    CrearMuroSegmento(gxInicio, gridW - 1, gy, gridMinX, gridMinY, datos.spriteMuro);
+                }
             }
 
             // 3. Spawns de jugadores en el centro
@@ -1090,6 +1159,27 @@ namespace SoulKnight
             sr.sprite = spriteSuelo;
             sr.drawMode = SpriteDrawMode.Tiled;
             sr.size = size;
+            sr.sortingOrder = -1;
+        }
+
+        private void CrearSueloSegmento(int gx1, int gx2, int gy, int minX, int minY, Sprite spriteSuelo)
+        {
+            float wx1 = gx1 + minX;
+            float wx2 = gx2 + minX;
+            float wy = gy + minY;
+
+            float longitud = wx2 - wx1 + 1f;
+            Vector2 centro = new Vector2((wx1 + wx2) * 0.5f, wy);
+            Vector2 tam = new Vector2(longitud, 1f);
+
+            var go = new GameObject("Suelo");
+            go.transform.SetParent(contenedorMapa);
+            go.transform.position = (Vector3)centro;
+
+            var sr = go.AddComponent<SpriteRenderer>();
+            sr.sprite = spriteSuelo;
+            sr.drawMode = SpriteDrawMode.Tiled;
+            sr.size = tam;
             sr.sortingOrder = -1;
         }
 

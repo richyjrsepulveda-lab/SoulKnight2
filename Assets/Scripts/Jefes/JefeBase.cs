@@ -77,7 +77,20 @@ namespace SoulKnight
             {
                 sr.sprite = CatalogoPixelArtEnemigos.ObtenerSpriteJefe(bioma);
             }
-            transform.localScale = Vector3.one * 2.4f;
+            transform.localScale = Vector3.one * 1.85f;
+
+            var box = GetComponent<BoxCollider2D>();
+            if (box != null)
+            {
+                box.size = new Vector2(0.9f, 0.95f);
+                box.offset = new Vector2(0f, -0.05f);
+            }
+            var circle = GetComponent<CircleCollider2D>();
+            if (circle != null)
+            {
+                circle.radius = 0.5f;
+                circle.offset = new Vector2(0f, -0.05f);
+            }
         }
 
         [Header("Escalado por Jugadores")]
@@ -107,6 +120,9 @@ namespace SoulKnight
             }
 
             base.OnNetworkSpawn();
+
+            BiomaActualNet.OnValueChanged += (prev, act) => ActualizarVisualPixelArtJefe((TipoBioma)act);
+            ActualizarVisualPixelArtJefe((TipoBioma)BiomaActualNet.Value);
 
             // Ocultar la barrita pequeña sobre la cabeza porque el Jefe usa la barra gigante arriba estilo Dark Souls
             if (barraVida != null)

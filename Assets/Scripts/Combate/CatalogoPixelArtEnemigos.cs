@@ -13,8 +13,8 @@ namespace SoulKnight
     }
 
     /// <summary>
-    /// Generador y catálogo de arte Pixel-Art de alta fidelidad para todos los enemigos y jefes
-    /// de los 5 biomas de la mazmorra.
+    /// Generador procedural de Sprites Pixel-Art de alta fidelidad con siluetas definidas,
+    /// contorno oscuro (1px outline), sombreado volumétrico y ojos expresivos a 32 PPU.
     /// </summary>
     public static class CatalogoPixelArtEnemigos
     {
@@ -45,762 +45,1031 @@ namespace SoulKnight
             switch (bioma)
             {
                 case TipoBioma.Piedra:
-                    if (rol == RolEnemigo.Tanque) return CrearPixelCaballeroHierro();
-                    if (rol == RolEnemigo.MeleeRapido) return CrearPixelGargola();
-                    if (rol == RolEnemigo.Rango) return CrearPixelBallestero();
-                    return CrearPixelFantasma();
+                    if (rol == RolEnemigo.Tanque) return DibujarCaballeroHierro();
+                    if (rol == RolEnemigo.MeleeRapido) return DibujarGargola();
+                    if (rol == RolEnemigo.Rango) return DibujarBallestero();
+                    return DibujarFantasma();
 
                 case TipoBioma.Hielo:
-                    if (rol == RolEnemigo.Tanque) return CrearPixelGolemHielo();
-                    if (rol == RolEnemigo.MeleeRapido) return CrearPixelLoboPolar();
-                    if (rol == RolEnemigo.Rango) return CrearPixelMagoGlacial();
-                    return CrearPixelMurcielagoHielo();
+                    if (rol == RolEnemigo.Tanque) return DibujarGolemHielo();
+                    if (rol == RolEnemigo.MeleeRapido) return DibujarLoboPolar();
+                    if (rol == RolEnemigo.Rango) return DibujarMagoGlacial();
+                    return DibujarMurcielagoHielo();
 
                 case TipoBioma.Fuego:
-                    if (rol == RolEnemigo.Tanque) return CrearPixelEngendroMagma();
-                    if (rol == RolEnemigo.MeleeRapido) return CrearPixelSabuesoIgneo();
-                    if (rol == RolEnemigo.Rango) return CrearPixelChamanFuego();
-                    return CrearPixelFatuoVolcanico();
+                    if (rol == RolEnemigo.Tanque) return DibujarEngendroMagma();
+                    if (rol == RolEnemigo.MeleeRapido) return DibujarSabuesoIgneo();
+                    if (rol == RolEnemigo.Rango) return DibujarChamanFuego();
+                    return DibujarFatuoVolcanico();
 
                 case TipoBioma.Planta:
-                    if (rol == RolEnemigo.Tanque) return CrearPixelTreant();
-                    if (rol == RolEnemigo.MeleeRapido) return CrearPixelMandragora();
-                    if (rol == RolEnemigo.Rango) return CrearPixelFlorCarnivora();
-                    return CrearPixelHongoEsporas();
+                    if (rol == RolEnemigo.Tanque) return DibujarTreant();
+                    if (rol == RolEnemigo.MeleeRapido) return DibujarMandragora();
+                    if (rol == RolEnemigo.Rango) return DibujarFlorCarnivora();
+                    return DibujarHongoEsporas();
 
                 case TipoBioma.Arena:
-                    if (rol == RolEnemigo.Tanque) return CrearPixelSarcofagoAndante();
-                    if (rol == RolEnemigo.Spawner) return CrearPixelAtaudRitual();
-                    if (rol == RolEnemigo.MeleeRapido) return CrearPixelRataDesierto();
-                    return CrearPixelMomia();
+                    if (rol == RolEnemigo.Tanque) return DibujarSarcofagoAndante();
+                    if (rol == RolEnemigo.Spawner) return DibujarAtaudRitual();
+                    if (rol == RolEnemigo.MeleeRapido) return DibujarRataDesierto();
+                    return DibujarMomia();
             }
 
-            return CrearPixelCaballeroHierro();
+            return DibujarCaballeroHierro();
         }
 
         // ========================================================
-        // 1. PIEDRA
+        // 1. BIOMA PIEDRA
         // ========================================================
-        private static Sprite CrearPixelCaballeroHierro()
+        private static Sprite DibujarCaballeroHierro()
         {
-            // 24x28 Caballero acorazado con escudo y yelmo
-            int w = 24, h = 28;
-            Texture2D t = new Texture2D(w, h, TextureFormat.RGBA32, false);
-            t.filterMode = FilterMode.Point;
+            int w = 28, h = 32;
+            var t = CrearTextura(w, h);
+            Color cOut = new Color(0.08f, 0.08f, 0.12f);
             Color cAcero = new Color(0.55f, 0.58f, 0.65f);
-            Color cAceroBrillo = new Color(0.85f, 0.88f, 0.95f);
-            Color cSombra = new Color(0.25f, 0.28f, 0.35f);
-            Color cVisor = new Color(0.1f, 0.12f, 0.15f);
-            Color cOjoRojo = new Color(1f, 0.2f, 0.2f);
-            Color cPenacho = new Color(0.85f, 0.15f, 0.15f);
+            Color cLuz = new Color(0.85f, 0.88f, 0.95f);
+            Color cSombra = new Color(0.28f, 0.30f, 0.38f);
+            Color cRojo = new Color(0.95f, 0.20f, 0.20f);
+            Color cOro = new Color(1f, 0.80f, 0.20f);
+
+            // Silueta / Escudo a la izquierda, Caballero al centro
+            for (int y = 0; y < h; y++)
+            {
+                for (int x = 0; x < w; x++)
+                {
+                    // Pluma roja del yelmo
+                    if (y >= 26 && y <= 30 && x >= 12 && x <= 16)
+                    {
+                        if (x == 12 || x == 16 || y == 30) t.SetPixel(x, y, cOut);
+                        else t.SetPixel(x, y, (x <= 14) ? cRojo : new Color(0.65f, 0.12f, 0.12f));
+                        continue;
+                    }
+
+                    // Yelmo
+                    if (y >= 19 && y <= 26 && x >= 10 && x <= 20)
+                    {
+                        if (x == 10 || x == 20 || y == 19 || y == 26) t.SetPixel(x, y, cOut);
+                        else if (y == 22 && x >= 12 && x <= 18) t.SetPixel(x, y, (x == 14 || x == 17) ? cRojo : cOut); // Visor con ojos rojos
+                        else t.SetPixel(x, y, (x <= 14) ? cLuz : (x <= 17 ? cAcero : cSombra));
+                        continue;
+                    }
+
+                    // Escudo grande a la izquierda (x: 2 a 12, y: 7 a 20)
+                    if (x >= 2 && x <= 12 && y >= 7 && y <= 20)
+                    {
+                        if (x == 2 || x == 12 || y == 7 || y == 20) t.SetPixel(x, y, cOut);
+                        else if (x == 7 || y == 14) t.SetPixel(x, y, cOro); // Cruz dorada en el escudo
+                        else t.SetPixel(x, y, (x <= 6) ? cLuz : cAcero);
+                        continue;
+                    }
+
+                    // Pecho y brazo con espada a la derecha (x: 13 a 24, y: 8 a 19)
+                    if (x >= 13 && x <= 24 && y >= 8 && y <= 19)
+                    {
+                        if (x == 24 || y == 8 || y == 19) t.SetPixel(x, y, cOut);
+                        else if (x >= 20 && y >= 11 && y <= 17) t.SetPixel(x, y, (y == 11) ? cOro : cLuz); // Espada de acero
+                        else t.SetPixel(x, y, (x <= 17) ? cAcero : cSombra);
+                        continue;
+                    }
+
+                    // Piernas grebas
+                    if (y >= 1 && y <= 7 && ((x >= 11 && x <= 15) || (x >= 17 && x <= 21)))
+                    {
+                        if (y == 1 || x == 11 || x == 15 || x == 17 || x == 21) t.SetPixel(x, y, cOut);
+                        else t.SetPixel(x, y, (y >= 5) ? cAcero : cSombra);
+                        continue;
+                    }
+                }
+            }
+            t.Apply();
+            return Sprite.Create(t, new Rect(0, 0, w, h), new Vector2(0.5f, 0.25f), 32f);
+        }
+
+        private static Sprite DibujarGargola()
+        {
+            int w = 28, h = 28;
+            var t = CrearTextura(w, h);
+            Color cOut = new Color(0.08f, 0.08f, 0.12f);
+            Color cPiedra = new Color(0.44f, 0.46f, 0.52f);
+            Color cLuz = new Color(0.65f, 0.68f, 0.75f);
+            Color cSombra = new Color(0.24f, 0.25f, 0.30f);
+            Color cOjos = new Color(1f, 0.90f, 0.20f);
 
             for (int y = 0; y < h; y++)
             {
                 for (int x = 0; x < w; x++)
                 {
-                    // Penacho rojo arriba
-                    if (y >= 24 && x >= 10 && x <= 13) { t.SetPixel(x, y, cPenacho); continue; }
-
-                    // Yelmo
-                    if (y >= 18 && y <= 23 && x >= 8 && x <= 15)
+                    // Alas puntiagudas
+                    bool alaIzq = (x >= 1 && x <= 10 && y >= 12 && y <= 24 && (y - x >= 4));
+                    bool alaDer = (x >= 17 && x <= 26 && y >= 12 && y <= 24 && (x + y >= 30));
+                    if (alaIzq || alaDer)
                     {
-                        if (y == 20 && (x == 10 || x == 13)) t.SetPixel(x, y, cOjoRojo);
-                        else if (y == 20) t.SetPixel(x, y, cVisor);
-                        else t.SetPixel(x, y, (x <= 11) ? cAceroBrillo : cAcero);
+                        if (x == 1 || x == 26 || y == 24 || y == 12) t.SetPixel(x, y, cOut);
+                        else t.SetPixel(x, y, (y > 18) ? cLuz : cPiedra);
                         continue;
                     }
 
-                    // Pecho y Escudo grande a la izquierda (x: 3 a 10, y: 7 a 18)
-                    if (x >= 3 && x <= 10 && y >= 7 && y <= 18)
+                    // Cabeza con cuernos
+                    if (y >= 14 && y <= 23 && x >= 10 && x <= 17)
                     {
-                        if (x == 3 || y == 7 || y == 18) t.SetPixel(x, y, cSombra);
-                        else if (x == 4 || y == 17) t.SetPixel(x, y, cAceroBrillo);
-                        else if (x == 6 && y == 12) t.SetPixel(x, y, cOjoRojo); // Cruz/Gema central
-                        else t.SetPixel(x, y, cAcero);
+                        if (x == 10 || x == 17 || y == 14 || y == 23) t.SetPixel(x, y, cOut);
+                        else if (y == 17 && (x == 12 || x == 15)) t.SetPixel(x, y, cOjos);
+                        else t.SetPixel(x, y, (x <= 13) ? cLuz : cPiedra);
                         continue;
                     }
 
-                    // Torso y Espada a la derecha
-                    if (x >= 11 && x <= 18 && y >= 8 && y <= 17)
+                    // Torso y garras
+                    if (y >= 3 && y <= 13 && x >= 9 && x <= 18)
                     {
-                        t.SetPixel(x, y, (x > 15) ? cSombra : cAcero);
+                        if (x == 9 || x == 18 || y == 3) t.SetPixel(x, y, cOut);
+                        else t.SetPixel(x, y, (x <= 13) ? cPiedra : cSombra);
+                        continue;
+                    }
+                }
+            }
+            t.Apply();
+            return Sprite.Create(t, new Rect(0, 0, w, h), new Vector2(0.5f, 0.25f), 32f);
+        }
+
+        private static Sprite DibujarBallestero()
+        {
+            int w = 28, h = 30;
+            var t = CrearTextura(w, h);
+            Color cOut = new Color(0.08f, 0.08f, 0.12f);
+            Color cCuero = new Color(0.48f, 0.32f, 0.18f);
+            Color cCueroLuz = new Color(0.68f, 0.48f, 0.28f);
+            Color cMetal = new Color(0.62f, 0.65f, 0.72f);
+            Color cOjo = new Color(0.20f, 0.95f, 0.35f);
+
+            for (int y = 0; y < h; y++)
+            {
+                for (int x = 0; x < w; x++)
+                {
+                    // Ballesta horizontal frontal apuntando (x: 2 a 16, y: 11 a 15)
+                    if (x >= 2 && x <= 16 && y >= 11 && y <= 15)
+                    {
+                        if (x == 2 || x == 16 || y == 11 || y == 15) t.SetPixel(x, y, cOut);
+                        else t.SetPixel(x, y, (x <= 6) ? cMetal : cCueroLuz);
+                        continue;
+                    }
+
+                    // Cabeza / Capucha
+                    if (y >= 18 && y <= 27 && x >= 11 && x <= 20)
+                    {
+                        if (x == 11 || x == 20 || y == 18 || y == 27) t.SetPixel(x, y, cOut);
+                        else if (y == 22 && x == 14) t.SetPixel(x, y, cOjo);
+                        else t.SetPixel(x, y, (x <= 15) ? cCueroLuz : cCuero);
+                        continue;
+                    }
+
+                    // Torso y Carcaj a la espalda
+                    if (y >= 6 && y <= 18 && x >= 10 && x <= 22)
+                    {
+                        if (x == 10 || x == 22 || y == 6) t.SetPixel(x, y, cOut);
+                        else t.SetPixel(x, y, (x > 18) ? cMetal : cCuero);
                         continue;
                     }
 
                     // Piernas
-                    if (y <= 7 && ((x >= 9 && x <= 12) || (x >= 14 && x <= 17)))
+                    if (y >= 1 && y <= 5 && ((x >= 12 && x <= 15) || (x >= 17 && x <= 20)))
                     {
-                        t.SetPixel(x, y, (y <= 2) ? cSombra : cAcero);
+                        if (y == 1 || x == 12 || x == 15 || x == 17 || x == 20) t.SetPixel(x, y, cOut);
+                        else t.SetPixel(x, y, cCuero);
                         continue;
                     }
-
-                    t.SetPixel(x, y, Color.clear);
                 }
             }
             t.Apply();
-            return Sprite.Create(t, new Rect(0, 0, w, h), new Vector2(0.5f, 0.45f), 16f);
+            return Sprite.Create(t, new Rect(0, 0, w, h), new Vector2(0.5f, 0.25f), 32f);
         }
 
-        private static Sprite CrearPixelGargola()
+        private static Sprite DibujarFantasma()
         {
-            // 24x24 Gárgola alada
-            int w = 24, h = 24;
-            Texture2D t = new Texture2D(w, h, TextureFormat.RGBA32, false);
-            t.filterMode = FilterMode.Point;
-            Color cGris = new Color(0.42f, 0.44f, 0.48f);
-            Color cOscuro = new Color(0.24f, 0.25f, 0.28f);
-            Color cOjo = new Color(1f, 0.85f, 0.2f); // Ojos amarillos brillantes
+            int w = 26, h = 30;
+            var t = CrearTextura(w, h);
+            Color cOut = new Color(0.10f, 0.18f, 0.32f);
+            Color cCuerpo = new Color(0.55f, 0.78f, 0.95f, 0.88f);
+            Color cLuz = new Color(0.85f, 0.96f, 1f, 0.95f);
+            Color cOjo = new Color(0.12f, 0.95f, 1f);
 
             for (int y = 0; y < h; y++)
             {
                 for (int x = 0; x < w; x++)
                 {
-                    // Alas desplegadas
-                    bool alaIzq = (x >= 2 && x <= 8 && y >= 12 && y <= 20 && x + y >= 16);
-                    bool alaDer = (x >= 15 && x <= 21 && y >= 12 && y <= 20 && y - x <= 2);
-                    if (alaIzq || alaDer) { t.SetPixel(x, y, (x == 2 || x == 21) ? cOscuro : cGris); continue; }
-
-                    // Cabeza cornuda
-                    if (y >= 14 && y <= 19 && x >= 9 && x <= 14)
+                    // Silueta espectral flotante ondulada
+                    if (y >= 4 && y <= 26 && x >= 4 && x <= 21)
                     {
-                        if (y == 16 && (x == 10 || x == 13)) t.SetPixel(x, y, cOjo);
-                        else t.SetPixel(x, y, cGris);
-                        continue;
+                        float dist = Vector2.Distance(new Vector2(x, y), new Vector2(12.5f, 18f));
+                        if (dist <= 9.5f)
+                        {
+                            if (dist >= 8.5f || (y <= 6 && (x % 4 == 0))) t.SetPixel(x, y, cOut);
+                            else if (y == 18 && (x == 9 || x == 15)) t.SetPixel(x, y, cOjo);
+                            else t.SetPixel(x, y, (x <= 12) ? cLuz : cCuerpo);
+                            continue;
+                        }
                     }
-
-                    // Cuerpo agazapado
-                    if (y >= 4 && y <= 13 && x >= 8 && x <= 15)
-                    {
-                        t.SetPixel(x, y, (x < 11) ? cGris : cOscuro);
-                        continue;
-                    }
-
-                    t.SetPixel(x, y, Color.clear);
                 }
             }
             t.Apply();
-            return Sprite.Create(t, new Rect(0, 0, w, h), new Vector2(0.5f, 0.5f), 16f);
-        }
-
-        private static Sprite CrearPixelBallestero()
-        {
-            int w = 22, h = 26;
-            Texture2D t = new Texture2D(w, h, TextureFormat.RGBA32, false);
-            t.filterMode = FilterMode.Point;
-            Color cHueso = new Color(0.88f, 0.88f, 0.82f);
-            Color cMadera = new Color(0.48f, 0.28f, 0.14f);
-            Color cHierro = new Color(0.6f, 0.65f, 0.7f);
-
-            for (int y = 0; y < h; y++)
-            {
-                for (int x = 0; x < w; x++)
-                {
-                    // Calavera
-                    if (y >= 18 && y <= 24 && x >= 8 && x <= 14)
-                    {
-                        if (y == 20 && (x == 10 || x == 12)) t.SetPixel(x, y, Color.black);
-                        else t.SetPixel(x, y, cHueso);
-                        continue;
-                    }
-                    // Ballesta horizontal en brazos
-                    if (y == 13 && x >= 3 && x <= 19) { t.SetPixel(x, y, cHierro); continue; }
-                    if (x == 11 && y >= 10 && y <= 15) { t.SetPixel(x, y, cMadera); continue; }
-                    // Costillas y piernas de esqueleto
-                    if (y >= 2 && y <= 17 && x >= 9 && x <= 13)
-                    {
-                        t.SetPixel(x, y, (y % 3 == 0) ? Color.black : cHueso);
-                        continue;
-                    }
-                    t.SetPixel(x, y, Color.clear);
-                }
-            }
-            t.Apply();
-            return Sprite.Create(t, new Rect(0, 0, w, h), new Vector2(0.5f, 0.5f), 16f);
-        }
-
-        private static Sprite CrearPixelFantasma()
-        {
-            int w = 20, h = 26;
-            Texture2D t = new Texture2D(w, h, TextureFormat.RGBA32, false);
-            t.filterMode = FilterMode.Point;
-            Color cEtereo = new Color(0.65f, 0.85f, 0.95f, 0.85f);
-            Color cBrillo = new Color(0.9f, 0.98f, 1f, 0.95f);
-            Color cOjo = new Color(0.1f, 0.35f, 0.65f, 1f);
-
-            for (int y = 0; y < h; y++)
-            {
-                for (int x = 0; x < w; x++)
-                {
-                    int dx = Mathf.Abs(x - 10);
-                    int maxDx = (y > 18) ? 6 : (y > 6 ? 7 : Mathf.RoundToInt(6 - (6 - y) * 0.8f));
-                    if (dx <= maxDx && y >= 2 && y <= 23)
-                    {
-                        if (y == 17 && (x == 8 || x == 12)) t.SetPixel(x, y, cOjo);
-                        else if (y == 14 && x == 10) t.SetPixel(x, y, cOjo); // Boca
-                        else t.SetPixel(x, y, (x <= 9) ? cBrillo : cEtereo);
-                    }
-                    else t.SetPixel(x, y, Color.clear);
-                }
-            }
-            t.Apply();
-            return Sprite.Create(t, new Rect(0, 0, w, h), new Vector2(0.5f, 0.5f), 16f);
+            return Sprite.Create(t, new Rect(0, 0, w, h), new Vector2(0.5f, 0.25f), 32f);
         }
 
         // ========================================================
-        // 2. HIELO
+        // 2. BIOMA HIELO
         // ========================================================
-        private static Sprite CrearPixelGolemHielo()
+        private static Sprite DibujarGolemHielo()
         {
-            int w = 28, h = 30;
-            Texture2D t = new Texture2D(w, h, TextureFormat.RGBA32, false);
-            t.filterMode = FilterMode.Point;
-            Color cHielo = new Color(0.38f, 0.68f, 0.88f);
-            Color cBrillo = new Color(0.85f, 0.96f, 1f);
-            Color cSombra = new Color(0.18f, 0.38f, 0.58f);
-            Color cOjoCian = new Color(0.1f, 1f, 0.95f);
+            int w = 32, h = 34;
+            var t = CrearTextura(w, h);
+            Color cOut = new Color(0.06f, 0.12f, 0.25f);
+            Color cCristal = new Color(0.38f, 0.68f, 0.88f);
+            Color cBrillo = new Color(0.82f, 0.96f, 1f);
+            Color cSombra = new Color(0.16f, 0.35f, 0.58f);
+            Color cOjo = new Color(0.20f, 1f, 0.90f);
 
             for (int y = 0; y < h; y++)
             {
                 for (int x = 0; x < w; x++)
                 {
-                    int dx = Mathf.Abs(x - 14);
-                    if (dx <= 11 && y >= 4 && y <= 26)
+                    // Hombros gigantes con carámbanos (x: 3 a 28, y: 14 a 28)
+                    if (x >= 3 && x <= 28 && y >= 14 && y <= 28)
                     {
-                        if (y >= 20 && y <= 21 && (x == 11 || x == 16)) t.SetPixel(x, y, cOjoCian);
-                        else if (x <= 13) t.SetPixel(x, y, cBrillo);
-                        else if (x >= 20) t.SetPixel(x, y, cSombra);
-                        else t.SetPixel(x, y, cHielo);
-                    }
-                    else t.SetPixel(x, y, Color.clear);
-                }
-            }
-            t.Apply();
-            return Sprite.Create(t, new Rect(0, 0, w, h), new Vector2(0.5f, 0.5f), 16f);
-        }
-
-        private static Sprite CrearPixelLoboPolar()
-        {
-            int w = 26, h = 20;
-            Texture2D t = new Texture2D(w, h, TextureFormat.RGBA32, false);
-            t.filterMode = FilterMode.Point;
-            Color cPelaje = new Color(0.88f, 0.92f, 0.98f);
-            Color cSombra = new Color(0.55f, 0.65f, 0.78f);
-            Color cOjoAzul = new Color(0.2f, 0.75f, 1f);
-
-            for (int y = 0; y < h; y++)
-            {
-                for (int x = 0; x < w; x++)
-                {
-                    // Hocico y cabeza hacia la izquierda
-                    bool cabeza = (x >= 3 && x <= 11 && y >= 9 && y <= 16);
-                    bool cuerpo = (x >= 9 && x <= 22 && y >= 6 && y <= 15);
-                    bool patas = (y <= 5 && (x == 7 || x == 8 || x == 19 || x == 20));
-
-                    if (cabeza || cuerpo || patas)
-                    {
-                        if (x == 6 && y == 13) t.SetPixel(x, y, cOjoAzul);
-                        else if (x == 3 && y == 11) t.SetPixel(x, y, Color.black); // Nariz
-                        else t.SetPixel(x, y, (y >= 11) ? cPelaje : cSombra);
-                    }
-                    else t.SetPixel(x, y, Color.clear);
-                }
-            }
-            t.Apply();
-            return Sprite.Create(t, new Rect(0, 0, w, h), new Vector2(0.5f, 0.45f), 16f);
-        }
-
-        private static Sprite CrearPixelMagoGlacial()
-        {
-            int w = 22, h = 28;
-            Texture2D t = new Texture2D(w, h, TextureFormat.RGBA32, false);
-            t.filterMode = FilterMode.Point;
-            Color cTunica = new Color(0.22f, 0.42f, 0.72f);
-            Color cBordeHielo = new Color(0.75f, 0.92f, 1f);
-            Color cCetro = new Color(0.35f, 0.88f, 1f);
-
-            for (int y = 0; y < h; y++)
-            {
-                for (int x = 0; x < w; x++)
-                {
-                    // Cetro de hielo a la derecha
-                    if (x >= 18 && x <= 20 && y >= 4 && y <= 24)
-                    {
-                        t.SetPixel(x, y, (y >= 21) ? cBordeHielo : cCetro);
+                        if (x == 3 || x == 28 || y == 28 || (y == 14 && (x < 11 || x > 20))) t.SetPixel(x, y, cOut);
+                        else if (y == 22 && (x == 13 || x == 18)) t.SetPixel(x, y, cOjo); // Ojos helados
+                        else t.SetPixel(x, y, (x <= 15) ? cBrillo : (x <= 22 ? cCristal : cSombra));
                         continue;
                     }
-                    // Túnica con capucha
-                    int dx = Mathf.Abs(x - 10);
-                    int maxDx = (y > 20) ? 5 : Mathf.RoundToInt(Mathf.Lerp(8f, 4f, (y - 4f) / 16f));
-                    if (dx <= maxDx && y >= 4 && y <= 25)
+
+                    // Piernas de hielo sólido
+                    if (y >= 1 && y <= 13 && x >= 8 && x <= 23)
                     {
-                        if (y == 20 && (x == 9 || x == 12)) t.SetPixel(x, y, Color.cyan);
-                        else t.SetPixel(x, y, (x <= 9) ? cBordeHielo : cTunica);
+                        if (x == 8 || x == 23 || y == 1 || x == 15) t.SetPixel(x, y, cOut);
+                        else t.SetPixel(x, y, (x <= 15) ? cCristal : cSombra);
+                        continue;
                     }
-                    else t.SetPixel(x, y, Color.clear);
                 }
             }
             t.Apply();
-            return Sprite.Create(t, new Rect(0, 0, w, h), new Vector2(0.5f, 0.5f), 16f);
+            return Sprite.Create(t, new Rect(0, 0, w, h), new Vector2(0.5f, 0.25f), 32f);
         }
 
-        private static Sprite CrearPixelMurcielagoHielo()
+        private static Sprite DibujarLoboPolar()
         {
-            int w = 22, h = 18;
-            Texture2D t = new Texture2D(w, h, TextureFormat.RGBA32, false);
-            t.filterMode = FilterMode.Point;
-            Color cAla = new Color(0.35f, 0.75f, 0.95f, 0.9f);
-            Color cCuerpo = new Color(0.18f, 0.38f, 0.62f);
+            int w = 30, h = 26;
+            var t = CrearTextura(w, h);
+            Color cOut = new Color(0.08f, 0.12f, 0.20f);
+            Color cPelo = new Color(0.88f, 0.94f, 1f);
+            Color cSombra = new Color(0.55f, 0.68f, 0.82f);
+            Color cOjo = new Color(0.15f, 0.75f, 1f);
+            Color cNariz = new Color(0.12f, 0.18f, 0.28f);
 
             for (int y = 0; y < h; y++)
             {
                 for (int x = 0; x < w; x++)
                 {
-                    int dx = Mathf.Abs(x - 11);
-                    if (dx <= 3 && y >= 5 && y <= 13)
+                    // Orejas y hocico
+                    if (x >= 2 && x <= 14 && y >= 10 && y <= 23)
                     {
-                        if (y == 10 && (x == 10 || x == 12)) t.SetPixel(x, y, Color.white);
-                        else t.SetPixel(x, y, cCuerpo);
+                        if (x == 2 || y == 23 || (y == 10 && x < 8)) t.SetPixel(x, y, cOut);
+                        else if (x == 3 && y == 13) t.SetPixel(x, y, cNariz);
+                        else if (x == 8 && y == 16) t.SetPixel(x, y, cOjo);
+                        else t.SetPixel(x, y, (y >= 16) ? cPelo : cSombra);
+                        continue;
                     }
-                    else if (y >= 7 && y <= 15 && dx <= 10)
+
+                    // Lomo y patas
+                    if (x >= 12 && x <= 27 && y >= 2 && y <= 18)
                     {
-                        t.SetPixel(x, y, cAla);
+                        if (x == 27 || y == 2 || y == 18) t.SetPixel(x, y, cOut);
+                        else t.SetPixel(x, y, (y >= 10) ? cPelo : cSombra);
+                        continue;
                     }
-                    else t.SetPixel(x, y, Color.clear);
                 }
             }
             t.Apply();
-            return Sprite.Create(t, new Rect(0, 0, w, h), new Vector2(0.5f, 0.5f), 16f);
+            return Sprite.Create(t, new Rect(0, 0, w, h), new Vector2(0.5f, 0.25f), 32f);
+        }
+
+        private static Sprite DibujarMagoGlacial()
+        {
+            int w = 26, h = 32;
+            var t = CrearTextura(w, h);
+            Color cOut = new Color(0.06f, 0.10f, 0.22f);
+            Color cTunica = new Color(0.24f, 0.48f, 0.75f);
+            Color cTunicaLuz = new Color(0.55f, 0.78f, 0.95f);
+            Color cBaculo = new Color(0.65f, 0.42f, 0.22f);
+            Color cGema = new Color(0.35f, 0.95f, 1f);
+
+            for (int y = 0; y < h; y++)
+            {
+                for (int x = 0; x < w; x++)
+                {
+                    // Báculo mágico a la derecha con gema de cristal
+                    if (x >= 21 && x <= 24 && y >= 3 && y <= 30)
+                    {
+                        if (y >= 26) t.SetPixel(x, y, cGema);
+                        else t.SetPixel(x, y, (x == 21 || x == 24) ? cOut : cBaculo);
+                        continue;
+                    }
+
+                    // Capucha puntiaguda
+                    if (y >= 20 && y <= 30 && x >= 8 && x <= 18)
+                    {
+                        if (x == 8 || x == 18 || y == 30) t.SetPixel(x, y, cOut);
+                        else if (y == 23 && (x == 11 || x == 15)) t.SetPixel(x, y, cGema); // Ojos arcanos
+                        else t.SetPixel(x, y, (x <= 13) ? cTunicaLuz : cTunica);
+                        continue;
+                    }
+
+                    // Túnica ondeante
+                    if (y >= 2 && y <= 20 && x >= 6 && x <= 20)
+                    {
+                        if (x == 6 || x == 20 || y == 2) t.SetPixel(x, y, cOut);
+                        else t.SetPixel(x, y, (x <= 12) ? cTunicaLuz : cTunica);
+                        continue;
+                    }
+                }
+            }
+            t.Apply();
+            return Sprite.Create(t, new Rect(0, 0, w, h), new Vector2(0.5f, 0.25f), 32f);
+        }
+
+        private static Sprite DibujarMurcielagoHielo()
+        {
+            int w = 26, h = 24;
+            var t = CrearTextura(w, h);
+            Color cOut = new Color(0.06f, 0.10f, 0.20f);
+            Color cAzul = new Color(0.45f, 0.75f, 0.92f);
+            Color cLuz = new Color(0.80f, 0.95f, 1f);
+            Color cOjo = new Color(1f, 0.25f, 0.25f);
+
+            for (int y = 0; y < h; y++)
+            {
+                for (int x = 0; x < w; x++)
+                {
+                    // Alas puntiagudas
+                    bool ala = (y >= 10 && y <= 20 && ((x >= 1 && x <= 9) || (x >= 16 && x <= 24)));
+                    if (ala)
+                    {
+                        if (x == 1 || x == 24 || y == 20) t.SetPixel(x, y, cOut);
+                        else t.SetPixel(x, y, (y > 15) ? cLuz : cAzul);
+                        continue;
+                    }
+
+                    // Cuerpo central y orejas
+                    if (x >= 9 && x <= 16 && y >= 4 && y <= 21)
+                    {
+                        if (x == 9 || x == 16 || y == 4 || y == 21) t.SetPixel(x, y, cOut);
+                        else if (y == 13 && (x == 11 || x == 14)) t.SetPixel(x, y, cOjo);
+                        else t.SetPixel(x, y, cAzul);
+                        continue;
+                    }
+                }
+            }
+            t.Apply();
+            return Sprite.Create(t, new Rect(0, 0, w, h), new Vector2(0.5f, 0.25f), 32f);
         }
 
         // ========================================================
-        // 3. FUEGO
+        // 3. BIOMA FUEGO
         // ========================================================
-        private static Sprite CrearPixelEngendroMagma()
+        private static Sprite DibujarEngendroMagma()
         {
-            int w = 28, h = 28;
-            Texture2D t = new Texture2D(w, h, TextureFormat.RGBA32, false);
-            t.filterMode = FilterMode.Point;
-            Color cBasalto = new Color(0.18f, 0.14f, 0.16f);
-            Color cLava = new Color(1f, 0.52f, 0.08f);
-            Color cLavaViva = new Color(1f, 0.92f, 0.35f);
+            int w = 30, h = 32;
+            var t = CrearTextura(w, h);
+            Color cOut = new Color(0.12f, 0.05f, 0.05f);
+            Color cObsidiana = new Color(0.22f, 0.18f, 0.24f);
+            Color cLavaIntensa = new Color(1f, 0.85f, 0.20f);
+            Color cFuego = new Color(0.95f, 0.35f, 0.08f);
 
             for (int y = 0; y < h; y++)
             {
                 for (int x = 0; x < w; x++)
                 {
-                    int dx = Mathf.Abs(x - 14);
-                    int dy = Mathf.Abs(y - 14);
-                    if (dx * dx + dy * dy <= 125)
+                    float dist = Vector2.Distance(new Vector2(x, y), new Vector2(15f, 15f));
+                    if (dist <= 12f)
                     {
-                        // Grietas incandescentes
-                        if (dx == 0 || (x + y == 28 && dy < 8)) t.SetPixel(x, y, cLavaViva);
-                        else if (dx <= 3 || dy <= 2) t.SetPixel(x, y, cLava);
-                        else t.SetPixel(x, y, cBasalto);
+                        if (dist >= 11f) t.SetPixel(x, y, cOut);
+                        else if (dist <= 5.5f) t.SetPixel(x, y, (dist <= 2.5f) ? cLavaIntensa : cFuego); // Núcleo de lava brillante
+                        else if ((x + y) % 5 == 0) t.SetPixel(x, y, cFuego); // Grietas de magma
+                        else t.SetPixel(x, y, cObsidiana);
+                        continue;
                     }
-                    else t.SetPixel(x, y, Color.clear);
                 }
             }
             t.Apply();
-            return Sprite.Create(t, new Rect(0, 0, w, h), new Vector2(0.5f, 0.5f), 16f);
+            return Sprite.Create(t, new Rect(0, 0, w, h), new Vector2(0.5f, 0.25f), 32f);
         }
 
-        private static Sprite CrearPixelSabuesoIgneo()
+        private static Sprite DibujarSabuesoIgneo()
         {
-            int w = 26, h = 20;
-            Texture2D t = new Texture2D(w, h, TextureFormat.RGBA32, false);
-            t.filterMode = FilterMode.Point;
-            Color cCarneFuego = new Color(0.85f, 0.22f, 0.08f);
-            Color cLlama = new Color(1f, 0.75f, 0.12f);
+            int w = 30, h = 26;
+            var t = CrearTextura(w, h);
+            Color cOut = new Color(0.12f, 0.05f, 0.05f);
+            Color cCarbon = new Color(0.25f, 0.18f, 0.18f);
+            Color cFuego = new Color(0.95f, 0.40f, 0.08f);
+            Color cOjo = new Color(1f, 0.90f, 0.20f);
 
             for (int y = 0; y < h; y++)
             {
                 for (int x = 0; x < w; x++)
                 {
-                    bool cabeza = (x >= 3 && x <= 10 && y >= 8 && y <= 15);
-                    bool cuerpo = (x >= 9 && x <= 22 && y >= 6 && y <= 14);
-                    bool espinasFuego = (y >= 15 && y <= 18 && x >= 11 && x <= 19 && (x + y) % 2 == 0);
-                    bool patas = (y <= 5 && (x == 7 || x == 8 || x == 19 || x == 20));
-
-                    if (espinasFuego) t.SetPixel(x, y, cLlama);
-                    else if (cabeza || cuerpo || patas)
+                    if (x >= 2 && x <= 14 && y >= 8 && y <= 22)
                     {
-                        if (x == 6 && y == 12) t.SetPixel(x, y, cLlama);
-                        else t.SetPixel(x, y, cCarneFuego);
+                        if (x == 2 || y == 22 || (y == 8 && x < 8)) t.SetPixel(x, y, cOut);
+                        else if (x == 8 && y == 15) t.SetPixel(x, y, cOjo);
+                        else t.SetPixel(x, y, (y >= 16) ? cFuego : cCarbon);
+                        continue;
                     }
-                    else t.SetPixel(x, y, Color.clear);
+
+                    if (x >= 12 && x <= 27 && y >= 2 && y <= 18)
+                    {
+                        if (x == 27 || y == 2 || y == 18) t.SetPixel(x, y, cOut);
+                        else t.SetPixel(x, y, ((x + y) % 4 == 0) ? cFuego : cCarbon);
+                        continue;
+                    }
                 }
             }
             t.Apply();
-            return Sprite.Create(t, new Rect(0, 0, w, h), new Vector2(0.5f, 0.45f), 16f);
+            return Sprite.Create(t, new Rect(0, 0, w, h), new Vector2(0.5f, 0.25f), 32f);
         }
 
-        private static Sprite CrearPixelChamanFuego()
+        private static Sprite DibujarChamanFuego()
         {
-            int w = 22, h = 28;
-            Texture2D t = new Texture2D(w, h, TextureFormat.RGBA32, false);
-            t.filterMode = FilterMode.Point;
-            Color cTunica = new Color(0.55f, 0.15f, 0.08f);
-            Color cMascara = new Color(0.92f, 0.85f, 0.65f);
-            Color cFuego = new Color(1f, 0.65f, 0.12f);
+            int w = 26, h = 32;
+            var t = CrearTextura(w, h);
+            Color cOut = new Color(0.10f, 0.06f, 0.08f);
+            Color cManto = new Color(0.65f, 0.22f, 0.12f);
+            Color cLuz = new Color(0.95f, 0.45f, 0.15f);
+            Color cMascara = new Color(0.92f, 0.88f, 0.80f);
+            Color cFuego = new Color(1f, 0.85f, 0.20f);
 
             for (int y = 0; y < h; y++)
             {
                 for (int x = 0; x < w; x++)
                 {
-                    // Orbe de fuego en mano derecha
-                    if (x >= 17 && x <= 21 && y >= 16 && y <= 20) { t.SetPixel(x, y, cFuego); continue; }
-                    // Máscara
-                    if (y >= 18 && y <= 24 && x >= 8 && x <= 14)
+                    // Báculo con llama
+                    if (x >= 21 && x <= 24 && y >= 3 && y <= 30)
                     {
-                        if (y == 20 && (x == 10 || x == 12)) t.SetPixel(x, y, Color.red);
+                        if (y >= 25) t.SetPixel(x, y, cFuego);
+                        else t.SetPixel(x, y, (x == 21 || x == 24) ? cOut : new Color(0.4f, 0.2f, 0.1f));
+                        continue;
+                    }
+
+                    // Máscara tribal
+                    if (y >= 20 && y <= 28 && x >= 8 && x <= 18)
+                    {
+                        if (x == 8 || x == 18 || y == 28) t.SetPixel(x, y, cOut);
+                        else if (y == 23 && (x == 11 || x == 15)) t.SetPixel(x, y, cFuego); // Ojos ígneos
                         else t.SetPixel(x, y, cMascara);
                         continue;
                     }
-                    // Túnica
-                    int dx = Mathf.Abs(x - 11);
-                    if (dx <= 6 && y >= 4 && y <= 18) t.SetPixel(x, y, cTunica);
-                    else t.SetPixel(x, y, Color.clear);
-                }
-            }
-            t.Apply();
-            return Sprite.Create(t, new Rect(0, 0, w, h), new Vector2(0.5f, 0.5f), 16f);
-        }
 
-        private static Sprite CrearPixelFatuoVolcanico()
-        {
-            int w = 18, h = 22;
-            Texture2D t = new Texture2D(w, h, TextureFormat.RGBA32, false);
-            t.filterMode = FilterMode.Point;
-            Color cLlama = new Color(1f, 0.35f, 0.05f, 0.9f);
-            Color cCentro = new Color(1f, 0.92f, 0.45f);
-
-            for (int y = 0; y < h; y++)
-            {
-                for (int x = 0; x < w; x++)
-                {
-                    int dx = Mathf.Abs(x - 9);
-                    int dy = Mathf.Abs(y - 10);
-                    if (dx * dx + dy * dy <= 50)
+                    // Manto ardiente
+                    if (y >= 2 && y <= 20 && x >= 6 && x <= 19)
                     {
-                        if (y == 11 && (x == 7 || x == 11)) t.SetPixel(x, y, Color.black); // Ojos
-                        else t.SetPixel(x, y, (dx <= 2 && dy <= 2) ? cCentro : cLlama);
-                    }
-                    else t.SetPixel(x, y, Color.clear);
-                }
-            }
-            t.Apply();
-            return Sprite.Create(t, new Rect(0, 0, w, h), new Vector2(0.5f, 0.5f), 16f);
-        }
-
-        // ========================================================
-        // 4. PLANTA
-        // ========================================================
-        private static Sprite CrearPixelTreant()
-        {
-            int w = 28, h = 32;
-            Texture2D t = new Texture2D(w, h, TextureFormat.RGBA32, false);
-            t.filterMode = FilterMode.Point;
-            Color cCorteza = new Color(0.42f, 0.28f, 0.15f);
-            Color cMusgo = new Color(0.28f, 0.72f, 0.22f);
-            Color cOjoVerde = new Color(0.65f, 1f, 0.25f);
-
-            for (int y = 0; y < h; y++)
-            {
-                for (int x = 0; x < w; x++)
-                {
-                    int dx = Mathf.Abs(x - 14);
-                    // Ramas arriba
-                    if (y >= 25 && dx <= 11)
-                    {
-                        t.SetPixel(x, y, (x + y) % 3 == 0 ? cMusgo : cCorteza);
+                        if (x == 6 || x == 19 || y == 2) t.SetPixel(x, y, cOut);
+                        else t.SetPixel(x, y, (x <= 12) ? cLuz : cManto);
                         continue;
                     }
-                    // Tronco
-                    if (dx <= 9 && y >= 4 && y <= 25)
-                    {
-                        if (y == 19 && (x == 11 || x == 16)) t.SetPixel(x, y, cOjoVerde);
-                        else if (y >= 12 && y <= 16 && dx <= 5) t.SetPixel(x, y, cMusgo); // Barba de musgo
-                        else t.SetPixel(x, y, cCorteza);
-                    }
-                    else t.SetPixel(x, y, Color.clear);
                 }
             }
             t.Apply();
-            return Sprite.Create(t, new Rect(0, 0, w, h), new Vector2(0.5f, 0.45f), 16f);
+            return Sprite.Create(t, new Rect(0, 0, w, h), new Vector2(0.5f, 0.25f), 32f);
         }
 
-        private static Sprite CrearPixelMandragora()
-        {
-            int w = 22, h = 24;
-            Texture2D t = new Texture2D(w, h, TextureFormat.RGBA32, false);
-            t.filterMode = FilterMode.Point;
-            Color cRaiz = new Color(0.58f, 0.48f, 0.28f);
-            Color cHoja = new Color(0.32f, 0.82f, 0.25f);
-
-            for (int y = 0; y < h; y++)
-            {
-                for (int x = 0; x < w; x++)
-                {
-                    // Hojas arriba
-                    if (y >= 17 && Mathf.Abs(x - 11) <= 7 && (x + y) % 2 == 0) { t.SetPixel(x, y, cHoja); continue; }
-                    // Raíz chillona
-                    int dx = Mathf.Abs(x - 11);
-                    if (dx <= 6 && y >= 3 && y <= 17)
-                    {
-                        if (y == 12 && (x == 9 || x == 13)) t.SetPixel(x, y, Color.black);
-                        else if (y == 8 && dx <= 2) t.SetPixel(x, y, Color.black); // Boca abierta
-                        else t.SetPixel(x, y, cRaiz);
-                    }
-                    else t.SetPixel(x, y, Color.clear);
-                }
-            }
-            t.Apply();
-            return Sprite.Create(t, new Rect(0, 0, w, h), new Vector2(0.5f, 0.5f), 16f);
-        }
-
-        private static Sprite CrearPixelFlorCarnivora()
+        private static Sprite DibujarFatuoVolcanico()
         {
             int w = 24, h = 26;
-            Texture2D t = new Texture2D(w, h, TextureFormat.RGBA32, false);
-            t.filterMode = FilterMode.Point;
-            Color cPetalo = new Color(0.92f, 0.25f, 0.35f);
-            Color cTallo = new Color(0.25f, 0.65f, 0.20f);
-            Color cDientes = new Color(1f, 0.95f, 0.85f);
+            var t = CrearTextura(w, h);
+            Color cOut = new Color(0.12f, 0.05f, 0.05f);
+            Color cLlamaExt = new Color(0.95f, 0.28f, 0.08f);
+            Color cLlamaMed = new Color(1f, 0.65f, 0.12f);
+            Color cNucleo = new Color(1f, 0.98f, 0.65f);
 
+            Vector2 c = new Vector2(11.5f, 11.5f);
             for (int y = 0; y < h; y++)
             {
                 for (int x = 0; x < w; x++)
                 {
-                    // Tallo
-                    if (y <= 12 && x >= 10 && x <= 13) { t.SetPixel(x, y, cTallo); continue; }
-                    // Cabeza abierta estilo Venus atrapamoscas
-                    int dx = Mathf.Abs(x - 12);
-                    if (dx <= 8 && y >= 12 && y <= 23)
+                    float d = Vector2.Distance(new Vector2(x, y), c);
+                    if (d <= 9.5f)
                     {
-                        if (y == 17 && dx <= 6) t.SetPixel(x, y, Color.black); // Fauces
-                        else if ((y == 18 || y == 16) && dx % 2 == 1) t.SetPixel(x, y, cDientes);
-                        else t.SetPixel(x, y, cPetalo);
+                        if (d >= 8.5f) t.SetPixel(x, y, cOut);
+                        else if (d <= 3.5f) t.SetPixel(x, y, cNucleo);
+                        else if (d <= 6.5f) t.SetPixel(x, y, cLlamaMed);
+                        else t.SetPixel(x, y, cLlamaExt);
+                        continue;
                     }
-                    else t.SetPixel(x, y, Color.clear);
                 }
             }
             t.Apply();
-            return Sprite.Create(t, new Rect(0, 0, w, h), new Vector2(0.5f, 0.45f), 16f);
+            return Sprite.Create(t, new Rect(0, 0, w, h), new Vector2(0.5f, 0.25f), 32f);
         }
 
-        private static Sprite CrearPixelHongoEsporas()
+        // ========================================================
+        // 4. BIOMA PLANTA
+        // ========================================================
+        private static Sprite DibujarTreant()
         {
-            int w = 22, h = 24;
-            Texture2D t = new Texture2D(w, h, TextureFormat.RGBA32, false);
-            t.filterMode = FilterMode.Point;
-            Color cSombrero = new Color(0.35f, 0.85f, 0.42f);
-            Color cMota = new Color(0.85f, 1f, 0.65f);
-            Color cTallo = new Color(0.88f, 0.88f, 0.82f);
+            int w = 32, h = 34;
+            var t = CrearTextura(w, h);
+            Color cOut = new Color(0.08f, 0.12f, 0.06f);
+            Color cCorteza = new Color(0.38f, 0.26f, 0.16f);
+            Color cCortezaLuz = new Color(0.55f, 0.38f, 0.24f);
+            Color cHojas = new Color(0.24f, 0.68f, 0.28f);
+            Color cOjo = new Color(0.40f, 1f, 0.35f);
 
             for (int y = 0; y < h; y++)
             {
                 for (int x = 0; x < w; x++)
                 {
-                    // Tallo
-                    if (y <= 10 && x >= 8 && x <= 13)
+                    // Corona de hojas y ramas arriba
+                    if (y >= 26 && x >= 4 && x <= 27)
                     {
-                        if (y == 6 && (x == 9 || x == 12)) t.SetPixel(x, y, Color.black); // Ojos
+                        if (y == 33 || x == 4 || x == 27) t.SetPixel(x, y, cOut);
+                        else t.SetPixel(x, y, (x % 3 == 0) ? new Color(0.45f, 0.85f, 0.35f) : cHojas);
+                        continue;
+                    }
+
+                    // Tronco ancestral con ojos sabios
+                    if (y >= 8 && y <= 26 && x >= 7 && x <= 24)
+                    {
+                        if (x == 7 || x == 24) t.SetPixel(x, y, cOut);
+                        else if (y == 20 && (x == 12 || x == 19)) t.SetPixel(x, y, cOjo); // Ojos verdes benevolentes
+                        else t.SetPixel(x, y, (x <= 15) ? cCortezaLuz : cCorteza);
+                        continue;
+                    }
+
+                    // Raíces gruesas
+                    if (y >= 1 && y <= 8 && x >= 5 && x <= 26)
+                    {
+                        if (y == 1 || x == 5 || x == 26) t.SetPixel(x, y, cOut);
+                        else t.SetPixel(x, y, cCorteza);
+                        continue;
+                    }
+                }
+            }
+            t.Apply();
+            return Sprite.Create(t, new Rect(0, 0, w, h), new Vector2(0.5f, 0.25f), 32f);
+        }
+
+        private static Sprite DibujarMandragora()
+        {
+            int w = 24, h = 26;
+            var t = CrearTextura(w, h);
+            Color cOut = new Color(0.08f, 0.12f, 0.06f);
+            Color cRaiz = new Color(0.68f, 0.52f, 0.32f);
+            Color cRaizLuz = new Color(0.85f, 0.70f, 0.45f);
+            Color cHoja = new Color(0.28f, 0.75f, 0.32f);
+            Color cOjo = new Color(0.12f, 0.12f, 0.12f);
+
+            for (int y = 0; y < h; y++)
+            {
+                for (int x = 0; x < w; x++)
+                {
+                    // Hojas superiores
+                    if (y >= 18 && y <= 25 && x >= 8 && x <= 16)
+                    {
+                        if (y == 25 || x == 8 || x == 16) t.SetPixel(x, y, cOut);
+                        else t.SetPixel(x, y, cHoja);
+                        continue;
+                    }
+
+                    // Raíz bulbosa
+                    if (y >= 3 && y <= 18 && x >= 5 && x <= 19)
+                    {
+                        if (x == 5 || x == 19 || y == 3) t.SetPixel(x, y, cOut);
+                        else if (y == 13 && (x == 9 || x == 15)) t.SetPixel(x, y, cOjo);
+                        else t.SetPixel(x, y, (x <= 12) ? cRaizLuz : cRaiz);
+                        continue;
+                    }
+                }
+            }
+            t.Apply();
+            return Sprite.Create(t, new Rect(0, 0, w, h), new Vector2(0.5f, 0.25f), 32f);
+        }
+
+        private static Sprite DibujarFlorCarnivora()
+        {
+            int w = 28, h = 30;
+            var t = CrearTextura(w, h);
+            Color cOut = new Color(0.08f, 0.12f, 0.06f);
+            Color cPetalo = new Color(0.85f, 0.18f, 0.35f);
+            Color cPetaloLuz = new Color(1f, 0.35f, 0.55f);
+            Color cDientes = new Color(0.95f, 0.95f, 0.95f);
+            Color cTallo = new Color(0.22f, 0.58f, 0.25f);
+
+            for (int y = 0; y < h; y++)
+            {
+                for (int x = 0; x < w; x++)
+                {
+                    // Fauces carnívoras abiertas (x: 4 a 24, y: 12 a 28)
+                    if (x >= 4 && x <= 24 && y >= 12 && y <= 28)
+                    {
+                        if (x == 4 || x == 24 || y == 28 || y == 12) t.SetPixel(x, y, cOut);
+                        else if (y >= 18 && y <= 21 && (x % 3 == 0)) t.SetPixel(x, y, cDientes); // Dientes afilados
+                        else t.SetPixel(x, y, (y >= 20) ? cPetaloLuz : cPetalo);
+                        continue;
+                    }
+
+                    // Tallo con hojas espinosas
+                    if (y >= 1 && y <= 12 && x >= 11 && x <= 17)
+                    {
+                        if (x == 11 || x == 17 || y == 1) t.SetPixel(x, y, cOut);
                         else t.SetPixel(x, y, cTallo);
                         continue;
                     }
-                    // Sombrero abovedado
-                    int dx = Mathf.Abs(x - 11);
-                    if (y >= 10 && y <= 21 && dx <= 9)
-                    {
-                        if ((dx == 4 && y == 16) || (dx == 1 && y == 19)) t.SetPixel(x, y, cMota);
-                        else t.SetPixel(x, y, cSombrero);
-                    }
-                    else t.SetPixel(x, y, Color.clear);
                 }
             }
             t.Apply();
-            return Sprite.Create(t, new Rect(0, 0, w, h), new Vector2(0.5f, 0.5f), 16f);
+            return Sprite.Create(t, new Rect(0, 0, w, h), new Vector2(0.5f, 0.25f), 32f);
         }
 
-        // ========================================================
-        // 5. ARENA
-        // ========================================================
-        private static Sprite CrearPixelSarcofagoAndante()
+        private static Sprite DibujarHongoEsporas()
         {
-            // 24x30 Sarcófago vertical con patas
-            int w = 24, h = 30;
-            Texture2D t = new Texture2D(w, h, TextureFormat.RGBA32, false);
-            t.filterMode = FilterMode.Point;
-            Color cOro = new Color(0.95f, 0.82f, 0.35f);
-            Color cTurquesa = new Color(0.20f, 0.68f, 0.72f);
-            Color cSombra = new Color(0.55f, 0.42f, 0.18f);
+            int w = 26, h = 28;
+            var t = CrearTextura(w, h);
+            Color cOut = new Color(0.08f, 0.08f, 0.12f);
+            Color cSombrero = new Color(0.58f, 0.22f, 0.75f);
+            Color cMota = new Color(0.35f, 0.95f, 0.85f);
+            Color cTallo = new Color(0.85f, 0.82f, 0.75f);
 
             for (int y = 0; y < h; y++)
             {
                 for (int x = 0; x < w; x++)
                 {
-                    // Patas abajo
-                    if (y <= 5 && ((x >= 6 && x <= 9) || (x >= 14 && x <= 17))) { t.SetPixel(x, y, cSombra); continue; }
-
-                    int dx = Mathf.Abs(x - 12);
-                    int maxDx = (y > 22) ? 7 : (y > 10 ? 8 : 6);
-                    if (dx <= maxDx && y >= 6 && y <= 28)
+                    // Sombrero del hongo
+                    if (y >= 12 && y <= 26 && x >= 3 && x <= 23)
                     {
-                        // Máscara funeraria
-                        if (y >= 20 && y <= 25 && dx <= 4)
+                        float dist = Vector2.Distance(new Vector2(x, y), new Vector2(13f, 15f));
+                        if (dist <= 10f)
                         {
-                            if (y == 22 && (x == 10 || x == 13)) t.SetPixel(x, y, Color.black);
-                            else t.SetPixel(x, y, cOro);
+                            if (dist >= 9f) t.SetPixel(x, y, cOut);
+                            else if ((x == 8 && y == 21) || (x == 17 && y == 20) || (x == 13 && y == 16)) t.SetPixel(x, y, cMota); // Esporas luminiscentes
+                            else t.SetPixel(x, y, cSombrero);
+                            continue;
                         }
-                        else if (y % 4 == 0) t.SetPixel(x, y, cTurquesa);
-                        else t.SetPixel(x, y, (x <= 11) ? cOro : cSombra);
                     }
-                    else t.SetPixel(x, y, Color.clear);
-                }
-            }
-            t.Apply();
-            return Sprite.Create(t, new Rect(0, 0, w, h), new Vector2(0.5f, 0.45f), 16f);
-        }
 
-        private static Sprite CrearPixelAtaudRitual()
-        {
-            // 26x32 Sarcófago ceremonial fijo (Spawner)
-            int w = 26, h = 32;
-            Texture2D t = new Texture2D(w, h, TextureFormat.RGBA32, false);
-            t.filterMode = FilterMode.Point;
-            Color cArenisca = new Color(0.75f, 0.62f, 0.40f);
-            Color cOro = new Color(0.95f, 0.82f, 0.35f);
-            Color cGlifo = new Color(0.25f, 0.75f, 0.85f); // Glifos mágicos cian
-
-            for (int y = 0; y < h; y++)
-            {
-                for (int x = 0; x < w; x++)
-                {
-                    int dx = Mathf.Abs(x - 13);
-                    if (dx <= 10 && y >= 3 && y <= 29)
+                    // Pie del hongo
+                    if (y >= 1 && y <= 12 && x >= 9 && x <= 17)
                     {
-                        if (dx == 10 || y == 3 || y == 29) t.SetPixel(x, y, cOro);
-                        else if ((dx == 0 && y >= 8 && y <= 22) || (y == 16 && dx <= 5)) t.SetPixel(x, y, cGlifo); // Cruz/Anj
-                        else t.SetPixel(x, y, cArenisca);
+                        if (x == 9 || x == 17 || y == 1) t.SetPixel(x, y, cOut);
+                        else t.SetPixel(x, y, cTallo);
+                        continue;
                     }
-                    else t.SetPixel(x, y, Color.clear);
                 }
             }
             t.Apply();
-            return Sprite.Create(t, new Rect(0, 0, w, h), new Vector2(0.5f, 0.5f), 16f);
-        }
-
-        private static Sprite CrearPixelRataDesierto()
-        {
-            int w = 20, h = 14;
-            Texture2D t = new Texture2D(w, h, TextureFormat.RGBA32, false);
-            t.filterMode = FilterMode.Point;
-            Color cPelaje = new Color(0.68f, 0.52f, 0.35f);
-            Color cOjoRojo = new Color(0.95f, 0.15f, 0.15f);
-
-            for (int y = 0; y < h; y++)
-            {
-                for (int x = 0; x < w; x++)
-                {
-                    // Cola larga a la derecha
-                    if (x >= 14 && y == 7 && x % 2 == 0) { t.SetPixel(x, y, new Color(0.85f, 0.65f, 0.65f)); continue; }
-                    // Cuerpo agachado
-                    if (x >= 3 && x <= 14 && y >= 3 && y <= 9)
-                    {
-                        if (x == 4 && y == 7) t.SetPixel(x, y, cOjoRojo);
-                        else t.SetPixel(x, y, cPelaje);
-                    }
-                    else t.SetPixel(x, y, Color.clear);
-                }
-            }
-            t.Apply();
-            return Sprite.Create(t, new Rect(0, 0, w, h), new Vector2(0.5f, 0.45f), 16f);
-        }
-
-        private static Sprite CrearPixelMomia()
-        {
-            int w = 22, h = 28;
-            Texture2D t = new Texture2D(w, h, TextureFormat.RGBA32, false);
-            t.filterMode = FilterMode.Point;
-            Color cVendas = new Color(0.85f, 0.80f, 0.68f);
-            Color cSombra = new Color(0.55f, 0.48f, 0.38f);
-            Color cOjoRojo = new Color(1f, 0.25f, 0.15f);
-
-            for (int y = 0; y < h; y++)
-            {
-                for (int x = 0; x < w; x++)
-                {
-                    int dx = Mathf.Abs(x - 11);
-                    if (dx <= 6 && y >= 3 && y <= 25)
-                    {
-                        if (y == 20 && (x == 9 || x == 13)) t.SetPixel(x, y, cOjoRojo);
-                        else if (y % 3 == 0) t.SetPixel(x, y, cSombra); // Vendas cruzadas
-                        else t.SetPixel(x, y, cVendas);
-                    }
-                    else t.SetPixel(x, y, Color.clear);
-                }
-            }
-            t.Apply();
-            return Sprite.Create(t, new Rect(0, 0, w, h), new Vector2(0.5f, 0.5f), 16f);
+            return Sprite.Create(t, new Rect(0, 0, w, h), new Vector2(0.5f, 0.25f), 32f);
         }
 
         // ========================================================
-        // 👑 JEFES MONUMENTALES (48x48)
+        // 5. BIOMA ARENA
+        // ========================================================
+        private static Sprite DibujarSarcofagoAndante()
+        {
+            int w = 28, h = 34;
+            var t = CrearTextura(w, h);
+            Color cOut = new Color(0.12f, 0.10f, 0.05f);
+            Color cOro = new Color(0.95f, 0.78f, 0.22f);
+            Color cOroSombra = new Color(0.65f, 0.50f, 0.12f);
+            Color cLapis = new Color(0.15f, 0.35f, 0.75f);
+            Color cOjo = new Color(1f, 0.25f, 0.25f);
+
+            for (int y = 0; y < h; y++)
+            {
+                for (int x = 0; x < w; x++)
+                {
+                    // Silueta de sarcófago imperial
+                    if (y >= 3 && y <= 31 && x >= 5 && x <= 22)
+                    {
+                        if (x == 5 || x == 22 || y == 3 || y == 31) t.SetPixel(x, y, cOut);
+                        else if (y >= 21 && y <= 27 && (x + y) % 3 == 0) t.SetPixel(x, y, cLapis); // Franjas de lapislázuli en el nemes
+                        else if (y == 23 && (x == 10 || x == 17)) t.SetPixel(x, y, cOjo); // Ojos de maldición
+                        else t.SetPixel(x, y, (x <= 13) ? cOro : cOroSombra);
+                        continue;
+                    }
+                }
+            }
+            t.Apply();
+            return Sprite.Create(t, new Rect(0, 0, w, h), new Vector2(0.5f, 0.25f), 32f);
+        }
+
+        private static Sprite DibujarAtaudRitual()
+        {
+            int w = 32, h = 36;
+            var t = CrearTextura(w, h);
+            Color cOut = new Color(0.10f, 0.08f, 0.05f);
+            Color cPiedra = new Color(0.60f, 0.48f, 0.32f);
+            Color cCadena = new Color(0.75f, 0.78f, 0.85f);
+            Color cAura = new Color(0.35f, 0.95f, 0.45f);
+
+            for (int y = 0; y < h; y++)
+            {
+                for (int x = 0; x < w; x++)
+                {
+                    if (x >= 6 && x <= 25 && y >= 3 && y <= 33)
+                    {
+                        if (x == 6 || x == 25 || y == 3 || y == 33) t.SetPixel(x, y, cOut);
+                        else if (x == y || x + y == 31) t.SetPixel(x, y, cCadena); // Cadenas cruzadas que atan el ataúd
+                        else if (y >= 14 && y <= 18 && x >= 12 && x <= 19) t.SetPixel(x, y, cAura); // Sello arcano de invocación
+                        else t.SetPixel(x, y, cPiedra);
+                        continue;
+                    }
+                }
+            }
+            t.Apply();
+            return Sprite.Create(t, new Rect(0, 0, w, h), new Vector2(0.5f, 0.25f), 32f);
+        }
+
+        private static Sprite DibujarRataDesierto()
+        {
+            int w = 26, h = 20;
+            var t = CrearTextura(w, h);
+            Color cOut = new Color(0.12f, 0.10f, 0.05f);
+            Color cArena = new Color(0.78f, 0.62f, 0.40f);
+            Color cLuz = new Color(0.92f, 0.78f, 0.55f);
+            Color cOjo = new Color(1f, 0.15f, 0.15f);
+
+            for (int y = 0; y < h; y++)
+            {
+                for (int x = 0; x < w; x++)
+                {
+                    // Cola a la derecha
+                    if (x >= 18 && y >= 10 && (y - x == -10 || y - x == -9)) { t.SetPixel(x, y, cOut); continue; }
+
+                    // Cuerpo y cabeza afilada
+                    if (x >= 2 && x <= 18 && y >= 3 && y <= 15)
+                    {
+                        if (x == 2 || x == 18 || y == 3 || y == 15) t.SetPixel(x, y, cOut);
+                        else if (x == 6 && y == 11) t.SetPixel(x, y, cOjo);
+                        else t.SetPixel(x, y, (y >= 9) ? cLuz : cArena);
+                        continue;
+                    }
+                }
+            }
+            t.Apply();
+            return Sprite.Create(t, new Rect(0, 0, w, h), new Vector2(0.5f, 0.25f), 32f);
+        }
+
+        private static Sprite DibujarMomia()
+        {
+            int w = 26, h = 30;
+            var t = CrearTextura(w, h);
+            Color cOut = new Color(0.12f, 0.10f, 0.05f);
+            Color cVendaje = new Color(0.85f, 0.80f, 0.68f);
+            Color cVendajeSombra = new Color(0.55f, 0.50f, 0.40f);
+            Color cOjo = new Color(1f, 0.90f, 0.20f);
+
+            for (int y = 0; y < h; y++)
+            {
+                for (int x = 0; x < w; x++)
+                {
+                    if (x >= 7 && x <= 19 && y >= 2 && y <= 27)
+                    {
+                        if (x == 7 || x == 19 || y == 2 || y == 27) t.SetPixel(x, y, cOut);
+                        else if (y == 21 && (x == 10 || x == 16)) t.SetPixel(x, y, cOjo);
+                        else if ((x + y) % 4 == 0) t.SetPixel(x, y, cVendajeSombra); // Rayas de los vendajes
+                        else t.SetPixel(x, y, cVendaje);
+                        continue;
+                    }
+                }
+            }
+            t.Apply();
+            return Sprite.Create(t, new Rect(0, 0, w, h), new Vector2(0.5f, 0.25f), 32f);
+        }
+
+        // ========================================================
+        // LOS 5 JEFES MONUMENTALES (64x64 at 32 PPU = 2.0 unidades)
         // ========================================================
         private static Sprite GenerarSpriteJefe(TipoBioma bioma)
         {
-            int s = 48;
-            Texture2D t = new Texture2D(s, s, TextureFormat.RGBA32, false);
-            t.filterMode = FilterMode.Point;
-
-            Color c1, c2, cOjos;
+            int s = 64;
+            var t = CrearTextura(s, s);
 
             switch (bioma)
             {
-                case TipoBioma.Piedra: // Coloso de Piedra
-                    c1 = new Color(0.48f, 0.50f, 0.55f);
-                    c2 = new Color(0.28f, 0.30f, 0.35f);
-                    cOjos = new Color(1f, 0.85f, 0.2f);
+                case TipoBioma.Piedra: // El Coloso de Piedra
+                    DibujarColosoPiedra(t);
                     break;
                 case TipoBioma.Hielo: // Yeti de las Ventiscas
-                    c1 = new Color(0.85f, 0.95f, 1f);
-                    c2 = new Color(0.35f, 0.65f, 0.88f);
-                    cOjos = new Color(0.1f, 0.95f, 1f);
+                    DibujarYetiVentiscas(t);
                     break;
                 case TipoBioma.Fuego: // Señor del Magma
-                    c1 = new Color(0.22f, 0.16f, 0.18f);
-                    c2 = new Color(1f, 0.45f, 0.08f);
-                    cOjos = new Color(1f, 0.95f, 0.3f);
+                    DibujarSenorMagma(t);
                     break;
-                case TipoBioma.Planta: // Reina Espora
-                    c1 = new Color(0.25f, 0.65f, 0.25f);
-                    c2 = new Color(0.85f, 0.35f, 0.65f);
-                    cOjos = new Color(0.7f, 1f, 0.2f);
+                case TipoBioma.Planta: // La Reina Espora
+                    DibujarReinaEspora(t);
                     break;
-                default: // Faraón Eterno
-                    c1 = new Color(0.95f, 0.82f, 0.35f);
-                    c2 = new Color(0.22f, 0.65f, 0.72f);
-                    cOjos = new Color(1f, 0.25f, 0.15f);
+                case TipoBioma.Arena: // Faraón Eterno
+                    DibujarFaraonEterno(t);
                     break;
             }
 
-            for (int y = 0; y < s; y++)
+            t.Apply();
+            return Sprite.Create(t, new Rect(0, 0, s, s), new Vector2(0.5f, 0.22f), 32f);
+        }
+
+        private static void DibujarColosoPiedra(Texture2D t)
+        {
+            Color cOut = new Color(0.08f, 0.08f, 0.12f);
+            Color cPiedra = new Color(0.42f, 0.44f, 0.50f);
+            Color cLuz = new Color(0.68f, 0.70f, 0.78f);
+            Color cSombra = new Color(0.22f, 0.24f, 0.28f);
+            Color cRuna = new Color(1f, 0.75f, 0.25f);
+
+            for (int y = 0; y < 64; y++)
             {
-                for (int x = 0; x < s; x++)
+                for (int x = 0; x < 64; x++)
                 {
-                    int dx = Mathf.Abs(x - 24);
-                    int dy = Mathf.Abs(y - 24);
-                    if (dx * dx + dy * dy <= 380)
+                    // Silueta monumental
+                    if (x >= 12 && x <= 52 && y >= 6 && y <= 56)
                     {
-                        if (y >= 26 && y <= 29 && (x == 18 || x == 29)) t.SetPixel(x, y, cOjos);
-                        else if (y % 5 == 0 || dx >= 16) t.SetPixel(x, y, c2);
-                        else t.SetPixel(x, y, c1);
+                        float dist = Vector2.Distance(new Vector2(x, y), new Vector2(32f, 34f));
+                        if (dist <= 23f)
+                        {
+                            if (dist >= 21.5f || x == 12 || x == 52 || y == 6) t.SetPixel(x, y, cOut);
+                            else if (y >= 44 && y <= 54 && x >= 24 && x <= 40)
+                            {
+                                // Yelmo de titan con ojo rúnico central
+                                if (y == 48 && x >= 29 && x <= 35) t.SetPixel(x, y, cRuna);
+                                else t.SetPixel(x, y, (x <= 32) ? cLuz : cPiedra);
+                            }
+                            else if (y >= 26 && y <= 38 && x >= 26 && x <= 38 && (x == 32 || y == 32))
+                            {
+                                t.SetPixel(x, y, cRuna); // Cruz rúnica de poder en el pecho
+                            }
+                            else
+                            {
+                                t.SetPixel(x, y, (x <= 32) ? cLuz : (x <= 42 ? cPiedra : cSombra));
+                            }
+                        }
                     }
-                    else t.SetPixel(x, y, Color.clear);
                 }
             }
-            t.Apply();
-            return Sprite.Create(t, new Rect(0, 0, s, s), new Vector2(0.5f, 0.5f), 16f);
+        }
+
+        private static void DibujarYetiVentiscas(Texture2D t)
+        {
+            Color cOut = new Color(0.06f, 0.10f, 0.22f);
+            Color cPelaje = new Color(0.85f, 0.94f, 1f);
+            Color cSombra = new Color(0.45f, 0.62f, 0.78f);
+            Color cCuerno = new Color(0.20f, 0.45f, 0.70f);
+            Color cOjo = new Color(0.20f, 1f, 0.90f);
+
+            for (int y = 0; y < 64; y++)
+            {
+                for (int x = 0; x < 64; x++)
+                {
+                    // Cuernos de hielo colosales (curvados a los lados)
+                    bool cuernoIzq = (x >= 6 && x <= 22 && y >= 44 && y <= 58 && (x + y <= 72));
+                    bool cuernoDer = (x >= 42 && x <= 58 && y >= 44 && y <= 58 && (y - x <= 8));
+                    if (cuernoIzq || cuernoDer)
+                    {
+                        if (x == 6 || x == 58 || y == 58) t.SetPixel(x, y, cOut);
+                        else t.SetPixel(x, y, cCuerno);
+                        continue;
+                    }
+
+                    // Cuerpo y cabeza masiva de la bestia polar
+                    float dist = Vector2.Distance(new Vector2(x, y), new Vector2(32f, 30f));
+                    if (dist <= 23f)
+                    {
+                        if (dist >= 21.5f || y == 6) t.SetPixel(x, y, cOut);
+                        else if (y >= 38 && y <= 48 && (x == 26 || x == 38)) t.SetPixel(x, y, cOjo); // Ojos celestes furiosos
+                        else if (y >= 32 && y <= 35 && x >= 28 && x <= 36) t.SetPixel(x, y, Color.white); // Colmillos
+                        else t.SetPixel(x, y, (x <= 32) ? cPelaje : cSombra);
+                    }
+                }
+            }
+        }
+
+        private static void DibujarSenorMagma(Texture2D t)
+        {
+            Color cOut = new Color(0.12f, 0.05f, 0.05f);
+            Color cObsidiana = new Color(0.20f, 0.16f, 0.22f);
+            Color cLavaIntensa = new Color(1f, 0.90f, 0.25f);
+            Color cFuego = new Color(1f, 0.42f, 0.08f);
+
+            for (int y = 0; y < 64; y++)
+            {
+                for (int x = 0; x < 64; x++)
+                {
+                    // Cuernos de fuego demoníacos
+                    bool cuerno = (y >= 46 && y <= 60 && ((x >= 12 && x <= 22 && x + y >= 64) || (x >= 42 && x <= 52 && y - x >= 6)));
+                    if (cuerno)
+                    {
+                        t.SetPixel(x, y, cFuego);
+                        continue;
+                    }
+
+                    float dist = Vector2.Distance(new Vector2(x, y), new Vector2(32f, 30f));
+                    if (dist <= 23f)
+                    {
+                        if (dist >= 21.5f || y == 6) t.SetPixel(x, y, cOut);
+                        else if (dist <= 8f) t.SetPixel(x, y, (dist <= 4f) ? cLavaIntensa : cFuego); // Horno ardiente en el pecho
+                        else if (y >= 40 && y <= 44 && (x == 27 || x == 37)) t.SetPixel(x, y, cLavaIntensa); // Ojos de fuego
+                        else t.SetPixel(x, y, ((x + y) % 6 == 0) ? cFuego : cObsidiana);
+                    }
+                }
+            }
+        }
+
+        private static void DibujarReinaEspora(Texture2D t)
+        {
+            Color cOut = new Color(0.08f, 0.08f, 0.12f);
+            Color cSombrero = new Color(0.62f, 0.22f, 0.78f);
+            Color cEspora = new Color(0.35f, 1f, 0.75f);
+            Color cVestido = new Color(0.24f, 0.58f, 0.32f);
+            Color cRostro = new Color(0.92f, 0.85f, 0.78f);
+
+            for (int y = 0; y < 64; y++)
+            {
+                for (int x = 0; x < 64; x++)
+                {
+                    // Sombrero fúngico real coronando a la Reina
+                    if (y >= 42 && y <= 60 && x >= 10 && x <= 54)
+                    {
+                        float d = Vector2.Distance(new Vector2(x, y), new Vector2(32f, 44f));
+                        if (d <= 21f)
+                        {
+                            if (d >= 19.5f) t.SetPixel(x, y, cOut);
+                            else if ((x == 20 && y == 52) || (x == 44 && y == 51) || (x == 32 && y == 55)) t.SetPixel(x, y, cEspora);
+                            else t.SetPixel(x, y, cSombrero);
+                            continue;
+                        }
+                    }
+
+                    // Rostro de dríade y túnica floral
+                    if (x >= 18 && x <= 46 && y >= 6 && y <= 44)
+                    {
+                        if (x == 18 || x == 46 || y == 6) t.SetPixel(x, y, cOut);
+                        else if (y >= 34 && y <= 42)
+                        {
+                            if (y == 38 && (x == 28 || x == 36)) t.SetPixel(x, y, cEspora); // Ojos esmeralda
+                            else t.SetPixel(x, y, cRostro);
+                        }
+                        else
+                        {
+                            t.SetPixel(x, y, ((x * 3 + y) % 5 == 0) ? cEspora : cVestido);
+                        }
+                    }
+                }
+            }
+        }
+
+        private static void DibujarFaraonEterno(Texture2D t)
+        {
+            Color cOut = new Color(0.12f, 0.08f, 0.05f);
+            Color cOro = new Color(0.98f, 0.80f, 0.20f);
+            Color cOroBrillo = new Color(1f, 0.95f, 0.55f);
+            Color cLapis = new Color(0.15f, 0.35f, 0.80f);
+            Color cOjo = new Color(1f, 0.20f, 0.20f);
+            Color cMascara = new Color(0.88f, 0.72f, 0.25f);
+
+            for (int y = 0; y < 64; y++)
+            {
+                for (int x = 0; x < 64; x++)
+                {
+                    // Nemes real imperial (tocado de rayas doradas y azules)
+                    if (y >= 36 && y <= 60 && x >= 12 && x <= 52)
+                    {
+                        if (x == 12 || x == 52 || y == 60) t.SetPixel(x, y, cOut);
+                        else if (x == 32 && y >= 52) t.SetPixel(x, y, Color.red); // Cobra Uraeus real
+                        else t.SetPixel(x, y, ((x + y / 2) % 6 < 3) ? cOro : cLapis);
+                        continue;
+                    }
+
+                    // Máscara funeraria de oro puro con ojos carmesí
+                    if (x >= 22 && x <= 42 && y >= 24 && y <= 40)
+                    {
+                        if (x == 22 || x == 42) t.SetPixel(x, y, cOut);
+                        else if (y == 32 && (x == 28 || x == 36)) t.SetPixel(x, y, cOjo);
+                        else t.SetPixel(x, y, (x <= 32) ? cOroBrillo : cMascara);
+                        continue;
+                    }
+
+                    // Torso y collar usekh sagrado
+                    if (x >= 16 && x <= 48 && y >= 6 && y <= 26)
+                    {
+                        if (x == 16 || x == 48 || y == 6) t.SetPixel(x, y, cOut);
+                        else if (y >= 20 && y <= 24) t.SetPixel(x, y, (x % 4 == 0) ? cLapis : cOro);
+                        else t.SetPixel(x, y, (x <= 32) ? cOro : cMascara);
+                    }
+                }
+            }
+        }
+
+        private static Texture2D CrearTextura(int w, int h)
+        {
+            var t = new Texture2D(w, h, TextureFormat.RGBA32, false);
+            t.filterMode = FilterMode.Point;
+            for (int y = 0; y < h; y++)
+                for (int x = 0; x < w; x++)
+                    t.SetPixel(x, y, Color.clear);
+            return t;
         }
     }
 }

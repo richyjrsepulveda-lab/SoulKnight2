@@ -209,6 +209,48 @@ namespace SoulKnight
             }
             float esc = EscalaVisualNet.Value > 0.1f ? EscalaVisualNet.Value : 1.0f;
             transform.localScale = new Vector3(esc, esc, 1f);
+            AjustarHitboxPrecisa((RolEnemigo)RolActualNet.Value);
+        }
+
+        private void AjustarHitboxPrecisa(RolEnemigo rol)
+        {
+            var box = GetComponent<BoxCollider2D>();
+            if (box != null)
+            {
+                switch (rol)
+                {
+                    case RolEnemigo.Tanque:
+                        box.size = new Vector2(0.85f, 0.95f);
+                        box.offset = new Vector2(0f, -0.05f);
+                        break;
+                    case RolEnemigo.MeleeRapido:
+                        box.size = new Vector2(0.65f, 0.70f);
+                        box.offset = new Vector2(0f, -0.05f);
+                        break;
+                    case RolEnemigo.Rango:
+                        box.size = new Vector2(0.70f, 0.85f);
+                        box.offset = new Vector2(0f, -0.05f);
+                        break;
+                    case RolEnemigo.Especial:
+                        box.size = new Vector2(0.70f, 0.80f);
+                        box.offset = new Vector2(0f, -0.05f);
+                        break;
+                    case RolEnemigo.Spawner:
+                        box.size = new Vector2(0.95f, 1.15f);
+                        box.offset = new Vector2(0f, 0f);
+                        break;
+                    default:
+                        box.size = new Vector2(0.75f, 0.85f);
+                        box.offset = new Vector2(0f, -0.05f);
+                        break;
+                }
+            }
+            var circle = GetComponent<CircleCollider2D>();
+            if (circle != null)
+            {
+                circle.radius = 0.45f;
+                circle.offset = new Vector2(0f, -0.05f);
+            }
         }
 
         private void PulsoCuracionPlanta()
