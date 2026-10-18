@@ -60,12 +60,12 @@ namespace SoulKnight
                     break;
 
                 case TipoBioma.Planta:
-                    b.nombreBioma = "Santuario Selvático de Esporas";
+                    b.nombreBioma = "Santuario Ancestral Cubierto de Musgo";
                     b.spriteSuelo = CrearSueloPlanta();
                     b.spriteMuro = CrearMuroPlanta();
                     b.spriteColumna = CrearColumnaPlanta();
-                    b.colorLuzAntorcha = new Color(0.42f, 1f, 0.48f, 1f);
-                    b.spriteLlamaAntorcha = CrearLlamaPixel(new Color(0.90f, 1f, 0.78f), new Color(0.38f, 0.96f, 0.45f), new Color(0.14f, 0.70f, 0.30f));
+                    b.colorLuzAntorcha = new Color(1f, 0.82f, 0.50f, 0.85f);
+                    b.spriteLlamaAntorcha = CrearLlamaPixel(new Color(1f, 0.96f, 0.72f), new Color(1f, 0.70f, 0.24f), new Color(0.86f, 0.32f, 0.10f));
                     break;
 
                 case TipoBioma.Arena:
@@ -461,7 +461,7 @@ namespace SoulKnight
         }
 
         // ========================================================
-        // 4. BIOMA: PLANTA (Santuario de Esporas)
+        // 4. BIOMA: PLANTA (Santuario Ancestral de Musgo Sereno)
         // ========================================================
         private static Sprite CrearSueloPlanta()
         {
@@ -470,32 +470,34 @@ namespace SoulKnight
             tex.filterMode = FilterMode.Point;
             tex.wrapMode = TextureWrapMode.Repeat;
 
-            Color cTierra = new Color(0.12f, 0.10f, 0.08f, 1f);
-            Color cHumus = new Color(0.16f, 0.14f, 0.10f, 1f);
-            Color cMusgoOscuro = new Color(0.16f, 0.24f, 0.12f, 1f);
-            Color cMusgo = new Color(0.22f, 0.35f, 0.16f, 1f);
-            Color cTrebol = new Color(0.30f, 0.46f, 0.20f, 1f);
+            // Paleta tranquila y desaturada: pizarra oscura húmeda y pátina de musgo salvia tenue
+            Color cFondo = new Color(0.10f, 0.11f, 0.11f, 1f);        // Juntas y tierra oscura
+            Color cPiedraOscura = new Color(0.14f, 0.15f, 0.15f, 1f);  // Laja de piedra base
+            Color cPiedraMedia = new Color(0.18f, 0.20f, 0.19f, 1f);   // Superficie desgastada
+            Color cMusgoApagado = new Color(0.19f, 0.23f, 0.18f, 1f);  // Musgo verde salvia apagado
+            Color cLiquen = new Color(0.23f, 0.27f, 0.21f, 1f);        // Pátina vegetal suave
 
-            // Generador continuo toroidal (sin bordes de bloque como Minecraft)
+            // Generador continuo toroidal sin bandas diagonales ni cortes
             for (int y = 0; y < s; y++)
             {
                 for (int x = 0; x < s; x++)
                 {
                     float angX = (x * 2.0f * Mathf.PI) / s;
                     float angY = (y * 2.0f * Mathf.PI) / s;
-                    float u = Mathf.Cos(angX), v = Mathf.Sin(angX);
-                    float sy = Mathf.Cos(angY), ty = Mathf.Sin(angY);
+                    float u = Mathf.Cos(angX);
+                    float sy = Mathf.Cos(angY);
 
-                    float val = Mathf.Sin(u * 4.0f + sy * 3.2f) + 
-                                Mathf.Cos(v * 3.2f - ty * 4.0f) + 
-                                0.5f * Mathf.Sin(angX * 4f + angY * 2f);
+                    // Patrón isotrópico de piedra antigua con musgo
+                    float val = Mathf.Sin(u * 3.5f) * Mathf.Cos(sy * 3.5f) + 
+                                0.5f * Mathf.Cos(u * 2.0f + sy * 2.0f) * Mathf.Sin(u * 2.0f - sy * 2.0f) +
+                                0.35f * Mathf.Sin(angX * 3.0f) + 0.35f * Mathf.Cos(angY * 3.0f);
 
                     Color c;
-                    if (val < -0.6f) c = cTierra;
-                    else if (val < 0.1f) c = cHumus;
-                    else if (val < 0.8f) c = cMusgoOscuro;
-                    else if (val < 1.4f) c = cMusgo;
-                    else c = cTrebol;
+                    if (val < -0.55f) c = cFondo;
+                    else if (val < -0.05f) c = cPiedraOscura;
+                    else if (val < 0.45f) c = cPiedraMedia;
+                    else if (val < 0.95f) c = cMusgoApagado;
+                    else c = cLiquen;
 
                     tex.SetPixel(x, y, c);
                 }
@@ -511,13 +513,14 @@ namespace SoulKnight
             tex.filterMode = FilterMode.Point;
             tex.wrapMode = TextureWrapMode.Repeat;
 
-            Color cJunta = new Color(0.08f, 0.10f, 0.08f);
-            Color cLuz = new Color(0.42f, 0.50f, 0.38f);
-            Color cSombra = new Color(0.18f, 0.22f, 0.16f);
-            Color cPiedra = new Color(0.28f, 0.34f, 0.26f);
-            Color cMusgo = new Color(0.35f, 0.72f, 0.30f);
+            // 1 SOLO BLOQUE SÓLIDO (32x32) de roca megalítica con relieve sereno
+            Color cJunta = new Color(0.07f, 0.08f, 0.08f);
+            Color cLuz = new Color(0.30f, 0.32f, 0.30f);
+            Color cSombra = new Color(0.12f, 0.13f, 0.13f);
+            Color cPiedra = new Color(0.20f, 0.22f, 0.21f);
+            Color cRelieve = new Color(0.25f, 0.30f, 0.24f);
+            Color cCentro = new Color(0.16f, 0.20f, 0.16f);
 
-            // 1 SOLO BLOQUE SÓLIDO (32x32) de roca antigua cubierta de enredaderas
             for (int y = 0; y < s; y++)
             {
                 for (int x = 0; x < s; x++)
@@ -539,9 +542,9 @@ namespace SoulKnight
                         Color c = cPiedra;
                         int dx = Mathf.Abs(x - 15);
                         int dy = Mathf.Abs(y - 15);
-                        if (dx <= 4 && dy <= 4) c = cMusgo;
-                        else if ((x * 5 + y * 3) % 8 == 0) c = cMusgo;
-                        else if ((x + y) % 6 == 0) c = cLuz;
+                        if (dx + dy == 6) c = cRelieve;
+                        else if (dx + dy < 6) c = cCentro;
+                        else if ((x * 3 + y * 2) % 7 == 0) c = cRelieve;
                         tex.SetPixel(x, y, c);
                     }
                 }
@@ -556,9 +559,10 @@ namespace SoulKnight
             Texture2D tex = new Texture2D(w, h, TextureFormat.RGBA32, false);
             tex.filterMode = FilterMode.Point;
 
-            Color cTronco = new Color(0.28f, 0.32f, 0.26f);
-            Color cVerde = new Color(0.25f, 0.65f, 0.28f);
-            Color cFlor = new Color(0.95f, 0.40f, 0.75f);
+            Color cPiedraLuz = new Color(0.26f, 0.28f, 0.26f);
+            Color cPiedraSombra = new Color(0.13f, 0.14f, 0.14f);
+            Color cMusgo = new Color(0.20f, 0.25f, 0.19f);
+            Color cRuna = new Color(0.42f, 0.38f, 0.28f);
 
             for (int y = 0; y < h; y++)
             {
@@ -571,9 +575,10 @@ namespace SoulKnight
                     }
                     else
                     {
-                        Color c = cTronco;
-                        if ((x + y) % 6 == 0) c = cVerde;
-                        if (x == 16 && (y == 20 || y == 35)) c = cFlor;
+                        float nx = (float)(x - margen) / (w - margen * 2 - 1);
+                        Color c = Color.Lerp(cPiedraLuz, cPiedraSombra, nx);
+                        if ((x + y) % 7 == 0) c = cMusgo;
+                        if (x == w / 2 && (y == 20 || y == 35)) c = cRuna;
                         tex.SetPixel(x, y, c);
                     }
                 }

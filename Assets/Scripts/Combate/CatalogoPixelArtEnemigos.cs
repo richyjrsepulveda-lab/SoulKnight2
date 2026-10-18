@@ -861,16 +861,16 @@ namespace SoulKnight
                 { 'X', new Color(0.24f, 0.16f, 0.10f) }, // Corteza roble sombra
                 { 'O', new Color(0.40f, 0.28f, 0.18f) }, // Corteza roble media
                 { '@', new Color(0.58f, 0.42f, 0.28f) }, // Corteza roble clara
-                { '#', new Color(0.25f, 0.45f, 0.18f) }, // Musgo oscuro
-                { '$', new Color(0.45f, 0.75f, 0.25f) }, // Hojas verdes brillantes
-                { '*', new Color(0.35f, 0.62f, 0.22f) }, // Follaje medio
-                { '!', new Color(1f, 0.80f, 0.15f) }     // Ojos de espÃ­ritu Ã¡mbar
+                { '#', new Color(0.20f, 0.32f, 0.16f) }, // Musgo sereno
+                { '$', new Color(0.32f, 0.52f, 0.26f) }, // Hojas verde bosque calmado
+                { '*', new Color(0.24f, 0.40f, 0.20f) }, // Follaje medio
+                { '!', new Color(0.95f, 0.75f, 0.20f) }  // Ojos de espíritu ámbar
             };
 
             return CrearSpriteDeMapa(mapa, pal, 32f, 0.18f);
         }
 
-        // 4.2 MandrÃ¡gora Rabiosa (Melee RÃ¡pido) - RaÃ­z viviente veloz con brote de hojas
+        // 4.2 Mandrágora Rabiosa (Melee Rápido) - Raíz viviente veloz con brote de hojas
         private static Sprite DibujarMandragora()
         {
             string[] mapa = new string[]
@@ -900,14 +900,14 @@ namespace SoulKnight
             var pal = new Dictionary<char, Color>
             {
                 { '.', new Color(0.08f, 0.06f, 0.04f) },
-                { 'X', new Color(0.32f, 0.22f, 0.14f) }, // RaÃ­z sombra
-                { 'O', new Color(0.52f, 0.38f, 0.25f) }, // RaÃ­z media
-                { '@', new Color(0.72f, 0.55f, 0.38f) }, // RaÃ­z clara
-                { '$', new Color(0.40f, 0.80f, 0.25f) }, // Brote verde
-                { '*', new Color(0.28f, 0.60f, 0.18f) },
-                { '#', new Color(0.90f, 0.85f, 0.70f) }, // Dientes afilados de madera
+                { 'X', new Color(0.32f, 0.22f, 0.14f) }, // Raíz sombra
+                { 'O', new Color(0.52f, 0.38f, 0.25f) }, // Raíz media
+                { '@', new Color(0.72f, 0.55f, 0.38f) }, // Raíz clara
+                { '$', new Color(0.30f, 0.52f, 0.24f) }, // Brote verde calmado
+                { '*', new Color(0.22f, 0.40f, 0.18f) },
+                { '#', new Color(0.88f, 0.82f, 0.68f) }, // Dientes de madera
                 { '-', new Color(0.12f, 0.08f, 0.06f) }, // Boca abierta
-                { '!', new Color(1f, 0.15f, 0.20f) }     // Ojos rojos feroces
+                { '!', new Color(0.88f, 0.18f, 0.18f) }  // Ojos rojos
             };
 
             return CrearSpriteDeMapa(mapa, pal, 32f, 0.18f);
@@ -943,11 +943,11 @@ namespace SoulKnight
             var pal = new Dictionary<char, Color>
             {
                 { '.', new Color(0.06f, 0.08f, 0.04f) },
-                { 'X', new Color(0.18f, 0.35f, 0.14f) }, // Tallo verde oscuro
-                { 'O', new Color(0.32f, 0.62f, 0.24f) }, // Tallo verde medio
-                { '#', new Color(0.48f, 0.16f, 0.52f) }, // PÃ©talos violetas carnÃ­voros
-                { '-', new Color(0.20f, 0.06f, 0.22f) }, // Interior fauces oscuro
-                { '!', new Color(0.60f, 1f, 0.20f) }     // Esporas Ã¡cidas brillantes
+                { 'X', new Color(0.16f, 0.28f, 0.14f) }, // Tallo verde oscuro sereno
+                { 'O', new Color(0.26f, 0.44f, 0.22f) }, // Tallo verde medio
+                { '#', new Color(0.44f, 0.18f, 0.46f) }, // Pétalos violeta sobrio
+                { '-', new Color(0.18f, 0.07f, 0.20f) }, // Interior fauces oscuro
+                { '!', new Color(0.62f, 0.78f, 0.35f) }  // Esporas polen tenue
             };
 
             return CrearSpriteDeMapa(mapa, pal, 32f, 0.18f);
@@ -981,17 +981,17 @@ namespace SoulKnight
             {
                 { '.', new Color(0.06f, 0.06f, 0.08f) },
                 { 'X', new Color(0.24f, 0.22f, 0.28f) }, // Tallo sombra
-                { 'O', new Color(0.46f, 0.44f, 0.52f) }, // Tallo medio
-                { '@', new Color(0.70f, 0.68f, 0.78f) }, // Tallo claro
-                { '#', new Color(0.50f, 0.18f, 0.62f) }, // Sombrero morado
-                { '$', new Color(0.30f, 0.95f, 0.35f) }, // Motas venenosas verde fosforescente
-                { '!', new Color(1f, 0.85f, 0.15f) }     // Ojos amarillos alienÃ­genas
+                { 'O', new Color(0.44f, 0.42f, 0.50f) }, // Tallo medio
+                { '@', new Color(0.66f, 0.64f, 0.74f) }, // Tallo claro
+                { '#', new Color(0.45f, 0.18f, 0.55f) }, // Sombrero morado profundo
+                { '$', new Color(0.40f, 0.72f, 0.45f) }, // Motas jade suave
+                { '!', new Color(0.95f, 0.80f, 0.20f) }  // Ojos ámbar
             };
 
             return CrearSpriteDeMapa(mapa, pal, 32f, 0.20f);
         }
 
-        // 4.5 La Reina Espora (Jefe - 36x40) - Emperatriz floral con pÃ©talos gigantes y lÃ¡tigos de espinas
+        // 4.5 La Reina Espora (Jefe - 36x40) - Emperatriz floral con pétalos gigantes y látigos de espinas
         private static Sprite DibujarReinaEspora()
         {
             string[] mapa = new string[]
@@ -1030,13 +1030,13 @@ namespace SoulKnight
             var pal = new Dictionary<char, Color>
             {
                 { '.', new Color(0.06f, 0.08f, 0.04f) },
-                { 'X', new Color(0.18f, 0.32f, 0.16f) }, // LÃ¡tigos de enredadera sombra
-                { 'O', new Color(0.32f, 0.58f, 0.28f) }, // Enredadera media
-                { '@', new Color(0.55f, 0.85f, 0.45f) }, // Espinas claras
-                { '#', new Color(0.62f, 0.16f, 0.55f) }, // PÃ©talos gigantes violeta imperial
-                { '$', new Color(0.90f, 0.35f, 0.75f) }, // Borde pÃ©talo magenta
-                { '*', new Color(0.35f, 0.85f, 0.40f) }, // Hojas de la corona
-                { '!', new Color(1f, 0.95f, 0.25f) }     // NÃºcleo de polen real brillante
+                { 'X', new Color(0.16f, 0.26f, 0.14f) }, // Látigos de enredadera sombra
+                { 'O', new Color(0.26f, 0.45f, 0.24f) }, // Enredadera media serena
+                { '@', new Color(0.40f, 0.62f, 0.36f) }, // Espinas claras suaves
+                { '#', new Color(0.54f, 0.18f, 0.48f) }, // Pétalos violeta profundo
+                { '$', new Color(0.72f, 0.32f, 0.62f) }, // Borde pétalo orquídea suave
+                { '*', new Color(0.28f, 0.55f, 0.32f) }, // Hojas corona verde bosque
+                { '!', new Color(0.95f, 0.88f, 0.30f) }  // Polen dorado
             };
 
             return CrearSpriteDeMapa(mapa, pal, 32f, 0.15f);
