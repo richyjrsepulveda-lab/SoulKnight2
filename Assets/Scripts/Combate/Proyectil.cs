@@ -229,7 +229,7 @@ namespace SoulKnight
                             if (pj != null && pj.OwnerClientId == _lanzadorId)
                             {
                                 if (pj.TipoPj == TipoPersonaje.Hielo) colorImpacto = new Color(0.42f, 0.88f, 1f, 1f);
-                                else if (pj.TipoPj == TipoPersonaje.Rayo) colorImpacto = new Color(1f, 0.96f, 0.22f, 1f);
+                                else if (pj.TipoPj == TipoPersonaje.Electrico) colorImpacto = new Color(1f, 0.96f, 0.22f, 1f);
                                 else if (pj.TipoPj == TipoPersonaje.Fuego) colorImpacto = new Color(0.96f, 0.40f, 0.05f, 1f);
                                 break;
                             }

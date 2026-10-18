@@ -102,25 +102,35 @@ namespace SoulKnight
 
         /// <summary>
         /// Calcula la posición exacta de la boca/hocico del gato según la dirección de apuntado
-        /// para que los ataques (rayo y bola de nieve) salgan orgánicamente de su boca.
+        /// calibrada al pixel con los sprites del gato (64x64, PPU 18, pivote 32,32).
         /// </summary>
         public Vector2 ObtenerPosicionBoca(Vector2 dir)
         {
             Vector2 posCentro = transform.position;
             if (dir.sqrMagnitude < 0.001f) dir = Vector2.right;
-            Vector2 dirNorm = dir.normalized;
 
-            float alturaCabeza = 0.38f;
-            if (dirNorm.y < -0.3f)
+            bool esLateral = Mathf.Abs(dir.x) >= Mathf.Abs(dir.y) * 0.75f;
+            Vector2 offsetBoca;
+
+            if (esLateral)
             {
-                alturaCabeza = 0.18f;
+                // El sprite del gato visto de perfil mide 64px con PPU 18 y pivote al centro (32,32).
+                // El hocico está a 23.5 píxeles del centro (23.5 / 18 = 1.31m) y 2.5 píxeles arriba (+0.14m).
+                float signoX = dir.x >= 0 ? 1f : -1f;
+                offsetBoca = new Vector2(signoX * 1.31f, 0.14f);
+                offsetBoca.y += Mathf.Clamp(dir.y, -0.4f, 0.4f) * 0.35f;
             }
-            else if (dirNorm.y > 0.4f)
+            else if (dir.y < 0)
             {
-                alturaCabeza = 0.55f;
+                // Gato mirando hacia abajo (South_0001): boca en y=37.5 (5.5 píxeles abajo del centro = -0.31m).
+                offsetBoca = new Vector2(Mathf.Clamp(dir.x, -0.4f, 0.4f) * 0.5f, -0.31f);
+            }
+            else
+            {
+                // Gato mirando hacia arriba (North_0001): cabeza en el borde superior (+0.85m).
+                offsetBoca = new Vector2(Mathf.Clamp(dir.x, -0.4f, 0.4f) * 0.5f, 0.85f);
             }
 
-            Vector2 offsetBoca = new Vector2(0f, alturaCabeza) + dirNorm * 0.40f;
             return posCentro + offsetBoca;
         }
 
