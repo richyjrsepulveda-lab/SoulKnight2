@@ -89,6 +89,10 @@ namespace SoulKnight
         private float _timerEstaSentado = 0f;
         private bool _mirandoDerecha = false;
 
+        // Suavizado dinámico del punto de salida del rayo de hielo (elimina cualquier salto o "tp" visual)
+        private Vector2 _posOrigenRayoSuavizada;
+        private bool _rayoActivoAnterior = false;
+
         protected override void Awake()
         {
             base.Awake();
@@ -103,32 +107,70 @@ namespace SoulKnight
         /// <summary>
         /// Calcula la posición exacta de la boca/hocico del gato según la dirección de apuntado
         /// calibrada al pixel con los sprites del gato (64x64, PPU 18, pivote 32,32).
+        /// Mantiene la salida del rayo en la orientación lateral hasta ángulos casi verticales (>70°)
+        /// con una trayectoria continua sobre la cabeza para evitar cualquier salto ("tp").
         /// </summary>
         public Vector2 ObtenerPosicionBoca(Vector2 dir)
         {
             Vector2 posCentro = transform.position;
             if (dir.sqrMagnitude < 0.001f) dir = Vector2.right;
 
-            bool esLateral = Mathf.Abs(dir.x) >= Mathf.Abs(dir.y) * 0.75f;
+            // Determinar si visualmente estamos en modo lateral o vertical
+            // Se sincroniza con _direccionVisualActual y el ángulo de apuntado con histéresis
+            bool esLateral;
+            if (_direccionVisualActual == 2)
+            {
+                // Ya en lateral: se mantiene lateral a menos que el ángulo sea casi vertical (>70.2°)
+                esLateral = Mathf.Abs(dir.x) >= Mathf.Abs(dir.y) * 0.36f;
+            }
+            else
+            {
+                // En vertical: solo regresa a lateral si el ángulo baja de 65.3°
+                esLateral = Mathf.Abs(dir.x) >= Mathf.Abs(dir.y) * 0.46f;
+            }
+
             Vector2 offsetBoca;
 
             if (esLateral)
             {
-                // El sprite del gato visto de perfil mide 64px con PPU 18 y pivote al centro (32,32).
-                // El hocico está a 23.5 píxeles del centro (23.5 / 18 = 1.31m) y 2.5 píxeles arriba (+0.14m).
-                float signoX = dir.x >= 0 ? 1f : -1f;
-                offsetBoca = new Vector2(signoX * 1.31f, 0.14f);
-                offsetBoca.y += Mathf.Clamp(dir.y, -0.4f, 0.4f) * 0.35f;
+                // El gato está de perfil (West).
+                // Con flipX = true mira a la derecha (+X), con flipX = false mira a la izquierda (-X).
+                float signoX = _mirandoDerecha ? 1f : (dir.x >= 0 ? 1f : -1f);
+
+                // La cabeza del gato de perfil se encuentra hacia el frente (signoX).
+                // Al apuntar hacia arriba o abajo, el hocico describe un arco continuo sobre la cabeza:
+                // - Horizontal (0°): hocico al frente (x = 1.30m, y = 0.16m)
+                // - Hacia arriba (dir.y > 0): la boca sube gradualmente hacia la parte superior
+                //   de la cabeza (y sube hasta ~0.72m, x se traslada suavemente hacia ~0.75m),
+                //   haciendo una transición suave y continua con la vista de espaldas (North).
+                // - Hacia abajo (dir.y < 0): el hocico desciende suavemente (y baja a ~-0.15m).
+                float yClamped = Mathf.Clamp(dir.y, -0.95f, 0.95f);
+                float xFactor = Mathf.Clamp01(1f - Mathf.Abs(yClamped) * 0.42f);
+
+                float offsetX = signoX * (1.30f * xFactor);
+                float offsetY;
+                if (yClamped >= 0f)
+                {
+                    offsetY = 0.16f + yClamped * 0.58f;
+                }
+                else
+                {
+                    offsetY = 0.16f + yClamped * 0.32f;
+                }
+
+                offsetBoca = new Vector2(offsetX, offsetY);
             }
             else if (dir.y < 0)
             {
-                // Gato mirando hacia abajo (South_0001): boca en y=37.5 (5.5 píxeles abajo del centro = -0.31m).
-                offsetBoca = new Vector2(Mathf.Clamp(dir.x, -0.4f, 0.4f) * 0.5f, -0.31f);
+                // Gato mirando hacia abajo (South_0001):
+                // Cabeza de frente, boca centrada abajo (-0.26m) con leve seguimiento en X
+                offsetBoca = new Vector2(dir.x * 0.45f, -0.26f);
             }
             else
             {
-                // Gato mirando hacia arriba (North_0001): cabeza en el borde superior (+0.85m).
-                offsetBoca = new Vector2(Mathf.Clamp(dir.x, -0.4f, 0.4f) * 0.5f, 0.85f);
+                // Gato mirando hacia arriba (North_0001):
+                // Cabeza de espaldas apuntando arriba (+0.80m) con leve seguimiento en X
+                offsetBoca = new Vector2(dir.x * 0.45f, 0.80f);
             }
 
             return posCentro + offsetBoca;
@@ -247,7 +289,11 @@ namespace SoulKnight
             { 
                 if (rayoHielo) rayoHielo.enabled = act; 
                 if (rayoHieloHalo) rayoHieloHalo.enabled = act;
-                if (!act) OcultarVisualesExtraRayoHielo();
+                if (!act)
+                {
+                    _rayoActivoAnterior = false;
+                    OcultarVisualesExtraRayoHielo();
+                }
             };
         }
 
@@ -258,6 +304,7 @@ namespace SoulKnight
                 if (IsServer && DisparandoRayo.Value) DisparandoRayo.Value = false;
                 if (rayoHielo != null && rayoHielo.enabled) rayoHielo.enabled = false;
                 if (rayoHieloHalo != null && rayoHieloHalo.enabled) rayoHieloHalo.enabled = false;
+                _rayoActivoAnterior = false;
                 OcultarVisualesExtraRayoHielo();
                 return;
             }
@@ -295,8 +342,19 @@ namespace SoulKnight
                     Vector2 dir = IsOwner ? ((Vector2)mouseMundo - (Vector2)transform.position).normalized : DireccionApuntado.Value;
                     if (dir.sqrMagnitude < 0.001f) dir = Vector2.right;
 
-                    // El rayo sale directamente de la boca del gato
-                    Vector2 origen = ObtenerPosicionBoca(dir);
+                    // El rayo sale directamente de la boca del gato con suavizado continuo de origen
+                    Vector2 origenDeseado = ObtenerPosicionBoca(dir);
+                    if (!_rayoActivoAnterior)
+                    {
+                        _posOrigenRayoSuavizada = origenDeseado;
+                        _rayoActivoAnterior = true;
+                    }
+                    else
+                    {
+                        _posOrigenRayoSuavizada = Vector2.Lerp(_posOrigenRayoSuavizada, origenDeseado, Time.deltaTime * 28f);
+                    }
+                    Vector2 origen = _posOrigenRayoSuavizada;
+
                     float distMouse = Vector2.Distance(origen, mouseMundo);
                     // Si el cursor está por debajo del límite, el rayo se recorta al cursor; si está por encima, llega hasta el límite
                     float alcanceDinamico = IsOwner ? Mathf.Min(distMouse, rangoRayo) : Mathf.Min(AlcanceEfectivoRayoSincronizado.Value, rangoRayo);
@@ -386,6 +444,7 @@ namespace SoulKnight
                 }
                 else
                 {
+                    _rayoActivoAnterior = false;
                     OcultarVisualesExtraRayoHielo();
                 }
             }
@@ -436,16 +495,46 @@ namespace SoulKnight
             }
 
             // Determinar si la dirección predominante es vertical u horizontal
-            // Si |x| >= |y| * 0.8f se considera lateral (Izquierda o Derecha)
-            bool esLateral = Mathf.Abs(dirMirada.x) >= Mathf.Abs(dirMirada.y) * 0.8f;
+            float absX = Mathf.Abs(dirMirada.x);
+            float absY = Mathf.Abs(dirMirada.y);
+
+            bool esLateral;
+            if (estaAtacando)
+            {
+                // Al atacar / apuntar con el rayo de hielo:
+                // El gato continúa en el perfil lateral (derecha o izquierda) para prácticamente todo el rango.
+                // Solo cambia al sprite de Arriba/Abajo cuando el cursor alcanza un ángulo empinado que arriba puede alcanzar (>70°).
+                if (_direccionVisualActual == 2)
+                {
+                    // Ya está en lateral: se mantiene lateral a menos que el ángulo sea casi vertical (>70.2°)
+                    esLateral = absX >= absY * 0.36f;
+                }
+                else
+                {
+                    // Está en vertical: regresa a lateral en cuanto el ángulo baja de 65.3°
+                    esLateral = absX >= absY * 0.46f;
+                }
+            }
+            else
+            {
+                // Al caminar normalmente sin atacar:
+                if (_direccionVisualActual == 2)
+                {
+                    esLateral = absX >= absY * 0.65f;
+                }
+                else
+                {
+                    esLateral = absX >= absY * 0.85f;
+                }
+            }
 
             if (esLateral)
             {
                 _direccionVisualActual = 2; // Lado (West)
                 // Los sprites West miran naturalmente a la izquierda.
                 // Izquierda: dirMirada.x < 0 -> flipX = false
-                // Derecha:   dirMirada.x > 0 -> flipX = true
-                _mirandoDerecha = dirMirada.x > 0;
+                // Derecha:   dirMirada.x >= 0 -> flipX = true
+                _mirandoDerecha = dirMirada.x >= 0;
                 if (_spriteRenderer != null)
                 {
                     _spriteRenderer.flipX = _mirandoDerecha;
@@ -456,7 +545,12 @@ namespace SoulKnight
             }
             else
             {
-                _mirandoDerecha = false;
+                // Preservar la intención horizontal previa para no desorientar el flipX al regresar a lateral
+                if (absX > 0.05f)
+                {
+                    _mirandoDerecha = dirMirada.x >= 0;
+                }
+
                 if (_spriteRenderer != null)
                 {
                     _spriteRenderer.flipX = false;
