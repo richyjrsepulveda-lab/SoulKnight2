@@ -91,47 +91,34 @@ namespace SoulKnight
             tex.filterMode = FilterMode.Point;
             tex.wrapMode = TextureWrapMode.Repeat;
 
-            Color cBase = new Color(0.28f, 0.30f, 0.35f);
-            Color cLuz = new Color(0.38f, 0.40f, 0.46f);
-            Color cSombra = new Color(0.20f, 0.21f, 0.25f);
-            Color cJunta = new Color(0.12f, 0.13f, 0.16f);
-            Color cRuna = new Color(0.44f, 0.46f, 0.54f);
+            Color cNegro = new Color(0.12f, 0.13f, 0.16f, 1f);
+            Color cSombra = new Color(0.18f, 0.20f, 0.24f, 1f);
+            Color cBase = new Color(0.24f, 0.26f, 0.31f, 1f);
+            Color cLuz = new Color(0.32f, 0.35f, 0.42f, 1f);
+            Color cGrava = new Color(0.40f, 0.43f, 0.50f, 1f);
 
-            // 4 grandes losas cuadradas de 16x16 con biselado 3D
+            // Generador continuo toroidal (sin bordes de bloque como Minecraft)
             for (int y = 0; y < s; y++)
             {
                 for (int x = 0; x < s; x++)
                 {
-                    int lx = x % 16;
-                    int ly = y % 16;
+                    float angX = (x * 2.0f * Mathf.PI) / s;
+                    float angY = (y * 2.0f * Mathf.PI) / s;
+                    float u = Mathf.Cos(angX), v = Mathf.Sin(angX);
+                    float sy = Mathf.Cos(angY), ty = Mathf.Sin(angY);
 
-                    if (lx == 0 || ly == 0)
-                    {
-                        tex.SetPixel(x, y, cJunta);
-                    }
-                    else if (lx == 1 || ly == 15)
-                    {
-                        tex.SetPixel(x, y, cLuz); // Bisel superior e izquierdo
-                    }
-                    else if (lx == 15 || ly == 1)
-                    {
-                        tex.SetPixel(x, y, cSombra); // Bisel inferior y derecho
-                    }
-                    else
-                    {
-                        // Textura de piedra pulida
-                        Color c = cBase;
-                        if ((lx + ly) % 7 == 0) c = cLuz;
-                        else if ((lx * 3 + ly * 5) % 11 == 0) c = cSombra;
+                    float val = Mathf.Sin(u * 4.0f + sy * 3.5f) + 
+                                Mathf.Cos(v * 3.5f - ty * 4.0f) + 
+                                0.5f * Mathf.Sin(angX * 4f + angY * 3f);
 
-                        // Runa tallada sutil en el centro de las losas
-                        if ((lx >= 7 && lx <= 9 && ly >= 5 && ly <= 11) || (ly >= 7 && ly <= 9 && lx >= 5 && lx <= 11))
-                        {
-                            c = cRuna;
-                        }
+                    Color c;
+                    if (val < -0.7f) c = cNegro;
+                    else if (val < -0.1f) c = cSombra;
+                    else if (val < 0.7f) c = cBase;
+                    else if (val < 1.4f) c = cLuz;
+                    else c = cGrava;
 
-                        tex.SetPixel(x, y, c);
-                    }
+                    tex.SetPixel(x, y, c);
                 }
             }
             tex.Apply();
@@ -245,40 +232,37 @@ namespace SoulKnight
             tex.filterMode = FilterMode.Point;
             tex.wrapMode = TextureWrapMode.Repeat;
 
-            Color cGlaciar = new Color(0.32f, 0.62f, 0.82f);
-            Color cBrillo = new Color(0.78f, 0.94f, 1f);
-            Color cDestello = Color.white;
-            Color cProfundo = new Color(0.16f, 0.36f, 0.58f);
-            Color cGrieta = new Color(0.10f, 0.22f, 0.40f);
+            // Paleta de hielo glaciar oscuro y descansado a la vista (sin brillo excesivo)
+            Color cAbismo = new Color(0.07f, 0.13f, 0.20f, 1f);   // #122133 Base muy oscura
+            Color cHielo = new Color(0.10f, 0.18f, 0.28f, 1f);    // #1a2e47 Tono medio hielo profundo
+            Color cVeta = new Color(0.15f, 0.26f, 0.38f, 1f);     // #264261 Fracturas cristalinas internas
+            Color cEscarcha = new Color(0.20f, 0.34f, 0.48f, 1f); // #33577a Escarcha sutil en grieta
+            Color cGlint = new Color(0.28f, 0.44f, 0.60f, 1f);    // #477099 Destellos mínimos dispersos
 
+            // Generador de textura continua toroidal (100% seamless, sin bordes de bloque como Minecraft)
             for (int y = 0; y < s; y++)
             {
                 for (int x = 0; x < s; x++)
                 {
-                    int lx = x % 16;
-                    int ly = y % 16;
+                    float angX = (x * 2.0f * Mathf.PI) / s;
+                    float angY = (y * 2.0f * Mathf.PI) / s;
+                    float u = Mathf.Cos(angX), v = Mathf.Sin(angX);
+                    float sy = Mathf.Cos(angY), ty = Mathf.Sin(angY);
 
-                    if (lx == 0 || ly == 0)
-                    {
-                        tex.SetPixel(x, y, cGrieta);
-                    }
-                    else if (lx == 1 || ly == 15)
-                    {
-                        tex.SetPixel(x, y, cBrillo);
-                    }
-                    else if (lx == 15 || ly == 1)
-                    {
-                        tex.SetPixel(x, y, cProfundo);
-                    }
-                    else
-                    {
-                        Color c = cGlaciar;
-                        // Destellos cristalinos de escarcha
-                        if ((lx == 4 && ly == 12) || (lx == 11 && ly == 5)) c = cDestello;
-                        else if ((lx + ly) % 5 == 0) c = cBrillo;
-                        else if ((lx * 2 + ly * 3) % 9 == 0) c = cProfundo;
-                        tex.SetPixel(x, y, c);
-                    }
+                    // Ondas armónicas toroidales con fracturas diagonales de permafrost
+                    float val = Mathf.Sin(u * 3.2f + sy * 2.8f) + 
+                                Mathf.Cos(v * 2.8f - ty * 3.2f) + 
+                                0.6f * Mathf.Sin(angX * 3f + angY * 2f) +
+                                0.3f * Mathf.Cos(angX * 5f - angY * 4f);
+
+                    Color c;
+                    if (val < -0.8f) c = cAbismo;
+                    else if (val < 0.1f) c = cHielo;
+                    else if (val < 0.9f) c = cVeta;
+                    else if (val < 1.6f) c = cEscarcha;
+                    else c = cGlint;
+
+                    tex.SetPixel(x, y, c);
                 }
             }
             tex.Apply();
@@ -382,41 +366,34 @@ namespace SoulKnight
             tex.filterMode = FilterMode.Point;
             tex.wrapMode = TextureWrapMode.Repeat;
 
-            Color cBasalto = new Color(0.18f, 0.16f, 0.20f);
-            Color cBasaltoClaro = new Color(0.28f, 0.24f, 0.28f);
-            Color cSombra = new Color(0.10f, 0.09f, 0.12f);
-            Color cLavaIntensa = new Color(1f, 0.88f, 0.20f);
-            Color cLavaMedia = new Color(1f, 0.45f, 0.05f);
-            Color cLavaBorde = new Color(0.65f, 0.12f, 0.05f);
+            Color cObsidiana = new Color(0.10f, 0.08f, 0.11f, 1f);
+            Color cBasalto = new Color(0.16f, 0.13f, 0.18f, 1f);
+            Color cCeniza = new Color(0.24f, 0.18f, 0.22f, 1f);
+            Color cLavaOscura = new Color(0.45f, 0.10f, 0.05f, 1f);
+            Color cMagma = new Color(0.75f, 0.22f, 0.05f, 1f);
 
+            // Generador continuo toroidal (sin bordes de bloque como Minecraft)
             for (int y = 0; y < s; y++)
             {
                 for (int x = 0; x < s; x++)
                 {
-                    int lx = x % 16;
-                    int ly = y % 16;
+                    float angX = (x * 2.0f * Mathf.PI) / s;
+                    float angY = (y * 2.0f * Mathf.PI) / s;
+                    float u = Mathf.Cos(angX), v = Mathf.Sin(angX);
+                    float sy = Mathf.Cos(angY), ty = Mathf.Sin(angY);
 
-                    // Canales de magma ardiente entre las losas
-                    if (lx == 0 || ly == 0)
-                    {
-                        if (lx == 0 && ly == 0) tex.SetPixel(x, y, cLavaIntensa); // Cruce de lava brillante
-                        else if (lx == 0 || ly == 0) tex.SetPixel(x, y, cLavaMedia);
-                    }
-                    else if (lx == 1 || ly == 1)
-                    {
-                        tex.SetPixel(x, y, cLavaBorde); // Borde incandescente
-                    }
-                    else if (lx == 15 || ly == 15)
-                    {
-                        tex.SetPixel(x, y, cBasaltoClaro);
-                    }
-                    else
-                    {
-                        Color c = cBasalto;
-                        if ((x * 3 + y * 7) % 13 == 0) c = cBasaltoClaro;
-                        else if ((x + y) % 9 == 0) c = cSombra;
-                        tex.SetPixel(x, y, c);
-                    }
+                    float val = Mathf.Sin(u * 3.5f + sy * 3.0f) + 
+                                Mathf.Cos(v * 3.0f - ty * 3.5f) + 
+                                0.6f * Mathf.Sin(angX * 3f - angY * 3f);
+
+                    Color c;
+                    if (val < -0.6f) c = cObsidiana;
+                    else if (val < 0.2f) c = cBasalto;
+                    else if (val < 0.9f) c = cCeniza;
+                    else if (val < 1.5f) c = cLavaOscura;
+                    else c = cMagma;
+
+                    tex.SetPixel(x, y, c);
                 }
             }
             tex.Apply();
@@ -516,34 +493,34 @@ namespace SoulKnight
             tex.filterMode = FilterMode.Point;
             tex.wrapMode = TextureWrapMode.Repeat;
 
-            Color cRoca = new Color(0.25f, 0.28f, 0.25f);
-            Color cMusgo = new Color(0.22f, 0.48f, 0.24f);
-            Color cMusgoClaro = new Color(0.35f, 0.70f, 0.38f);
-            Color cTierra = new Color(0.16f, 0.18f, 0.14f);
-            Color cEsporaFlor = new Color(0.85f, 0.35f, 0.85f);
+            Color cTierra = new Color(0.12f, 0.10f, 0.08f, 1f);
+            Color cHumus = new Color(0.16f, 0.14f, 0.10f, 1f);
+            Color cMusgoOscuro = new Color(0.16f, 0.24f, 0.12f, 1f);
+            Color cMusgo = new Color(0.22f, 0.35f, 0.16f, 1f);
+            Color cTrebol = new Color(0.30f, 0.46f, 0.20f, 1f);
 
+            // Generador continuo toroidal (sin bordes de bloque como Minecraft)
             for (int y = 0; y < s; y++)
             {
                 for (int x = 0; x < s; x++)
                 {
-                    int lx = x % 16;
-                    int ly = y % 16;
+                    float angX = (x * 2.0f * Mathf.PI) / s;
+                    float angY = (y * 2.0f * Mathf.PI) / s;
+                    float u = Mathf.Cos(angX), v = Mathf.Sin(angX);
+                    float sy = Mathf.Cos(angY), ty = Mathf.Sin(angY);
 
-                    if (lx == 0 || ly == 0)
-                    {
-                        tex.SetPixel(x, y, cTierra);
-                    }
-                    else if ((lx > 3 && lx < 13 && ly > 3 && ly < 13) && ((x + y) % 3 != 0))
-                    {
-                        tex.SetPixel(x, y, cRoca);
-                    }
-                    else
-                    {
-                        Color c = ((x * 5 + y * 7) % 7 == 0) ? cMusgoClaro : cMusgo;
-                        // Florecillas esporíferas
-                        if ((lx == 7 && ly == 7) || (lx == 12 && ly == 2)) c = cEsporaFlor;
-                        tex.SetPixel(x, y, c);
-                    }
+                    float val = Mathf.Sin(u * 4.0f + sy * 3.2f) + 
+                                Mathf.Cos(v * 3.2f - ty * 4.0f) + 
+                                0.5f * Mathf.Sin(angX * 4f + angY * 2f);
+
+                    Color c;
+                    if (val < -0.6f) c = cTierra;
+                    else if (val < 0.1f) c = cHumus;
+                    else if (val < 0.8f) c = cMusgoOscuro;
+                    else if (val < 1.4f) c = cMusgo;
+                    else c = cTrebol;
+
+                    tex.SetPixel(x, y, c);
                 }
             }
             tex.Apply();
@@ -640,40 +617,31 @@ namespace SoulKnight
             tex.filterMode = FilterMode.Point;
             tex.wrapMode = TextureWrapMode.Repeat;
 
-            Color cArenisca = new Color(0.72f, 0.56f, 0.32f);
-            Color cAreniscaLuz = new Color(0.85f, 0.70f, 0.45f);
-            Color cSombra = new Color(0.54f, 0.40f, 0.22f);
-            Color cJunta = new Color(0.35f, 0.25f, 0.14f);
-            Color cLapis = new Color(0.15f, 0.35f, 0.75f); // Lapis lazuli incrustado
+            Color cSombra = new Color(0.35f, 0.26f, 0.15f, 1f);
+            Color cArena = new Color(0.48f, 0.36f, 0.21f, 1f);
+            Color cDuna = new Color(0.58f, 0.44f, 0.26f, 1f);
+            Color cCresta = new Color(0.68f, 0.52f, 0.32f, 1f);
 
+            // Generador continuo toroidal (sin bordes de bloque como Minecraft)
             for (int y = 0; y < s; y++)
             {
                 for (int x = 0; x < s; x++)
                 {
-                    int lx = x % 16;
-                    int ly = y % 16;
+                    float angX = (x * 2.0f * Mathf.PI) / s;
+                    float angY = (y * 2.0f * Mathf.PI) / s;
+                    float u = Mathf.Cos(angX), v = Mathf.Sin(angX);
+                    float sy = Mathf.Cos(angY), ty = Mathf.Sin(angY);
 
-                    if (lx == 0 || ly == 0)
-                    {
-                        tex.SetPixel(x, y, cJunta);
-                    }
-                    else if (lx == 1 || ly == 15)
-                    {
-                        tex.SetPixel(x, y, cAreniscaLuz);
-                    }
-                    else if (lx == 15 || ly == 1)
-                    {
-                        tex.SetPixel(x, y, cSombra);
-                    }
-                    else
-                    {
-                        Color c = cArenisca;
-                        // Gema de lapislázuli en el centro de las losas doradas
-                        if (lx >= 7 && lx <= 8 && ly >= 7 && ly <= 8) c = cLapis;
-                        else if ((lx + ly) % 7 == 0) c = cAreniscaLuz;
-                        else if ((lx * 3 + ly * 2) % 11 == 0) c = cSombra;
-                        tex.SetPixel(x, y, c);
-                    }
+                    // Ondas de viento diagonales continuas
+                    float val = Mathf.Sin(angX * 3.0f + angY * 2.0f + u * 1.5f) + 0.3f * Mathf.Cos(v * 2f - sy * 2f);
+
+                    Color c;
+                    if (val < -0.4f) c = cSombra;
+                    else if (val < 0.2f) c = cArena;
+                    else if (val < 0.7f) c = cDuna;
+                    else c = cCresta;
+
+                    tex.SetPixel(x, y, c);
                 }
             }
             tex.Apply();

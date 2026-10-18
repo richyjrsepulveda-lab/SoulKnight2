@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
 namespace SoulKnight
@@ -13,8 +13,9 @@ namespace SoulKnight
     }
 
     /// <summary>
-    /// Generador procedural de Sprites Pixel-Art de alta fidelidad con siluetas definidas,
-    /// contorno oscuro (1px outline), sombreado volumétrico y ojos expresivos a 32 PPU.
+    /// CatÃ¡logo central de Sprites Pixel-Art de alta fidelidad:
+    /// - DiseÃ±os artesanales pixel a pixel con siluetas orgÃ¡nicas (no bloques matemÃ¡ticos).
+    /// - Contorno oscuro de 1px, paletas con sombreado de 3 niveles y ojos expresivos a 32 PPU.
     /// </summary>
     public static class CatalogoPixelArtEnemigos
     {
@@ -38,6 +39,35 @@ namespace SoulKnight
             sp = GenerarSpriteJefe(bioma);
             _cacheSprites[clave] = sp;
             return sp;
+        }
+
+        private static Sprite CrearSpriteDeMapa(string[] mapa, Dictionary<char, Color> paleta, float ppu = 32f, float pivotY = 0.2f)
+        {
+            int h = mapa.Length;
+            int w = mapa[0].Length;
+            Texture2D tex = new Texture2D(w, h, TextureFormat.RGBA32, false);
+            tex.filterMode = FilterMode.Point;
+            tex.wrapMode = TextureWrapMode.Clamp;
+
+            for (int y = 0; y < h; y++)
+            {
+                int texY = h - 1 - y;
+                string fila = mapa[y];
+                for (int x = 0; x < w; x++)
+                {
+                    char c = x < fila.Length ? fila[x] : ' ';
+                    if (paleta.TryGetValue(c, out Color col))
+                    {
+                        tex.SetPixel(x, texY, col);
+                    }
+                    else
+                    {
+                        tex.SetPixel(x, texY, Color.clear);
+                    }
+                }
+            }
+            tex.Apply();
+            return Sprite.Create(tex, new Rect(0, 0, w, h), new Vector2(0.5f, pivotY), ppu);
         }
 
         private static Sprite GenerarSpriteEnemigo(TipoBioma bioma, RolEnemigo rol)
@@ -78,998 +108,1130 @@ namespace SoulKnight
             return DibujarCaballeroHierro();
         }
 
-        // ========================================================
-        // 1. BIOMA PIEDRA
-        // ========================================================
-        private static Sprite DibujarCaballeroHierro()
-        {
-            int w = 28, h = 32;
-            var t = CrearTextura(w, h);
-            Color cOut = new Color(0.08f, 0.08f, 0.12f);
-            Color cAcero = new Color(0.55f, 0.58f, 0.65f);
-            Color cLuz = new Color(0.85f, 0.88f, 0.95f);
-            Color cSombra = new Color(0.28f, 0.30f, 0.38f);
-            Color cRojo = new Color(0.95f, 0.20f, 0.20f);
-            Color cOro = new Color(1f, 0.80f, 0.20f);
-
-            // Silueta / Escudo a la izquierda, Caballero al centro
-            for (int y = 0; y < h; y++)
-            {
-                for (int x = 0; x < w; x++)
-                {
-                    // Pluma roja del yelmo
-                    if (y >= 26 && y <= 30 && x >= 12 && x <= 16)
-                    {
-                        if (x == 12 || x == 16 || y == 30) t.SetPixel(x, y, cOut);
-                        else t.SetPixel(x, y, (x <= 14) ? cRojo : new Color(0.65f, 0.12f, 0.12f));
-                        continue;
-                    }
-
-                    // Yelmo
-                    if (y >= 19 && y <= 26 && x >= 10 && x <= 20)
-                    {
-                        if (x == 10 || x == 20 || y == 19 || y == 26) t.SetPixel(x, y, cOut);
-                        else if (y == 22 && x >= 12 && x <= 18) t.SetPixel(x, y, (x == 14 || x == 17) ? cRojo : cOut); // Visor con ojos rojos
-                        else t.SetPixel(x, y, (x <= 14) ? cLuz : (x <= 17 ? cAcero : cSombra));
-                        continue;
-                    }
-
-                    // Escudo grande a la izquierda (x: 2 a 12, y: 7 a 20)
-                    if (x >= 2 && x <= 12 && y >= 7 && y <= 20)
-                    {
-                        if (x == 2 || x == 12 || y == 7 || y == 20) t.SetPixel(x, y, cOut);
-                        else if (x == 7 || y == 14) t.SetPixel(x, y, cOro); // Cruz dorada en el escudo
-                        else t.SetPixel(x, y, (x <= 6) ? cLuz : cAcero);
-                        continue;
-                    }
-
-                    // Pecho y brazo con espada a la derecha (x: 13 a 24, y: 8 a 19)
-                    if (x >= 13 && x <= 24 && y >= 8 && y <= 19)
-                    {
-                        if (x == 24 || y == 8 || y == 19) t.SetPixel(x, y, cOut);
-                        else if (x >= 20 && y >= 11 && y <= 17) t.SetPixel(x, y, (y == 11) ? cOro : cLuz); // Espada de acero
-                        else t.SetPixel(x, y, (x <= 17) ? cAcero : cSombra);
-                        continue;
-                    }
-
-                    // Piernas grebas
-                    if (y >= 1 && y <= 7 && ((x >= 11 && x <= 15) || (x >= 17 && x <= 21)))
-                    {
-                        if (y == 1 || x == 11 || x == 15 || x == 17 || x == 21) t.SetPixel(x, y, cOut);
-                        else t.SetPixel(x, y, (y >= 5) ? cAcero : cSombra);
-                        continue;
-                    }
-                }
-            }
-            t.Apply();
-            return Sprite.Create(t, new Rect(0, 0, w, h), new Vector2(0.5f, 0.25f), 32f);
-        }
-
-        private static Sprite DibujarGargola()
-        {
-            int w = 28, h = 28;
-            var t = CrearTextura(w, h);
-            Color cOut = new Color(0.08f, 0.08f, 0.12f);
-            Color cPiedra = new Color(0.44f, 0.46f, 0.52f);
-            Color cLuz = new Color(0.65f, 0.68f, 0.75f);
-            Color cSombra = new Color(0.24f, 0.25f, 0.30f);
-            Color cOjos = new Color(1f, 0.90f, 0.20f);
-
-            for (int y = 0; y < h; y++)
-            {
-                for (int x = 0; x < w; x++)
-                {
-                    // Alas puntiagudas
-                    bool alaIzq = (x >= 1 && x <= 10 && y >= 12 && y <= 24 && (y - x >= 4));
-                    bool alaDer = (x >= 17 && x <= 26 && y >= 12 && y <= 24 && (x + y >= 30));
-                    if (alaIzq || alaDer)
-                    {
-                        if (x == 1 || x == 26 || y == 24 || y == 12) t.SetPixel(x, y, cOut);
-                        else t.SetPixel(x, y, (y > 18) ? cLuz : cPiedra);
-                        continue;
-                    }
-
-                    // Cabeza con cuernos
-                    if (y >= 14 && y <= 23 && x >= 10 && x <= 17)
-                    {
-                        if (x == 10 || x == 17 || y == 14 || y == 23) t.SetPixel(x, y, cOut);
-                        else if (y == 17 && (x == 12 || x == 15)) t.SetPixel(x, y, cOjos);
-                        else t.SetPixel(x, y, (x <= 13) ? cLuz : cPiedra);
-                        continue;
-                    }
-
-                    // Torso y garras
-                    if (y >= 3 && y <= 13 && x >= 9 && x <= 18)
-                    {
-                        if (x == 9 || x == 18 || y == 3) t.SetPixel(x, y, cOut);
-                        else t.SetPixel(x, y, (x <= 13) ? cPiedra : cSombra);
-                        continue;
-                    }
-                }
-            }
-            t.Apply();
-            return Sprite.Create(t, new Rect(0, 0, w, h), new Vector2(0.5f, 0.25f), 32f);
-        }
-
-        private static Sprite DibujarBallestero()
-        {
-            int w = 28, h = 30;
-            var t = CrearTextura(w, h);
-            Color cOut = new Color(0.08f, 0.08f, 0.12f);
-            Color cCuero = new Color(0.48f, 0.32f, 0.18f);
-            Color cCueroLuz = new Color(0.68f, 0.48f, 0.28f);
-            Color cMetal = new Color(0.62f, 0.65f, 0.72f);
-            Color cOjo = new Color(0.20f, 0.95f, 0.35f);
-
-            for (int y = 0; y < h; y++)
-            {
-                for (int x = 0; x < w; x++)
-                {
-                    // Ballesta horizontal frontal apuntando (x: 2 a 16, y: 11 a 15)
-                    if (x >= 2 && x <= 16 && y >= 11 && y <= 15)
-                    {
-                        if (x == 2 || x == 16 || y == 11 || y == 15) t.SetPixel(x, y, cOut);
-                        else t.SetPixel(x, y, (x <= 6) ? cMetal : cCueroLuz);
-                        continue;
-                    }
-
-                    // Cabeza / Capucha
-                    if (y >= 18 && y <= 27 && x >= 11 && x <= 20)
-                    {
-                        if (x == 11 || x == 20 || y == 18 || y == 27) t.SetPixel(x, y, cOut);
-                        else if (y == 22 && x == 14) t.SetPixel(x, y, cOjo);
-                        else t.SetPixel(x, y, (x <= 15) ? cCueroLuz : cCuero);
-                        continue;
-                    }
-
-                    // Torso y Carcaj a la espalda
-                    if (y >= 6 && y <= 18 && x >= 10 && x <= 22)
-                    {
-                        if (x == 10 || x == 22 || y == 6) t.SetPixel(x, y, cOut);
-                        else t.SetPixel(x, y, (x > 18) ? cMetal : cCuero);
-                        continue;
-                    }
-
-                    // Piernas
-                    if (y >= 1 && y <= 5 && ((x >= 12 && x <= 15) || (x >= 17 && x <= 20)))
-                    {
-                        if (y == 1 || x == 12 || x == 15 || x == 17 || x == 20) t.SetPixel(x, y, cOut);
-                        else t.SetPixel(x, y, cCuero);
-                        continue;
-                    }
-                }
-            }
-            t.Apply();
-            return Sprite.Create(t, new Rect(0, 0, w, h), new Vector2(0.5f, 0.25f), 32f);
-        }
-
-        private static Sprite DibujarFantasma()
-        {
-            int w = 26, h = 30;
-            var t = CrearTextura(w, h);
-            Color cOut = new Color(0.10f, 0.18f, 0.32f);
-            Color cCuerpo = new Color(0.55f, 0.78f, 0.95f, 0.88f);
-            Color cLuz = new Color(0.85f, 0.96f, 1f, 0.95f);
-            Color cOjo = new Color(0.12f, 0.95f, 1f);
-
-            for (int y = 0; y < h; y++)
-            {
-                for (int x = 0; x < w; x++)
-                {
-                    // Silueta espectral flotante ondulada
-                    if (y >= 4 && y <= 26 && x >= 4 && x <= 21)
-                    {
-                        float dist = Vector2.Distance(new Vector2(x, y), new Vector2(12.5f, 18f));
-                        if (dist <= 9.5f)
-                        {
-                            if (dist >= 8.5f || (y <= 6 && (x % 4 == 0))) t.SetPixel(x, y, cOut);
-                            else if (y == 18 && (x == 9 || x == 15)) t.SetPixel(x, y, cOjo);
-                            else t.SetPixel(x, y, (x <= 12) ? cLuz : cCuerpo);
-                            continue;
-                        }
-                    }
-                }
-            }
-            t.Apply();
-            return Sprite.Create(t, new Rect(0, 0, w, h), new Vector2(0.5f, 0.25f), 32f);
-        }
-
-        // ========================================================
-        // 2. BIOMA HIELO
-        // ========================================================
-        private static Sprite DibujarGolemHielo()
-        {
-            int w = 32, h = 34;
-            var t = CrearTextura(w, h);
-            Color cOut = new Color(0.06f, 0.12f, 0.25f);
-            Color cCristal = new Color(0.38f, 0.68f, 0.88f);
-            Color cBrillo = new Color(0.82f, 0.96f, 1f);
-            Color cSombra = new Color(0.16f, 0.35f, 0.58f);
-            Color cOjo = new Color(0.20f, 1f, 0.90f);
-
-            for (int y = 0; y < h; y++)
-            {
-                for (int x = 0; x < w; x++)
-                {
-                    // Hombros gigantes con carámbanos (x: 3 a 28, y: 14 a 28)
-                    if (x >= 3 && x <= 28 && y >= 14 && y <= 28)
-                    {
-                        if (x == 3 || x == 28 || y == 28 || (y == 14 && (x < 11 || x > 20))) t.SetPixel(x, y, cOut);
-                        else if (y == 22 && (x == 13 || x == 18)) t.SetPixel(x, y, cOjo); // Ojos helados
-                        else t.SetPixel(x, y, (x <= 15) ? cBrillo : (x <= 22 ? cCristal : cSombra));
-                        continue;
-                    }
-
-                    // Piernas de hielo sólido
-                    if (y >= 1 && y <= 13 && x >= 8 && x <= 23)
-                    {
-                        if (x == 8 || x == 23 || y == 1 || x == 15) t.SetPixel(x, y, cOut);
-                        else t.SetPixel(x, y, (x <= 15) ? cCristal : cSombra);
-                        continue;
-                    }
-                }
-            }
-            t.Apply();
-            return Sprite.Create(t, new Rect(0, 0, w, h), new Vector2(0.5f, 0.25f), 32f);
-        }
-
-        private static Sprite DibujarLoboPolar()
-        {
-            int w = 30, h = 26;
-            var t = CrearTextura(w, h);
-            Color cOut = new Color(0.08f, 0.12f, 0.20f);
-            Color cPelo = new Color(0.88f, 0.94f, 1f);
-            Color cSombra = new Color(0.55f, 0.68f, 0.82f);
-            Color cOjo = new Color(0.15f, 0.75f, 1f);
-            Color cNariz = new Color(0.12f, 0.18f, 0.28f);
-
-            for (int y = 0; y < h; y++)
-            {
-                for (int x = 0; x < w; x++)
-                {
-                    // Orejas y hocico
-                    if (x >= 2 && x <= 14 && y >= 10 && y <= 23)
-                    {
-                        if (x == 2 || y == 23 || (y == 10 && x < 8)) t.SetPixel(x, y, cOut);
-                        else if (x == 3 && y == 13) t.SetPixel(x, y, cNariz);
-                        else if (x == 8 && y == 16) t.SetPixel(x, y, cOjo);
-                        else t.SetPixel(x, y, (y >= 16) ? cPelo : cSombra);
-                        continue;
-                    }
-
-                    // Lomo y patas
-                    if (x >= 12 && x <= 27 && y >= 2 && y <= 18)
-                    {
-                        if (x == 27 || y == 2 || y == 18) t.SetPixel(x, y, cOut);
-                        else t.SetPixel(x, y, (y >= 10) ? cPelo : cSombra);
-                        continue;
-                    }
-                }
-            }
-            t.Apply();
-            return Sprite.Create(t, new Rect(0, 0, w, h), new Vector2(0.5f, 0.25f), 32f);
-        }
-
-        private static Sprite DibujarMagoGlacial()
-        {
-            int w = 26, h = 32;
-            var t = CrearTextura(w, h);
-            Color cOut = new Color(0.06f, 0.10f, 0.22f);
-            Color cTunica = new Color(0.24f, 0.48f, 0.75f);
-            Color cTunicaLuz = new Color(0.55f, 0.78f, 0.95f);
-            Color cBaculo = new Color(0.65f, 0.42f, 0.22f);
-            Color cGema = new Color(0.35f, 0.95f, 1f);
-
-            for (int y = 0; y < h; y++)
-            {
-                for (int x = 0; x < w; x++)
-                {
-                    // Báculo mágico a la derecha con gema de cristal
-                    if (x >= 21 && x <= 24 && y >= 3 && y <= 30)
-                    {
-                        if (y >= 26) t.SetPixel(x, y, cGema);
-                        else t.SetPixel(x, y, (x == 21 || x == 24) ? cOut : cBaculo);
-                        continue;
-                    }
-
-                    // Capucha puntiaguda
-                    if (y >= 20 && y <= 30 && x >= 8 && x <= 18)
-                    {
-                        if (x == 8 || x == 18 || y == 30) t.SetPixel(x, y, cOut);
-                        else if (y == 23 && (x == 11 || x == 15)) t.SetPixel(x, y, cGema); // Ojos arcanos
-                        else t.SetPixel(x, y, (x <= 13) ? cTunicaLuz : cTunica);
-                        continue;
-                    }
-
-                    // Túnica ondeante
-                    if (y >= 2 && y <= 20 && x >= 6 && x <= 20)
-                    {
-                        if (x == 6 || x == 20 || y == 2) t.SetPixel(x, y, cOut);
-                        else t.SetPixel(x, y, (x <= 12) ? cTunicaLuz : cTunica);
-                        continue;
-                    }
-                }
-            }
-            t.Apply();
-            return Sprite.Create(t, new Rect(0, 0, w, h), new Vector2(0.5f, 0.25f), 32f);
-        }
-
-        private static Sprite DibujarMurcielagoHielo()
-        {
-            int w = 26, h = 24;
-            var t = CrearTextura(w, h);
-            Color cOut = new Color(0.06f, 0.10f, 0.20f);
-            Color cAzul = new Color(0.45f, 0.75f, 0.92f);
-            Color cLuz = new Color(0.80f, 0.95f, 1f);
-            Color cOjo = new Color(1f, 0.25f, 0.25f);
-
-            for (int y = 0; y < h; y++)
-            {
-                for (int x = 0; x < w; x++)
-                {
-                    // Alas puntiagudas
-                    bool ala = (y >= 10 && y <= 20 && ((x >= 1 && x <= 9) || (x >= 16 && x <= 24)));
-                    if (ala)
-                    {
-                        if (x == 1 || x == 24 || y == 20) t.SetPixel(x, y, cOut);
-                        else t.SetPixel(x, y, (y > 15) ? cLuz : cAzul);
-                        continue;
-                    }
-
-                    // Cuerpo central y orejas
-                    if (x >= 9 && x <= 16 && y >= 4 && y <= 21)
-                    {
-                        if (x == 9 || x == 16 || y == 4 || y == 21) t.SetPixel(x, y, cOut);
-                        else if (y == 13 && (x == 11 || x == 14)) t.SetPixel(x, y, cOjo);
-                        else t.SetPixel(x, y, cAzul);
-                        continue;
-                    }
-                }
-            }
-            t.Apply();
-            return Sprite.Create(t, new Rect(0, 0, w, h), new Vector2(0.5f, 0.25f), 32f);
-        }
-
-        // ========================================================
-        // 3. BIOMA FUEGO
-        // ========================================================
-        private static Sprite DibujarEngendroMagma()
-        {
-            int w = 30, h = 32;
-            var t = CrearTextura(w, h);
-            Color cOut = new Color(0.12f, 0.05f, 0.05f);
-            Color cObsidiana = new Color(0.22f, 0.18f, 0.24f);
-            Color cLavaIntensa = new Color(1f, 0.85f, 0.20f);
-            Color cFuego = new Color(0.95f, 0.35f, 0.08f);
-
-            for (int y = 0; y < h; y++)
-            {
-                for (int x = 0; x < w; x++)
-                {
-                    float dist = Vector2.Distance(new Vector2(x, y), new Vector2(15f, 15f));
-                    if (dist <= 12f)
-                    {
-                        if (dist >= 11f) t.SetPixel(x, y, cOut);
-                        else if (dist <= 5.5f) t.SetPixel(x, y, (dist <= 2.5f) ? cLavaIntensa : cFuego); // Núcleo de lava brillante
-                        else if ((x + y) % 5 == 0) t.SetPixel(x, y, cFuego); // Grietas de magma
-                        else t.SetPixel(x, y, cObsidiana);
-                        continue;
-                    }
-                }
-            }
-            t.Apply();
-            return Sprite.Create(t, new Rect(0, 0, w, h), new Vector2(0.5f, 0.25f), 32f);
-        }
-
-        private static Sprite DibujarSabuesoIgneo()
-        {
-            int w = 30, h = 26;
-            var t = CrearTextura(w, h);
-            Color cOut = new Color(0.12f, 0.05f, 0.05f);
-            Color cCarbon = new Color(0.25f, 0.18f, 0.18f);
-            Color cFuego = new Color(0.95f, 0.40f, 0.08f);
-            Color cOjo = new Color(1f, 0.90f, 0.20f);
-
-            for (int y = 0; y < h; y++)
-            {
-                for (int x = 0; x < w; x++)
-                {
-                    if (x >= 2 && x <= 14 && y >= 8 && y <= 22)
-                    {
-                        if (x == 2 || y == 22 || (y == 8 && x < 8)) t.SetPixel(x, y, cOut);
-                        else if (x == 8 && y == 15) t.SetPixel(x, y, cOjo);
-                        else t.SetPixel(x, y, (y >= 16) ? cFuego : cCarbon);
-                        continue;
-                    }
-
-                    if (x >= 12 && x <= 27 && y >= 2 && y <= 18)
-                    {
-                        if (x == 27 || y == 2 || y == 18) t.SetPixel(x, y, cOut);
-                        else t.SetPixel(x, y, ((x + y) % 4 == 0) ? cFuego : cCarbon);
-                        continue;
-                    }
-                }
-            }
-            t.Apply();
-            return Sprite.Create(t, new Rect(0, 0, w, h), new Vector2(0.5f, 0.25f), 32f);
-        }
-
-        private static Sprite DibujarChamanFuego()
-        {
-            int w = 26, h = 32;
-            var t = CrearTextura(w, h);
-            Color cOut = new Color(0.10f, 0.06f, 0.08f);
-            Color cManto = new Color(0.65f, 0.22f, 0.12f);
-            Color cLuz = new Color(0.95f, 0.45f, 0.15f);
-            Color cMascara = new Color(0.92f, 0.88f, 0.80f);
-            Color cFuego = new Color(1f, 0.85f, 0.20f);
-
-            for (int y = 0; y < h; y++)
-            {
-                for (int x = 0; x < w; x++)
-                {
-                    // Báculo con llama
-                    if (x >= 21 && x <= 24 && y >= 3 && y <= 30)
-                    {
-                        if (y >= 25) t.SetPixel(x, y, cFuego);
-                        else t.SetPixel(x, y, (x == 21 || x == 24) ? cOut : new Color(0.4f, 0.2f, 0.1f));
-                        continue;
-                    }
-
-                    // Máscara tribal
-                    if (y >= 20 && y <= 28 && x >= 8 && x <= 18)
-                    {
-                        if (x == 8 || x == 18 || y == 28) t.SetPixel(x, y, cOut);
-                        else if (y == 23 && (x == 11 || x == 15)) t.SetPixel(x, y, cFuego); // Ojos ígneos
-                        else t.SetPixel(x, y, cMascara);
-                        continue;
-                    }
-
-                    // Manto ardiente
-                    if (y >= 2 && y <= 20 && x >= 6 && x <= 19)
-                    {
-                        if (x == 6 || x == 19 || y == 2) t.SetPixel(x, y, cOut);
-                        else t.SetPixel(x, y, (x <= 12) ? cLuz : cManto);
-                        continue;
-                    }
-                }
-            }
-            t.Apply();
-            return Sprite.Create(t, new Rect(0, 0, w, h), new Vector2(0.5f, 0.25f), 32f);
-        }
-
-        private static Sprite DibujarFatuoVolcanico()
-        {
-            int w = 24, h = 26;
-            var t = CrearTextura(w, h);
-            Color cOut = new Color(0.12f, 0.05f, 0.05f);
-            Color cLlamaExt = new Color(0.95f, 0.28f, 0.08f);
-            Color cLlamaMed = new Color(1f, 0.65f, 0.12f);
-            Color cNucleo = new Color(1f, 0.98f, 0.65f);
-
-            Vector2 c = new Vector2(11.5f, 11.5f);
-            for (int y = 0; y < h; y++)
-            {
-                for (int x = 0; x < w; x++)
-                {
-                    float d = Vector2.Distance(new Vector2(x, y), c);
-                    if (d <= 9.5f)
-                    {
-                        if (d >= 8.5f) t.SetPixel(x, y, cOut);
-                        else if (d <= 3.5f) t.SetPixel(x, y, cNucleo);
-                        else if (d <= 6.5f) t.SetPixel(x, y, cLlamaMed);
-                        else t.SetPixel(x, y, cLlamaExt);
-                        continue;
-                    }
-                }
-            }
-            t.Apply();
-            return Sprite.Create(t, new Rect(0, 0, w, h), new Vector2(0.5f, 0.25f), 32f);
-        }
-
-        // ========================================================
-        // 4. BIOMA PLANTA
-        // ========================================================
-        private static Sprite DibujarTreant()
-        {
-            int w = 32, h = 34;
-            var t = CrearTextura(w, h);
-            Color cOut = new Color(0.08f, 0.12f, 0.06f);
-            Color cCorteza = new Color(0.38f, 0.26f, 0.16f);
-            Color cCortezaLuz = new Color(0.55f, 0.38f, 0.24f);
-            Color cHojas = new Color(0.24f, 0.68f, 0.28f);
-            Color cOjo = new Color(0.40f, 1f, 0.35f);
-
-            for (int y = 0; y < h; y++)
-            {
-                for (int x = 0; x < w; x++)
-                {
-                    // Corona de hojas y ramas arriba
-                    if (y >= 26 && x >= 4 && x <= 27)
-                    {
-                        if (y == 33 || x == 4 || x == 27) t.SetPixel(x, y, cOut);
-                        else t.SetPixel(x, y, (x % 3 == 0) ? new Color(0.45f, 0.85f, 0.35f) : cHojas);
-                        continue;
-                    }
-
-                    // Tronco ancestral con ojos sabios
-                    if (y >= 8 && y <= 26 && x >= 7 && x <= 24)
-                    {
-                        if (x == 7 || x == 24) t.SetPixel(x, y, cOut);
-                        else if (y == 20 && (x == 12 || x == 19)) t.SetPixel(x, y, cOjo); // Ojos verdes benevolentes
-                        else t.SetPixel(x, y, (x <= 15) ? cCortezaLuz : cCorteza);
-                        continue;
-                    }
-
-                    // Raíces gruesas
-                    if (y >= 1 && y <= 8 && x >= 5 && x <= 26)
-                    {
-                        if (y == 1 || x == 5 || x == 26) t.SetPixel(x, y, cOut);
-                        else t.SetPixel(x, y, cCorteza);
-                        continue;
-                    }
-                }
-            }
-            t.Apply();
-            return Sprite.Create(t, new Rect(0, 0, w, h), new Vector2(0.5f, 0.25f), 32f);
-        }
-
-        private static Sprite DibujarMandragora()
-        {
-            int w = 24, h = 26;
-            var t = CrearTextura(w, h);
-            Color cOut = new Color(0.08f, 0.12f, 0.06f);
-            Color cRaiz = new Color(0.68f, 0.52f, 0.32f);
-            Color cRaizLuz = new Color(0.85f, 0.70f, 0.45f);
-            Color cHoja = new Color(0.28f, 0.75f, 0.32f);
-            Color cOjo = new Color(0.12f, 0.12f, 0.12f);
-
-            for (int y = 0; y < h; y++)
-            {
-                for (int x = 0; x < w; x++)
-                {
-                    // Hojas superiores
-                    if (y >= 18 && y <= 25 && x >= 8 && x <= 16)
-                    {
-                        if (y == 25 || x == 8 || x == 16) t.SetPixel(x, y, cOut);
-                        else t.SetPixel(x, y, cHoja);
-                        continue;
-                    }
-
-                    // Raíz bulbosa
-                    if (y >= 3 && y <= 18 && x >= 5 && x <= 19)
-                    {
-                        if (x == 5 || x == 19 || y == 3) t.SetPixel(x, y, cOut);
-                        else if (y == 13 && (x == 9 || x == 15)) t.SetPixel(x, y, cOjo);
-                        else t.SetPixel(x, y, (x <= 12) ? cRaizLuz : cRaiz);
-                        continue;
-                    }
-                }
-            }
-            t.Apply();
-            return Sprite.Create(t, new Rect(0, 0, w, h), new Vector2(0.5f, 0.25f), 32f);
-        }
-
-        private static Sprite DibujarFlorCarnivora()
-        {
-            int w = 28, h = 30;
-            var t = CrearTextura(w, h);
-            Color cOut = new Color(0.08f, 0.12f, 0.06f);
-            Color cPetalo = new Color(0.85f, 0.18f, 0.35f);
-            Color cPetaloLuz = new Color(1f, 0.35f, 0.55f);
-            Color cDientes = new Color(0.95f, 0.95f, 0.95f);
-            Color cTallo = new Color(0.22f, 0.58f, 0.25f);
-
-            for (int y = 0; y < h; y++)
-            {
-                for (int x = 0; x < w; x++)
-                {
-                    // Fauces carnívoras abiertas (x: 4 a 24, y: 12 a 28)
-                    if (x >= 4 && x <= 24 && y >= 12 && y <= 28)
-                    {
-                        if (x == 4 || x == 24 || y == 28 || y == 12) t.SetPixel(x, y, cOut);
-                        else if (y >= 18 && y <= 21 && (x % 3 == 0)) t.SetPixel(x, y, cDientes); // Dientes afilados
-                        else t.SetPixel(x, y, (y >= 20) ? cPetaloLuz : cPetalo);
-                        continue;
-                    }
-
-                    // Tallo con hojas espinosas
-                    if (y >= 1 && y <= 12 && x >= 11 && x <= 17)
-                    {
-                        if (x == 11 || x == 17 || y == 1) t.SetPixel(x, y, cOut);
-                        else t.SetPixel(x, y, cTallo);
-                        continue;
-                    }
-                }
-            }
-            t.Apply();
-            return Sprite.Create(t, new Rect(0, 0, w, h), new Vector2(0.5f, 0.25f), 32f);
-        }
-
-        private static Sprite DibujarHongoEsporas()
-        {
-            int w = 26, h = 28;
-            var t = CrearTextura(w, h);
-            Color cOut = new Color(0.08f, 0.08f, 0.12f);
-            Color cSombrero = new Color(0.58f, 0.22f, 0.75f);
-            Color cMota = new Color(0.35f, 0.95f, 0.85f);
-            Color cTallo = new Color(0.85f, 0.82f, 0.75f);
-
-            for (int y = 0; y < h; y++)
-            {
-                for (int x = 0; x < w; x++)
-                {
-                    // Sombrero del hongo
-                    if (y >= 12 && y <= 26 && x >= 3 && x <= 23)
-                    {
-                        float dist = Vector2.Distance(new Vector2(x, y), new Vector2(13f, 15f));
-                        if (dist <= 10f)
-                        {
-                            if (dist >= 9f) t.SetPixel(x, y, cOut);
-                            else if ((x == 8 && y == 21) || (x == 17 && y == 20) || (x == 13 && y == 16)) t.SetPixel(x, y, cMota); // Esporas luminiscentes
-                            else t.SetPixel(x, y, cSombrero);
-                            continue;
-                        }
-                    }
-
-                    // Pie del hongo
-                    if (y >= 1 && y <= 12 && x >= 9 && x <= 17)
-                    {
-                        if (x == 9 || x == 17 || y == 1) t.SetPixel(x, y, cOut);
-                        else t.SetPixel(x, y, cTallo);
-                        continue;
-                    }
-                }
-            }
-            t.Apply();
-            return Sprite.Create(t, new Rect(0, 0, w, h), new Vector2(0.5f, 0.25f), 32f);
-        }
-
-        // ========================================================
-        // 5. BIOMA ARENA
-        // ========================================================
-        private static Sprite DibujarSarcofagoAndante()
-        {
-            int w = 28, h = 34;
-            var t = CrearTextura(w, h);
-            Color cOut = new Color(0.12f, 0.10f, 0.05f);
-            Color cOro = new Color(0.95f, 0.78f, 0.22f);
-            Color cOroSombra = new Color(0.65f, 0.50f, 0.12f);
-            Color cLapis = new Color(0.15f, 0.35f, 0.75f);
-            Color cOjo = new Color(1f, 0.25f, 0.25f);
-
-            for (int y = 0; y < h; y++)
-            {
-                for (int x = 0; x < w; x++)
-                {
-                    // Silueta de sarcófago imperial
-                    if (y >= 3 && y <= 31 && x >= 5 && x <= 22)
-                    {
-                        if (x == 5 || x == 22 || y == 3 || y == 31) t.SetPixel(x, y, cOut);
-                        else if (y >= 21 && y <= 27 && (x + y) % 3 == 0) t.SetPixel(x, y, cLapis); // Franjas de lapislázuli en el nemes
-                        else if (y == 23 && (x == 10 || x == 17)) t.SetPixel(x, y, cOjo); // Ojos de maldición
-                        else t.SetPixel(x, y, (x <= 13) ? cOro : cOroSombra);
-                        continue;
-                    }
-                }
-            }
-            t.Apply();
-            return Sprite.Create(t, new Rect(0, 0, w, h), new Vector2(0.5f, 0.25f), 32f);
-        }
-
-        private static Sprite DibujarAtaudRitual()
-        {
-            int w = 32, h = 36;
-            var t = CrearTextura(w, h);
-            Color cOut = new Color(0.10f, 0.08f, 0.05f);
-            Color cPiedra = new Color(0.60f, 0.48f, 0.32f);
-            Color cCadena = new Color(0.75f, 0.78f, 0.85f);
-            Color cAura = new Color(0.35f, 0.95f, 0.45f);
-
-            for (int y = 0; y < h; y++)
-            {
-                for (int x = 0; x < w; x++)
-                {
-                    if (x >= 6 && x <= 25 && y >= 3 && y <= 33)
-                    {
-                        if (x == 6 || x == 25 || y == 3 || y == 33) t.SetPixel(x, y, cOut);
-                        else if (x == y || x + y == 31) t.SetPixel(x, y, cCadena); // Cadenas cruzadas que atan el ataúd
-                        else if (y >= 14 && y <= 18 && x >= 12 && x <= 19) t.SetPixel(x, y, cAura); // Sello arcano de invocación
-                        else t.SetPixel(x, y, cPiedra);
-                        continue;
-                    }
-                }
-            }
-            t.Apply();
-            return Sprite.Create(t, new Rect(0, 0, w, h), new Vector2(0.5f, 0.25f), 32f);
-        }
-
-        private static Sprite DibujarRataDesierto()
-        {
-            int w = 26, h = 20;
-            var t = CrearTextura(w, h);
-            Color cOut = new Color(0.12f, 0.10f, 0.05f);
-            Color cArena = new Color(0.78f, 0.62f, 0.40f);
-            Color cLuz = new Color(0.92f, 0.78f, 0.55f);
-            Color cOjo = new Color(1f, 0.15f, 0.15f);
-
-            for (int y = 0; y < h; y++)
-            {
-                for (int x = 0; x < w; x++)
-                {
-                    // Cola a la derecha
-                    if (x >= 18 && y >= 10 && (y - x == -10 || y - x == -9)) { t.SetPixel(x, y, cOut); continue; }
-
-                    // Cuerpo y cabeza afilada
-                    if (x >= 2 && x <= 18 && y >= 3 && y <= 15)
-                    {
-                        if (x == 2 || x == 18 || y == 3 || y == 15) t.SetPixel(x, y, cOut);
-                        else if (x == 6 && y == 11) t.SetPixel(x, y, cOjo);
-                        else t.SetPixel(x, y, (y >= 9) ? cLuz : cArena);
-                        continue;
-                    }
-                }
-            }
-            t.Apply();
-            return Sprite.Create(t, new Rect(0, 0, w, h), new Vector2(0.5f, 0.25f), 32f);
-        }
-
-        private static Sprite DibujarMomia()
-        {
-            int w = 26, h = 30;
-            var t = CrearTextura(w, h);
-            Color cOut = new Color(0.12f, 0.10f, 0.05f);
-            Color cVendaje = new Color(0.85f, 0.80f, 0.68f);
-            Color cVendajeSombra = new Color(0.55f, 0.50f, 0.40f);
-            Color cOjo = new Color(1f, 0.90f, 0.20f);
-
-            for (int y = 0; y < h; y++)
-            {
-                for (int x = 0; x < w; x++)
-                {
-                    if (x >= 7 && x <= 19 && y >= 2 && y <= 27)
-                    {
-                        if (x == 7 || x == 19 || y == 2 || y == 27) t.SetPixel(x, y, cOut);
-                        else if (y == 21 && (x == 10 || x == 16)) t.SetPixel(x, y, cOjo);
-                        else if ((x + y) % 4 == 0) t.SetPixel(x, y, cVendajeSombra); // Rayas de los vendajes
-                        else t.SetPixel(x, y, cVendaje);
-                        continue;
-                    }
-                }
-            }
-            t.Apply();
-            return Sprite.Create(t, new Rect(0, 0, w, h), new Vector2(0.5f, 0.25f), 32f);
-        }
-
-        // ========================================================
-        // LOS 5 JEFES MONUMENTALES (64x64 at 32 PPU = 2.0 unidades)
-        // ========================================================
         private static Sprite GenerarSpriteJefe(TipoBioma bioma)
         {
-            int s = 64;
-            var t = CrearTextura(s, s);
-
             switch (bioma)
             {
-                case TipoBioma.Piedra: // El Coloso de Piedra
-                    DibujarColosoPiedra(t);
-                    break;
-                case TipoBioma.Hielo: // Yeti de las Ventiscas
-                    DibujarYetiVentiscas(t);
-                    break;
-                case TipoBioma.Fuego: // Señor del Magma
-                    DibujarSenorMagma(t);
-                    break;
-                case TipoBioma.Planta: // La Reina Espora
-                    DibujarReinaEspora(t);
-                    break;
-                case TipoBioma.Arena: // Faraón Eterno
-                    DibujarFaraonEterno(t);
-                    break;
+                case TipoBioma.Piedra: return DibujarColosoPiedra();
+                case TipoBioma.Hielo: return DibujarYetiVentiscas();
+                case TipoBioma.Fuego: return DibujarSenorMagma();
+                case TipoBioma.Planta: return DibujarReinaEspora();
+                case TipoBioma.Arena: return DibujarFaraonEterno();
             }
-
-            t.Apply();
-            return Sprite.Create(t, new Rect(0, 0, s, s), new Vector2(0.5f, 0.22f), 32f);
+            return DibujarColosoPiedra();
         }
 
-        private static void DibujarColosoPiedra(Texture2D t)
-        {
-            Color cOut = new Color(0.08f, 0.08f, 0.12f);
-            Color cPiedra = new Color(0.42f, 0.44f, 0.50f);
-            Color cLuz = new Color(0.68f, 0.70f, 0.78f);
-            Color cSombra = new Color(0.22f, 0.24f, 0.28f);
-            Color cRuna = new Color(1f, 0.75f, 0.25f);
+        // ========================================================
+        // 1. BIOMA PIEDRA (Mazmorra Medieval)
+        // ========================================================
 
-            for (int y = 0; y < 64; y++)
+        // 1.1 Caballero de Hierro (Tanque) - Yelmo con cuernos, escudo redondo, maza
+        private static Sprite DibujarCaballeroHierro()
+        {
+            string[] mapa = new string[]
             {
-                for (int x = 0; x < 64; x++)
-                {
-                    // Silueta monumental
-                    if (x >= 12 && x <= 52 && y >= 6 && y <= 56)
-                    {
-                        float dist = Vector2.Distance(new Vector2(x, y), new Vector2(32f, 34f));
-                        if (dist <= 23f)
-                        {
-                            if (dist >= 21.5f || x == 12 || x == 52 || y == 6) t.SetPixel(x, y, cOut);
-                            else if (y >= 44 && y <= 54 && x >= 24 && x <= 40)
-                            {
-                                // Yelmo de titan con ojo rúnico central
-                                if (y == 48 && x >= 29 && x <= 35) t.SetPixel(x, y, cRuna);
-                                else t.SetPixel(x, y, (x <= 32) ? cLuz : cPiedra);
-                            }
-                            else if (y >= 26 && y <= 38 && x >= 26 && x <= 38 && (x == 32 || y == 32))
-                            {
-                                t.SetPixel(x, y, cRuna); // Cruz rúnica de poder en el pecho
-                            }
-                            else
-                            {
-                                t.SetPixel(x, y, (x <= 32) ? cLuz : (x <= 42 ? cPiedra : cSombra));
-                            }
-                        }
-                    }
-                }
-            }
-        }
+                "         ....           ",
+                "        .++++.          ",
+                "       ..++++..         ",
+                "      ..XXXXXX..        ",
+                "     .XXOOOOOOXX.       ",
+                "    .#.XOOOOOOX.#.      ",
+                "   .##.X@@..@@X.##.     ",
+                "   .#$.X@.!!.@@X.#$.    ",
+                "   .#$.X@.!!.@@X.#$.    ",
+                "    .#.XOOOOOOX.#.      ",
+                "     ..XXXXXXXX..       ",
+                "  ....##XOOOOX##....    ",
+                " .####.#XOOOOX#.####.   ",
+                ".#$$$#.#XOOOOX#.####.   ",
+                ".#$$$#.XXXXXXXX.####.   ",
+                ".#$$$#..XOOOOX..#$$#.   ",
+                ".#$$$# .XOOOOX. .##.    ",
+                " .###. .XOOOOX.  ..     ",
+                "  ...  .XXXXXX.         ",
+                "       .XX..XX.         ",
+                "       .XX..XX.         ",
+                "      .XXX..XXX.        ",
+                "      ....  ....        "
+            };
 
-        private static void DibujarYetiVentiscas(Texture2D t)
-        {
-            Color cOut = new Color(0.06f, 0.10f, 0.22f);
-            Color cPelaje = new Color(0.85f, 0.94f, 1f);
-            Color cSombra = new Color(0.45f, 0.62f, 0.78f);
-            Color cCuerno = new Color(0.20f, 0.45f, 0.70f);
-            Color cOjo = new Color(0.20f, 1f, 0.90f);
-
-            for (int y = 0; y < 64; y++)
+            var pal = new Dictionary<char, Color>
             {
-                for (int x = 0; x < 64; x++)
-                {
-                    // Cuernos de hielo colosales (curvados a los lados)
-                    bool cuernoIzq = (x >= 6 && x <= 22 && y >= 44 && y <= 58 && (x + y <= 72));
-                    bool cuernoDer = (x >= 42 && x <= 58 && y >= 44 && y <= 58 && (y - x <= 8));
-                    if (cuernoIzq || cuernoDer)
-                    {
-                        if (x == 6 || x == 58 || y == 58) t.SetPixel(x, y, cOut);
-                        else t.SetPixel(x, y, cCuerno);
-                        continue;
-                    }
+                { '.', new Color(0.06f, 0.08f, 0.12f) }, // Contorno negro azulado
+                { 'X', new Color(0.24f, 0.28f, 0.36f) }, // Acero sombra
+                { 'O', new Color(0.46f, 0.52f, 0.62f) }, // Acero medio
+                { '@', new Color(0.72f, 0.78f, 0.88f) }, // Acero brillo
+                { '+', new Color(0.85f, 0.18f, 0.18f) }, // Pluma yelmo carmesÃ­
+                { '!', new Color(1f, 0.15f, 0.15f) },    // Ojo visor rojo brillante
+                { '#', new Color(0.65f, 0.50f, 0.22f) }, // Bronce / borde escudo
+                { '$', new Color(0.92f, 0.78f, 0.36f) }  // Oro brillo
+            };
 
-                    // Cuerpo y cabeza masiva de la bestia polar
-                    float dist = Vector2.Distance(new Vector2(x, y), new Vector2(32f, 30f));
-                    if (dist <= 23f)
-                    {
-                        if (dist >= 21.5f || y == 6) t.SetPixel(x, y, cOut);
-                        else if (y >= 38 && y <= 48 && (x == 26 || x == 38)) t.SetPixel(x, y, cOjo); // Ojos celestes furiosos
-                        else if (y >= 32 && y <= 35 && x >= 28 && x <= 36) t.SetPixel(x, y, Color.white); // Colmillos
-                        else t.SetPixel(x, y, (x <= 32) ? cPelaje : cSombra);
-                    }
-                }
-            }
+            return CrearSpriteDeMapa(mapa, pal, 32f, 0.18f);
         }
 
-        private static void DibujarSenorMagma(Texture2D t)
+        // 1.2 GÃ¡rgola de Piedra (Melee RÃ¡pido) - Alas demonÃ­acas de piedra, cuernos, ojos amarillos
+        private static Sprite DibujarGargola()
         {
-            Color cOut = new Color(0.12f, 0.05f, 0.05f);
-            Color cObsidiana = new Color(0.20f, 0.16f, 0.22f);
-            Color cLavaIntensa = new Color(1f, 0.90f, 0.25f);
-            Color cFuego = new Color(1f, 0.42f, 0.08f);
-
-            for (int y = 0; y < 64; y++)
+            string[] mapa = new string[]
             {
-                for (int x = 0; x < 64; x++)
-                {
-                    // Cuernos de fuego demoníacos
-                    bool cuerno = (y >= 46 && y <= 60 && ((x >= 12 && x <= 22 && x + y >= 64) || (x >= 42 && x <= 52 && y - x >= 6)));
-                    if (cuerno)
-                    {
-                        t.SetPixel(x, y, cFuego);
-                        continue;
-                    }
+                " ..              ..     ",
+                ".##.            .##.    ",
+                ".###..        ..###.    ",
+                " .####.  ....  .####.   ",
+                "  .###..XOOOOX..###.    ",
+                " ..##.XXO@@@@OXX.##..   ",
+                ".---.XOO@.!..@OOX.---.  ",
+                ".---.XOO@.!..@OOX.---.  ",
+                " .--.XOOOOOOOOOOX.--.   ",
+                "  .. .XXXXXXXXXX. ..    ",
+                "    .XXXXXXXXXXXX.      ",
+                "   .XXOOOOOOOOOOXX.     ",
+                "  .XXOOOOOOOOOOOOXX.    ",
+                "  .XXOOOOOOOOOOOOXX.    ",
+                "   .XXXXXXXXXXXXXX.     ",
+                "    .XX.XXXXXX.XX.      ",
+                "    .XX. .XX. .XX.      ",
+                "   .XXX. .XX. .XXX.     ",
+                "   ....  ....  ....     "
+            };
 
-                    float dist = Vector2.Distance(new Vector2(x, y), new Vector2(32f, 30f));
-                    if (dist <= 23f)
-                    {
-                        if (dist >= 21.5f || y == 6) t.SetPixel(x, y, cOut);
-                        else if (dist <= 8f) t.SetPixel(x, y, (dist <= 4f) ? cLavaIntensa : cFuego); // Horno ardiente en el pecho
-                        else if (y >= 40 && y <= 44 && (x == 27 || x == 37)) t.SetPixel(x, y, cLavaIntensa); // Ojos de fuego
-                        else t.SetPixel(x, y, ((x + y) % 6 == 0) ? cFuego : cObsidiana);
-                    }
-                }
-            }
-        }
-
-        private static void DibujarReinaEspora(Texture2D t)
-        {
-            Color cOut = new Color(0.08f, 0.08f, 0.12f);
-            Color cSombrero = new Color(0.62f, 0.22f, 0.78f);
-            Color cEspora = new Color(0.35f, 1f, 0.75f);
-            Color cVestido = new Color(0.24f, 0.58f, 0.32f);
-            Color cRostro = new Color(0.92f, 0.85f, 0.78f);
-
-            for (int y = 0; y < 64; y++)
+            var pal = new Dictionary<char, Color>
             {
-                for (int x = 0; x < 64; x++)
-                {
-                    // Sombrero fúngico real coronando a la Reina
-                    if (y >= 42 && y <= 60 && x >= 10 && x <= 54)
-                    {
-                        float d = Vector2.Distance(new Vector2(x, y), new Vector2(32f, 44f));
-                        if (d <= 21f)
-                        {
-                            if (d >= 19.5f) t.SetPixel(x, y, cOut);
-                            else if ((x == 20 && y == 52) || (x == 44 && y == 51) || (x == 32 && y == 55)) t.SetPixel(x, y, cEspora);
-                            else t.SetPixel(x, y, cSombrero);
-                            continue;
-                        }
-                    }
+                { '.', new Color(0.08f, 0.10f, 0.14f) },
+                { 'X', new Color(0.25f, 0.28f, 0.34f) },
+                { 'O', new Color(0.45f, 0.50f, 0.58f) },
+                { '@', new Color(0.68f, 0.74f, 0.82f) },
+                { '!', new Color(1f, 0.90f, 0.15f) },    // Ojos amarillos brillantes
+                { '#', new Color(0.32f, 0.35f, 0.42f) }, // Cuernos de piedra
+                { '-', new Color(0.16f, 0.18f, 0.22f) }  // Membrana oscura de alas
+            };
 
-                    // Rostro de dríade y túnica floral
-                    if (x >= 18 && x <= 46 && y >= 6 && y <= 44)
-                    {
-                        if (x == 18 || x == 46 || y == 6) t.SetPixel(x, y, cOut);
-                        else if (y >= 34 && y <= 42)
-                        {
-                            if (y == 38 && (x == 28 || x == 36)) t.SetPixel(x, y, cEspora); // Ojos esmeralda
-                            else t.SetPixel(x, y, cRostro);
-                        }
-                        else
-                        {
-                            t.SetPixel(x, y, ((x * 3 + y) % 5 == 0) ? cEspora : cVestido);
-                        }
-                    }
-                }
-            }
+            return CrearSpriteDeMapa(mapa, pal, 32f, 0.18f);
         }
 
-        private static void DibujarFaraonEterno(Texture2D t)
+        // 1.3 Ballestero Esqueleto (Rango) - Capucha rota, crÃ¡neo blanco, ballesta
+        private static Sprite DibujarBallestero()
         {
-            Color cOut = new Color(0.12f, 0.08f, 0.05f);
-            Color cOro = new Color(0.98f, 0.80f, 0.20f);
-            Color cOroBrillo = new Color(1f, 0.95f, 0.55f);
-            Color cLapis = new Color(0.15f, 0.35f, 0.80f);
-            Color cOjo = new Color(1f, 0.20f, 0.20f);
-            Color cMascara = new Color(0.88f, 0.72f, 0.25f);
-
-            for (int y = 0; y < 64; y++)
+            string[] mapa = new string[]
             {
-                for (int x = 0; x < 64; x++)
-                {
-                    // Nemes real imperial (tocado de rayas doradas y azules)
-                    if (y >= 36 && y <= 60 && x >= 12 && x <= 52)
-                    {
-                        if (x == 12 || x == 52 || y == 60) t.SetPixel(x, y, cOut);
-                        else if (x == 32 && y >= 52) t.SetPixel(x, y, Color.red); // Cobra Uraeus real
-                        else t.SetPixel(x, y, ((x + y / 2) % 6 < 3) ? cOro : cLapis);
-                        continue;
-                    }
+                "        ......          ",
+                "       .XXXXXX.         ",
+                "      .X@@@@@@X.        ",
+                "      .X@....@X.        ",
+                "     .X@.OOOO.@X.       ",
+                "     .X@.O!!O.@X.       ",
+                "     .X@.OOOO.@X.       ",
+                "      .X@.OO.@X.        ",
+                "    ...X@....@X...      ",
+                "   .###.XXXXXX.###.     ",
+                "  .##$#.XOOOOX.#$##.    ",
+                " ..###..XOOOOX..###..   ",
+                ".++++++.XXXXXX.++++++.  ",
+                "  ....  .OOOO.  ....    ",
+                "        .X..X.          ",
+                "        .O..O.          ",
+                "       .XX..XX.         ",
+                "       ...  ...         "
+            };
 
-                    // Máscara funeraria de oro puro con ojos carmesí
-                    if (x >= 22 && x <= 42 && y >= 24 && y <= 40)
-                    {
-                        if (x == 22 || x == 42) t.SetPixel(x, y, cOut);
-                        else if (y == 32 && (x == 28 || x == 36)) t.SetPixel(x, y, cOjo);
-                        else t.SetPixel(x, y, (x <= 32) ? cOroBrillo : cMascara);
-                        continue;
-                    }
+            var pal = new Dictionary<char, Color>
+            {
+                { '.', new Color(0.08f, 0.08f, 0.10f) },
+                { 'X', new Color(0.20f, 0.18f, 0.24f) }, // Capucha oscura sombra
+                { '@', new Color(0.38f, 0.34f, 0.44f) }, // Capucha media
+                { 'O', new Color(0.82f, 0.80f, 0.74f) }, // Hueso crÃ¡neo
+                { '!', new Color(1f, 0.65f, 0.10f) },    // Ojos Ã¡mbar
+                { '#', new Color(0.48f, 0.30f, 0.18f) }, // Madera ballesta
+                { '$', new Color(0.70f, 0.48f, 0.28f) },
+                { '+', new Color(0.75f, 0.80f, 0.88f) }  // Arco de acero / cuerda
+            };
 
-                    // Torso y collar usekh sagrado
-                    if (x >= 16 && x <= 48 && y >= 6 && y <= 26)
-                    {
-                        if (x == 16 || x == 48 || y == 6) t.SetPixel(x, y, cOut);
-                        else if (y >= 20 && y <= 24) t.SetPixel(x, y, (x % 4 == 0) ? cLapis : cOro);
-                        else t.SetPixel(x, y, (x <= 32) ? cOro : cMascara);
-                    }
-                }
-            }
+            return CrearSpriteDeMapa(mapa, pal, 32f, 0.18f);
         }
 
-        private static Texture2D CrearTextura(int w, int h)
+        // 1.4 Fantasma RÃºnico (Especial) - Espectro flotante con manto andrajoso y nÃºcleo cian
+        private static Sprite DibujarFantasma()
         {
-            var t = new Texture2D(w, h, TextureFormat.RGBA32, false);
-            t.filterMode = FilterMode.Point;
-            for (int y = 0; y < h; y++)
-                for (int x = 0; x < w; x++)
-                    t.SetPixel(x, y, Color.clear);
-            return t;
+            string[] mapa = new string[]
+            {
+                "        ......          ",
+                "       .XXXXXX.         ",
+                "      .XXOOOOXX.        ",
+                "     .XXO@@@@OXX.       ",
+                "     .XO@....@OX.       ",
+                "  #  .XO@.!!.@@X.  #    ",
+                " #$# .XO@.!!.@@X. #$#   ",
+                "  #  .XO@....@OX.  #    ",
+                "     .XXOOOOOOXX.       ",
+                "      .XXXXXXXX.        ",
+                "     .XXOOOOOOXX.       ",
+                "    .XXOOOOOOOOXX.      ",
+                "    .XXOOOOOOOOXX.      ",
+                "    .XXO.OOOO.OXX.      ",
+                "     .XX.XXXX.XX.       ",
+                "      .X. .. .X.        ",
+                "       ..    ..         "
+            };
+
+            var pal = new Dictionary<char, Color>
+            {
+                { '.', new Color(0.05f, 0.10f, 0.16f) },
+                { 'X', new Color(0.12f, 0.26f, 0.38f) },
+                { 'O', new Color(0.22f, 0.50f, 0.70f) },
+                { '@', new Color(0.48f, 0.82f, 0.96f) },
+                { '!', new Color(0.85f, 1f, 1f) },       // Ojos de alma fulgurantes
+                { '#', new Color(0.28f, 0.32f, 0.38f) }, // Piedras rÃºnicas flotantes
+                { '$', new Color(0.10f, 0.95f, 0.90f) }  // Glifo mÃ¡gico en la piedra
+            };
+
+            return CrearSpriteDeMapa(mapa, pal, 32f, 0.22f);
+        }
+
+        // 1.5 Coloso de Piedra (Jefe - 36x40) - TitÃ¡n monolÃ­tico de granito con runas y ojo ciclÃ³peo
+        private static Sprite DibujarColosoPiedra()
+        {
+            string[] mapa = new string[]
+            {
+                "            ............            ",
+                "           .############.           ",
+                "          .##XXXXXXXXXX##.          ",
+                "         .##XXOOOOOOOOXX##.         ",
+                "        .##XXO@@@@@@@@OXX##.        ",
+                "        .##XO@...$$...@OX##.        ",
+                "        .##XO@..$$$$..@OX##.        ",
+                "        .##XO@..$!!$..@OX##.        ",
+                "        .##XO@..$$$$..@OX##.        ",
+                "        .##XO@...$$...@OX##.        ",
+                "        .##XXO@@@@@@@@OXX##.        ",
+                "         .##XXXXXXXXXXXX##.         ",
+                "       ...################...       ",
+                "     ..XXX.##############.XXX..     ",
+                "    .XXXXXX.XXXXXXXXXXXX.XXXXXX.    ",
+                "   .XXXXOOOO.XXOOOOOOXX.OOOOXXXX.   ",
+                "  .XXXXO@@@@O.XOOOOOOX.O@@@@OXXXX.  ",
+                "  .XXXO@$$$$@O.XOOOOX.O@$$$$@OXXX.  ",
+                "  .XXXO@$$$$@O.XXXXXX.O@$$$$@OXXX.  ",
+                "  .XXXXO@@@@O.XXOOOOXX.O@@@@OXXXX.  ",
+                "   .XXXXOOOO.XXOOOOOOXX.OOOOXXXX.   ",
+                "    .XXXXXX.XXOOOOOOOOXX.XXXXXX.    ",
+                "     ..XX..XXOOOOOOOOOOXX..XX..     ",
+                "         .XXOOOOOOOOOOOOXX.         ",
+                "        .XXOOOOO$$$$OOOOOXX.        ",
+                "        .XXOOOO$$!!$$OOOOXX.        ",
+                "        .XXOOOOO$$$$OOOOOXX.        ",
+                "        .XXXXXXXXXXXXXXXXXX.        ",
+                "        .XXXXXX.    .XXXXXX.        ",
+                "        .XXXXXX.    .XXXXXX.        ",
+                "        .XXXXXX.    .XXXXXX.        ",
+                "       .XXXXXXXX.  .XXXXXXXX.       ",
+                "       ..........  ..........       "
+            };
+
+            var pal = new Dictionary<char, Color>
+            {
+                { '.', new Color(0.06f, 0.08f, 0.12f) },
+                { 'X', new Color(0.22f, 0.26f, 0.32f) }, // Granito sombra
+                { 'O', new Color(0.40f, 0.46f, 0.55f) }, // Granito medio
+                { '@', new Color(0.62f, 0.70f, 0.80f) }, // Granito claro
+                { '#', new Color(0.18f, 0.32f, 0.22f) }, // Musgo antiguo en la corona
+                { '$', new Color(0.10f, 0.85f, 0.90f) }, // Grietas rÃºnicas cian
+                { '!', new Color(0.80f, 1f, 1f) }        // NÃºcleo rÃºnico brillante
+            };
+
+            return CrearSpriteDeMapa(mapa, pal, 32f, 0.15f);
+        }
+
+        // ========================================================
+        // 2. BIOMA HIELO (Cripta Glacial)
+        // ========================================================
+
+        // 2.1 GÃ³lem de Escarcha (Tanque) - Hombros de cristal y carÃ¡mbanos
+        private static Sprite DibujarGolemHielo()
+        {
+            string[] mapa = new string[]
+            {
+                "         ..      ..         ",
+                "        .##.    .##.        ",
+                "       .####.  .####.       ",
+                "      ..####....####..      ",
+                "     .XXOOOOOOOOOOOOXX.     ",
+                "    .XXO@@@@@@@@@@@@OXX.    ",
+                "   ..XO@...@@@@@@...@@OX..  ",
+                "  .##XO@.!!.@@@@.!!.@@OX##. ",
+                "  .#$XO@.!!.@@@@.!!.@@OX$#. ",
+                "  .##XO@...@@@@@@...@@OX##. ",
+                "   ..XXOOOOOOOOOOOOOOXX..   ",
+                "  ...XXXXXXXXXXXXXXXXXX...  ",
+                " .###.XXOOOOOOOOOOOOXX.###. ",
+                ".#$$#.XXOOOOOOOOOOOOXX.#$$#.",
+                ".#$$#.XXXXXXXXXXXXXXXX.#$$#.",
+                " .##. .XXOOOOOOOOOOXX. .##. ",
+                "  ..  .XXOOOOOOOOOOXX.  ..  ",
+                "       .XXXXXXXXXXXX.       ",
+                "       .XXXX.  .XXXX.       ",
+                "       .XXXX.  .XXXX.       ",
+                "      .XXXXXX..XXXXXX.      ",
+                "      .......  .......      "
+            };
+
+            var pal = new Dictionary<char, Color>
+            {
+                { '.', new Color(0.04f, 0.10f, 0.18f) },
+                { 'X', new Color(0.12f, 0.25f, 0.40f) }, // Hielo sombra
+                { 'O', new Color(0.24f, 0.50f, 0.72f) }, // Hielo medio
+                { '@', new Color(0.50f, 0.80f, 0.95f) }, // Hielo brillo
+                { '#', new Color(0.35f, 0.65f, 0.85f) }, // Puntas de carÃ¡mbano
+                { '$', new Color(0.85f, 0.98f, 1f) },    // Escarcha blanca
+                { '!', new Color(0.80f, 1f, 1f) }        // Ojos glaciales resplandecientes
+            };
+
+            return CrearSpriteDeMapa(mapa, pal, 32f, 0.18f);
+        }
+
+        // 2.2 Lobo Polar (Melee RÃ¡pido) - Lobo Ã¡rtico blanco con ojos cian
+        private static Sprite DibujarLoboPolar()
+        {
+            string[] mapa = new string[]
+            {
+                " ..          ..         ",
+                ".XX.        .XX.        ",
+                ".XOX.      .XOX.        ",
+                ".XOOX......XOOX.        ",
+                ".XOOOXXXXXXOOOX.        ",
+                ".XOOOOOOOOOOOOX.        ",
+                ".XOO@.OOOO.@OOX.        ",
+                ".XOO@.!!OO.!!OX.        ",
+                ".XOO@.!!OO.!!OX.        ",
+                " .XOOOO#..#OOX.         ",
+                "  .XOOO####OX.          ",
+                "   .XXXXXXXX.   ...     ",
+                "  .XXOOOOOOXX. .XX.     ",
+                " .XXOOOOOOOOXX.XOX.     ",
+                ".XXOOOOOOOOOOXXXOX.     ",
+                ".XXOOOOOOOOOOOOXOX.     ",
+                " .XXOOOOOOOOOOXXOX.     ",
+                "  .XXXXXXXXXXXXXOX.     ",
+                "   .XX.    .XX.XOX.     ",
+                "   .XX.    .XX. .X.     ",
+                "  .XXX.   .XXX.  ..     ",
+                "  ....    ....          "
+            };
+
+            var pal = new Dictionary<char, Color>
+            {
+                { '.', new Color(0.06f, 0.12f, 0.20f) },
+                { 'X', new Color(0.40f, 0.55f, 0.72f) }, // Pelaje sombra azulada
+                { 'O', new Color(0.75f, 0.88f, 0.98f) }, // Pelaje blanco Ã¡rtico
+                { '@', new Color(1f, 1f, 1f) },          // Blanco nieve puro
+                { '!', new Color(0.10f, 0.85f, 1f) },    // Ojos cian penetrantes
+                { '#', new Color(0.15f, 0.20f, 0.30f) }  // Hocico oscuro
+            };
+
+            return CrearSpriteDeMapa(mapa, pal, 32f, 0.18f);
+        }
+
+        // 2.3 Mago Glacial (Rango) - Mago encapuchado azul con bÃ¡culo de diamante de hielo
+        private static Sprite DibujarMagoGlacial()
+        {
+            string[] mapa = new string[]
+            {
+                "       $$$              ",
+                "      $***$             ",
+                "       $*$              ",
+                "        #      ...      ",
+                "       #+#    .XXX.     ",
+                "        #    .X@@@X.    ",
+                "        #   .X@...X.    ",
+                "        #   .X.!!!.X.   ",
+                "        #   .X.!!!.X.   ",
+                "       #+#  .X@...X.    ",
+                "        #   ..X@@@X..   ",
+                "        #  .XXOOOOOXX.  ",
+                "        # .XXOOOOOOOXX. ",
+                "       #+#.XXOOOOOOOXX. ",
+                "        #.XXOOOOOOOOOXX.",
+                "        #.XXOOOOOOOOOXX.",
+                "        #.XXOOOOOOOOOXX.",
+                "        # .XXOOOOOOOXX. ",
+                "        #  .XXXXXXXXX.  ",
+                "        #   .XX...XX.   ",
+                "        #   .XX. .XX.   ",
+                "            .XX. .XX.   "
+            };
+
+            var pal = new Dictionary<char, Color>
+            {
+                { '.', new Color(0.06f, 0.10f, 0.18f) },
+                { 'X', new Color(0.12f, 0.22f, 0.35f) }, // TÃºnica azul oscuro
+                { 'O', new Color(0.20f, 0.40f, 0.62f) }, // TÃºnica azul medio
+                { '@', new Color(0.40f, 0.68f, 0.88f) }, // Bordado cian
+                { '!', new Color(0.20f, 0.95f, 1f) },    // Ojos de hielo brillante
+                { '#', new Color(0.35f, 0.25f, 0.18f) }, // Madera del bÃ¡culo
+                { '+', new Color(0.60f, 0.75f, 0.90f) }, // Anillos de plata
+                { '*', new Color(0.60f, 0.92f, 1f) },    // Cristal de hielo flotante
+                { '$', new Color(1f, 1f, 1f) }           // Destello cristalino
+            };
+
+            return CrearSpriteDeMapa(mapa, pal, 32f, 0.18f);
+        }
+
+        // 2.4 MurciÃ©lago Glacial (Especial) - Alas de cristal translÃºcido y colmillos de hielo
+        private static Sprite DibujarMurcielagoHielo()
+        {
+            string[] mapa = new string[]
+            {
+                " ..              ..     ",
+                ".##.            .##.    ",
+                ".#$#.   ....   .#$#.    ",
+                ".#$$#..XXXXXX..#$$#.    ",
+                " .#$$#XOOOOOOX#$$#.     ",
+                "  .#$XOO@..@OOX$#.      ",
+                "   .XXOO.!!.OOXX.       ",
+                "  .XXXXO.!!.OXXXX.      ",
+                " .XXXXXXOOOOXXXXXX.     ",
+                ".XXXXXXXX..XXXXXXXX.    ",
+                ".XXXXXXX.  .XXXXXXX.    ",
+                " .XXXXX.    .XXXXX.     ",
+                "  .XXX.      .XXX.      ",
+                "   ...        ...       "
+            };
+
+            var pal = new Dictionary<char, Color>
+            {
+                { '.', new Color(0.04f, 0.08f, 0.16f) },
+                { 'X', new Color(0.12f, 0.24f, 0.38f) }, // Ala azul profundo
+                { 'O', new Color(0.25f, 0.50f, 0.72f) }, // Membrana cristalina
+                { '@', new Color(0.55f, 0.82f, 0.95f) },
+                { '!', new Color(0.85f, 1f, 1f) },       // Ojos helados
+                { '#', new Color(0.40f, 0.70f, 0.90f) }, // Puntas de hielo
+                { '$', new Color(0.90f, 0.98f, 1f) }     // Brillo blanco
+            };
+
+            return CrearSpriteDeMapa(mapa, pal, 32f, 0.25f);
+        }
+
+        // 2.5 Yeti de las Ventiscas (Jefe - 36x40) - Bestia colosal con cuernos de carnero de hielo
+        private static Sprite DibujarYetiVentiscas()
+        {
+            string[] mapa = new string[]
+            {
+                "    ....                    ....    ",
+                "   .####.                  .####.   ",
+                "  .######.                .######.  ",
+                "  .##$$##.   ..........   .##$$##.  ",
+                "  .##$$##...XXXXXXXXXXXX...##$$##.  ",
+                "   .####.XXXXXXXXXXXXXXXXXX.####.   ",
+                "    ....XXOOOOOOOOOOOOOOOOXX....    ",
+                "       .XXOO@@@@@@@@@@@@OOXX.       ",
+                "      .XXOO@...@@@@@@...@@OOXX.     ",
+                "     .XXOOO@.!!.@@@@.!!.@@OOOXX.    ",
+                "     .XXOOO@.!!.@@@@.!!.@@OOOXX.    ",
+                "     .XXOOO@...@@@@@@...@@OOOXX.    ",
+                "      .XXOOOOOOOOOOOOOOOOOOOOXX.    ",
+                "     ..XXOOOO--#----#--OOOOOOXX..   ",
+                "   ..XXXXOOOO--#----#--OOOOOOXXXX.. ",
+                "  .XXXXXXOOOO----------OOOOOOXXXXXX.",
+                " .XXXXOOOOOOO##########OOOOOOOXXXXX.",
+                ".XXXXO@@@@OOOOOOOOOOOOOOOO@@@@OXXXX.",
+                ".XXXO@$$$$@OOOOOOOOOOOOOO@$$$$@OXXX.",
+                ".XXXO@$$$$@OOOOOOOOOOOOOO@$$$$@OXXX.",
+                ".XXXXO@@@@OOOOOOOOOOOOOOOO@@@@OXXXX.",
+                " .XXXXOOOOOOOOOOOOOOOOOOOOOOOOXXXX. ",
+                "  .XXXXXXOOOOOOOOOOOOOOOOOOOOXXXX.  ",
+                "   ..XXXXXXOOOOOOOOOOOOOOOOXXXX..   ",
+                "     .XXXXXOOOOOOOOOOOOOOOOXXXXX.   ",
+                "     .XXXXXOOOOOOOOOOOOOOOOXXXXX.   ",
+                "     .XXXXXXXXXXXXXXXXXXXXXXXXXX.   ",
+                "     .XXXXXXXX.      .XXXXXXXXXX.   ",
+                "     .XXXXXXXX.      .XXXXXXXXXX.   ",
+                "    .XXXXXXXXXX.    .XXXXXXXXXXXX.  ",
+                "    ............    ..............  "
+            };
+
+            var pal = new Dictionary<char, Color>
+            {
+                { '.', new Color(0.04f, 0.08f, 0.16f) },
+                { 'X', new Color(0.24f, 0.35f, 0.50f) }, // Pelaje sombra
+                { 'O', new Color(0.60f, 0.75f, 0.88f) }, // Pelaje medio
+                { '@', new Color(0.85f, 0.94f, 1f) },    // Pelaje blanco nieve
+                { '#', new Color(0.18f, 0.40f, 0.65f) }, // Cuernos de hielo oscuro / boca
+                { '$', new Color(0.55f, 0.85f, 1f) },    // Cuernos brillo
+                { '-', new Color(0.10f, 0.14f, 0.22f) }, // Boca rugiente oscura
+                { '!', new Color(0.20f, 0.95f, 1f) }     // Ojos cian ardientes
+            };
+
+            return CrearSpriteDeMapa(mapa, pal, 32f, 0.15f);
+        }
+
+        // ========================================================
+        // 3. BIOMA FUEGO (Fortaleza VolcÃ¡nica)
+        // ========================================================
+
+        // 3.1 Engendro de Magma (Tanque) - Armadura de basalto negro con grietas de lava incandescente
+        private static Sprite DibujarEngendroMagma()
+        {
+            string[] mapa = new string[]
+            {
+                "         ..      ..         ",
+                "        .##.    .##.        ",
+                "       .####....####.       ",
+                "      ..XXXXXXXXXXXX..      ",
+                "     .XXOOOOOOOOOOOOXX.     ",
+                "    .XXO@@@@@@@@@@@@OXX.    ",
+                "   ..XO@...@@@@@@...@@OX..  ",
+                "  .##XO@.!!.@@@@.!!.@@OX##. ",
+                "  .#$XO@.!!.@@@@.!!.@@OX$#. ",
+                "  .##XO@...@@@@@@...@@OX##. ",
+                "   ..XXOOOOOOOOOOOOOOXX..   ",
+                "  ...XXXXXXXXXXXXXXXXXX...  ",
+                " .###.XXOOOO$$$$OOOOXX.###. ",
+                ".#$$#.XXOOO$$!!$$OOOXX.#$$#.",
+                ".#$$#.XXOOOO$$$$OOOOXX.#$$#.",
+                " .##. .XXOOOOOOOOOOXX. .##. ",
+                "  ..  .XXOOOOOOOOOOXX.  ..  ",
+                "       .XXXXXXXXXXXX.       ",
+                "       .XXXX.  .XXXX.       ",
+                "       .XXXX.  .XXXX.       ",
+                "      .XXXXXX..XXXXXX.      ",
+                "      .......  .......      "
+            };
+
+            var pal = new Dictionary<char, Color>
+            {
+                { '.', new Color(0.08f, 0.04f, 0.04f) },
+                { 'X', new Color(0.18f, 0.12f, 0.14f) }, // Basalto sombra
+                { 'O', new Color(0.32f, 0.22f, 0.26f) }, // Basalto medio
+                { '@', new Color(0.50f, 0.38f, 0.42f) }, // Basalto brillo
+                { '#', new Color(0.85f, 0.20f, 0.05f) }, // Magma rojo
+                { '$', new Color(1f, 0.55f, 0.10f) },    // Lava naranja
+                { '!', new Color(1f, 0.90f, 0.20f) }     // NÃºcleo amarillo brillante
+            };
+
+            return CrearSpriteDeMapa(mapa, pal, 32f, 0.18f);
+        }
+
+        // 3.2 Sabueso Ãgneo (Melee RÃ¡pido) - Perro demonÃ­aco con crin en llamas
+        private static Sprite DibujarSabuesoIgneo()
+        {
+            string[] mapa = new string[]
+            {
+                "    $$        $$$       ",
+                "   $**$      $***$      ",
+                "  $****$....$*****$     ",
+                " ..#**#XXXXXX#***#..    ",
+                ".XX#*#OOOOOOOO#*#OXX.   ",
+                ".XOOOOOOOOOOOOOOOOOOX.  ",
+                ".XOO@.OOOOOOOOOO.@OOX.  ",
+                ".XOO@.!!OOOOOO!!.@@OX.  ",
+                ".XOO@.!!OOOOOO!!.@@OX.  ",
+                " .XOOOO--####--OOOOOX.  ",
+                "  .XOOO--------OOOOX.   ",
+                "   .XXXXXXXXXXXXXXX.    ",
+                "  .XXOOOOOOOOOOOOOXX.   ",
+                " .XXOOOOOOOOOOOOOOOXX.  ",
+                ".XXOOOOOOOOOOOOOOOOOXX. ",
+                " .XXOOOOOOOOOOOOOOOXX.  ",
+                "  .XXXXXXXXXXXXXXXXX.   ",
+                "   .XX.  .XX.  .XX.     ",
+                "  .XXX. .XXX. .XXX.     ",
+                "  ....  ....  ....      "
+            };
+
+            var pal = new Dictionary<char, Color>
+            {
+                { '.', new Color(0.08f, 0.04f, 0.04f) },
+                { 'X', new Color(0.18f, 0.10f, 0.12f) }, // Piel chamuscada sombra
+                { 'O', new Color(0.32f, 0.18f, 0.22f) }, // Piel chamuscada media
+                { '@', new Color(0.52f, 0.30f, 0.36f) },
+                { '#', new Color(0.85f, 0.15f, 0.05f) }, // Fuego base rojo
+                { '*', new Color(1f, 0.50f, 0.08f) },    // Fuego naranja
+                { '$', new Color(1f, 0.88f, 0.25f) },    // Fuego amarillo
+                { '-', new Color(0.10f, 0.05f, 0.05f) }, // Fauces oscuras
+                { '!', new Color(1f, 0.20f, 0.05f) }     // Ojos de fuego
+            };
+
+            return CrearSpriteDeMapa(mapa, pal, 32f, 0.18f);
+        }
+
+        // 3.3 ChamÃ¡n de Fuego (Rango) - MÃ¡scara ceremonial, tÃºnica roja y bÃ¡culo ardiente
+        private static Sprite DibujarChamanFuego()
+        {
+            string[] mapa = new string[]
+            {
+                "       $$$              ",
+                "      $***$             ",
+                "       $*$              ",
+                "        #      ...      ",
+                "       #+#    .XXX.     ",
+                "        #    .X@@@X.    ",
+                "        #   .X@...X.    ",
+                "        #   .X.!!!.X.   ",
+                "        #   .X.!!!.X.   ",
+                "       #+#  .X@...X.    ",
+                "        #   ..X@@@X..   ",
+                "        #  .XXOOOOOXX.  ",
+                "        # .XXOOOOOOOXX. ",
+                "       #+#.XXOOOOOOOXX. ",
+                "        #.XXOOOOOOOOOXX.",
+                "        #.XXOOOOOOOOOXX.",
+                "        #.XXOOOOOOOOOXX.",
+                "        # .XXOOOOOOOXX. ",
+                "        #  .XXXXXXXXX.  ",
+                "        #   .XX...XX.   ",
+                "        #   .XX. .XX.   ",
+                "            .XX. .XX.   "
+            };
+
+            var pal = new Dictionary<char, Color>
+            {
+                { '.', new Color(0.08f, 0.04f, 0.04f) },
+                { 'X', new Color(0.35f, 0.08f, 0.08f) }, // TÃºnica carmesÃ­ sombra
+                { 'O', new Color(0.65f, 0.15f, 0.12f) }, // TÃºnica carmesÃ­ media
+                { '@', new Color(0.90f, 0.35f, 0.20f) }, // Borde fuego claro
+                { '!', new Color(1f, 0.85f, 0.15f) },    // Ojos de fuego brillante
+                { '#', new Color(0.28f, 0.20f, 0.18f) }, // Hierro negro del bÃ¡culo
+                { '+', new Color(0.85f, 0.65f, 0.20f) }, // Anillos de bronce
+                { '*', new Color(1f, 0.45f, 0.08f) },    // Bola de fuego naranja
+                { '$', new Color(1f, 0.90f, 0.30f) }     // Fuego amarillo brillante
+            };
+
+            return CrearSpriteDeMapa(mapa, pal, 32f, 0.18f);
+        }
+
+        // 3.4 Fatuo VolcÃ¡nico (Especial) - Remolino de llamas vivas con nÃºcleo ardiente
+        private static Sprite DibujarFatuoVolcanico()
+        {
+            string[] mapa = new string[]
+            {
+                "       $$$              ",
+                "      $***$    $$       ",
+                "     $*****$  $**$      ",
+                "    ..#***#....#*$      ",
+                "   .##X***X####..       ",
+                "  .##XX***XX####.       ",
+                "  .#XXO***OXX###.       ",
+                "  .XOO@.!.@OOX##.       ",
+                "  .XOO@.!.@OOX#.        ",
+                "   .XXOOOOOXX.          ",
+                "    .XXXXXXX.           ",
+                "     .XX.XX.            ",
+                "      .. ..             "
+            };
+
+            var pal = new Dictionary<char, Color>
+            {
+                { '.', new Color(0.10f, 0.02f, 0.02f) },
+                { 'X', new Color(0.55f, 0.08f, 0.05f) }, // Rojo oscuro
+                { 'O', new Color(0.85f, 0.25f, 0.05f) }, // Fuego medio
+                { '@', new Color(1f, 0.60f, 0.12f) },    // Fuego claro
+                { '!', new Color(1f, 1f, 0.70f) },       // Ojos blancos incandescentes
+                { '#', new Color(0.70f, 0.12f, 0.05f) }, // Llamas exteriores
+                { '*', new Color(1f, 0.50f, 0.08f) },    // Lenguas de fuego
+                { '$', new Color(1f, 0.85f, 0.25f) }     // Puntas de chispa
+            };
+
+            return CrearSpriteDeMapa(mapa, pal, 32f, 0.25f);
+        }
+
+        // 3.5 SeÃ±or del Magma (Jefe - 36x40) - Archidemonio Ã­gneo con cuernos colosales y pecho de lava
+        private static Sprite DibujarSenorMagma()
+        {
+            string[] mapa = new string[]
+            {
+                "  $$                            $$  ",
+                " $**$                          $**$ ",
+                ".#***#                        #***#.",
+                ".##***#                      #***##.",
+                " .##***#    ............    #***##. ",
+                "  .##***#..##############..#***##.  ",
+                "   .##**#.XXXXXXXXXXXXXXXX.#**##.   ",
+                "    .##..XXOOOOOOOOOOOOOOXX..##.    ",
+                "      ..XXOO@@@@@@@@@@@@OOXX..      ",
+                "     .XXOO@...@@@@@@...@@OOXX.      ",
+                "    .XXOOO@.!!.@@@@.!!.@@OOOXX.     ",
+                "    .XXOOO@.!!.@@@@.!!.@@OOOXX.     ",
+                "    .XXOOO@...@@@@@@...@@OOOXX.     ",
+                "     .XXOOOOOOOOOOOOOOOOOOOOXX.     ",
+                "    ..XXOOOO$$$$$$$$$$OOOOOOXX..    ",
+                "  ..XXXXOOOO$$!!$$!!$$OOOOOOXXXX..  ",
+                " .XXXXXXOOOO$$$$$$$$$$OOOOOOXXXXXX. ",
+                ".XXXXOOOOOOO##########OOOOOOOXXXXXX.",
+                ".XXXO@$$$$@OOOOOOOOOOOOOOOO@@@@OXXX.",
+                ".XXXO@$$$$@OOOOOOOOOOOOOOOO@@@@OXXX.",
+                ".XXXXO@@@@OOOOOOOOOOOOOOOO@@@@OXXXX.",
+                " .XXXXOOOOOOOOOOOOOOOOOOOOOOOOXXXX. ",
+                "  .XXXXXXOOOOOOOOOOOOOOOOOOOOXXXX.  ",
+                "   ..XXXXXXOOOOOOOOOOOOOOOOXXXX..   ",
+                "     .XXXXXOOOOOOOOOOOOOOOOXXXXX.   ",
+                "     .XXXXXOOOOOOOOOOOOOOOOXXXXX.   ",
+                "     .XXXXXXXXXXXXXXXXXXXXXXXXXX.   ",
+                "     .XXXXXXXX.      .XXXXXXXXXX.   ",
+                "     .XXXXXXXX.      .XXXXXXXXXX.   ",
+                "    .XXXXXXXXXX.    .XXXXXXXXXXXX.  ",
+                "    ............    ..............  "
+            };
+
+            var pal = new Dictionary<char, Color>
+            {
+                { '.', new Color(0.08f, 0.04f, 0.04f) },
+                { 'X', new Color(0.20f, 0.12f, 0.14f) }, // Basalto obsidiana sombra
+                { 'O', new Color(0.36f, 0.22f, 0.26f) }, // Basalto medio
+                { '@', new Color(0.58f, 0.38f, 0.42f) }, // Basalto claro
+                { '#', new Color(0.85f, 0.18f, 0.05f) }, // Cuernos de lava roja
+                { '*', new Color(1f, 0.55f, 0.10f) },    // Cuernos lava naranja
+                { '$', new Color(1f, 0.85f, 0.25f) },    // CorazÃ³n ardiente de sol lÃ­quido
+                { '!', new Color(1f, 1f, 0.80f) }        // NÃºcleo blanco incandescente
+            };
+
+            return CrearSpriteDeMapa(mapa, pal, 32f, 0.15f);
+        }
+
+        // ========================================================
+        // 4. BIOMA PLANTA (Santuario de Esporas)
+        // ========================================================
+
+        // 4.1 Treant Ancestral (Tanque) - Roble viviente con musgo y hojas
+        private static Sprite DibujarTreant()
+        {
+            string[] mapa = new string[]
+            {
+                "         $$      $$         ",
+                "        $**$    $**$        ",
+                "       $****$..$****$       ",
+                "      ..####XXXX####..      ",
+                "     .XXOOOOOOOOOOOOXX.     ",
+                "    .XXO@@@@@@@@@@@@OXX.    ",
+                "   ..XO@...@@@@@@...@@OX..  ",
+                "  .##XO@.!!.@@@@.!!.@@OX##. ",
+                "  .#$XO@.!!.@@@@.!!.@@OX$#. ",
+                "  .##XO@...@@@@@@...@@OX##. ",
+                "   ..XXOOOOOOOOOOOOOOXX..   ",
+                "  ...XXXXXXXXXXXXXXXXXX...  ",
+                " .###.XXOOOOOOOOOOOOXX.###. ",
+                ".#$$#.XXOOOOOOOOOOOOXX.#$$#.",
+                ".#$$#.XXXXXXXXXXXXXXXX.#$$#.",
+                " .##. .XXOOOOOOOOOOXX. .##. ",
+                "  ..  .XXOOOOOOOOOOXX.  ..  ",
+                "       .XXXXXXXXXXXX.       ",
+                "       .XXXX.  .XXXX.       ",
+                "       .XXXX.  .XXXX.       ",
+                "      .XXXXXX..XXXXXX.      ",
+                "      .......  .......      "
+            };
+
+            var pal = new Dictionary<char, Color>
+            {
+                { '.', new Color(0.06f, 0.08f, 0.04f) },
+                { 'X', new Color(0.24f, 0.16f, 0.10f) }, // Corteza roble sombra
+                { 'O', new Color(0.40f, 0.28f, 0.18f) }, // Corteza roble media
+                { '@', new Color(0.58f, 0.42f, 0.28f) }, // Corteza roble clara
+                { '#', new Color(0.25f, 0.45f, 0.18f) }, // Musgo oscuro
+                { '$', new Color(0.45f, 0.75f, 0.25f) }, // Hojas verdes brillantes
+                { '*', new Color(0.35f, 0.62f, 0.22f) }, // Follaje medio
+                { '!', new Color(1f, 0.80f, 0.15f) }     // Ojos de espÃ­ritu Ã¡mbar
+            };
+
+            return CrearSpriteDeMapa(mapa, pal, 32f, 0.18f);
+        }
+
+        // 4.2 MandrÃ¡gora Rabiosa (Melee RÃ¡pido) - RaÃ­z viviente veloz con brote de hojas
+        private static Sprite DibujarMandragora()
+        {
+            string[] mapa = new string[]
+            {
+                "         $$$            ",
+                "        $***$           ",
+                "         $*$            ",
+                "        ......          ",
+                "       .XXXXXX.         ",
+                "      .XXOOOOXX.        ",
+                "     .XXO@@@@OXX.       ",
+                "     .XO@....@OX.       ",
+                "     .XO@.!!.@@X.       ",
+                "     .XO@.!!.@@X.       ",
+                "     .XO@....@OX.       ",
+                "      .X--##--X.        ",
+                "      .X------X.        ",
+                "       .XXXXXX.         ",
+                "      .XXOOOOXX.        ",
+                "     .XXOOOOOOXX.       ",
+                "      .XXXXXXXX.        ",
+                "      .XX.  .XX.        ",
+                "     .XXX.  .XXX.       ",
+                "     ....    ....       "
+            };
+
+            var pal = new Dictionary<char, Color>
+            {
+                { '.', new Color(0.08f, 0.06f, 0.04f) },
+                { 'X', new Color(0.32f, 0.22f, 0.14f) }, // RaÃ­z sombra
+                { 'O', new Color(0.52f, 0.38f, 0.25f) }, // RaÃ­z media
+                { '@', new Color(0.72f, 0.55f, 0.38f) }, // RaÃ­z clara
+                { '$', new Color(0.40f, 0.80f, 0.25f) }, // Brote verde
+                { '*', new Color(0.28f, 0.60f, 0.18f) },
+                { '#', new Color(0.90f, 0.85f, 0.70f) }, // Dientes afilados de madera
+                { '-', new Color(0.12f, 0.08f, 0.06f) }, // Boca abierta
+                { '!', new Color(1f, 0.15f, 0.20f) }     // Ojos rojos feroces
+            };
+
+            return CrearSpriteDeMapa(mapa, pal, 32f, 0.18f);
+        }
+
+        // 4.3 Flor CarnÃ­vora (Rango) - Fauces abiertas de planta carnÃ­vora con espinas
+        private static Sprite DibujarFlorCarnivora()
+        {
+            string[] mapa = new string[]
+            {
+                "      ........          ",
+                "     .########.         ",
+                "    .##--##--##.        ",
+                "   .##--------##.       ",
+                "  .##----------##.      ",
+                "  .#------------#.      ",
+                "  .#--!!----!!--#.      ",
+                "  .#--!!----!!--#.      ",
+                "  .##----------##.      ",
+                "   .##--####--##.       ",
+                "    .##########.        ",
+                "     ...XXXX...         ",
+                "       .XOOX.           ",
+                "       .XOOX.   ..      ",
+                "   ..  .XOOX.  .##.     ",
+                "  .##. .XOOX. .####.    ",
+                " .####..XOOX..######.   ",
+                " .##################.   ",
+                "  .################.    ",
+                "   ................     "
+            };
+
+            var pal = new Dictionary<char, Color>
+            {
+                { '.', new Color(0.06f, 0.08f, 0.04f) },
+                { 'X', new Color(0.18f, 0.35f, 0.14f) }, // Tallo verde oscuro
+                { 'O', new Color(0.32f, 0.62f, 0.24f) }, // Tallo verde medio
+                { '#', new Color(0.48f, 0.16f, 0.52f) }, // PÃ©talos violetas carnÃ­voros
+                { '-', new Color(0.20f, 0.06f, 0.22f) }, // Interior fauces oscuro
+                { '!', new Color(0.60f, 1f, 0.20f) }     // Esporas Ã¡cidas brillantes
+            };
+
+            return CrearSpriteDeMapa(mapa, pal, 32f, 0.18f);
+        }
+
+        // 4.4 Hongo de Esporas (Especial) - Sombrero de hongo morado con motas venenosas verdes
+        private static Sprite DibujarHongoEsporas()
+        {
+            string[] mapa = new string[]
+            {
+                "        ......          ",
+                "      ..######..        ",
+                "     .##$$##$$##.       ",
+                "    .###$$##$$###.      ",
+                "   .##############.     ",
+                "  .##$$########$$##.    ",
+                "  .##$$########$$##.    ",
+                "  .################.    ",
+                "   ...XXXXXXXXXX...     ",
+                "     .XXOOOOOOXX.       ",
+                "     .XO@....@OX.       ",
+                "     .XO@.!!.@@X.       ",
+                "     .XO@.!!.@@X.       ",
+                "     .XO@....@OX.       ",
+                "     .XXOOOOOOXX.       ",
+                "      .XXXXXXXX.        ",
+                "      ..........        "
+            };
+
+            var pal = new Dictionary<char, Color>
+            {
+                { '.', new Color(0.06f, 0.06f, 0.08f) },
+                { 'X', new Color(0.24f, 0.22f, 0.28f) }, // Tallo sombra
+                { 'O', new Color(0.46f, 0.44f, 0.52f) }, // Tallo medio
+                { '@', new Color(0.70f, 0.68f, 0.78f) }, // Tallo claro
+                { '#', new Color(0.50f, 0.18f, 0.62f) }, // Sombrero morado
+                { '$', new Color(0.30f, 0.95f, 0.35f) }, // Motas venenosas verde fosforescente
+                { '!', new Color(1f, 0.85f, 0.15f) }     // Ojos amarillos alienÃ­genas
+            };
+
+            return CrearSpriteDeMapa(mapa, pal, 32f, 0.20f);
+        }
+
+        // 4.5 La Reina Espora (Jefe - 36x40) - Emperatriz floral con pÃ©talos gigantes y lÃ¡tigos de espinas
+        private static Sprite DibujarReinaEspora()
+        {
+            string[] mapa = new string[]
+            {
+                "     $$$                  $$$       ",
+                "    $***$                $***$      ",
+                "   $*****$  ..........  $*****$     ",
+                "  .##***##..##########..##***##.    ",
+                " .###***##################***###.   ",
+                ".####***######$$$$######***####.    ",
+                ".#####*######$$!!$$######*#####.    ",
+                " .##########$$$!!$$$##########.     ",
+                "  .#########$$$!!$$$#########.      ",
+                "   .#########$$$$$$#########.       ",
+                "    ..####################..        ",
+                "   .XXXX.##############.XXXX.       ",
+                "  .XXXXXX.XXXXXXXXXXXX.XXXXXX.      ",
+                " .XXOOOOXX.XXOOOOOOXX.XXOOOOXX.     ",
+                ".XXO@@@@OXX.XOOOOOOX.XXO@@@@OXX.    ",
+                ".XXO@..@OXX.XOOOOOOX.XXO@..@OXX.    ",
+                ".XXO@!!@OXX.XOOOOOOX.XXO@!!@OXX.    ",
+                ".XXO@..@OXX.XOOOOOOX.XXO@..@OXX.    ",
+                ".XXO@@@@OXX.XXXXXXXX.XXO@@@@OXX.    ",
+                " .XXOOOOXX.XXOOOOOOXX.XXOOOOXX.     ",
+                "  .XXXXXX.XXOOOOOOOOXX.XXXXXX.      ",
+                "   ..XX..XXOOOOOOOOOOXX..XX..       ",
+                "        .XXOOOOOOOOOOXX.            ",
+                "       .XXOOOOOOOOOOOOXX.           ",
+                "       .XXXXXXXXXXXXXXXX.           ",
+                "       .XXXXXX.  .XXXXXX.           ",
+                "       .XXXXXX.  .XXXXXX.           ",
+                "      .XXXXXXXX..XXXXXXXX.          ",
+                "      .........  .........          "
+            };
+
+            var pal = new Dictionary<char, Color>
+            {
+                { '.', new Color(0.06f, 0.08f, 0.04f) },
+                { 'X', new Color(0.18f, 0.32f, 0.16f) }, // LÃ¡tigos de enredadera sombra
+                { 'O', new Color(0.32f, 0.58f, 0.28f) }, // Enredadera media
+                { '@', new Color(0.55f, 0.85f, 0.45f) }, // Espinas claras
+                { '#', new Color(0.62f, 0.16f, 0.55f) }, // PÃ©talos gigantes violeta imperial
+                { '$', new Color(0.90f, 0.35f, 0.75f) }, // Borde pÃ©talo magenta
+                { '*', new Color(0.35f, 0.85f, 0.40f) }, // Hojas de la corona
+                { '!', new Color(1f, 0.95f, 0.25f) }     // NÃºcleo de polen real brillante
+            };
+
+            return CrearSpriteDeMapa(mapa, pal, 32f, 0.15f);
+        }
+
+        // ========================================================
+        // 5. BIOMA ARENA (NecrÃ³polis del Desierto)
+        // ========================================================
+
+        // 5.1 SarcÃ³fago Andante (Tanque) - SarcÃ³fago de arenisca con mÃ¡scara dorada de faraÃ³n
+        private static Sprite DibujarSarcofagoAndante()
+        {
+            string[] mapa = new string[]
+            {
+                "         ........           ",
+                "        .########.          ",
+                "       .##########.         ",
+                "      .##$$$$$$$$##.        ",
+                "     .##$$--$$--$$##.       ",
+                "     .##$$-!!$$-!!$##.      ",
+                "     .##$$-!!$$-!!$##.      ",
+                "      .##$$$$$$$$##.        ",
+                "       .##--##--##.         ",
+                "      .###++++####.         ",
+                "     .##XXXXXXXXXX##.       ",
+                "    .##XXOOOOOOOOXX##.      ",
+                "   .##XXO@@@@@@@@OXX##.     ",
+                "   .##XXO@$$$$$$@OXX##.     ",
+                "   .##XXO@$++++$@OXX##.     ",
+                "   .##XXO@$$$$$$@OXX##.     ",
+                "   .##XXO@@@@@@@@OXX##.     ",
+                "    .##XXOOOOOOOOXX##.      ",
+                "     .##XXXXXXXXXX##.       ",
+                "      .XXXXXXXXXXXX.        ",
+                "      .XXXX.  .XXXX.        ",
+                "     .XXXXXX..XXXXXX.       ",
+                "     .......  .......       "
+            };
+
+            var pal = new Dictionary<char, Color>
+            {
+                { '.', new Color(0.08f, 0.06f, 0.04f) },
+                { 'X', new Color(0.42f, 0.32f, 0.18f) }, // Arenisca sombra
+                { 'O', new Color(0.65f, 0.50f, 0.30f) }, // Arenisca media
+                { '@', new Color(0.85f, 0.70f, 0.45f) }, // Arenisca clara
+                { '#', new Color(0.70f, 0.50f, 0.15f) }, // Oro faraÃ³nico sombra
+                { '$', new Color(0.95f, 0.75f, 0.20f) }, // Oro brillante
+                { '-', new Color(0.15f, 0.30f, 0.65f) }, // Franjas de lapislÃ¡zuli azul
+                { '+', new Color(0.85f, 0.15f, 0.20f) }, // RubÃ­ sagrado
+                { '!', new Color(1f, 0.10f, 0.15f) }     // Ojos de rubÃ­ brillante
+            };
+
+            return CrearSpriteDeMapa(mapa, pal, 32f, 0.18f);
+        }
+
+        // 5.2 AtaÃºd Ritual (Spawner) - Tumba erguida con vÃ³rtice de almas oscuras y cobra de oro
+        private static Sprite DibujarAtaudRitual()
+        {
+            string[] mapa = new string[]
+            {
+                "         ..#$#..            ",
+                "        .#######.           ",
+                "       .#########.          ",
+                "      .##.......##.         ",
+                "     .##.-------.##.        ",
+                "     .##.-------.##.        ",
+                "     .##.--!!!!--.##.       ",
+                "     .##.--!*!--.##.        ",
+                "     .##.--!!!!--.##.       ",
+                "     .##.-------.##.        ",
+                "     .##.-------.##.        ",
+                "     .##.--!!!!--.##.       ",
+                "     .##.--!*!--.##.        ",
+                "     .##.--!!!!--.##.       ",
+                "     .##.-------.##.        ",
+                "     .##.-------.##.        ",
+                "     .##.-------.##.        ",
+                "    .####.......####.       ",
+                "   .#################.      ",
+                "   ...................      "
+            };
+
+            var pal = new Dictionary<char, Color>
+            {
+                { '.', new Color(0.08f, 0.06f, 0.04f) },
+                { '#', new Color(0.55f, 0.42f, 0.25f) }, // Piedra de tumba arenisca
+                { '$', new Color(0.95f, 0.75f, 0.20f) }, // Cobra de oro superior
+                { '-', new Color(0.06f, 0.04f, 0.08f) }, // VÃ³rtice negro abisal interior
+                { '!', new Color(0.10f, 0.85f, 0.45f) }, // Glifos rÃºnicos verdes de invocaciÃ³n
+                { '*', new Color(0.80f, 1f, 0.80f) }     // Resplandor de invocaciÃ³n
+            };
+
+            return CrearSpriteDeMapa(mapa, pal, 32f, 0.15f);
+        }
+
+        // 5.3 Rata del Desierto (Melee RÃ¡pido) - Rata gigante salvaje de arena con incisivos
+        private static Sprite DibujarRataDesierto()
+        {
+            string[] mapa = new string[]
+            {
+                " ..          ..         ",
+                ".##.        .##.        ",
+                ".#$#.      .#$#.        ",
+                ".#$#X......X#$#.        ",
+                ".XOOOXXXXXXOOOX.        ",
+                ".XOOOOOOOOOOOOX.        ",
+                ".XOO@.OOOO.@OOX.        ",
+                ".XOO@.!!OO.!!OX.        ",
+                ".XOO@.!!OO.!!OX.        ",
+                " .XOOOO--++--OX.        ",
+                "  .XOOO------X. ...     ",
+                "   .XXXXXXXXX. .---.    ",
+                "  .XXOOOOOOXX. .---.    ",
+                " .XXOOOOOOOOXX..---.    ",
+                ".XXOOOOOOOOOOX.---.     ",
+                ".XXOOOOOOOOOOX.---.     ",
+                " .XXOOOOOOOOXX.---.     ",
+                "  .XXXXXXXXXX. .-.      ",
+                "   .XX.  .XX.   .       ",
+                "  .XXX. .XXX.           ",
+                "  ....  ....            "
+            };
+
+            var pal = new Dictionary<char, Color>
+            {
+                { '.', new Color(0.08f, 0.06f, 0.04f) },
+                { 'X', new Color(0.35f, 0.25f, 0.15f) }, // Pelaje sombra arena
+                { 'O', new Color(0.55f, 0.42f, 0.26f) }, // Pelaje medio arena
+                { '@', new Color(0.75f, 0.60f, 0.40f) }, // Pelaje claro
+                { '#', new Color(0.48f, 0.32f, 0.25f) }, // Orejas
+                { '$', new Color(0.75f, 0.45f, 0.50f) }, // Interior oreja rosado
+                { '+', new Color(0.95f, 0.90f, 0.60f) }, // Dientes incisivos afilados
+                { '-', new Color(0.65f, 0.40f, 0.45f) }, // Cola escamada rosada
+                { '!', new Color(1f, 0.12f, 0.15f) }     // Ojos rojos rubÃ­
+            };
+
+            return CrearSpriteDeMapa(mapa, pal, 32f, 0.18f);
+        }
+
+        // 5.4 Momia Maldita (Rango) - Momia con vendas desgarradas y maldiciÃ³n en las manos
+        private static Sprite DibujarMomia()
+        {
+            string[] mapa = new string[]
+            {
+                "        ......          ",
+                "       .XXXXXX.         ",
+                "      .X@@@@@@X.        ",
+                "      .X@....@X.        ",
+                "     .X@.OOOO.@X.       ",
+                "     .X@.O!!O.@X.       ",
+                "     .X@.OOOO.@X.       ",
+                "      .X@.OO.@X.        ",
+                "    ...X@....@X...      ",
+                "   .---.XXXXXX.---.     ",
+                "  .----.XOOOOX.----.    ",
+                " ..----.XOOOOX.----..   ",
+                ".++++++.XXXXXX.++++++.  ",
+                "  ....  .OOOO.  ....    ",
+                "        .X..X.          ",
+                "        .O..O.          ",
+                "       .XX..XX.         ",
+                "       ...  ...         "
+            };
+
+            var pal = new Dictionary<char, Color>
+            {
+                { '.', new Color(0.08f, 0.06f, 0.04f) },
+                { 'X', new Color(0.38f, 0.32f, 0.24f) }, // Vendajes sombra
+                { 'O', new Color(0.60f, 0.52f, 0.40f) }, // Vendajes medios
+                { '@', new Color(0.82f, 0.74f, 0.60f) }, // Vendajes claros
+                { '-', new Color(0.70f, 0.62f, 0.50f) }, // Tiras de tela suelta
+                { '+', new Color(0.10f, 0.85f, 0.70f) }, // MaldiciÃ³n mÃ¡gica turquesa en las manos
+                { '!', new Color(0.10f, 0.95f, 0.75f) }  // Ojos turquesa malditos
+            };
+
+            return CrearSpriteDeMapa(mapa, pal, 32f, 0.18f);
+        }
+
+        // 5.5 FaraÃ³n Eterno (Jefe - 36x40) - Dios-Rey no muerto con tocado Nemes, mÃ¡scara de oro y cetros
+        private static Sprite DibujarFaraonEterno()
+        {
+            string[] mapa = new string[]
+            {
+                "            ............            ",
+                "           .############.           ",
+                "          .##--$$--$$--##.          ",
+                "         .##--$$--$$--$$##.         ",
+                "        .##--$$--$$--$$--##.        ",
+                "        .##--$$--$$--$$--##.        ",
+                "        .##--$$..$$..$$--##.        ",
+                "        .##--$.!!$$.!!$--##.        ",
+                "        .##--$.!!$$.!!$--##.        ",
+                "        .##--$$..$$..$$--##.        ",
+                "        .##--$$$$$$$$$$--##.        ",
+                "         .##--$$++++$$--##.         ",
+                "          .##--$$$$$$--##.          ",
+                "       ....############....         ",
+                "     ..XXX.############.XXX..       ",
+                "    .XXXXXX.XXXXXXXXXX.XXXXXX.      ",
+                "   .XXXXOOOO.XOOOOOOX.OOOOXXXX.     ",
+                "  .XXXXO@@@@O.XOOOOX.O@@@@OXXXX.    ",
+                "  .XXXO@$$$$@O.XXXX.O@$$$$@OXXX.    ",
+                "  .XXXO@$++$@O.OOOO.O@$++$@OXXX.    ",
+                "  .XXXXO@@@@O.XOOOOX.O@@@@OXXXX.    ",
+                "   .XXXXOOOO.XXOOOOXX.OOOOXXXX.     ",
+                "    .XXXXXX.XXOOOOOOXX.XXXXXX.      ",
+                "     ..XX..XXOOOOOOOOXX..XX..       ",
+                "         .XXOOOOOOOOOOXX.           ",
+                "        .XXOOOOOOOOOOOOXX.          ",
+                "        .XXXXXXXXXXXXXXXX.          ",
+                "        .XXXXXX.  .XXXXXX.          ",
+                "        .XXXXXX.  .XXXXXX.          ",
+                "       .XXXXXXXX..XXXXXXXX.         ",
+                "       .........  .........         "
+            };
+
+            var pal = new Dictionary<char, Color>
+            {
+                { '.', new Color(0.08f, 0.06f, 0.04f) },
+                { 'X', new Color(0.40f, 0.30f, 0.18f) }, // Manto sombra
+                { 'O', new Color(0.65f, 0.50f, 0.28f) }, // Manto medio
+                { '@', new Color(0.85f, 0.70f, 0.42f) }, // Manto claro
+                { '#', new Color(0.75f, 0.55f, 0.15f) }, // Oro real
+                { '$', new Color(1f, 0.82f, 0.25f) },    // Oro brillante de la mÃ¡scara
+                { '-', new Color(0.12f, 0.28f, 0.65f) }, // LapislÃ¡zuli azul real del tocado Nemes
+                { '+', new Color(0.85f, 0.15f, 0.20f) }, // Barba postiza y rubÃ­es
+                { '!', new Color(1f, 0.10f, 0.15f) }     // Ojos de rubÃ­ resplandeciente
+            };
+
+            return CrearSpriteDeMapa(mapa, pal, 32f, 0.15f);
         }
     }
 }
