@@ -120,7 +120,7 @@ namespace SoulKnight
                 var enemigo = _enemigosEnZona[i];
                 if (enemigo != null && enemigo.gameObject.activeInHierarchy)
                 {
-                    enemigo.RecibirDano(_danoPorTick);
+                    enemigo.RecibirDano(_danoPorTick, new Color(0.42f, 0.88f, 1f, 1f));
                     enemigo.Freeze();
                 }
                 else

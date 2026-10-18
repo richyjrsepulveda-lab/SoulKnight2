@@ -425,7 +425,7 @@ namespace SoulKnight
 
             VidaActual.Value = Mathf.Max(0, VidaActual.Value - danoFinal);
 
-            MostrarDanoClientRpc(danoFinal, Color.white);
+            MostrarDanoClientRpc(danoFinal, new Color(1f, 0.22f, 0.22f, 1f)); // Daño de enemigos siempre rojo
 
             if (VidaActual.Value <= 0)
             {

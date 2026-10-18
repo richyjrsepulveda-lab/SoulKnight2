@@ -570,12 +570,24 @@ namespace SoulKnight
 
             if (contenedorSlotsHabilidades == null) return;
 
-            // Reajustar dimensiones del contenedor de slots para dejar espacio a la ficha técnica
+            // Asegurar que contenedorSlotsHabilidades sea una fila horizontal centrada para los 4 iconos
+            var vlg = contenedorSlotsHabilidades.GetComponent<VerticalLayoutGroup>();
+            if (vlg != null) Destroy(vlg);
+
+            var hlg = contenedorSlotsHabilidades.GetComponent<HorizontalLayoutGroup>();
+            if (hlg == null) hlg = contenedorSlotsHabilidades.gameObject.AddComponent<HorizontalLayoutGroup>();
+            hlg.spacing = 16f;
+            hlg.childAlignment = TextAnchor.MiddleCenter;
+            hlg.childControlWidth = false;
+            hlg.childControlHeight = false;
+            hlg.childForceExpandWidth = false;
+            hlg.childForceExpandHeight = false;
+
             var rtContHabs = contenedorSlotsHabilidades.GetComponent<RectTransform>();
             if (rtContHabs != null)
             {
-                rtContHabs.anchoredPosition = new Vector2(0f, 50f);
-                rtContHabs.sizeDelta = new Vector2(640f, 215f);
+                rtContHabs.anchoredPosition = new Vector2(0f, 32f);
+                rtContHabs.sizeDelta = new Vector2(450f, 68f);
             }
 
             // Limpiar slots viejos
@@ -584,196 +596,75 @@ namespace SoulKnight
                 Destroy(hijo.gameObject);
             }
 
-            // Obtener todas las habilidades del personaje y el loadout seleccionado actualmente
+            // Obtener habilidades del personaje
             var todasHabilidades = CatalogoHabilidades.ObtenerHabilidadesPersonaje(pj);
-            var loadoutActual = GestorLoadout.ObtenerLoadout(pj);
-
             if (_habilidadSeleccionadaCuarto == IdHabilidad.Ninguna && todasHabilidades.Count > 0)
             {
                 _habilidadSeleccionadaCuarto = todasHabilidades[0].id;
             }
 
-            string[] teclas = new string[] { "CLICK IZQ", "E", "Q", "R" };
-
-            foreach (var hab in todasHabilidades)
+            // Crear los 4 recuadros de habilidad en una fila (idéntico al menú de pausa)
+            for (int i = 0; i < todasHabilidades.Count && i < 4; i++)
             {
-                bool desbloqueada = GestorMaestria.EstaDesbloqueada(pj, hab.id);
-                bool equipada = loadoutActual.Contains(hab.id);
+                var hab = todasHabilidades[i];
                 bool seleccionada = (_habilidadSeleccionadaCuarto == hab.id);
 
-                var slotObj = new GameObject($"Slot_{hab.id}");
+                var slotObj = new GameObject($"SlotHab_{i}");
                 slotObj.transform.SetParent(contenedorSlotsHabilidades, false);
 
-                var rt = slotObj.AddComponent<RectTransform>();
-                rt.sizeDelta = new Vector2(620f, 48f);
+                var rtSlot = slotObj.AddComponent<RectTransform>();
+                rtSlot.sizeDelta = new Vector2(56f, 56f);
 
                 var le = slotObj.AddComponent<LayoutElement>();
-                le.preferredHeight = 48f;
-                le.minHeight = 48f;
+                le.preferredWidth = 56f;
+                le.preferredHeight = 56f;
+                le.minWidth = 56f;
+                le.minHeight = 56f;
 
-                var img = slotObj.AddComponent<Image>();
-                img.color = seleccionada
-                    ? new Color(0.18f, 0.32f, 0.48f, 0.98f)
-                    : (equipada
-                        ? new Color(0.12f, 0.26f, 0.20f, 0.95f)
-                        : (desbloqueada ? new Color(0.11f, 0.14f, 0.20f, 0.92f) : new Color(0.07f, 0.08f, 0.11f, 0.85f)));
+                // Borde exterior (resaltado en cyan si está seleccionada)
+                var imgBorde = slotObj.AddComponent<Image>();
+                imgBorde.color = seleccionada
+                    ? new Color(0.25f, 0.85f, 1.0f, 1f)
+                    : new Color(0.20f, 0.28f, 0.40f, 0.7f);
 
-                // Botón interactivo en el slot completo para seleccionarla y ver ficha técnica
-                var btnSlot = slotObj.AddComponent<Button>();
-                IdHabilidad idHabActual = hab.id;
-                btnSlot.onClick.AddListener(() =>
-                {
-                    _habilidadSeleccionadaCuarto = idHabActual;
-                    ConstruirVistaCuarto(pj);
-                });
+                // Fondo interior oscuro
+                var fondoInt = new GameObject("FondoInterno");
+                fondoInt.transform.SetParent(slotObj.transform, false);
+                var rtFi = fondoInt.AddComponent<RectTransform>();
+                rtFi.anchorMin = Vector2.zero;
+                rtFi.anchorMax = Vector2.one;
+                rtFi.offsetMin = new Vector2(3f, 3f);
+                rtFi.offsetMax = new Vector2(-3f, -3f);
+                var imgFi = fondoInt.AddComponent<Image>();
+                imgFi.color = new Color(0.08f, 0.11f, 0.16f, 0.95f);
+                imgFi.raycastTarget = false;
 
-                // 1. Icono de la habilidad en recuadro estilizado a la izquierda
-                var icoBox = new GameObject("IconoBox");
-                icoBox.transform.SetParent(slotObj.transform, false);
-                var rtIcoBox = icoBox.AddComponent<RectTransform>();
-                rtIcoBox.anchorMin = new Vector2(0f, 0.5f);
-                rtIcoBox.anchorMax = new Vector2(0f, 0.5f);
-                rtIcoBox.pivot = new Vector2(0.5f, 0.5f);
-                rtIcoBox.anchoredPosition = new Vector2(28f, 0f);
-                rtIcoBox.sizeDelta = new Vector2(40f, 40f);
+                // Icono de la habilidad
+                var icoObj = new GameObject("Icono");
+                icoObj.transform.SetParent(fondoInt.transform, false);
+                var rtIco = icoObj.AddComponent<RectTransform>();
+                rtIco.anchorMin = Vector2.zero;
+                rtIco.anchorMax = Vector2.one;
+                rtIco.offsetMin = new Vector2(3f, 3f);
+                rtIco.offsetMax = new Vector2(-3f, -3f);
 
-                var imgIcoBox = icoBox.AddComponent<Image>();
-                imgIcoBox.color = seleccionada ? new Color(0.35f, 0.85f, 1f, 0.9f) : new Color(0.20f, 0.24f, 0.35f, 0.9f);
-
-                var icoImgObj = new GameObject("Icono");
-                icoImgObj.transform.SetParent(icoBox.transform, false);
-                var rtIcoImg = icoImgObj.AddComponent<RectTransform>();
-                rtIcoImg.anchorMin = Vector2.zero;
-                rtIcoImg.anchorMax = Vector2.one;
-                rtIcoImg.offsetMin = new Vector2(2f, 2f);
-                rtIcoImg.offsetMax = new Vector2(-2f, -2f);
-                var imgIco = icoImgObj.AddComponent<Image>();
+                var imgIco = icoObj.AddComponent<Image>();
                 imgIco.sprite = CatalogoHabilidades.ObtenerSpriteHabilidad(hab.id);
                 imgIco.preserveAspect = true;
-                imgIco.color = desbloqueada ? Color.white : new Color(0.45f, 0.45f, 0.45f, 0.75f);
+                imgIco.color = Color.white;
                 imgIco.raycastTarget = false;
 
-                // 2. Badge de tecla
-                string teclaStr = hab.slotPorDefecto < teclas.Length ? teclas[hab.slotPorDefecto] : "HAB";
-                var badgeObj = new GameObject("BadgeTecla");
-                badgeObj.transform.SetParent(slotObj.transform, false);
-                var rtBadge = badgeObj.AddComponent<RectTransform>();
-                rtBadge.anchorMin = new Vector2(0f, 0.5f);
-                rtBadge.anchorMax = new Vector2(0f, 0.5f);
-                rtBadge.pivot = new Vector2(0f, 0.5f);
-                rtBadge.anchoredPosition = new Vector2(98f, 0f);
-                rtBadge.sizeDelta = new Vector2(76f, 24f);
-
-                var imgBadge = badgeObj.AddComponent<Image>();
-                imgBadge.color = new Color(0.06f, 0.08f, 0.14f, 0.95f);
-                imgBadge.raycastTarget = false;
-
-                var txtBadgeObj = new GameObject("Txt");
-                txtBadgeObj.transform.SetParent(badgeObj.transform, false);
-                var rtTxtB = txtBadgeObj.AddComponent<RectTransform>();
-                rtTxtB.anchorMin = Vector2.zero;
-                rtTxtB.anchorMax = Vector2.one;
-                rtTxtB.sizeDelta = Vector2.zero;
-                var txtBadge = txtBadgeObj.AddComponent<Text>();
-                txtBadge.font = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-                txtBadge.fontSize = 9;
-                txtBadge.fontStyle = FontStyle.Bold;
-                txtBadge.alignment = TextAnchor.MiddleCenter;
-                txtBadge.color = new Color(1f, 0.88f, 0.35f);
-                txtBadge.text = $"[{teclaStr}]";
-                txtBadge.raycastTarget = false;
-
-                // 3. Textos del slot (Nombre limpio y estado, sin texto feo)
-                var txtObj = new GameObject("TextoSlot");
-                txtObj.transform.SetParent(slotObj.transform, false);
-                var rtTxt = txtObj.AddComponent<RectTransform>();
-                rtTxt.anchorMin = new Vector2(0f, 0.5f);
-                rtTxt.anchorMax = new Vector2(1f, 0.5f);
-                rtTxt.pivot = new Vector2(0f, 0.5f);
-                rtTxt.anchoredPosition = new Vector2(185f, 0f);
-                rtTxt.sizeDelta = new Vector2(-295f, 40f);
-
-                var txt = txtObj.AddComponent<Text>();
-                txt.font = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-                txt.fontSize = 10;
-                txt.color = desbloqueada ? Color.white : new Color(0.6f, 0.6f, 0.6f);
-                txt.alignment = TextAnchor.MiddleLeft;
-                txt.raycastTarget = false;
-
-                string estadoRun = desbloqueada 
-                    ? $"<color=#8be9fd>Desbloquea en Run Nv.{hab.nivelRequeridoRun}</color>" 
-                    : $"<color=#ffb86c>Requiere Maestría Nv.{hab.nivelMaestriaRequerido}</color>";
-
-                txt.text = $"<b>{hab.nombre.ToUpper()}</b>\n<size=9>{estadoRun}</size>";
-
-                // 4. Botón interactivo de equipar o etiqueta de bloqueo a la derecha
-                if (desbloqueada)
+                // Click para seleccionar y mostrar ficha técnica debajo
+                var btn = slotObj.AddComponent<Button>();
+                IdHabilidad idClick = hab.id;
+                btn.onClick.AddListener(() =>
                 {
-                    var btnEquiparObj = new GameObject("BotonEquipar");
-                    btnEquiparObj.transform.SetParent(slotObj.transform, false);
-                    var imgBtn = btnEquiparObj.AddComponent<Image>();
-                    imgBtn.color = equipada ? new Color(0.65f, 0.22f, 0.22f) : new Color(0.18f, 0.55f, 0.30f);
-                    var rtBtn = btnEquiparObj.GetComponent<RectTransform>();
-                    rtBtn.anchorMin = new Vector2(1f, 0.5f);
-                    rtBtn.anchorMax = new Vector2(1f, 0.5f);
-                    rtBtn.pivot = new Vector2(1f, 0.5f);
-                    rtBtn.anchoredPosition = new Vector2(-12f, 0f);
-                    rtBtn.sizeDelta = new Vector2(98f, 32f);
-
-                    var txtBtnObj = new GameObject("TxtBtn");
-                    txtBtnObj.transform.SetParent(btnEquiparObj.transform, false);
-                    var rtTb = txtBtnObj.AddComponent<RectTransform>();
-                    rtTb.anchorMin = Vector2.zero;
-                    rtTb.anchorMax = Vector2.one;
-                    rtTb.sizeDelta = Vector2.zero;
-                    var txtBtn = txtBtnObj.AddComponent<Text>();
-                    txtBtn.font = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-                    txtBtn.fontSize = 10;
-                    txtBtn.fontStyle = FontStyle.Bold;
-                    txtBtn.color = Color.white;
-                    txtBtn.alignment = TextAnchor.MiddleCenter;
-                    txtBtn.text = equipada ? "EQUIPADA" : "+ EQUIPAR";
-                    txtBtn.raycastTarget = false;
-
-                    var btn = btnEquiparObj.AddComponent<Button>();
-                    IdHabilidad idClick = hab.id;
-                    btn.onClick.AddListener(() =>
-                    {
-                        AlternarHabilidadEnLoadout(pj, idClick);
-                        ConstruirVistaCuarto(pj);
-                    });
-                }
-                else
-                {
-                    var txtBloqObj = new GameObject("TxtBloq");
-                    txtBloqObj.transform.SetParent(slotObj.transform, false);
-                    var imgBloq = txtBloqObj.AddComponent<Image>();
-                    imgBloq.color = new Color(0.18f, 0.15f, 0.12f, 0.95f);
-                    var rtBloq = txtBloqObj.GetComponent<RectTransform>();
-                    rtBloq.anchorMin = new Vector2(1f, 0.5f);
-                    rtBloq.anchorMax = new Vector2(1f, 0.5f);
-                    rtBloq.pivot = new Vector2(1f, 0.5f);
-                    rtBloq.anchoredPosition = new Vector2(-12f, 0f);
-                    rtBloq.sizeDelta = new Vector2(98f, 32f);
-
-                    var txtB = new GameObject("Txt");
-                    txtB.transform.SetParent(txtBloqObj.transform, false);
-                    var rtTxtBloq = txtB.AddComponent<RectTransform>();
-                    rtTxtBloq.anchorMin = Vector2.zero;
-                    rtTxtBloq.anchorMax = Vector2.one;
-                    rtTxtBloq.sizeDelta = Vector2.zero;
-                    var txtBloq = txtB.AddComponent<Text>();
-                    txtBloq.font = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-                    txtBloq.fontSize = 9;
-                    txtBloq.fontStyle = FontStyle.Bold;
-                    txtBloq.color = new Color(1f, 0.70f, 0.25f);
-                    txtBloq.alignment = TextAnchor.MiddleCenter;
-                    txtBloq.text = $"🔒 NV.{hab.nivelMaestriaRequerido}";
-                    txtBloq.raycastTarget = false;
-                }
+                    _habilidadSeleccionadaCuarto = idClick;
+                    ConstruirVistaCuarto(pj);
+                });
             }
 
-            // 5. Tarjeta inferior con la DESCRIPCIÓN TÉCNICA detallada de la habilidad seleccionada
+            // Tarjeta inferior con la descripción de la habilidad seleccionada
             ActualizarTarjetaDetalleTecnicoCuarto(pj);
         }
 
@@ -799,11 +690,11 @@ namespace SoulKnight
                 rtCard.anchorMin = new Vector2(0.5f, 0.5f);
                 rtCard.anchorMax = new Vector2(0.5f, 0.5f);
                 rtCard.pivot = new Vector2(0.5f, 0.5f);
-                rtCard.anchoredPosition = new Vector2(0f, -86f);
-                rtCard.sizeDelta = new Vector2(620f, 92f);
+                rtCard.anchoredPosition = new Vector2(0f, -54f);
+                rtCard.sizeDelta = new Vector2(560f, 96f);
 
                 var imgBorde = objCard.AddComponent<Image>();
-                imgBorde.color = new Color(0.32f, 0.65f, 0.95f, 0.95f); // Borde azul cian
+                imgBorde.color = new Color(0.20f, 0.28f, 0.40f, 0.85f);
 
                 var fondoInt = new GameObject("Fondo");
                 fondoInt.transform.SetParent(objCard.transform, false);
@@ -820,12 +711,12 @@ namespace SoulKnight
                 var rtTd = txtObj.AddComponent<RectTransform>();
                 rtTd.anchorMin = Vector2.zero;
                 rtTd.anchorMax = Vector2.one;
-                rtTd.offsetMin = new Vector2(12f, 6f);
-                rtTd.offsetMax = new Vector2(-12f, -6f);
+                rtTd.offsetMin = new Vector2(14f, 8f);
+                rtTd.offsetMax = new Vector2(-14f, -8f);
 
                 _txtDetalleTecnicoCuarto = txtObj.AddComponent<Text>();
                 _txtDetalleTecnicoCuarto.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-                _txtDetalleTecnicoCuarto.fontSize = 13;
+                _txtDetalleTecnicoCuarto.fontSize = 12;
                 _txtDetalleTecnicoCuarto.lineSpacing = 1.25f;
                 _txtDetalleTecnicoCuarto.alignment = TextAnchor.MiddleLeft;
                 _txtDetalleTecnicoCuarto.color = new Color(0.92f, 0.96f, 1f);
@@ -834,21 +725,28 @@ namespace SoulKnight
 
             if (_txtDetalleTecnicoCuarto != null)
             {
+                var habs = CatalogoHabilidades.ObtenerHabilidadesPersonaje(pj);
                 var habSel = CatalogoHabilidades.Obtener(_habilidadSeleccionadaCuarto);
-                if (habSel == null)
+                if (habSel == null && habs.Count > 0)
                 {
-                    var habs = CatalogoHabilidades.ObtenerHabilidadesPersonaje(pj);
-                    if (habs.Count > 0) habSel = habs[0];
+                    habSel = habs[0];
                 }
 
                 if (habSel != null)
                 {
                     string[] teclas = new string[] { "CLICK IZQ", "E", "Q", "R" };
-                    string tStr = habSel.slotPorDefecto < teclas.Length ? teclas[habSel.slotPorDefecto] : "HAB";
-                    string descTec = !string.IsNullOrEmpty(habSel.descripcionTecnica) ? habSel.descripcionTecnica : habSel.descripcion;
-                    _txtDetalleTecnicoCuarto.text = $"<b><size=14><color=#70d0ff>{habSel.nombre.ToUpper()}</color></size></b> <color=#ffd700>[{tStr}]</color>\n" +
-                                                  $"{descTec}\n" +
-                                                  $"<size=11><color=#88a0c0><i>(Haz clic en cualquier habilidad para ver sus especificaciones)</i></color></size>";
+                    int idx = habs.FindIndex(h => h.id == habSel.id);
+                    string teclaStr = (idx >= 0 && idx < teclas.Length) ? teclas[idx] : "HAB";
+                    string desc = !string.IsNullOrEmpty(habSel.descripcionTecnica) ? habSel.descripcionTecnica : habSel.descripcion;
+
+                    _txtDetalleTecnicoCuarto.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+                    _txtDetalleTecnicoCuarto.fontSize = 12;
+                    _txtDetalleTecnicoCuarto.lineSpacing = 1.25f;
+                    _txtDetalleTecnicoCuarto.text = $"<b><size=13><color=#5ce1e6>{habSel.nombre.ToUpper()}</color></size></b> <color=#ffd700>({teclaStr})</color>\n{desc}";
+                }
+                else
+                {
+                    _txtDetalleTecnicoCuarto.text = "<color=#94a3b8><i>Haz clic en una habilidad para ver su descripción.</i></color>";
                 }
             }
         }

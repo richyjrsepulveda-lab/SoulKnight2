@@ -100,6 +100,30 @@ namespace SoulKnight
             _tiempoMirarAtaque = duracion;
         }
 
+        /// <summary>
+        /// Calcula la posición exacta de la boca/hocico del gato según la dirección de apuntado
+        /// para que los ataques (rayo y bola de nieve) salgan orgánicamente de su boca.
+        /// </summary>
+        public Vector2 ObtenerPosicionBoca(Vector2 dir)
+        {
+            Vector2 posCentro = transform.position;
+            if (dir.sqrMagnitude < 0.001f) dir = Vector2.right;
+            Vector2 dirNorm = dir.normalized;
+
+            float alturaCabeza = 0.38f;
+            if (dirNorm.y < -0.3f)
+            {
+                alturaCabeza = 0.18f;
+            }
+            else if (dirNorm.y > 0.4f)
+            {
+                alturaCabeza = 0.55f;
+            }
+
+            Vector2 offsetBoca = new Vector2(0f, alturaCabeza) + dirNorm * 0.40f;
+            return posCentro + offsetBoca;
+        }
+
         // Visuales mejorados del Rayo de Hielo (hélice de escarcha cristalina + estrella de impacto glacial)
         private LineRenderer _heliceEscarcha;
         private SpriteRenderer _estrellaImpactoHielo;
@@ -257,8 +281,12 @@ namespace SoulKnight
                     AsegurarVisualesRayoHielo();
                     if (_heliceEscarcha != null) _heliceEscarcha.enabled = true;
 
-                    Vector2 origen = transform.position;
                     Vector2 mouseMundo = Controles.PosicionMouseMundo();
+                    Vector2 dir = IsOwner ? ((Vector2)mouseMundo - (Vector2)transform.position).normalized : DireccionApuntado.Value;
+                    if (dir.sqrMagnitude < 0.001f) dir = Vector2.right;
+
+                    // El rayo sale directamente de la boca del gato
+                    Vector2 origen = ObtenerPosicionBoca(dir);
                     float distMouse = Vector2.Distance(origen, mouseMundo);
                     // Si el cursor está por debajo del límite, el rayo se recorta al cursor; si está por encima, llega hasta el límite
                     float alcanceDinamico = IsOwner ? Mathf.Min(distMouse, rangoRayo) : Mathf.Min(AlcanceEfectivoRayoSincronizado.Value, rangoRayo);
@@ -270,9 +298,6 @@ namespace SoulKnight
                             AlcanceEfectivoRayoSincronizado.Value = alcanceDinamico;
                         }
                     }
-
-                    Vector2 dir = IsOwner ? (mouseMundo - origen).normalized : DireccionApuntado.Value;
-                    if (dir.sqrMagnitude < 0.001f) dir = Vector2.right;
 
                     // El rayo penetra enemigos y se frena en su alcance dinámico o si choca con una pared sólida
                     Vector2 destino = origen + dir * alcanceDinamico;
@@ -686,9 +711,9 @@ namespace SoulKnight
 
         private void EjecutarRaycastRayoHielo()
         {
-            Vector2 origen = transform.position;
             Vector2 dir = DireccionApuntado.Value;
             if (dir.sqrMagnitude < 0.001f) dir = Vector2.right;
+            Vector2 origen = ObtenerPosicionBoca(dir);
 
             // Daña y ralentiza a los enemigos hasta el alcance dinámico recortado al cursor
             float alcanceEfectivo = Mathf.Min(AlcanceEfectivoRayoSincronizado.Value, rangoRayo);
@@ -701,7 +726,7 @@ namespace SoulKnight
                 if (enemigo != null)
                 {
                     int danoEscalado = Mathf.RoundToInt(danoRayo * MultiplicadorDanoTotal);
-                    enemigo.RecibirDano(danoEscalado);
+                    enemigo.RecibirDano(danoEscalado, new Color(0.42f, 0.88f, 1f, 1f)); // Azul clarito helado
                     enemigo.AplicarRalentizacion();
                     // NO rompemos el bucle: atraviesa a todos los enemigos en el haz
                 }
@@ -732,7 +757,8 @@ namespace SoulKnight
 
             NotificarAtaqueClientRpc(0.45f);
 
-            GameObject bola = Instantiate(prefabBolaHielo, transform.position, Quaternion.identity);
+            Vector2 posBoca = ObtenerPosicionBoca(dir);
+            GameObject bola = Instantiate(prefabBolaHielo, new Vector3(posBoca.x, posBoca.y, -0.4f), Quaternion.identity);
             var proj = bola.GetComponent<Proyectil>();
             if (proj != null)
             {

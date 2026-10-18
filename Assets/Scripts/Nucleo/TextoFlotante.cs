@@ -32,8 +32,8 @@ namespace SoulKnight
             var tm = go.AddComponent<TextMesh>();
             tm.font = _fuente;
             tm.text = texto;
-            tm.fontSize = 44;
-            tm.characterSize = 0.055f; // Texto visiblemente más pequeño y compacto
+            tm.fontSize = 50;
+            tm.characterSize = 0.075f; // Texto visiblemente más grande y legible
             tm.fontStyle = FontStyle.Bold;
             tm.anchor = TextAnchor.MiddleCenter;
             tm.alignment = TextAlignment.Center;

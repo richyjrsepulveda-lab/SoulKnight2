@@ -226,7 +226,7 @@ namespace SoulKnight
                     if (enemigo != null)
                     {
                         int danoEscalado = Mathf.RoundToInt(danoDash * MultiplicadorDanoTotal);
-                        enemigo.RecibirDano(danoEscalado);
+                        enemigo.RecibirDano(danoEscalado, new Color(1f, 0.96f, 0.22f, 1f)); // Amarillo rayo
                     }
                 }
 
@@ -320,7 +320,7 @@ namespace SoulKnight
                 if (enemigo != null)
                 {
                     int danoEscalado = Mathf.RoundToInt(danoEspada * MultiplicadorDanoTotal);
-                    enemigo.RecibirDano(danoEscalado);
+                    enemigo.RecibirDano(danoEscalado, new Color(1f, 0.96f, 0.22f, 1f)); // Amarillo rayo
                     enemigo.AplicarKnockback(dir, 350f);
                 }
             }
@@ -460,7 +460,7 @@ namespace SoulKnight
                 if (enemigo != null)
                 {
                     int danoEscalado = Mathf.RoundToInt(danoTeleport * MultiplicadorDanoTotal);
-                    enemigo.RecibirDano(danoEscalado);
+                    enemigo.RecibirDano(danoEscalado, new Color(1f, 0.96f, 0.22f, 1f)); // Amarillo rayo
                     Vector2 dirKnock = ((Vector2)enemigo.transform.position - pos).normalized;
                     enemigo.AplicarKnockback(dirKnock, 1000f);
                 }
@@ -508,7 +508,7 @@ namespace SoulKnight
                 if (enemigo != null)
                 {
                     int danoEscalado = Mathf.RoundToInt(danoRayo * MultiplicadorDanoTotal);
-                    enemigo.RecibirDano(danoEscalado);
+                    enemigo.RecibirDano(danoEscalado, new Color(1f, 0.96f, 0.22f, 1f)); // Amarillo rayo
                 }
             }
         }

@@ -399,7 +399,7 @@ namespace SoulKnight
                     if (pj != null)
                     {
                         if (pj.nivelProgreso != null) pj.nivelProgreso.AgregarXP(350);
-                        pj.AgregarOro(50);
+                        pj.AgregarOro(25);
                     }
                 }
 

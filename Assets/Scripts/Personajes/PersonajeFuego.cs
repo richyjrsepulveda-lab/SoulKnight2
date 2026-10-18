@@ -441,7 +441,7 @@ namespace SoulKnight
                     {
                         danados.Add(enemigo);
                         int danoEscalado = Mathf.RoundToInt(danoCabezaFuego * MultiplicadorDanoTotal);
-                        enemigo.RecibirDano(danoEscalado);
+                        enemigo.RecibirDano(danoEscalado, new Color(0.96f, 0.40f, 0.05f, 1f)); // Naranja oscuro
                         int danoQuemaduraEscalado = Mathf.RoundToInt(18 * MultiplicadorDanoTotal);
                         enemigo.AplicarQuemadura(danoQuemaduraEscalado);
                     }

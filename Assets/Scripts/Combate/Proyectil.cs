@@ -212,8 +212,32 @@ namespace SoulKnight
                 var enemigo = other.GetComponent<EnemigoBase>();
                 if (enemigo != null)
                 {
+                    Color colorImpacto = Color.white;
+                    if (aplicaCongelacion)
+                    {
+                        colorImpacto = new Color(0.42f, 0.88f, 1f, 1f); // Azul clarito helado
+                    }
+                    else if (aplicaQuemadura)
+                    {
+                        colorImpacto = new Color(0.96f, 0.40f, 0.05f, 1f); // Naranja oscuro fuego
+                    }
+                    else
+                    {
+                        for (int i = 0; i < Personaje.Todos.Count; i++)
+                        {
+                            var pj = Personaje.Todos[i];
+                            if (pj != null && pj.OwnerClientId == _lanzadorId)
+                            {
+                                if (pj.TipoPj == TipoPersonaje.Hielo) colorImpacto = new Color(0.42f, 0.88f, 1f, 1f);
+                                else if (pj.TipoPj == TipoPersonaje.Rayo) colorImpacto = new Color(1f, 0.96f, 0.22f, 1f);
+                                else if (pj.TipoPj == TipoPersonaje.Fuego) colorImpacto = new Color(0.96f, 0.40f, 0.05f, 1f);
+                                break;
+                            }
+                        }
+                    }
+
                     // Daño completo de impacto directo
-                    enemigo.RecibirDano(dano);
+                    enemigo.RecibirDano(dano, colorImpacto);
 
                     if (aplicaQuemadura)
                     {
@@ -229,7 +253,7 @@ namespace SoulKnight
                     // Detonación en área para dañar y congelar a los enemigos cercanos
                     if (aplicaCongelacion || tieneExplosionArea)
                     {
-                        DetonarExplosionArea(enemigo);
+                        DetonarExplosionArea(enemigo, colorImpacto);
                     }
 
                     DestruirProyectil();
@@ -240,8 +264,13 @@ namespace SoulKnight
             return false;
         }
 
-        private void DetonarExplosionArea(EnemigoBase enemigoDirecto)
+        private void DetonarExplosionArea(EnemigoBase enemigoDirecto, Color colorDanoArea = default)
         {
+            if (colorDanoArea == default)
+            {
+                colorDanoArea = aplicaCongelacion ? new Color(0.42f, 0.88f, 1f, 1f) : (aplicaQuemadura ? new Color(0.96f, 0.40f, 0.05f, 1f) : Color.white);
+            }
+
             Vector2 centro = transform.position;
             int danoCercanos = danoArea > 0 ? danoArea : Mathf.RoundToInt(dano * 0.55f);
 
@@ -252,7 +281,7 @@ namespace SoulKnight
                 var enCercano = col.GetComponent<EnemigoBase>();
                 if (enCercano != null && enCercano != enemigoDirecto)
                 {
-                    enCercano.RecibirDano(danoCercanos);
+                    enCercano.RecibirDano(danoCercanos, colorDanoArea);
 
                     if (aplicaCongelacion)
                     {

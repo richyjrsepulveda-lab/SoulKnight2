@@ -40,6 +40,7 @@ namespace SoulKnight
 
         public NetworkVariable<int> VidaActual = new NetworkVariable<int>(120);
         public NetworkVariable<bool> EstaCongelado = new NetworkVariable<bool>(false);
+        public NetworkVariable<bool> EstaRalentizado = new NetworkVariable<bool>(false);
         public NetworkVariable<bool> EstaQuemado = new NetworkVariable<bool>(false);
 
         protected Rigidbody2D _rb;
@@ -117,24 +118,43 @@ namespace SoulKnight
             EstaCongelado.OnValueChanged += (prev, act) =>
             {
                 if (spriteCongelado != null) spriteCongelado.SetActive(act);
+                ActualizarTinteVisual();
+            };
+
+            EstaRalentizado.OnValueChanged += (prev, act) =>
+            {
+                ActualizarTinteVisual();
             };
 
             EstaQuemado.OnValueChanged += (prev, act) =>
             {
-                ActualizarTinteQuemadura(act);
+                ActualizarTinteVisual();
             };
 
             if (barraVida != null) barraVida.Establecer(VidaActual.Value, vidaMax);
             if (spriteCongelado != null) spriteCongelado.SetActive(EstaCongelado.Value);
-            ActualizarTinteQuemadura(EstaQuemado.Value);
+            ActualizarTinteVisual();
         }
 
-        private void ActualizarTinteQuemadura(bool quemado)
+        private void ActualizarTinteVisual()
         {
             var sr = GetComponent<SpriteRenderer>();
             if (sr != null)
             {
-                sr.color = quemado ? new Color(1f, 0.52f, 0.25f, 1f) : Color.white;
+                if (EstaCongelado.Value || EstaRalentizado.Value)
+                {
+                    // Filtro azul clarito helado para enemigos ralentizados o congelados
+                    sr.color = new Color(0.48f, 0.85f, 1f, 1f);
+                }
+                else if (EstaQuemado.Value)
+                {
+                    // Filtro naranja para quemadura
+                    sr.color = new Color(1f, 0.52f, 0.25f, 1f);
+                }
+                else
+                {
+                    sr.color = Color.white;
+                }
             }
         }
 
@@ -166,6 +186,7 @@ namespace SoulKnight
                 if (_tiempoRalentizado <= 0f)
                 {
                     _velocidadActual = velocidadBase;
+                    EstaRalentizado.Value = false;
                 }
             }
 
@@ -178,7 +199,7 @@ namespace SoulKnight
                 {
                     _tiempoTickQuemadoActual = tickQuemado;
                     int danoFinalQuemado = _danoQuemadoPersonalizado > 0 ? _danoQuemadoPersonalizado : danoQuemadoPorSegundo;
-                    RecibirDano(danoFinalQuemado);
+                    RecibirDano(danoFinalQuemado, new Color(1f, 0.72f, 0.20f, 1f)); // Quemadura: naranja clarito
                 }
 
                 if (_tiempoQuemado <= 0f)
@@ -337,6 +358,11 @@ namespace SoulKnight
 
         public virtual void RecibirDano(int cantidad)
         {
+            RecibirDano(cantidad, Color.white);
+        }
+
+        public virtual void RecibirDano(int cantidad, Color colorDano)
+        {
             if (!IsServer || VidaActual.Value <= 0 || enAnimacionEntrada) return;
             if (GestorPartida.Instancia != null && (GestorPartida.Instancia.PartidaTerminada || GestorPartida.Instancia.ObtenerJugadoresVivos().Count == 0))
             {
@@ -344,7 +370,7 @@ namespace SoulKnight
             }
 
             VidaActual.Value = Mathf.Max(0, VidaActual.Value - cantidad);
-            MostrarDanoClientRpc(cantidad, Color.green);
+            MostrarDanoClientRpc(cantidad, colorDano);
 
             if (VidaActual.Value <= 0)
             {
@@ -369,6 +395,7 @@ namespace SoulKnight
             if (!IsServer || EstaCongelado.Value) return;
             _tiempoRalentizado = duracionRalentizacion;
             _velocidadActual = velocidadBase * 0.45f;
+            EstaRalentizado.Value = true;
         }
 
         public void Freeze()
@@ -396,8 +423,8 @@ namespace SoulKnight
             if (!IsServer) return;
             AlMorir?.Invoke();
 
-            // Otorgar oro de la run a los jugadores
-            int oroRecompensa = UnityEngine.Random.Range(2, 6);
+            // Otorgar oro de la run a los jugadores (reducido para no saturar de oro)
+            int oroRecompensa = UnityEngine.Random.value < 0.65f ? 1 : 2;
             for (int i = 0; i < Personaje.Todos.Count; i++)
             {
                 var pj = Personaje.Todos[i];
