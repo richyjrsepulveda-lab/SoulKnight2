@@ -156,6 +156,9 @@ namespace SoulKnight
 
             // Iniciar cinemática de caída desde arriba en todos los clientes
             StartCoroutine(RutinaCaidaEntradaJefe());
+
+            // Reproducir música épica de jefe
+            GestorAudio.PlayBGM(TipoMusica.Jefe);
         }
 
         public override void OnNetworkDespawn()
@@ -164,6 +167,7 @@ namespace SoulKnight
             {
                 HUDJugador.Instancia.OcultarBarraJefeDarkSouls();
             }
+            GestorAudio.PlayBGM(TipoMusica.Mazmorra);
             base.OnNetworkDespawn();
         }
 

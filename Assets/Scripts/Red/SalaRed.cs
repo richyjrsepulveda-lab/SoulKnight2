@@ -547,7 +547,7 @@ namespace SoulKnight
             {
                 GeneradorMazmorra.Instancia.GenerarConSemilla(semilla, bioma, tieneJefe, esNivelDecisionLoop);
             }
-            GestorAudio.PlayBGM(tieneJefe ? TipoMusica.Jefe : TipoMusica.Mazmorra);
+            GestorAudio.PlayBGM(TipoMusica.Mazmorra);
         }
 
         [ClientRpc]

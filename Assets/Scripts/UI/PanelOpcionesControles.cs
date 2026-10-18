@@ -718,6 +718,24 @@ namespace SoulKnight
             }
         }
 
+        private void EjecutarCheat(string codigo)
+        {
+            if (string.IsNullOrWhiteSpace(codigo)) return;
+            string resultado = ComandosAdmin.EjecutarComando(codigo);
+            if (_txtFeedbackComando != null)
+            {
+                _txtFeedbackComando.text = resultado;
+                _txtFeedbackComando.color = resultado.StartsWith("✓") 
+                    ? new Color(0.40f, 1f, 0.55f, 1f) 
+                    : new Color(1f, 0.55f, 0.55f, 1f);
+            }
+            if (_inputCodigoAdmin != null)
+            {
+                _inputCodigoAdmin.text = "";
+            }
+            GestorAudio.PlaySFX(TipoSFX.Mejora, 0.8f);
+        }
+
         private void BloquearAdmin()
         {
             _adminDesbloqueado = false;

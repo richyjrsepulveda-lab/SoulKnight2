@@ -534,7 +534,7 @@ namespace SoulKnight
                     pj.MostrarTextoFlotanteClientRpc($"¡{nombreMejora}!", color);
                 }
 
-                NotificarRecogidoClientRpc();
+                NotificarRecogidoClientRpc((byte)tipo);
 
                 if (NetworkObject != null && NetworkObject.IsSpawned)
                 {
@@ -545,9 +545,13 @@ namespace SoulKnight
         }
 
         [ClientRpc]
-        private void NotificarRecogidoClientRpc()
+        private void NotificarRecogidoClientRpc(byte tipoByte)
         {
-            GestorAudio.PlaySFX(TipoSFX.Mejora);
+            var tipo = (TipoMejoraRun)tipoByte;
+            if (tipo != TipoMejoraRun.PescadoEsqueleto && tipo != TipoMejoraRun.PescadoMedio && tipo != TipoMejoraRun.PescadoCompleto)
+            {
+                GestorAudio.PlaySFX(TipoSFX.Mejora);
+            }
         }
     }
 }

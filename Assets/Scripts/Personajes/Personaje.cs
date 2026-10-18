@@ -715,6 +715,14 @@ namespace SoulKnight
                 case TipoMejoraRun.PescadoMedio:
                 case TipoMejoraRun.PescadoCompleto:
                     Curar(Mathf.RoundToInt(def.valor));
+                    if (NetworkManager != null && NetworkManager.IsListening)
+                    {
+                        NotificarComerPescadoClientRpc();
+                    }
+                    else
+                    {
+                        GestorAudio.PlaySFX(TipoSFX.ComerPescado);
+                    }
                     break;
                 case TipoMejoraRun.AumentoDano:
                     // Mejora permanente acumulativa en toda la run (+15% por cada item recogido)
@@ -794,6 +802,12 @@ namespace SoulKnight
             {
                 MostrarDanoClientRpc(curacion, Color.green);
             }
+        }
+
+        [ClientRpc]
+        public void NotificarComerPescadoClientRpc()
+        {
+            GestorAudio.PlaySFX(TipoSFX.ComerPescado);
         }
 
         [ClientRpc]

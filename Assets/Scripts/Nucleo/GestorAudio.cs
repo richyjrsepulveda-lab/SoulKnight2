@@ -56,7 +56,8 @@ namespace SoulKnight
         SubirNivel,
         SubirMaestria,
         CargandoUltiRayo,
-        LanzandoUltiRayo
+        LanzandoUltiRayo,
+        ComerPescado
     }
 
     public class MarcadorAudioBoton : MonoBehaviour { }
@@ -181,7 +182,16 @@ namespace SoulKnight
             RegistrarMusica(TipoMusica.Sala, "Audio/Musica/MusicaSala");
             RegistrarMusica(TipoMusica.Lobby, "Audio/Musica/MusicaLobby");
             RegistrarMusica(TipoMusica.Mazmorra, "Audio/Musica/MusicaDungeon");
-            RegistrarMusica(TipoMusica.Jefe, "Audio/Musica/MusicaBoss");
+            // Usar MusicaJefe1 para los combates contra jefes
+            var clipJefe1 = Resources.Load<AudioClip>("Audio/Musica/MusicaJefe1");
+            if (clipJefe1 != null)
+            {
+                _clipsMusica[TipoMusica.Jefe] = clipJefe1;
+            }
+            else
+            {
+                RegistrarMusica(TipoMusica.Jefe, "Audio/Musica/MusicaBoss");
+            }
 
             // SFX
             RegistrarSFX(TipoSFX.Disparo, "Audio/SFX/Disparo");
@@ -223,6 +233,7 @@ namespace SoulKnight
             RegistrarSFX(TipoSFX.SubirMaestria, "Audio/SFX/SubirMaestria");
             RegistrarSFX(TipoSFX.CargandoUltiRayo, "Audio/SFX/CargandoUltiRayo");
             RegistrarSFX(TipoSFX.LanzandoUltiRayo, "Audio/SFX/LanzandoUltiRayo");
+            RegistrarSFX(TipoSFX.ComerPescado, "Audio/SFX/ComerPescado");
         }
 
         private void RegistrarMusica(TipoMusica tipo, string rutaResources)
