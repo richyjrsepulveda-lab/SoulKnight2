@@ -570,24 +570,31 @@ namespace SoulKnight
 
             if (contenedorSlotsHabilidades == null) return;
 
-            // Asegurar que contenedorSlotsHabilidades sea una fila horizontal centrada para los 4 iconos
-            var vlg = contenedorSlotsHabilidades.GetComponent<VerticalLayoutGroup>();
-            if (vlg != null) Destroy(vlg);
+            // Eliminar tarjeta externa previa si existiera en panelVistaCuarto
+            if (panelVistaCuarto != null)
+            {
+                var cardPrevia = panelVistaCuarto.transform.Find("TarjetaDetalleTecnicoCuarto");
+                if (cardPrevia != null) Destroy(cardPrevia.gameObject);
+            }
 
+            // Asegurar que contenedorSlotsHabilidades use VerticalLayoutGroup sin interferencias
             var hlg = contenedorSlotsHabilidades.GetComponent<HorizontalLayoutGroup>();
-            if (hlg == null) hlg = contenedorSlotsHabilidades.gameObject.AddComponent<HorizontalLayoutGroup>();
-            hlg.spacing = 16f;
-            hlg.childAlignment = TextAnchor.MiddleCenter;
-            hlg.childControlWidth = false;
-            hlg.childControlHeight = false;
-            hlg.childForceExpandWidth = false;
-            hlg.childForceExpandHeight = false;
+            if (hlg != null) Destroy(hlg);
+
+            var vlg = contenedorSlotsHabilidades.GetComponent<VerticalLayoutGroup>();
+            if (vlg == null) vlg = contenedorSlotsHabilidades.gameObject.AddComponent<VerticalLayoutGroup>();
+            vlg.spacing = 8f;
+            vlg.childAlignment = TextAnchor.UpperCenter;
+            vlg.childControlWidth = true;
+            vlg.childControlHeight = false;
+            vlg.childForceExpandWidth = true;
+            vlg.childForceExpandHeight = false;
 
             var rtContHabs = contenedorSlotsHabilidades.GetComponent<RectTransform>();
             if (rtContHabs != null)
             {
-                rtContHabs.anchoredPosition = new Vector2(0f, 32f);
-                rtContHabs.sizeDelta = new Vector2(450f, 68f);
+                rtContHabs.anchoredPosition = new Vector2(0f, -20f);
+                rtContHabs.sizeDelta = new Vector2(620f, 320f);
             }
 
             // Limpiar slots viejos
@@ -603,58 +610,106 @@ namespace SoulKnight
                 _habilidadSeleccionadaCuarto = todasHabilidades[0].id;
             }
 
-            // Crear los 4 recuadros de habilidad en una fila (idéntico al menú de pausa)
+            string[] teclas = new string[] { "CLICK IZQ", "E", "Q", "R" };
+
+            // Construir lista vertical: Icono a la izquierda, nombre a la derecha, y al hacer click se despliega su descripción
             for (int i = 0; i < todasHabilidades.Count && i < 4; i++)
             {
                 var hab = todasHabilidades[i];
                 bool seleccionada = (_habilidadSeleccionadaCuarto == hab.id);
+                string teclaStr = i < teclas.Length ? teclas[i] : "HAB";
+                string desc = !string.IsNullOrEmpty(hab.descripcionTecnica) ? hab.descripcionTecnica : hab.descripcion;
 
                 var slotObj = new GameObject($"SlotHab_{i}");
                 slotObj.transform.SetParent(contenedorSlotsHabilidades, false);
 
                 var rtSlot = slotObj.AddComponent<RectTransform>();
-                rtSlot.sizeDelta = new Vector2(56f, 56f);
+                float altoSlot = seleccionada ? 84f : 44f;
+                rtSlot.sizeDelta = new Vector2(620f, altoSlot);
 
                 var le = slotObj.AddComponent<LayoutElement>();
-                le.preferredWidth = 56f;
-                le.preferredHeight = 56f;
-                le.minWidth = 56f;
-                le.minHeight = 56f;
+                le.preferredHeight = altoSlot;
+                le.minHeight = altoSlot;
+                le.flexibleWidth = 1f;
 
-                // Borde exterior (resaltado en cyan si está seleccionada)
+                // Borde exterior resaltado al seleccionar
                 var imgBorde = slotObj.AddComponent<Image>();
                 imgBorde.color = seleccionada
-                    ? new Color(0.25f, 0.85f, 1.0f, 1f)
-                    : new Color(0.20f, 0.28f, 0.40f, 0.7f);
+                    ? new Color(0.28f, 0.78f, 1.0f, 0.95f) // Borde cyan brillante si está seleccionada
+                    : new Color(0.18f, 0.22f, 0.30f, 0.70f); // Borde neutro si no
 
-                // Fondo interior oscuro
+                // Fondo interior
                 var fondoInt = new GameObject("FondoInterno");
                 fondoInt.transform.SetParent(slotObj.transform, false);
                 var rtFi = fondoInt.AddComponent<RectTransform>();
                 rtFi.anchorMin = Vector2.zero;
                 rtFi.anchorMax = Vector2.one;
-                rtFi.offsetMin = new Vector2(3f, 3f);
-                rtFi.offsetMax = new Vector2(-3f, -3f);
+                rtFi.offsetMin = new Vector2(2f, 2f);
+                rtFi.offsetMax = new Vector2(-2f, -2f);
                 var imgFi = fondoInt.AddComponent<Image>();
-                imgFi.color = new Color(0.08f, 0.11f, 0.16f, 0.95f);
+                imgFi.color = seleccionada
+                    ? new Color(0.10f, 0.16f, 0.25f, 0.98f)
+                    : new Color(0.07f, 0.09f, 0.13f, 0.95f);
                 imgFi.raycastTarget = false;
 
-                // Icono de la habilidad
-                var icoObj = new GameObject("Icono");
-                icoObj.transform.SetParent(fondoInt.transform, false);
-                var rtIco = icoObj.AddComponent<RectTransform>();
-                rtIco.anchorMin = Vector2.zero;
-                rtIco.anchorMax = Vector2.one;
-                rtIco.offsetMin = new Vector2(3f, 3f);
-                rtIco.offsetMax = new Vector2(-3f, -3f);
+                // 1. Icono a la izquierda
+                var icoBox = new GameObject("IconoBox");
+                icoBox.transform.SetParent(fondoInt.transform, false);
+                var rtIco = icoBox.AddComponent<RectTransform>();
+                rtIco.anchorMin = new Vector2(0f, 0.5f);
+                rtIco.anchorMax = new Vector2(0f, 0.5f);
+                rtIco.pivot = new Vector2(0f, 0.5f);
+                rtIco.anchoredPosition = new Vector2(10f, seleccionada ? 18f : 0f);
+                rtIco.sizeDelta = new Vector2(32f, 32f);
 
-                var imgIco = icoObj.AddComponent<Image>();
+                var imgIco = icoBox.AddComponent<Image>();
                 imgIco.sprite = CatalogoHabilidades.ObtenerSpriteHabilidad(hab.id);
                 imgIco.preserveAspect = true;
                 imgIco.color = Color.white;
                 imgIco.raycastTarget = false;
 
-                // Click para seleccionar y mostrar ficha técnica debajo
+                // 2. Nombre de la habilidad a la derecha del icono
+                var txtNombreObj = new GameObject("TextoNombre");
+                txtNombreObj.transform.SetParent(fondoInt.transform, false);
+                var rtTxtNom = txtNombreObj.AddComponent<RectTransform>();
+                rtTxtNom.anchorMin = new Vector2(0f, 0.5f);
+                rtTxtNom.anchorMax = new Vector2(1f, 0.5f);
+                rtTxtNom.pivot = new Vector2(0f, 0.5f);
+                rtTxtNom.anchoredPosition = new Vector2(52f, seleccionada ? 18f : 0f);
+                rtTxtNom.sizeDelta = new Vector2(-60f, 30f);
+
+                var txtNom = txtNombreObj.AddComponent<Text>();
+                txtNom.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+                txtNom.fontSize = 12;
+                txtNom.alignment = TextAnchor.MiddleLeft;
+                txtNom.raycastTarget = false;
+                txtNom.text = seleccionada
+                    ? $"<b><size=13><color=#5ce1e6>{hab.nombre.ToUpper()}</color></size></b>  <color=#ffd700>({teclaStr})</color>"
+                    : $"<b>{hab.nombre.ToUpper()}</b>  <color=#94a3b8>({teclaStr})</color>";
+
+                // 3. Descripción técnica que aparece al hacer clic (desplegada)
+                if (seleccionada)
+                {
+                    var txtDescObj = new GameObject("TextoDescripcion");
+                    txtDescObj.transform.SetParent(fondoInt.transform, false);
+                    var rtTxtDesc = txtDescObj.AddComponent<RectTransform>();
+                    rtTxtDesc.anchorMin = new Vector2(0f, 0f);
+                    rtTxtDesc.anchorMax = new Vector2(1f, 0f);
+                    rtTxtDesc.pivot = new Vector2(0f, 0f);
+                    rtTxtDesc.anchoredPosition = new Vector2(52f, 8f);
+                    rtTxtDesc.sizeDelta = new Vector2(-60f, 40f);
+
+                    var txtDesc = txtDescObj.AddComponent<Text>();
+                    txtDesc.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+                    txtDesc.fontSize = 11;
+                    txtDesc.lineSpacing = 1.2f;
+                    txtDesc.alignment = TextAnchor.UpperLeft;
+                    txtDesc.color = new Color(0.85f, 0.90f, 0.96f);
+                    txtDesc.raycastTarget = false;
+                    txtDesc.text = desc;
+                }
+
+                // Botón interactivo para desplegar al hacer clic
                 var btn = slotObj.AddComponent<Button>();
                 IdHabilidad idClick = hab.id;
                 btn.onClick.AddListener(() =>
@@ -662,92 +717,6 @@ namespace SoulKnight
                     _habilidadSeleccionadaCuarto = idClick;
                     ConstruirVistaCuarto(pj);
                 });
-            }
-
-            // Tarjeta inferior con la descripción de la habilidad seleccionada
-            ActualizarTarjetaDetalleTecnicoCuarto(pj);
-        }
-
-        private void ActualizarTarjetaDetalleTecnicoCuarto(TipoPersonaje pj)
-        {
-            if (panelVistaCuarto == null) return;
-
-            if (_txtDetalleTecnicoCuarto == null)
-            {
-                var existCard = panelVistaCuarto.transform.Find("TarjetaDetalleTecnicoCuarto");
-                if (existCard != null)
-                {
-                    _txtDetalleTecnicoCuarto = existCard.Find("Fondo/TextoDetalle")?.GetComponent<Text>();
-                }
-            }
-
-            if (_txtDetalleTecnicoCuarto == null)
-            {
-                var objCard = new GameObject("TarjetaDetalleTecnicoCuarto");
-                objCard.transform.SetParent(panelVistaCuarto.transform, false);
-
-                var rtCard = objCard.AddComponent<RectTransform>();
-                rtCard.anchorMin = new Vector2(0.5f, 0.5f);
-                rtCard.anchorMax = new Vector2(0.5f, 0.5f);
-                rtCard.pivot = new Vector2(0.5f, 0.5f);
-                rtCard.anchoredPosition = new Vector2(0f, -54f);
-                rtCard.sizeDelta = new Vector2(560f, 96f);
-
-                var imgBorde = objCard.AddComponent<Image>();
-                imgBorde.color = new Color(0.20f, 0.28f, 0.40f, 0.85f);
-
-                var fondoInt = new GameObject("Fondo");
-                fondoInt.transform.SetParent(objCard.transform, false);
-                var rtFi = fondoInt.AddComponent<RectTransform>();
-                rtFi.anchorMin = Vector2.zero;
-                rtFi.anchorMax = Vector2.one;
-                rtFi.offsetMin = new Vector2(2f, 2f);
-                rtFi.offsetMax = new Vector2(-2f, -2f);
-                var imgFi = fondoInt.AddComponent<Image>();
-                imgFi.color = new Color(0.06f, 0.08f, 0.13f, 0.98f);
-
-                var txtObj = new GameObject("TextoDetalle");
-                txtObj.transform.SetParent(fondoInt.transform, false);
-                var rtTd = txtObj.AddComponent<RectTransform>();
-                rtTd.anchorMin = Vector2.zero;
-                rtTd.anchorMax = Vector2.one;
-                rtTd.offsetMin = new Vector2(14f, 8f);
-                rtTd.offsetMax = new Vector2(-14f, -8f);
-
-                _txtDetalleTecnicoCuarto = txtObj.AddComponent<Text>();
-                _txtDetalleTecnicoCuarto.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-                _txtDetalleTecnicoCuarto.fontSize = 12;
-                _txtDetalleTecnicoCuarto.lineSpacing = 1.25f;
-                _txtDetalleTecnicoCuarto.alignment = TextAnchor.MiddleLeft;
-                _txtDetalleTecnicoCuarto.color = new Color(0.92f, 0.96f, 1f);
-                _txtDetalleTecnicoCuarto.raycastTarget = false;
-            }
-
-            if (_txtDetalleTecnicoCuarto != null)
-            {
-                var habs = CatalogoHabilidades.ObtenerHabilidadesPersonaje(pj);
-                var habSel = CatalogoHabilidades.Obtener(_habilidadSeleccionadaCuarto);
-                if (habSel == null && habs.Count > 0)
-                {
-                    habSel = habs[0];
-                }
-
-                if (habSel != null)
-                {
-                    string[] teclas = new string[] { "CLICK IZQ", "E", "Q", "R" };
-                    int idx = habs.FindIndex(h => h.id == habSel.id);
-                    string teclaStr = (idx >= 0 && idx < teclas.Length) ? teclas[idx] : "HAB";
-                    string desc = !string.IsNullOrEmpty(habSel.descripcionTecnica) ? habSel.descripcionTecnica : habSel.descripcion;
-
-                    _txtDetalleTecnicoCuarto.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-                    _txtDetalleTecnicoCuarto.fontSize = 12;
-                    _txtDetalleTecnicoCuarto.lineSpacing = 1.25f;
-                    _txtDetalleTecnicoCuarto.text = $"<b><size=13><color=#5ce1e6>{habSel.nombre.ToUpper()}</color></size></b> <color=#ffd700>({teclaStr})</color>\n{desc}";
-                }
-                else
-                {
-                    _txtDetalleTecnicoCuarto.text = "<color=#94a3b8><i>Haz clic en una habilidad para ver su descripción.</i></color>";
-                }
             }
         }
 
