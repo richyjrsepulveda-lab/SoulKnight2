@@ -15,7 +15,7 @@ namespace SoulKnight
     /// Panel de Opciones unificado con pestañas:
     /// - Pestaña 1: Audio (Volumen General, Música, Efectos de sonido con sliders interactivos y prueba).
     /// - Pestaña 2: Controles (Reasignación dinámica de teclas y restauración por defecto).
-    /// Accesible y configurable en la Sala (menú principal), en el Lobby y durante la Run (menú de pausa).
+    /// Funciona tanto en componentes serializados en escenas (como MenuPrincipal) como en instancias creadas dinámicamente.
     /// </summary>
     public class PanelOpcionesControles : MonoBehaviour
     {
@@ -56,6 +56,7 @@ namespace SoulKnight
         void Awake()
         {
             Instancia = this;
+            AsegurarInterfazCompleta();
         }
 
         public static PanelOpcionesControles ObtenerOCrear(Transform parent)
@@ -66,26 +67,49 @@ namespace SoulKnight
                 {
                     Instancia.transform.SetParent(parent, false);
                 }
+                Instancia.AsegurarInterfazCompleta();
                 return Instancia;
             }
 
             var go = new GameObject("PanelOpcionesControles");
             if (parent != null) go.transform.SetParent(parent, false);
 
-            var rt = go.AddComponent<RectTransform>();
+            var comp = go.AddComponent<PanelOpcionesControles>();
+            comp.AsegurarInterfazCompleta();
+            go.SetActive(false);
+            return comp;
+        }
+
+        public void AsegurarInterfazCompleta()
+        {
+            if (_panelAudio != null && _panelControles != null) return;
+
+            // Si es un objeto serializado de escena previa (ej. MenuPrincipal.unity), limpiar elementos hijos antiguos
+            for (int i = transform.childCount - 1; i >= 0; i--)
+            {
+                var child = transform.GetChild(i);
+                if (child.name != "VentanaModal")
+                {
+                    Destroy(child.gameObject);
+                }
+            }
+
+            panelContenedor = gameObject;
+
+            var rt = GetComponent<RectTransform>();
+            if (rt == null) rt = gameObject.AddComponent<RectTransform>();
             rt.anchorMin = Vector2.zero;
             rt.anchorMax = Vector2.one;
             rt.sizeDelta = Vector2.zero;
+            rt.anchoredPosition = Vector2.zero;
 
-            var imgFondo = go.AddComponent<Image>();
+            var imgFondo = GetComponent<Image>();
+            if (imgFondo == null) imgFondo = gameObject.AddComponent<Image>();
             imgFondo.color = new Color(0.04f, 0.05f, 0.08f, 0.96f);
-
-            var comp = go.AddComponent<PanelOpcionesControles>();
-            comp.panelContenedor = go;
 
             // Ventana Principal
             var ventanaObj = new GameObject("VentanaModal");
-            ventanaObj.transform.SetParent(go.transform, false);
+            ventanaObj.transform.SetParent(transform, false);
             var rtVentana = ventanaObj.AddComponent<RectTransform>();
             rtVentana.anchorMin = new Vector2(0.5f, 0.5f);
             rtVentana.anchorMax = new Vector2(0.5f, 0.5f);
@@ -132,13 +156,13 @@ namespace SoulKnight
             rtTabs.sizeDelta = new Vector2(520f, 40f);
 
             // Botón Tab Audio
-            comp._btnTabAudio = CrearBotonTab(barraTabs.transform, "TabAudio", "🔊 AUDIO", new Vector2(-135f, 0f), out comp._imgTabAudio, out comp._txtTabAudio);
-            comp._btnTabControles = CrearBotonTab(barraTabs.transform, "TabControles", "🎮 CONTROLES", new Vector2(135f, 0f), out comp._imgTabControles, out comp._txtTabControles);
+            _btnTabAudio = CrearBotonTab(barraTabs.transform, "TabAudio", "🔊 AUDIO", new Vector2(-135f, 0f), out _imgTabAudio, out _txtTabAudio);
+            _btnTabControles = CrearBotonTab(barraTabs.transform, "TabControles", "🎮 CONTROLES", new Vector2(135f, 0f), out _imgTabControles, out _txtTabControles);
 
             // ==================== PANEL AUDIO ====================
-            comp._panelAudio = new GameObject("PanelAudio");
-            comp._panelAudio.transform.SetParent(ventanaObj.transform, false);
-            var rtAudio = comp._panelAudio.AddComponent<RectTransform>();
+            _panelAudio = new GameObject("PanelAudio");
+            _panelAudio.transform.SetParent(ventanaObj.transform, false);
+            var rtAudio = _panelAudio.AddComponent<RectTransform>();
             rtAudio.anchorMin = new Vector2(0.5f, 0.5f);
             rtAudio.anchorMax = new Vector2(0.5f, 0.5f);
             rtAudio.pivot = new Vector2(0.5f, 0.5f);
@@ -147,7 +171,7 @@ namespace SoulKnight
 
             // Subtítulo Audio
             var subAudio = new GameObject("SubtituloAudio");
-            subAudio.transform.SetParent(comp._panelAudio.transform, false);
+            subAudio.transform.SetParent(_panelAudio.transform, false);
             var txtSubAudio = subAudio.AddComponent<Text>();
             txtSubAudio.font = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
             txtSubAudio.fontSize = 11;
@@ -163,7 +187,7 @@ namespace SoulKnight
 
             // Contenedor Sliders
             var contSliders = new GameObject("ContenedorSliders");
-            contSliders.transform.SetParent(comp._panelAudio.transform, false);
+            contSliders.transform.SetParent(_panelAudio.transform, false);
             var rtContSliders = contSliders.AddComponent<RectTransform>();
             rtContSliders.anchorMin = new Vector2(0.5f, 0.5f);
             rtContSliders.anchorMax = new Vector2(0.5f, 0.5f);
@@ -177,18 +201,18 @@ namespace SoulKnight
             vlgSliders.childControlWidth = false;
             vlgSliders.childControlHeight = false;
 
-            comp._sliderMaster = CrearSliderFila(contSliders.transform, "SliderMaster", "Volumen General", GestorAudio.Instancia.VolumenMaster,
-                (val) => GestorAudio.Instancia.SetVolumenMaster(val), out comp._txtPctMaster);
+            _sliderMaster = CrearSliderFila(contSliders.transform, "SliderMaster", "Volumen General", GestorAudio.Instancia.VolumenMaster,
+                (val) => GestorAudio.Instancia.SetVolumenMaster(val), out _txtPctMaster);
 
-            comp._sliderMusica = CrearSliderFila(contSliders.transform, "SliderMusica", "Música de Fondo", GestorAudio.Instancia.VolumenMusica,
-                (val) => GestorAudio.Instancia.SetVolumenMusica(val), out comp._txtPctMusica);
+            _sliderMusica = CrearSliderFila(contSliders.transform, "SliderMusica", "Música de Fondo", GestorAudio.Instancia.VolumenMusica,
+                (val) => GestorAudio.Instancia.SetVolumenMusica(val), out _txtPctMusica);
 
-            comp._sliderSFX = CrearSliderFila(contSliders.transform, "SliderSFX", "Efectos (SFX)", GestorAudio.Instancia.VolumenSFX,
-                (val) => GestorAudio.Instancia.SetVolumenSFX(val), out comp._txtPctSFX);
+            _sliderSFX = CrearSliderFila(contSliders.transform, "SliderSFX", "Efectos (SFX)", GestorAudio.Instancia.VolumenSFX,
+                (val) => GestorAudio.Instancia.SetVolumenSFX(val), out _txtPctSFX);
 
             // Botón Probar Sonido
             var btnProbarObj = new GameObject("BotonProbarSonido");
-            btnProbarObj.transform.SetParent(comp._panelAudio.transform, false);
+            btnProbarObj.transform.SetParent(_panelAudio.transform, false);
             var imgProbar = btnProbarObj.AddComponent<Image>();
             imgProbar.color = new Color(0.18f, 0.35f, 0.55f, 1f);
             var rtProbar = btnProbarObj.GetComponent<RectTransform>();
@@ -219,9 +243,9 @@ namespace SoulKnight
             });
 
             // ==================== PANEL CONTROLES ====================
-            comp._panelControles = new GameObject("PanelControles");
-            comp._panelControles.transform.SetParent(ventanaObj.transform, false);
-            var rtContr = comp._panelControles.AddComponent<RectTransform>();
+            _panelControles = new GameObject("PanelControles");
+            _panelControles.transform.SetParent(ventanaObj.transform, false);
+            var rtContr = _panelControles.AddComponent<RectTransform>();
             rtContr.anchorMin = new Vector2(0.5f, 0.5f);
             rtContr.anchorMax = new Vector2(0.5f, 0.5f);
             rtContr.pivot = new Vector2(0.5f, 0.5f);
@@ -230,7 +254,7 @@ namespace SoulKnight
 
             // Subtítulo Controles
             var estObj = new GameObject("TextoEstado");
-            estObj.transform.SetParent(comp._panelControles.transform, false);
+            estObj.transform.SetParent(_panelControles.transform, false);
             var txtEst = estObj.AddComponent<Text>();
             txtEst.font = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
             txtEst.fontSize = 11;
@@ -243,11 +267,11 @@ namespace SoulKnight
             rtEst.pivot = new Vector2(0.5f, 1f);
             rtEst.anchoredPosition = new Vector2(0f, -6f);
             rtEst.sizeDelta = new Vector2(500f, 24f);
-            comp.textoEstado = txtEst;
+            textoEstado = txtEst;
 
             // Scroll / Contenedor Filas Controles
             var contFilasObj = new GameObject("ContenedorFilas");
-            contFilasObj.transform.SetParent(comp._panelControles.transform, false);
+            contFilasObj.transform.SetParent(_panelControles.transform, false);
             var vlg = contFilasObj.AddComponent<VerticalLayoutGroup>();
             vlg.childAlignment = TextAnchor.UpperCenter;
             vlg.spacing = 4f;
@@ -260,11 +284,11 @@ namespace SoulKnight
             rtFilas.pivot = new Vector2(0.5f, 0.5f);
             rtFilas.anchoredPosition = new Vector2(0f, 10f);
             rtFilas.sizeDelta = new Vector2(480f, 220f);
-            comp.contenedorFilas = contFilasObj.transform;
+            contenedorFilas = contFilasObj.transform;
 
             // Botón Restaurar Controles
             var btnRestObj = new GameObject("BotonRestaurar");
-            btnRestObj.transform.SetParent(comp._panelControles.transform, false);
+            btnRestObj.transform.SetParent(_panelControles.transform, false);
             var imgRest = btnRestObj.AddComponent<Image>();
             imgRest.color = new Color(0.45f, 0.22f, 0.22f, 1f);
             var rtRest = btnRestObj.GetComponent<RectTransform>();
@@ -273,7 +297,7 @@ namespace SoulKnight
             rtRest.pivot = new Vector2(0.5f, 0f);
             rtRest.anchoredPosition = new Vector2(0f, 14f);
             rtRest.sizeDelta = new Vector2(230f, 32f);
-            comp.botonRestaurar = btnRestObj.AddComponent<Button>();
+            botonRestaurar = btnRestObj.AddComponent<Button>();
 
             var txtRestObj = new GameObject("Texto");
             txtRestObj.transform.SetParent(btnRestObj.transform, false);
@@ -300,7 +324,7 @@ namespace SoulKnight
             rtCerrar.pivot = new Vector2(0.5f, 0f);
             rtCerrar.anchoredPosition = new Vector2(0f, 16f);
             rtCerrar.sizeDelta = new Vector2(260f, 38f);
-            comp.botonCerrar = btnCerrarObj.AddComponent<Button>();
+            botonCerrar = btnCerrarObj.AddComponent<Button>();
 
             var txtCerrarObj = new GameObject("Texto");
             txtCerrarObj.transform.SetParent(btnCerrarObj.transform, false);
@@ -317,16 +341,13 @@ namespace SoulKnight
             rtTxtCerrar.sizeDelta = Vector2.zero;
 
             // Listeners
-            comp._btnTabAudio.onClick.AddListener(() => comp.CambiarPestana(PestanaOpciones.Audio));
-            comp._btnTabControles.onClick.AddListener(() => comp.CambiarPestana(PestanaOpciones.Controles));
-            comp.botonCerrar.onClick.AddListener(comp.Cerrar);
-            comp.botonRestaurar.onClick.AddListener(comp.RestaurarPorDefecto);
+            _btnTabAudio.onClick.AddListener(() => CambiarPestana(PestanaOpciones.Audio));
+            _btnTabControles.onClick.AddListener(() => CambiarPestana(PestanaOpciones.Controles));
+            botonCerrar.onClick.AddListener(Cerrar);
+            botonRestaurar.onClick.AddListener(RestaurarPorDefecto);
 
-            comp.ConstruirFilas();
-            comp.CambiarPestana(PestanaOpciones.Audio);
-
-            go.SetActive(false);
-            return comp;
+            ConstruirFilas();
+            CambiarPestana(PestanaOpciones.Audio);
         }
 
         private static Button CrearBotonTab(Transform parent, string nombre, string texto, Vector2 pos, out Image img, out Text txt)
@@ -492,9 +513,7 @@ namespace SoulKnight
 
         void Start()
         {
-            if (botonCerrar) botonCerrar.onClick.AddListener(Cerrar);
-            if (botonRestaurar) botonRestaurar.onClick.AddListener(RestaurarPorDefecto);
-            ConstruirFilas();
+            AsegurarInterfazCompleta();
         }
 
         void Update()
@@ -525,7 +544,10 @@ namespace SoulKnight
 
         public void Abrir()
         {
+            AsegurarInterfazCompleta();
+
             if (panelContenedor) panelContenedor.SetActive(true);
+            else gameObject.SetActive(true);
 
             // Siempre abrir con Audio como primera opción seleccionada
             CambiarPestana(PestanaOpciones.Audio);
@@ -546,6 +568,7 @@ namespace SoulKnight
         {
             FinalizarEsperaTecla();
             if (panelContenedor) panelContenedor.SetActive(false);
+            else gameObject.SetActive(false);
         }
 
         private void RestaurarPorDefecto()

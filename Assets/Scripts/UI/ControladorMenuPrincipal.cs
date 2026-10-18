@@ -37,6 +37,30 @@ namespace SoulKnight
 
             GestorAudio.PlayBGM(TipoMusica.Sala);
             AsegurarBotonCambiarNombre();
+
+            if (panelOpciones == null)
+            {
+                panelOpciones = GetComponentInChildren<PanelOpcionesControles>(true) ?? FindObjectOfType<PanelOpcionesControles>(true);
+            }
+            if (panelOpciones != null)
+            {
+                panelOpciones.AsegurarInterfazCompleta();
+            }
+        }
+
+        void Update()
+        {
+            if (Input.GetKeyDown(KeyCode.Escape))
+            {
+                if (panelOpciones != null && panelOpciones.gameObject.activeSelf)
+                {
+                    panelOpciones.Cerrar();
+                }
+                else
+                {
+                    AlPresionarOpciones();
+                }
+            }
         }
 
         private void AsegurarBotonCambiarNombre()
@@ -130,13 +154,19 @@ namespace SoulKnight
         private void AlPresionarOpciones()
         {
             GestorAudio.PlaySFX(TipoSFX.ClickUI);
+            if (panelOpciones == null)
+            {
+                panelOpciones = GetComponentInChildren<PanelOpcionesControles>(true) ?? FindObjectOfType<PanelOpcionesControles>(true);
+            }
             if (panelOpciones != null)
             {
                 panelOpciones.Abrir();
             }
             else
             {
-                PanelOpcionesControles.ObtenerOCrear(transform).Abrir();
+                Canvas canvas = GetComponentInChildren<Canvas>() ?? FindObjectOfType<Canvas>();
+                panelOpciones = PanelOpcionesControles.ObtenerOCrear(canvas != null ? canvas.transform : transform);
+                panelOpciones.Abrir();
             }
         }
 
