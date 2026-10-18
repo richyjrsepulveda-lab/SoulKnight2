@@ -32,10 +32,25 @@ namespace SoulKnight
             if (Instancia == this) Instancia = null;
         }
 
+        private float _tiempoShake = 0f;
+        private float _magnitudShake = 0f;
+
+        public void Sacudir(float duracion = 0.35f, float magnitud = 0.25f)
+        {
+            _tiempoShake = duracion;
+            _magnitudShake = magnitud;
+        }
+
         void LateUpdate()
         {
             if (objetivo == null) return;
             Vector3 destino = new Vector3(objetivo.position.x, objetivo.position.y, transform.position.z);
+            if (_tiempoShake > 0f)
+            {
+                _tiempoShake -= Time.deltaTime;
+                Vector2 offset = Random.insideUnitCircle * _magnitudShake;
+                destino += new Vector3(offset.x, offset.y, 0f);
+            }
             transform.position = suavizado <= 0f
                 ? destino
                 : Vector3.Lerp(transform.position, destino, 1f - Mathf.Exp(-suavizado * Time.deltaTime));

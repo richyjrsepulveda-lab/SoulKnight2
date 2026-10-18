@@ -126,9 +126,9 @@ namespace SoulKnight
                 {
                     id = IdHabilidad.Fuego_Meteorito,
                     personaje = TipoPersonaje.Fuego,
-                    nombre = "Tormenta de Meteoros",
-                    descripcion = "Impacto cósmico devastador en área con daño masivo de fuego.",
-                    descripcionTecnica = "Invoca un meteorito colosal hacia el cursor que desata gran daño de fuego en área tras 1 segundo.",
+                    nombre = "Supernova Felina",
+                    descripcion = "Estallido masivo de 360° y furor ígneo definitivo.",
+                    descripcionTecnica = "Detona una explosión de 360°. Por 8s: velocidad aumentada, rastro de fuego, armadura y lanzallamas ilimitados, y escopeta triple de bolas de fuego.",
                     slotPorDefecto = 3,
                     nivelMaestriaRequerido = 4,
                     nivelRequeridoRun = 7

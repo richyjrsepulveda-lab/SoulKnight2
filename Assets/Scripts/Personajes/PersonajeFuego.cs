@@ -32,15 +32,26 @@ namespace SoulKnight
         public float duracionArmadura = 10.0f;
         public float reduccionArmadura = 0.8f;
 
+        [Header("Ultimate - Supernova")]
+        public float cooldownSupernova = 35.0f;
+        public float duracionSupernova = 8.0f;
+        public int danoSupernovaExplosion = 85;
+
         // Estados sincronizados
         public NetworkVariable<bool> ArmaduraActiva = new NetworkVariable<bool>(false);
         public NetworkVariable<bool> CabezaFuegoActiva = new NetworkVariable<bool>(false);
         public NetworkVariable<bool> DisparandoCabezaFuego = new NetworkVariable<bool>(false);
+        public NetworkVariable<bool> SupernovaActiva = new NetworkVariable<bool>(false);
 
         // Cooldowns locales para la UI
         private float _cdBolaFuegoRestante = 0f;
         private float _cdCabezaFuegoRestante = 0f;
         private float _cdArmaduraRestante = 0f;
+        private float _cdSupernovaRestante = 0f;
+
+        // Control de efectos y rastro de fuego
+        private float _timerRastroFuego = 0f;
+        private GameObject _auraSupernova;
 
         // Lógica de daño continuo para cabeza de fuego
         private float _tickTimerCabeza = 0f;
@@ -139,6 +150,22 @@ namespace SoulKnight
             }
         }
 
+        private void AsegurarAuraSupernova()
+        {
+            if (_auraSupernova == null)
+            {
+                _auraSupernova = new GameObject("AuraSupernova");
+                _auraSupernova.transform.SetParent(transform, false);
+                _auraSupernova.transform.localPosition = new Vector3(0f, -0.1f, 0f);
+                var sr = _auraSupernova.AddComponent<SpriteRenderer>();
+                sr.sprite = _spriteLenguaFuego;
+                sr.color = new Color(1f, 0.75f, 0.15f, 0.70f);
+                sr.sortingOrder = (rayoCabezaFuego != null ? rayoCabezaFuego.sortingOrder : 7) - 1;
+                _auraSupernova.transform.localScale = Vector3.one * 1.8f;
+                _auraSupernova.SetActive(false);
+            }
+        }
+
         public override void OnNetworkSpawn()
         {
             base.OnNetworkSpawn();
@@ -148,6 +175,17 @@ namespace SoulKnight
                 if (rayoCabezaFuego) rayoCabezaFuego.enabled = act;
                 if (!act) OcultarVisualesExtraLanzallamas();
             };
+            SupernovaActiva.OnValueChanged += (prev, act) =>
+            {
+                AsegurarAuraSupernova();
+                if (_auraSupernova != null) _auraSupernova.SetActive(act);
+            };
+        }
+
+        protected override float ObtenerVelocidadCorrer()
+        {
+            if (SupernovaActiva.Value) return velocidadBase * 1.9f;
+            return base.ObtenerVelocidadCorrer();
         }
 
         protected override void Update()
@@ -156,13 +194,27 @@ namespace SoulKnight
             {
                 if (IsServer && DisparandoCabezaFuego.Value) DisparandoCabezaFuego.Value = false;
                 if (IsServer && CabezaFuegoActiva.Value) CabezaFuegoActiva.Value = false;
+                if (IsServer && SupernovaActiva.Value) SupernovaActiva.Value = false;
                 _flamallamaIniciada = false;
                 if (rayoCabezaFuego != null && rayoCabezaFuego.enabled) rayoCabezaFuego.enabled = false;
                 OcultarVisualesExtraLanzallamas();
+                if (_auraSupernova != null && _auraSupernova.activeSelf) _auraSupernova.SetActive(false);
                 return;
             }
 
             base.Update();
+
+            // Animación de aura y velocidad durante Supernova
+            if (SupernovaActiva.Value)
+            {
+                _velocidadActual = velocidadBase * 1.4f;
+                if (_auraSupernova != null && _auraSupernova.activeSelf)
+                {
+                    _auraSupernova.transform.Rotate(0f, 0f, 200f * Time.deltaTime);
+                    float s = 1.8f + Mathf.Sin(Time.time * 14f) * 0.18f;
+                    _auraSupernova.transform.localScale = new Vector3(s, s, 1f);
+                }
+            }
 
             // Actualizar timers locales para UI
             if (EsControlLocal)
@@ -170,12 +222,33 @@ namespace SoulKnight
                 if (_cdBolaFuegoRestante > 0) _cdBolaFuegoRestante -= Time.deltaTime;
                 if (_cdCabezaFuegoRestante > 0) _cdCabezaFuegoRestante -= Time.deltaTime;
                 if (_cdArmaduraRestante > 0) _cdArmaduraRestante -= Time.deltaTime;
+                if (_cdSupernovaRestante > 0) _cdSupernovaRestante -= Time.deltaTime;
+
+                if (SupernovaActiva.Value)
+                {
+                    // Durante Supernova las habilidades no tienen cooldown
+                    _cdCabezaFuegoRestante = 0f;
+                    _cdArmaduraRestante = 0f;
+                }
 
                 if (HUDJugador.Instancia != null)
                 {
                     HUDJugador.Instancia.ActualizarCooldown(0, _cdBolaFuegoRestante, cooldownBolaFuego);
                     HUDJugador.Instancia.ActualizarCooldown(1, _cdCabezaFuegoRestante, cooldownCabezaFuego);
                     HUDJugador.Instancia.ActualizarCooldown(2, _cdArmaduraRestante, cooldownArmadura);
+                    HUDJugador.Instancia.ActualizarCooldown(3, _cdSupernovaRestante, cooldownSupernova);
+                }
+            }
+
+            // Generación de rastro de fuego ardiente al caminar en Supernova (Servidor)
+            if (IsServer && SupernovaActiva.Value)
+            {
+                _timerRastroFuego -= Time.deltaTime;
+                if (_timerRastroFuego <= 0f && ObtenerMovimientoEfectivo().sqrMagnitude > 0.05f)
+                {
+                    _timerRastroFuego = 0.16f;
+                    CrearRastroFuego(transform.position);
+                    CrearRastroFuegoClientRpc(transform.position);
                 }
             }
 
@@ -321,10 +394,11 @@ namespace SoulKnight
 
         protected override void ProcesarInputsHabilidadesLocales()
         {
-            // Disparo básico o Cabeza de Fuego
+            // --- 0. ATAQUE PRINCIPAL: Click Izquierdo ---
             if (CabezaFuegoActiva.Value)
             {
-                bool disparando = Controles.PrincipalMantenido;
+                // En modo Lanzallamas: durante Supernova permanece continuo; fuera de ella responde al click
+                bool disparando = SupernovaActiva.Value || Controles.PrincipalMantenido;
                 if (disparando != DisparandoCabezaFuego.Value)
                 {
                     SetDisparandoCabezaServerRpc(disparando);
@@ -332,15 +406,26 @@ namespace SoulKnight
             }
             else
             {
-                // Disparo automático continuo al mantener presionado el click izquierdo
+                // En modo Bolas de Fuego:
                 if (Controles.PrincipalMantenido && _cdBolaFuegoRestante <= 0)
                 {
                     if (PuedeUsarHabilidad(IdHabilidad.Fuego_BolaFuego, out string motivo))
                     {
-                        _cdBolaFuegoRestante = cooldownBolaFuego;
                         Vector2 dir = ((Vector2)Controles.PosicionMouseMundo() - (Vector2)transform.position).normalized;
                         if (dir.sqrMagnitude < 0.001f) dir = Vector2.right;
-                        LanzarBolaFuegoServerRpc(dir);
+
+                        if (SupernovaActiva.Value)
+                        {
+                            // MODO ESCOPETA TRIPLE DE FUEGO (Cadencia rápida 0.28s)
+                            _cdBolaFuegoRestante = 0.28f;
+                            LanzarEscopetaFuegoServerRpc(dir);
+                        }
+                        else
+                        {
+                            // Disparo estándar
+                            _cdBolaFuegoRestante = cooldownBolaFuego;
+                            LanzarBolaFuegoServerRpc(dir);
+                        }
                     }
                     else if (!string.IsNullOrEmpty(motivo))
                     {
@@ -349,39 +434,80 @@ namespace SoulKnight
                 }
             }
 
-            // Activar Cabeza de Fuego (E) - Auto-casteo al mantener presionado
-            if (Controles.AutoDisparo(Controles.Habilidad1) && _cdCabezaFuegoRestante <= 0 && !CabezaFuegoActiva.Value)
+            // --- 1. HABILIDAD 1 (E): Lanzallamas / Cabeza de Fuego ---
+            if (SupernovaActiva.Value)
             {
-                if (PuedeUsarHabilidad(IdHabilidad.Fuego_Lanzallamas, out string motivo))
+                // En Supernova: sin cooldown, presionar E alterna (toggle) entre Lanzallamas permanente y Escopeta de Bolas de Fuego
+                if (Controles.Presionada(Controles.Habilidad1))
                 {
-                    _cdCabezaFuegoRestante = cooldownCabezaFuego;
-                    ActivarCabezaFuegoServerRpc();
+                    if (PuedeUsarHabilidad(IdHabilidad.Fuego_Lanzallamas, out string motivoE))
+                    {
+                        bool activar = !CabezaFuegoActiva.Value;
+                        ToggleCabezaFuegoSupernovaServerRpc(activar);
+                    }
+                    else
+                    {
+                        NotificarHabilidadBloqueada(motivoE, Color.red, true);
+                    }
                 }
-                else
+            }
+            else
+            {
+                // Modo normal: Auto-casteo al presionar con cooldown
+                if (Controles.AutoDisparo(Controles.Habilidad1) && _cdCabezaFuegoRestante <= 0 && !CabezaFuegoActiva.Value)
                 {
-                    NotificarHabilidadBloqueada(motivo, Color.red, Controles.Presionada(Controles.Habilidad1));
+                    if (PuedeUsarHabilidad(IdHabilidad.Fuego_Lanzallamas, out string motivo))
+                    {
+                        _cdCabezaFuegoRestante = cooldownCabezaFuego;
+                        ActivarCabezaFuegoServerRpc();
+                    }
+                    else
+                    {
+                        NotificarHabilidadBloqueada(motivo, Color.red, Controles.Presionada(Controles.Habilidad1));
+                    }
                 }
             }
 
-            // Activar Armadura de Fuego (Q) - Auto-casteo al mantener presionado
-            if (Controles.AutoDisparo(Controles.Habilidad2) && _cdArmaduraRestante <= 0 && !ArmaduraActiva.Value)
+            // --- 2. HABILIDAD 2 (Q): Armadura de Fuego ---
+            if (!SupernovaActiva.Value)
             {
-                if (PuedeUsarHabilidad(IdHabilidad.Fuego_Armadura, out string motivo))
+                // Fuera de Supernova: comportamiento normal con cooldown
+                if (Controles.AutoDisparo(Controles.Habilidad2) && _cdArmaduraRestante <= 0 && !ArmaduraActiva.Value)
                 {
-                    _cdArmaduraRestante = cooldownArmadura;
-                    ActivarArmaduraServerRpc();
+                    if (PuedeUsarHabilidad(IdHabilidad.Fuego_Armadura, out string motivo))
+                    {
+                        _cdArmaduraRestante = cooldownArmadura;
+                        ActivarArmaduraServerRpc();
+                    }
+                    else
+                    {
+                        NotificarHabilidadBloqueada(motivo, Color.red, Controles.Presionada(Controles.Habilidad2));
+                    }
+                }
+            }
+            else
+            {
+                // En Supernova, la armadura ya está activa permanentemente
+                _cdArmaduraRestante = 0f;
+            }
+
+            // --- 3. ULTIMATE (R): Supernova Felina ---
+            if (Controles.AutoDisparo(Controles.Ultimate) && _cdSupernovaRestante <= 0 && !SupernovaActiva.Value)
+            {
+                if (PuedeUsarHabilidad(IdHabilidad.Fuego_Meteorito, out string motivoUlti))
+                {
+                    _cdSupernovaRestante = cooldownSupernova;
+                    ActivarSupernovaServerRpc();
                 }
                 else
                 {
-                    NotificarHabilidadBloqueada(motivo, Color.red, Controles.Presionada(Controles.Habilidad2));
+                    NotificarHabilidadBloqueada(motivoUlti, Color.red, Controles.Presionada(Controles.Ultimate));
                 }
             }
         }
 
-        [ServerRpc(RequireOwnership = false)]
-        private void LanzarBolaFuegoServerRpc(Vector2 dir, ServerRpcParams rpcParams = default)
+        private void InstanciarBolaFuego(Vector2 dir, int dano)
         {
-            if (rpcParams.Receive.SenderClientId != OwnerClientId) return;
             if (prefabBolaFuego == null) return;
             if (dir.sqrMagnitude < 0.001f) dir = Vector2.right;
 
@@ -389,14 +515,167 @@ namespace SoulKnight
             var proj = bola.GetComponent<Proyectil>();
             if (proj != null)
             {
-                int danoEscalado = Mathf.RoundToInt(danoBolaFuego * MultiplicadorDanoTotal);
-                proj.Configurar(dir, danoEscalado, OwnerClientId, quemadura: true);
+                proj.Configurar(dir, dano, OwnerClientId, quemadura: true);
             }
             bola.GetComponent<NetworkObject>().Spawn();
             if (proj != null)
             {
                 proj.DireccionSincronizada.Value = dir;
             }
+        }
+
+        [ServerRpc(RequireOwnership = false)]
+        private void LanzarBolaFuegoServerRpc(Vector2 dir, ServerRpcParams rpcParams = default)
+        {
+            if (rpcParams.Receive.SenderClientId != OwnerClientId) return;
+            int danoEscalado = Mathf.RoundToInt(danoBolaFuego * MultiplicadorDanoTotal);
+            InstanciarBolaFuego(dir, danoEscalado);
+        }
+
+        [ServerRpc(RequireOwnership = false)]
+        private void LanzarEscopetaFuegoServerRpc(Vector2 dirPrincipal, ServerRpcParams rpcParams = default)
+        {
+            if (rpcParams.Receive.SenderClientId != OwnerClientId) return;
+            if (prefabBolaFuego == null) return;
+            if (dirPrincipal.sqrMagnitude < 0.001f) dirPrincipal = Vector2.right;
+
+            int danoEscalado = Mathf.RoundToInt(danoBolaFuego * MultiplicadorDanoTotal);
+            Vector2 dirIzq = Quaternion.Euler(0f, 0f, 16f) * dirPrincipal;
+            Vector2 dirDer = Quaternion.Euler(0f, 0f, -16f) * dirPrincipal;
+
+            InstanciarBolaFuego(dirPrincipal, danoEscalado);
+            InstanciarBolaFuego(dirIzq, danoEscalado);
+            InstanciarBolaFuego(dirDer, danoEscalado);
+        }
+
+        [ServerRpc(RequireOwnership = false)]
+        private void ToggleCabezaFuegoSupernovaServerRpc(bool activar, ServerRpcParams rpcParams = default)
+        {
+            if (rpcParams.Receive.SenderClientId != OwnerClientId) return;
+            CabezaFuegoActiva.Value = activar;
+            DisparandoCabezaFuego.Value = activar;
+        }
+
+        [ServerRpc(RequireOwnership = false)]
+        private void ActivarSupernovaServerRpc(ServerRpcParams rpcParams = default)
+        {
+            if (rpcParams.Receive.SenderClientId != OwnerClientId) return;
+            DetonarSupernova();
+            StartCoroutine(RutinaSupernova());
+        }
+
+        private void DetonarSupernova()
+        {
+            // 1. Onda de choque 360° con daño y knockback
+            Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, 5.0f);
+            int danoExp = Mathf.RoundToInt(danoSupernovaExplosion * MultiplicadorDanoTotal);
+            int danoQuem = Mathf.RoundToInt(30 * MultiplicadorDanoTotal);
+
+            foreach (var h in hits)
+            {
+                if (h == null || h.isTrigger || h.gameObject == gameObject) continue;
+                var enemigo = h.GetComponent<EnemigoBase>();
+                if (enemigo != null && enemigo.VidaActual.Value > 0)
+                {
+                    enemigo.RecibirDano(danoExp, new Color(1f, 0.40f, 0.02f));
+                    enemigo.AplicarQuemadura(danoQuem);
+                    Vector2 dirEmpuje = ((Vector2)enemigo.transform.position - (Vector2)transform.position).normalized;
+                    if (dirEmpuje.sqrMagnitude > 0.001f)
+                    {
+                        enemigo.AplicarKnockback(dirEmpuje, 500f);
+                    }
+                }
+            }
+
+            // 2. Disparar 16 bolas de fuego en abanico circular de 360°
+            int danoRadial = Mathf.RoundToInt(danoBolaFuego * 0.9f * MultiplicadorDanoTotal);
+            for (int i = 0; i < 16; i++)
+            {
+                float ang = i * (360f / 16f) * Mathf.Deg2Rad;
+                Vector2 dirRadial = new Vector2(Mathf.Cos(ang), Mathf.Sin(ang));
+                InstanciarBolaFuego(dirRadial, danoRadial);
+            }
+
+            // 3. Efectos y shake en todos los clientes
+            DetonarSupernovaClientRpc(transform.position);
+        }
+
+        [ClientRpc]
+        private void DetonarSupernovaClientRpc(Vector3 pos)
+        {
+            CamaraSeguir.Instancia?.Sacudir(0.45f, 0.32f);
+            TextoFlotante.Crear(pos + Vector3.up * 1.5f, "¡SUPERNOVA!", new Color(1f, 0.82f, 0.15f));
+
+            // Efecto visual expansivo
+            var goOnda = new GameObject("OndaSupernovaVisual");
+            goOnda.transform.position = pos;
+            var sr = goOnda.AddComponent<SpriteRenderer>();
+            sr.sprite = _spriteLenguaFuego;
+            sr.color = new Color(1f, 0.6f, 0.1f, 0.9f);
+            sr.sortingOrder = 8;
+            StartCoroutine(RutinaAnimarOnda(goOnda, sr));
+        }
+
+        private IEnumerator RutinaAnimarOnda(GameObject goOnda, SpriteRenderer sr)
+        {
+            float t = 0f;
+            float dur = 0.45f;
+            while (t < dur)
+            {
+                t += Time.deltaTime;
+                float p = t / dur;
+                float escala = Mathf.Lerp(0.5f, 9.5f, p);
+                if (goOnda != null) goOnda.transform.localScale = new Vector3(escala, escala, 1f);
+                if (sr != null)
+                {
+                    Color c = sr.color;
+                    c.a = Mathf.Lerp(0.9f, 0f, p);
+                    sr.color = c;
+                }
+                yield return null;
+            }
+            if (goOnda != null) Destroy(goOnda);
+        }
+
+        private IEnumerator RutinaSupernova()
+        {
+            SupernovaActiva.Value = true;
+            ArmaduraActiva.Value = true;
+            ReduccionDano.Value = reduccionArmadura;
+
+            float tiempoRestante = duracionSupernova;
+            while (tiempoRestante > 0f)
+            {
+                if (EstaMuerto.Value) break;
+                tiempoRestante -= Time.deltaTime;
+                yield return null;
+            }
+
+            SupernovaActiva.Value = false;
+            CabezaFuegoActiva.Value = false;
+            DisparandoCabezaFuego.Value = false;
+            ArmaduraActiva.Value = false;
+            ReduccionDano.Value = 0f;
+            _velocidadActual = velocidadBase;
+        }
+
+        private void CrearRastroFuego(Vector3 pos)
+        {
+            var go = new GameObject("RastroFuego");
+            go.transform.position = pos;
+            var rf = go.AddComponent<RastroFuego>();
+            int danoTick = Mathf.RoundToInt(18 * MultiplicadorDanoTotal);
+            rf.Configurar(danoTick, 2.5f);
+        }
+
+        [ClientRpc]
+        private void CrearRastroFuegoClientRpc(Vector3 pos)
+        {
+            if (IsServer) return; // Ya creado en servidor
+            var go = new GameObject("RastroFuegoVisual");
+            go.transform.position = pos;
+            var rf = go.AddComponent<RastroFuego>();
+            rf.Configurar(0, 2.5f);
         }
 
         [ServerRpc(RequireOwnership = false)]
@@ -481,12 +760,14 @@ namespace SoulKnight
             _cdBolaFuegoRestante = 0f;
             _cdCabezaFuegoRestante = 0f;
             _cdArmaduraRestante = 0f;
+            _cdSupernovaRestante = 0f;
 
             if (EsControlLocal && HUDJugador.Instancia != null)
             {
                 HUDJugador.Instancia.ActualizarCooldown(0, 0f, cooldownBolaFuego);
                 HUDJugador.Instancia.ActualizarCooldown(1, 0f, cooldownCabezaFuego);
                 HUDJugador.Instancia.ActualizarCooldown(2, 0f, cooldownArmadura);
+                HUDJugador.Instancia.ActualizarCooldown(3, 0f, cooldownSupernova);
             }
         }
 
@@ -500,6 +781,7 @@ namespace SoulKnight
                 ArmaduraActiva.Value = false;
                 CabezaFuegoActiva.Value = false;
                 DisparandoCabezaFuego.Value = false;
+                SupernovaActiva.Value = false;
                 ReduccionDano.Value = 0f;
             }
 
@@ -513,6 +795,10 @@ namespace SoulKnight
             if (visualArmaduraFuego != null)
             {
                 visualArmaduraFuego.SetActive(false);
+            }
+            if (_auraSupernova != null)
+            {
+                _auraSupernova.SetActive(false);
             }
         }
     }
