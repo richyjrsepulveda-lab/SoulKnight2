@@ -176,7 +176,7 @@ namespace SoulKnight
                 barraMaestria.Establecer(0, GestorMaestria.XP_POR_NIVEL_MAESTRIA, false);
                 if (barraMaestria.textoVida != null)
                 {
-                    barraMaestria.textoVida.text = $"Maestría Nv.1 (0/{GestorMaestria.XP_POR_NIVEL_MAESTRIA} XP)";
+                    barraMaestria.textoVida.text = "Maestría Nv. 1";
                 }
             }
             if (barraXPRun != null)
@@ -800,53 +800,23 @@ namespace SoulKnight
                     if (barraMaestria.textoVida != null)
                     {
                         barraMaestria.textoVida.font = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-                        barraMaestria.textoVida.fontSize = 8;
+                        barraMaestria.textoVida.fontSize = 9;
                         barraMaestria.textoVida.alignment = TextAnchor.MiddleCenter;
                         barraMaestria.textoVida.raycastTarget = false;
                     }
 
-                    // Botón para abrir la explicación de maestría al hacer clic en la barra
+                    // Remover cualquier botón o interacción de la barra en la run
                     var btnBarra = barraMaestria.GetComponent<Button>();
-                    if (btnBarra == null)
+                    if (btnBarra != null)
                     {
-                        btnBarra = barraMaestria.gameObject.AddComponent<Button>();
+                        Destroy(btnBarra);
                     }
-                    btnBarra.onClick.RemoveAllListeners();
-                    btnBarra.onClick.AddListener(MostrarExplicacionMaestriaHUD);
 
-                    // Botón [?] accesible justo al lado de la barra de maestría
+                    // Quitar el botón de información de maestría durante la run
                     var btnInfoObj = contArribaIzq.Find("BotonInfoMaestriaHUD");
-                    if (btnInfoObj == null)
+                    if (btnInfoObj != null)
                     {
-                        var objInfo = new GameObject("BotonInfoMaestriaHUD");
-                        objInfo.transform.SetParent(contArribaIzq, false);
-                        var rtInfo = objInfo.AddComponent<RectTransform>();
-                        rtInfo.anchorMin = new Vector2(0f, 1f);
-                        rtInfo.anchorMax = new Vector2(0f, 1f);
-                        rtInfo.pivot = new Vector2(0f, 1f);
-                        rtInfo.anchoredPosition = new Vector2(182f, -28f);
-                        rtInfo.sizeDelta = new Vector2(16f, 16f);
-
-                        var imgInfo = objInfo.AddComponent<Image>();
-                        imgInfo.color = new Color(0.18f, 0.24f, 0.38f, 0.95f);
-
-                        var btnInfo = objInfo.AddComponent<Button>();
-                        btnInfo.onClick.AddListener(MostrarExplicacionMaestriaHUD);
-
-                        var txtInfoObj = new GameObject("Texto");
-                        txtInfoObj.transform.SetParent(objInfo.transform, false);
-                        var rtTxt = txtInfoObj.AddComponent<RectTransform>();
-                        rtTxt.anchorMin = Vector2.zero;
-                        rtTxt.anchorMax = Vector2.one;
-                        rtTxt.sizeDelta = Vector2.zero;
-                        var txtInfo = txtInfoObj.AddComponent<Text>();
-                        txtInfo.font = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-                        txtInfo.fontSize = 9;
-                        txtInfo.fontStyle = FontStyle.Bold;
-                        txtInfo.alignment = TextAnchor.MiddleCenter;
-                        txtInfo.color = new Color(1f, 0.88f, 0.35f);
-                        txtInfo.text = "?";
-                        txtInfo.raycastTarget = false;
+                        Destroy(btnInfoObj.gameObject);
                     }
                 }
             }
@@ -2522,8 +2492,8 @@ namespace SoulKnight
             if (barraMaestria.textoVida != null)
             {
                 barraMaestria.textoVida.text = esMax
-                    ? $"Maestría Nv.{nivelMaestria} (MÁXIMO)"
-                    : $"Maestría Nv.{nivelMaestria} ({xpEnNivel}/{GestorMaestria.XP_POR_NIVEL_MAESTRIA} XP)";
+                    ? $"Maestría Nv. {nivelMaestria} (MÁX)"
+                    : $"Maestría Nv. {nivelMaestria}";
             }
         }
 
