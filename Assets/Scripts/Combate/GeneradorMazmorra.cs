@@ -534,27 +534,20 @@ namespace SoulKnight
                     PuestitoTienda.CrearPuestito(new Vector2(s.cx, s.cy), salaObj.transform);
                 }
 
-                // Colocar Antorchas repartidas por todas las paredes de la sala
-                var posAntorchas = new HashSet<Vector2>();
-
-                // Esquinas interiores
-                posAntorchas.Add(new Vector2(s.xMin + 2.0f, s.yMax - 2.0f));
-                posAntorchas.Add(new Vector2(s.xMax - 2.0f, s.yMax - 2.0f));
-                posAntorchas.Add(new Vector2(s.xMin + 2.0f, s.yMin + 2.0f));
-                posAntorchas.Add(new Vector2(s.xMax - 2.0f, s.yMin + 2.0f));
-
-                // Paredes superior e inferior distribuidas uniformemente
-                for (float px = s.xMin + 5.5f; px <= s.xMax - 4.5f; px += 6.0f)
+                // Colocar Antorchas en las esquinas interiores de la sala
+                var posAntorchas = new List<Vector2>
                 {
-                    posAntorchas.Add(new Vector2(px, s.yMax - 2.0f));
-                    posAntorchas.Add(new Vector2(px, s.yMin + 2.0f));
-                }
+                    new Vector2(s.xMin + 2.5f, s.yMax - 2.5f),
+                    new Vector2(s.xMax - 2.5f, s.yMax - 2.5f),
+                    new Vector2(s.xMin + 2.5f, s.yMin + 2.5f),
+                    new Vector2(s.xMax - 2.5f, s.yMin + 2.5f)
+                };
 
-                // Paredes laterales izquierda y derecha distribuidas uniformemente
-                for (float py = s.yMin + 5.5f; py <= s.yMax - 4.5f; py += 6.0f)
+                // En salas amplias, añadir 2 antorchas intermedias en los laterales para excelente visibilidad
+                if (s.xMax - s.xMin >= 28)
                 {
-                    posAntorchas.Add(new Vector2(s.xMin + 2.0f, py));
-                    posAntorchas.Add(new Vector2(s.xMax - 2.0f, py));
+                    posAntorchas.Add(new Vector2(s.cx, s.yMax - 2.5f));
+                    posAntorchas.Add(new Vector2(s.cx, s.yMin + 2.5f));
                 }
 
                 foreach (var pa in posAntorchas)
@@ -640,38 +633,6 @@ namespace SoulKnight
                 }
 
                 salasGeneradas.Add(ctrl);
-            }
-
-            // 6b. Colocar Antorchas repartidas por todos los pasillos conectores para iluminar el mapa completo
-            for (int pIdx = 0; pIdx < pasillos.Count; pIdx++)
-            {
-                var p = pasillos[pIdx];
-                var salaAsociada = (pIdx < salasGeneradas.Count) ? salasGeneradas[pIdx] : (salasGeneradas.Count > 0 ? salasGeneradas[0] : null);
-                if (salaAsociada == null) continue;
-
-                int xDesde = Mathf.Min(p.x1, p.x2);
-                int xHasta = Mathf.Max(p.x1, p.x2);
-                for (float px = xDesde + 3.5f; px <= xHasta - 3.5f; px += 6.5f)
-                {
-                    CrearAntorchaEnSala(salaAsociada, new Vector2(px, p.y1 + 1.6f));
-                }
-
-                int yDesde = Mathf.Min(p.y1, p.y2);
-                int yHasta = Mathf.Max(p.y1, p.y2);
-                for (float py = yDesde + 3.5f; py <= yHasta - 3.5f; py += 6.5f)
-                {
-                    CrearAntorchaEnSala(salaAsociada, new Vector2(p.x2 + 1.6f, py));
-                }
-            }
-
-            // Antorchas en el pasillo posterior del jefe
-            if (salasGeneradas.Count > 0)
-            {
-                var salaJefeCtrl = salasGeneradas[salasGeneradas.Count - 1];
-                for (float px = pasilloJefeXMin + 2.5f; px <= pasilloJefeXMax - 2.0f; px += 3.5f)
-                {
-                    CrearAntorchaEnSala(salaJefeCtrl, new Vector2(px, pasilloJefeY + 1.6f));
-                }
             }
 
             // 7. Instanciar el Agujero / Pasadizo Secreto en la pared final del pasillito detrás de la Sala del Jefe
@@ -932,26 +893,25 @@ namespace SoulKnight
             var antObj = new GameObject("Antorcha");
             antObj.transform.SetParent(ctrl.transform);
             antObj.transform.position = (Vector3)pos;
-            antObj.transform.localScale = new Vector3(0.55f, 0.55f, 1f); // Antorcha físicamente más pequeña y estilizada
 
             var srBase = antObj.AddComponent<SpriteRenderer>();
             srBase.sprite = _spriteAntorchaBase;
             srBase.sortingOrder = 0;
 
-            // Resplandor cálido radial sobre el suelo (ilumina con gran intensidad)
+            // Resplandor cálido radial sobre el suelo (sortingOrder = 0, bajo el overlay de oscuridad para no traspasar paredes)
             var haloObj = new GameObject("HaloLuzCalida");
             haloObj.transform.SetParent(antObj.transform, false);
             haloObj.transform.localPosition = new Vector3(0f, 0.25f, 0f);
-            haloObj.transform.localScale = Vector3.one * 42.0f; // Diámetro de luz amplio y brillante
+            haloObj.transform.localScale = Vector3.one * 9.5f;
             var srHalo = haloObj.AddComponent<SpriteRenderer>();
             srHalo.sprite = _spriteHaloLuzCalida;
             srHalo.sortingOrder = 0;
 
-            // Llama pixel-art definida y proporcionada
+            // Llama pixel-art definida
             var llamaObj = new GameObject("Llama");
             llamaObj.transform.SetParent(antObj.transform, false);
             llamaObj.transform.localPosition = new Vector3(0f, 0.32f, 0f);
-            llamaObj.transform.localScale = Vector3.one * 0.85f;
+            llamaObj.transform.localScale = Vector3.one;
             var srLlama = llamaObj.AddComponent<SpriteRenderer>();
             srLlama.sprite = _spriteCirculoLuz;
             srLlama.color = Color.white;
