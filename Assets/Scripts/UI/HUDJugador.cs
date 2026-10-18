@@ -3022,6 +3022,150 @@ namespace SoulKnight
             }
         }
 
+        private GameObject _modalAdvertenciaBucle;
+        public void MostrarAdvertenciaBucle(Action onConfirmar)
+        {
+            if (_modalAdvertenciaBucle != null)
+            {
+                Destroy(_modalAdvertenciaBucle);
+            }
+
+            Font font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+
+            var modalObj = new GameObject("ModalAdvertenciaBucle");
+            modalObj.transform.SetParent(transform, false);
+            var rt = modalObj.AddComponent<RectTransform>();
+            rt.anchorMin = Vector2.zero;
+            rt.anchorMax = Vector2.one;
+            rt.offsetMin = Vector2.zero;
+            rt.offsetMax = Vector2.zero;
+
+            var imgFondoOscuro = modalObj.AddComponent<Image>();
+            imgFondoOscuro.color = new Color(0f, 0f, 0f, 0.75f);
+
+            // Ventana central
+            var cajaObj = new GameObject("CajaModal");
+            cajaObj.transform.SetParent(modalObj.transform, false);
+            var rtCaja = cajaObj.AddComponent<RectTransform>();
+            rtCaja.anchorMin = new Vector2(0.5f, 0.5f);
+            rtCaja.anchorMax = new Vector2(0.5f, 0.5f);
+            rtCaja.sizeDelta = new Vector2(560, 370);
+
+            var imgCaja = cajaObj.AddComponent<Image>();
+            imgCaja.color = new Color(0.10f, 0.12f, 0.16f, 0.98f);
+
+            var outline = cajaObj.AddComponent<Outline>();
+            outline.effectColor = new Color(0.95f, 0.65f, 0.15f, 1f);
+            outline.effectDistance = new Vector2(3, 3);
+
+            // Título
+            var titObj = new GameObject("Titulo");
+            titObj.transform.SetParent(cajaObj.transform, false);
+            var rtTit = titObj.AddComponent<RectTransform>();
+            rtTit.anchorMin = new Vector2(0f, 1f);
+            rtTit.anchorMax = new Vector2(1f, 1f);
+            rtTit.pivot = new Vector2(0.5f, 1f);
+            rtTit.anchoredPosition = new Vector2(0, -18);
+            rtTit.sizeDelta = new Vector2(-40, 42);
+
+            var txtTit = titObj.AddComponent<Text>();
+            txtTit.font = font;
+            txtTit.fontSize = 24;
+            txtTit.alignment = TextAnchor.MiddleCenter;
+            txtTit.color = new Color(1f, 0.8f, 0.2f);
+            txtTit.text = "⚠️ ¡DESAFÍO DEL BUCLE INFINITO! ⚠️";
+
+            // Mensaje explicativo
+            var msgObj = new GameObject("Mensaje");
+            msgObj.transform.SetParent(cajaObj.transform, false);
+            var rtMsg = msgObj.AddComponent<RectTransform>();
+            rtMsg.anchorMin = new Vector2(0f, 0f);
+            rtMsg.anchorMax = new Vector2(1f, 1f);
+            rtMsg.offsetMin = new Vector2(25, 75);
+            rtMsg.offsetMax = new Vector2(-25, -65);
+
+            var txtMsg = msgObj.AddComponent<Text>();
+            txtMsg.font = font;
+            txtMsg.fontSize = 15;
+            txtMsg.lineSpacing = 1.18f;
+            txtMsg.alignment = TextAnchor.UpperLeft;
+            txtMsg.color = Color.white;
+            txtMsg.text =
+                "Has conquistado las 3 recámaras de la mazmorra con éxito.\n\n" +
+                "Si decides entrar al Bucle (Niveles 11 al 20+):\n" +
+                "• Los enemigos serán más numerosos, letales y con habilidades reforzadas.\n" +
+                "• Los jefes aumentarán su daño, resistencia y ferocidad.\n\n" +
+                "⚠️ CONDICIONES DE RIESGO:\n" +
+                "• Conservarás TODO tu oro acumulado.\n" +
+                "• Sin embargo, perderás las recompensas compradas y mejoras temporales de run si todo el equipo muere en el bucle.\n\n" +
+                "¿Aceptas el desafío extremo?";
+
+            // Botón Aceptar / Continuar
+            var btnAceptarObj = new GameObject("BtnAceptar");
+            btnAceptarObj.transform.SetParent(cajaObj.transform, false);
+            var rtBtnA = btnAceptarObj.AddComponent<RectTransform>();
+            rtBtnA.anchorMin = new Vector2(0.5f, 0f);
+            rtBtnA.anchorMax = new Vector2(0.5f, 0f);
+            rtBtnA.anchoredPosition = new Vector2(120, 36);
+            rtBtnA.sizeDelta = new Vector2(200, 42);
+
+            var imgBtnA = btnAceptarObj.AddComponent<Image>();
+            imgBtnA.color = new Color(0.18f, 0.65f, 0.24f);
+            var btnA = btnAceptarObj.AddComponent<Button>();
+
+            var txtBtnAObj = new GameObject("TextoBtnAceptar");
+            txtBtnAObj.transform.SetParent(btnAceptarObj.transform, false);
+            var rtTxtA = txtBtnAObj.AddComponent<RectTransform>();
+            rtTxtA.anchorMin = Vector2.zero;
+            rtTxtA.anchorMax = Vector2.one;
+            rtTxtA.sizeDelta = Vector2.zero;
+            var txtBtnA = txtBtnAObj.AddComponent<Text>();
+            txtBtnA.font = font;
+            txtBtnA.fontSize = 16;
+            txtBtnA.alignment = TextAnchor.MiddleCenter;
+            txtBtnA.color = Color.white;
+            txtBtnA.text = "¡ACEPTAR DESAFÍO!";
+
+            btnA.onClick.AddListener(() =>
+            {
+                Destroy(modalObj);
+                onConfirmar?.Invoke();
+            });
+
+            // Botón Cancelar / Volver
+            var btnCancelarObj = new GameObject("BtnCancelar");
+            btnCancelarObj.transform.SetParent(cajaObj.transform, false);
+            var rtBtnC = btnCancelarObj.AddComponent<RectTransform>();
+            rtBtnC.anchorMin = new Vector2(0.5f, 0f);
+            rtBtnC.anchorMax = new Vector2(0.5f, 0f);
+            rtBtnC.anchoredPosition = new Vector2(-120, 36);
+            rtBtnC.sizeDelta = new Vector2(200, 42);
+
+            var imgBtnC = btnCancelarObj.AddComponent<Image>();
+            imgBtnC.color = new Color(0.55f, 0.18f, 0.18f);
+            var btnC = btnCancelarObj.AddComponent<Button>();
+
+            var txtBtnCObj = new GameObject("TextoBtnCancelar");
+            txtBtnCObj.transform.SetParent(btnCancelarObj.transform, false);
+            var rtTxtC = txtBtnCObj.AddComponent<RectTransform>();
+            rtTxtC.anchorMin = Vector2.zero;
+            rtTxtC.anchorMax = Vector2.one;
+            rtTxtC.sizeDelta = Vector2.zero;
+            var txtBtnC = txtBtnCObj.AddComponent<Text>();
+            txtBtnC.font = font;
+            txtBtnC.fontSize = 16;
+            txtBtnC.alignment = TextAnchor.MiddleCenter;
+            txtBtnC.color = Color.white;
+            txtBtnC.text = "VOLVER ATRÁS";
+
+            btnC.onClick.AddListener(() =>
+            {
+                Destroy(modalObj);
+            });
+
+            _modalAdvertenciaBucle = modalObj;
+        }
+
         public void MostrarAvisoPasaje(string mensaje)
         {
             if (textoAvisoPasaje != null)
@@ -3295,7 +3439,19 @@ namespace SoulKnight
 
             int nivel = (GestorPartida.Instancia != null) ? GestorPartida.Instancia.NivelActual : 1;
             string bioma = (GeneradorMazmorra.Instancia != null) ? GeneradorMazmorra.Instancia.biomaActual.ToString().ToUpper() : "MAZMORRA";
-            string textoBanner = $"NIVEL {nivel}\n{bioma}";
+            string textoBanner = "";
+            if (GestorPartida.Instancia != null && GestorPartida.Instancia.EnNivelDecisionLoop)
+            {
+                textoBanner = "SANTUARIO DEL TRIUNFO\n(NIVEL 10.1)";
+            }
+            else
+            {
+                int recamara = (GestorPartida.Instancia != null) ? GestorPartida.Instancia.ObtenerNumeroRecamara(nivel) : 1;
+                int nivelEnRecamara = ((nivel - 1) % 10) + 1;
+                int loop = (GestorPartida.Instancia != null) ? GestorPartida.Instancia.LoopActual : 0;
+                string extraLoop = loop > 0 ? $" [BUCLE +{loop}]" : "";
+                textoBanner = $"RECÁMARA {recamara} (NIVEL {nivelEnRecamara}/10)\n{bioma}{extraLoop}";
+            }
 
             IniciarFadeAclarar(0.8f, textoBanner, () =>
             {

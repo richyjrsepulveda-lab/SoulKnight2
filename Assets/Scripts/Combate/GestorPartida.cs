@@ -56,6 +56,9 @@ namespace SoulKnight
         private bool _spawneandoOleada = false;
 
         public int NivelActual { get; private set; } = 1;
+        public int LoopActual { get; private set; } = 0;
+        public TipoBioma[] BiomasRun { get; private set; } = new TipoBioma[3];
+        public bool EnNivelDecisionLoop { get; private set; } = false;
         private bool _transicionEnProgreso = false;
 
         void Awake()
@@ -84,28 +87,83 @@ namespace SoulKnight
             DetenerPartida();
         }
 
+        public void InicializarRecamarasRun()
+        {
+            List<TipoBioma> disponibles = new List<TipoBioma>()
+            {
+                TipoBioma.Piedra,
+                TipoBioma.Hielo,
+                TipoBioma.Fuego,
+                TipoBioma.Planta,
+                TipoBioma.Arena
+            };
+
+            // Barajar aleatoriamente sin repetir
+            for (int i = 0; i < disponibles.Count; i++)
+            {
+                int r = UnityEngine.Random.Range(i, disponibles.Count);
+                TipoBioma tmp = disponibles[i];
+                disponibles[i] = disponibles[r];
+                disponibles[r] = tmp;
+            }
+
+            BiomasRun = new TipoBioma[3];
+            BiomasRun[0] = disponibles[0];
+            BiomasRun[1] = disponibles[1];
+            BiomasRun[2] = disponibles[2];
+        }
+
+        public TipoBioma ObtenerBiomaPorNivel(int nivel)
+        {
+            if (BiomasRun == null || BiomasRun.Length < 3 || (BiomasRun[0] == BiomasRun[1] && BiomasRun[1] == BiomasRun[2]))
+            {
+                InicializarRecamarasRun();
+            }
+
+            int nivelEnCiclo = ((nivel - 1) % 10) + 1; // 1 a 10
+            if (nivelEnCiclo <= 3) return BiomasRun[0];      // Recámara 1: Niveles 1-3
+            if (nivelEnCiclo <= 6) return BiomasRun[1];      // Recámara 2: Niveles 4-6
+            return BiomasRun[2];                             // Recámara 3: Niveles 7-10
+        }
+
+        public int ObtenerNumeroRecamara(int nivel)
+        {
+            int nivelEnCiclo = ((nivel - 1) % 10) + 1;
+            if (nivelEnCiclo <= 3) return 1;
+            if (nivelEnCiclo <= 6) return 2;
+            return 3;
+        }
+
+        public bool EsNivelDeJefe(int nivel)
+        {
+            int nivelEnCiclo = ((nivel - 1) % 10) + 1;
+            return (nivelEnCiclo == 3 || nivelEnCiclo == 6 || nivelEnCiclo == 10);
+        }
+
         public void IniciarEnServidor()
         {
             if (_partidaIniciada || !NetworkManager.Singleton.IsServer) return;
             _partidaIniciada = true;
 
+            NivelActual = 1;
+            LoopActual = 0;
+            EnNivelDecisionLoop = false;
+            InicializarRecamarasRun();
+
             int semilla = UnityEngine.Random.Range(1000, 999999);
-            TipoBioma bioma = TipoBioma.Piedra;
-            if (generadorMazmorra != null && generadorMazmorra.biomas != null && generadorMazmorra.biomas.Length > 0)
-            {
-                bioma = generadorMazmorra.biomas[UnityEngine.Random.Range(0, generadorMazmorra.biomas.Length)].tipo;
-            }
+            TipoBioma bioma = ObtenerBiomaPorNivel(NivelActual);
+            bool tieneJefe = EsNivelDeJefe(NivelActual);
 
             if (generadorMazmorra != null)
             {
-                generadorMazmorra.GenerarConSemilla(semilla, bioma);
+                generadorMazmorra.GenerarConSemilla(semilla, bioma, tieneJefe, esNivelDecisionLoop: false);
             }
 
             if (SalaRed.Instancia != null)
             {
                 SalaRed.Instancia.SemillaMapaActual.Value = semilla;
                 SalaRed.Instancia.BiomaMapaActual.Value = (int)bioma;
-                SalaRed.Instancia.SincronizarMapaClientRpc(semilla, bioma);
+                SalaRed.Instancia.SincronizarMapaClientRpc(semilla, bioma, tieneJefe, esNivelDecisionLoop: false);
             }
 
             SpawnearJugadores();
@@ -220,13 +278,28 @@ namespace SoulKnight
 
             if (sala.esSalaJefe)
             {
-                // Sala del Jefe: Iniciar encuentro con el Jefe
-                _oleadaActualSala = 1;
-                StartCoroutine(RutinaSpawnearJefeEnSala(sala));
+                if (EsNivelDeJefe(NivelActual))
+                {
+                    // Nivel con Jefe (3, 6, 10): Iniciar encuentro con el Jefe correspondiente al bioma
+                    _oleadaActualSala = 1;
+                    StartCoroutine(RutinaSpawnearJefeEnSala(sala));
+                }
+                else
+                {
+                    // Nivel normal (1, 2, 4, 5, 7, 8, 9): Sala final con oleadas de guardianes que al derrotarlos abren el muro al hoyo
+                    sala.MostrarPortalesSpawn(false);
+                    if (SalaRed.Instancia != null)
+                    {
+                        SalaRed.Instancia.MostrarPortalesSalaClientRpc(indiceSala, false);
+                        SalaRed.Instancia.EnviarAvisoTodos($"⚔️ ¡Cámara de salida bloqueada! Despejen la sala para abrir el hoyo.");
+                    }
+                    _oleadaActualSala = 1;
+                    StartCoroutine(RutinaSpawnearOleada(sala, sala.puntosSpawnOleada1, esPrimeraOleada: true));
+                }
             }
             else
             {
-                // Sala normal: Al entrar no hay portales; aparecen 1s después de cerrarse y enemigos 1s después del portal
+                // Sala normal
                 sala.MostrarPortalesSpawn(false);
                 if (SalaRed.Instancia != null)
                 {
@@ -238,13 +311,47 @@ namespace SoulKnight
             }
         }
 
+        private List<RolEnemigo> ObtenerRolesOleada(TipoBioma bioma, int oleada, int cantidad)
+        {
+            List<RolEnemigo> resultado = new List<RolEnemigo>();
+            RolEnemigo[] catalogo = null;
+
+            if (oleada == 1)
+            {
+                // Oleada 1 (Vanguardia): Tanques, combate melé y hostigadores frontales
+                catalogo = new RolEnemigo[] { RolEnemigo.Tanque, RolEnemigo.MeleeRapido, RolEnemigo.Especial };
+            }
+            else
+            {
+                // Oleada 2 (Retaguardia & Apoyo): Daño a distancia, invocadores y apoyo táctico
+                if (bioma == TipoBioma.Arena)
+                {
+                    catalogo = new RolEnemigo[] { RolEnemigo.Spawner, RolEnemigo.Especial, RolEnemigo.MeleeRapido };
+                }
+                else
+                {
+                    catalogo = new RolEnemigo[] { RolEnemigo.Rango, RolEnemigo.Especial, RolEnemigo.Tanque };
+                }
+            }
+
+            if (catalogo == null || catalogo.Length == 0)
+            {
+                catalogo = new RolEnemigo[] { RolEnemigo.Tanque };
+            }
+
+            for (int i = 0; i < cantidad; i++)
+            {
+                resultado.Add(catalogo[i % catalogo.Length]);
+            }
+            return resultado;
+        }
+
         private IEnumerator RutinaSpawnearOleada(ControladorSala sala, List<Vector2> puntosSpawn, bool esPrimeraOleada)
         {
             _spawneandoOleada = true;
 
             if (esPrimeraOleada)
             {
-                // 1 segundo después de cerrarse la sala, aparecen los 2 o 4 portales
                 yield return new WaitForSeconds(1.0f);
                 if (PartidaTerminada || sala == null) { _spawneandoOleada = false; yield break; }
 
@@ -255,35 +362,40 @@ namespace SoulKnight
                     SalaRed.Instancia.EnviarAvisoTodos("🌀 ¡Portales abiertos! Oleada 1/2");
                 }
 
-                // 1 segundo después de aparecer el portal, salen los enemigos
                 yield return new WaitForSeconds(1.0f);
             }
             else
             {
-                // Los portales siguen abiertos; 1 segundo después emerge la siguiente oleada
                 yield return new WaitForSeconds(1.0f);
             }
 
-            List<GameObject> catalogo = new List<GameObject>();
-            if (prefabEnemigoSlime != null) catalogo.Add(prefabEnemigoSlime);
-            if (prefabEnemigoMago != null) catalogo.Add(prefabEnemigoMago);
-            if (prefabEnemigo != null) catalogo.Add(prefabEnemigo);
+            TipoBioma biomaActual = ObtenerBiomaPorNivel(NivelActual);
+            float multDificultad = 1.0f + (LoopActual * 0.55f);
 
-            if (catalogo.Count > 0 && puntosSpawn != null)
+            if (puntosSpawn != null && puntosSpawn.Count > 0)
             {
+                var roles = ObtenerRolesOleada(biomaActual, _oleadaActualSala, puntosSpawn.Count);
                 for (int i = 0; i < puntosSpawn.Count; i++)
                 {
                     if (PartidaTerminada) break;
 
-                    GameObject prefabSeleccionado = catalogo[(i + _oleadaActualSala) % catalogo.Count];
-                    GameObject enemigoObj = Instantiate(prefabSeleccionado, (Vector3)puntosSpawn[i], Quaternion.identity);
-                    var netObj = enemigoObj.GetComponent<NetworkObject>();
-                    netObj.Spawn(destroyWithScene: true);
+                    RolEnemigo rol = roles[i];
+                    GameObject prefab = (rol == RolEnemigo.Rango || rol == RolEnemigo.Spawner)
+                        ? (prefabEnemigoMago != null ? prefabEnemigoMago : prefabEnemigo)
+                        : (prefabEnemigo != null ? prefabEnemigo : prefabEnemigoSlime);
 
-                    var enemigo = enemigoObj.GetComponent<EnemigoBase>();
-                    if (enemigo != null)
+                    if (prefab != null)
                     {
-                        _enemigosActivos.Add(enemigo);
+                        GameObject enemigoObj = Instantiate(prefab, (Vector3)puntosSpawn[i], Quaternion.identity);
+                        var netObj = enemigoObj.GetComponent<NetworkObject>();
+                        netObj.Spawn(destroyWithScene: true);
+
+                        var enemigo = enemigoObj.GetComponent<EnemigoBase>();
+                        if (enemigo != null)
+                        {
+                            enemigo.ConfigurarRolYBioma(biomaActual, rol, multDificultad);
+                            _enemigosActivos.Add(enemigo);
+                        }
                     }
 
                     yield return new WaitForSeconds(0.15f);
@@ -300,13 +412,10 @@ namespace SoulKnight
             yield return new WaitForSeconds(0.35f);
 
             Vector2 posJefe = salaJefe.limitesSala.center;
+            TipoBioma biomaActual = ObtenerBiomaPorNivel(NivelActual);
+            float multDificultad = 1.0f + (LoopActual * 0.55f);
 
-            GameObject prefabJefeElegido = null;
-            int jefeIndice = (NivelActual - 1) % 3;
-            if (jefeIndice == 0 && prefabJefeSlimeRey != null) prefabJefeElegido = prefabJefeSlimeRey;
-            else if (jefeIndice == 1 && prefabJefeGranBrujo != null) prefabJefeElegido = prefabJefeGranBrujo;
-            else if (prefabJefeGolemColosal != null) prefabJefeElegido = prefabJefeGolemColosal;
-            else if (prefabJefeSlimeRey != null) prefabJefeElegido = prefabJefeSlimeRey;
+            GameObject prefabJefeElegido = prefabJefeGolemColosal != null ? prefabJefeGolemColosal : (prefabJefeSlimeRey != null ? prefabJefeSlimeRey : prefabEnemigo);
 
             if (prefabJefeElegido != null && !PartidaTerminada)
             {
@@ -317,12 +426,36 @@ namespace SoulKnight
                 var jefe = jefeObj.GetComponent<JefeBase>();
                 if (jefe != null)
                 {
+                    jefe.ConfigurarJefeBioma(biomaActual, multDificultad);
                     _enemigosActivos.Add(jefe);
                 }
             }
 
             _spawneandoOleada = false;
             RevisarFinDePartida();
+        }
+
+        public void SpawnearEsbirroEmergente(Vector2 posicion, TipoBioma bioma, RolEnemigo rol)
+        {
+            if (!NetworkManager.Singleton.IsServer || PartidaTerminada) return;
+
+            GameObject prefab = (rol == RolEnemigo.Rango || rol == RolEnemigo.Spawner)
+                ? (prefabEnemigoMago != null ? prefabEnemigoMago : prefabEnemigo)
+                : (prefabEnemigo != null ? prefabEnemigo : prefabEnemigoSlime);
+
+            if (prefab == null) return;
+
+            GameObject go = Instantiate(prefab, (Vector3)posicion, Quaternion.identity);
+            var netObj = go.GetComponent<NetworkObject>();
+            if (netObj != null) netObj.Spawn(destroyWithScene: true);
+
+            var enemigo = go.GetComponent<EnemigoBase>();
+            if (enemigo != null)
+            {
+                float mult = 1.0f + (LoopActual * 0.55f);
+                enemigo.ConfigurarRolYBioma(bioma, rol, mult);
+                _enemigosActivos.Add(enemigo);
+            }
         }
 
         public void DetenerPartida()
@@ -529,7 +662,15 @@ namespace SoulKnight
 
             yield return new WaitForSeconds(0.9f);
 
-            NivelActual++;
+            if (NivelActual == 10 && !EnNivelDecisionLoop)
+            {
+                // ¡Fin de los 10 niveles! Entrar al Nivel 10.1 (Santuario del Triunfo)
+                EnNivelDecisionLoop = true;
+            }
+            else
+            {
+                NivelActual++;
+            }
 
             var proyectiles = FindObjectsOfType<Proyectil>();
             foreach (var p in proyectiles)
@@ -567,22 +708,19 @@ namespace SoulKnight
             _spawneandoOleada = false;
 
             int semilla = UnityEngine.Random.Range(1000, 999999);
-            TipoBioma bioma = TipoBioma.Piedra;
-            if (generadorMazmorra != null && generadorMazmorra.biomas != null && generadorMazmorra.biomas.Length > 0)
-            {
-                bioma = generadorMazmorra.biomas[UnityEngine.Random.Range(0, generadorMazmorra.biomas.Length)].tipo;
-            }
+            TipoBioma bioma = EnNivelDecisionLoop ? TipoBioma.Piedra : ObtenerBiomaPorNivel(NivelActual);
+            bool tieneJefe = !EnNivelDecisionLoop && EsNivelDeJefe(NivelActual);
 
             if (generadorMazmorra != null)
             {
-                generadorMazmorra.GenerarConSemilla(semilla, bioma);
+                generadorMazmorra.GenerarConSemilla(semilla, bioma, tieneJefe, esNivelDecisionLoop: EnNivelDecisionLoop);
             }
 
             if (SalaRed.Instancia != null)
             {
                 SalaRed.Instancia.SemillaMapaActual.Value = semilla;
                 SalaRed.Instancia.BiomaMapaActual.Value = (int)bioma;
-                SalaRed.Instancia.SincronizarMapaClientRpc(semilla, bioma);
+                SalaRed.Instancia.SincronizarMapaClientRpc(semilla, bioma, tieneJefe, esNivelDecisionLoop: EnNivelDecisionLoop);
             }
 
             SpawnearTiendasEnSalas();
@@ -620,13 +758,75 @@ namespace SoulKnight
 
             yield return new WaitForSeconds(2.0f);
 
-            string nombreBioma = (generadorMazmorra != null) ? generadorMazmorra.biomaActual.ToString().ToUpper() : "MAZMORRA";
+            string textoBannerFinal = "";
+            if (EnNivelDecisionLoop)
+            {
+                textoBannerFinal = "SANTUARIO DEL TRIUNFO\n(NIVEL 10.1)";
+            }
+            else
+            {
+                int recamara = ObtenerNumeroRecamara(NivelActual);
+                int nivelEnRecamara = ((NivelActual - 1) % 10) + 1;
+                string extraLoop = LoopActual > 0 ? $" [BUCLE +{LoopActual}]" : "";
+                textoBannerFinal = $"RECÁMARA {recamara} (NIVEL {nivelEnRecamara}/10)\n{bioma.ToString().ToUpper()}{extraLoop}";
+            }
+
             if (SalaRed.Instancia != null)
             {
-                SalaRed.Instancia.FinalizarTransicionNivelClientRpc(NivelActual, new Unity.Collections.FixedString64Bytes(nombreBioma));
+                SalaRed.Instancia.FinalizarTransicionNivelClientRpc(NivelActual, new Unity.Collections.FixedString64Bytes(textoBannerFinal));
             }
 
             _transicionEnProgreso = false;
+        }
+
+        public void SolicitarAvanzarBucleServerRpc()
+        {
+            if (SalaRed.Instancia != null)
+            {
+                SalaRed.Instancia.SolicitarAvanzarBucleServerRpc();
+            }
+            else
+            {
+                AvanzarAlBucleInfinito();
+            }
+        }
+
+        public void AvanzarAlBucleInfinito()
+        {
+            if (!NetworkManager.Singleton.IsServer || PartidaTerminada || _transicionEnProgreso) return;
+
+            LoopActual++;
+            EnNivelDecisionLoop = false;
+            NivelActual = 10; // Para que al hacer la transición avance al nivel 11
+            InicializarRecamarasRun();
+
+            // Conservan el oro pero pierden las mejoras temporales adquiridas durante la run
+            foreach (var p in _personajesActivos)
+            {
+                if (p != null)
+                {
+                    p.PerderMejorasTemporalesPorMuerteEnLoop();
+                }
+            }
+
+            if (SalaRed.Instancia != null)
+            {
+                SalaRed.Instancia.EnviarAvisoTodos($"💀 ¡HA COMENZADO EL BUCLE +{LoopActual}! (Niveles {LoopActual * 10 + 1}-{LoopActual * 10 + 10}). Los enemigos serán mucho más peligrosos.");
+            }
+
+            StartCoroutine(RutinaTransicionNivel());
+        }
+
+        public void FinalizarRunConVictoria()
+        {
+            if (!NetworkManager.Singleton.IsServer || PartidaTerminada) return;
+
+            DetenerPartida();
+            if (SalaRed.Instancia != null)
+            {
+                SalaRed.Instancia.FinPartidaClientRpc(victoria: true);
+                SalaRed.Instancia.EnviarAvisoTodos("🏆 ¡VICTORIA TOTAL! Han completado la mazmorra y reclamado su gloria.");
+            }
         }
 
         public void SpawnearTiendasEnSalas()

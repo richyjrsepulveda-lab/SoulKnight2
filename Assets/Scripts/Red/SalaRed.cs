@@ -275,6 +275,16 @@ namespace SoulKnight
             }
         }
 
+        [ServerRpc(RequireOwnership = false)]
+        public void SolicitarAvanzarBucleServerRpc(ServerRpcParams rpcParams = default)
+        {
+            if (!IsServer) return;
+            if (GestorPartida.Instancia != null)
+            {
+                GestorPartida.Instancia.AvanzarAlBucleInfinito();
+            }
+        }
+
         public void IniciarVotacionVolverLobby(ulong idIniciador = ulong.MaxValue)
         {
             if (!IsServer || VotacionLobbyActiva.Value) return;
@@ -526,11 +536,11 @@ namespace SoulKnight
         }
 
         [ClientRpc]
-        public void SincronizarMapaClientRpc(int semilla, TipoBioma bioma)
+        public void SincronizarMapaClientRpc(int semilla, TipoBioma bioma, bool tieneJefe = true, bool esNivelDecisionLoop = false)
         {
             if (GeneradorMazmorra.Instancia != null)
             {
-                GeneradorMazmorra.Instancia.GenerarConSemilla(semilla, bioma);
+                GeneradorMazmorra.Instancia.GenerarConSemilla(semilla, bioma, tieneJefe, esNivelDecisionLoop);
             }
         }
 

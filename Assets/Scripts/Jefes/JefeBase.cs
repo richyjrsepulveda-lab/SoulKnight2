@@ -7,9 +7,14 @@ namespace SoulKnight
 {
     public enum TipoJefe : byte
     {
-        SlimeRey = 0,        // Slime gigante con saltos aplastantes y división de esbirros
-        GranBrujo = 1,       // Mago nigromante con proyectiles en espiral y rayos
-        GolemColosal = 2     // Guardián de roca con ondas sísmicas y carga pesada
+        ColosoPiedra = 0,
+        YetiVentiscas = 1,
+        SenorMagma = 2,
+        ReinaEspora = 3,
+        FaraonEterno = 4,
+        SlimeRey = 5,
+        GranBrujo = 6,
+        GolemColosal = 7
     }
 
     /// <summary>
@@ -23,6 +28,57 @@ namespace SoulKnight
         [Header("Configuración de Jefe")]
         public TipoJefe tipoJefe;
         public string nombreJefe = "Jefe Desconocido";
+
+        public void ConfigurarJefeBioma(TipoBioma bioma, float multDificultad = 1.0f)
+        {
+            if (!IsServer) return;
+            switch (bioma)
+            {
+                case TipoBioma.Piedra:
+                    tipoJefe = TipoJefe.ColosoPiedra;
+                    nombreJefe = "El Coloso de Piedra";
+                    vidaMax = Mathf.RoundToInt(650 * multDificultad);
+                    dano = Mathf.RoundToInt(18 * multDificultad);
+                    break;
+                case TipoBioma.Hielo:
+                    tipoJefe = TipoJefe.YetiVentiscas;
+                    nombreJefe = "Yeti de las Ventiscas";
+                    vidaMax = Mathf.RoundToInt(600 * multDificultad);
+                    dano = Mathf.RoundToInt(16 * multDificultad);
+                    break;
+                case TipoBioma.Fuego:
+                    tipoJefe = TipoJefe.SenorMagma;
+                    nombreJefe = "Señor del Magma";
+                    vidaMax = Mathf.RoundToInt(620 * multDificultad);
+                    dano = Mathf.RoundToInt(19 * multDificultad);
+                    break;
+                case TipoBioma.Planta:
+                    tipoJefe = TipoJefe.ReinaEspora;
+                    nombreJefe = "La Reina Espora";
+                    vidaMax = Mathf.RoundToInt(580 * multDificultad);
+                    dano = Mathf.RoundToInt(15 * multDificultad);
+                    break;
+                case TipoBioma.Arena:
+                    tipoJefe = TipoJefe.FaraonEterno;
+                    nombreJefe = "Faraón Eterno";
+                    vidaMax = Mathf.RoundToInt(640 * multDificultad);
+                    dano = Mathf.RoundToInt(17 * multDificultad);
+                    break;
+            }
+
+            CalcularEscaladoPorJugadores();
+            ActualizarVisualPixelArtJefe(bioma);
+        }
+
+        public void ActualizarVisualPixelArtJefe(TipoBioma bioma)
+        {
+            var sr = GetComponent<SpriteRenderer>();
+            if (sr != null)
+            {
+                sr.sprite = CatalogoPixelArtEnemigos.ObtenerSpriteJefe(bioma);
+            }
+            transform.localScale = Vector3.one * 2.4f;
+        }
 
         [Header("Escalado por Jugadores")]
         public float multiplicadorVidaPorJugador = 0.75f; // +75% de vida por cada jugador adicional
@@ -180,6 +236,41 @@ namespace SoulKnight
             // Estadísticas de jefe desafiantes pero sin one-shots injustos
             switch (tipoJefe)
             {
+                case TipoJefe.ColosoPiedra:
+                    if (vidaMax <= 0) vidaMax = 700;
+                    velocidadBase = 3.0f;
+                    if (dano <= 0) dano = 18;
+                    tiempoEntreHabilidadesEspeciales = 3.3f;
+                    tiempoEntreAtaques = 1.6f;
+                    break;
+                case TipoJefe.YetiVentiscas:
+                    if (vidaMax <= 0) vidaMax = 640;
+                    velocidadBase = 3.3f;
+                    if (dano <= 0) dano = 16;
+                    tiempoEntreHabilidadesEspeciales = 2.9f;
+                    tiempoEntreAtaques = 1.4f;
+                    break;
+                case TipoJefe.SenorMagma:
+                    if (vidaMax <= 0) vidaMax = 660;
+                    velocidadBase = 3.2f;
+                    if (dano <= 0) dano = 19;
+                    tiempoEntreHabilidadesEspeciales = 2.8f;
+                    tiempoEntreAtaques = 1.3f;
+                    break;
+                case TipoJefe.ReinaEspora:
+                    if (vidaMax <= 0) vidaMax = 620;
+                    velocidadBase = 3.4f;
+                    if (dano <= 0) dano = 15;
+                    tiempoEntreHabilidadesEspeciales = 2.9f;
+                    tiempoEntreAtaques = 1.4f;
+                    break;
+                case TipoJefe.FaraonEterno:
+                    if (vidaMax <= 0) vidaMax = 680;
+                    velocidadBase = 3.2f;
+                    if (dano <= 0) dano = 17;
+                    tiempoEntreHabilidadesEspeciales = 3.0f;
+                    tiempoEntreAtaques = 1.5f;
+                    break;
                 case TipoJefe.SlimeRey:
                     vidaMax = 850;
                     velocidadBase = 3.6f;
@@ -210,7 +301,7 @@ namespace SoulKnight
             VidaActual.Value = nuevaVidaMax;
 
             float factorDano = (1.0f + ((jugadores - 1) * 0.12f)) * (1.0f + (pisoActual - 1) * 0.12f);
-            dano = Mathf.Clamp(Mathf.RoundToInt(dano * factorDano), 12, 26);
+            dano = Mathf.Clamp(Mathf.RoundToInt(dano * factorDano), 12, 32);
         }
 
         protected override void Update()
@@ -245,6 +336,21 @@ namespace SoulKnight
         {
             switch (tipoJefe)
             {
+                case TipoJefe.ColosoPiedra:
+                    StartCoroutine(PatronColosoPiedra());
+                    break;
+                case TipoJefe.YetiVentiscas:
+                    StartCoroutine(PatronYetiVentiscas());
+                    break;
+                case TipoJefe.SenorMagma:
+                    StartCoroutine(PatronSenorMagma());
+                    break;
+                case TipoJefe.ReinaEspora:
+                    StartCoroutine(PatronReinaEspora());
+                    break;
+                case TipoJefe.FaraonEterno:
+                    StartCoroutine(PatronFaraonEterno());
+                    break;
                 case TipoJefe.SlimeRey:
                     StartCoroutine(PatronSlimeRey());
                     break;
@@ -372,7 +478,176 @@ namespace SoulKnight
             }
         }
 
-        protected void DispararProyectilJefe(Vector2 dir, int danoProj)
+        private IEnumerator PatronColosoPiedra()
+        {
+            Personaje obj = ObtenerJugadorMasCercano();
+            if (obj != null)
+            {
+                Vector2 dirCarga = ((Vector2)obj.transform.position - (Vector2)transform.position).normalized;
+                AplicarKnockback(dirCarga, 320f);
+            }
+
+            yield return new WaitForSeconds(0.35f);
+            if (EstaCongelado.Value || VidaActual.Value <= 0) yield break;
+
+            float radioTerremoto = 5.2f + (_numJugadoresAlSpawn * 0.4f);
+            int danoSismo = Mathf.Clamp(Mathf.RoundToInt(dano * 1.15f), 14, 28);
+            Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, radioTerremoto);
+            foreach (var hit in hits)
+            {
+                var pj = hit.GetComponent<Personaje>();
+                if (pj != null && !pj.EstaMuerto.Value)
+                {
+                    pj.RecibirDano(danoSismo);
+                    Vector2 dirKnock = ((Vector2)pj.transform.position - (Vector2)transform.position).normalized;
+                    pj.AplicarKnockback(dirKnock, 400f);
+                }
+            }
+
+            // 8 rocas pesadas despedidas
+            int rocas = 8 + (_numJugadoresAlSpawn * 2);
+            float paso = 360f / rocas;
+            int danoRoca = Mathf.Max(10, Mathf.RoundToInt(dano * 0.8f));
+            for (int i = 0; i < rocas; i++)
+            {
+                float rad = (i * paso) * Mathf.Deg2Rad;
+                Vector2 dir = new Vector2(Mathf.Cos(rad), Mathf.Sin(rad));
+                DispararProyectilJefe(dir, danoRoca);
+            }
+        }
+
+        private IEnumerator PatronYetiVentiscas()
+        {
+            Personaje obj = ObtenerJugadorMasCercano();
+            Vector2 dirPrincipal = obj != null ? ((Vector2)obj.transform.position - (Vector2)transform.position).normalized : Vector2.down;
+
+            // Cono de 5 proyectiles de escarcha glacial que CONGELAN al jugador durante 2.0s
+            int danoHielo = Mathf.Max(10, Mathf.RoundToInt(dano * 0.85f));
+            for (int k = -2; k <= 2; k++)
+            {
+                Vector2 dir = Quaternion.Euler(0, 0, k * 16f) * dirPrincipal;
+                DispararProyectilJefe(dir, danoHielo, congelacion: true);
+            }
+
+            yield return new WaitForSeconds(0.45f);
+            if (EstaCongelado.Value || VidaActual.Value <= 0) yield break;
+
+            // Anillo radial de 10 carámbanos que RALENTIZAN
+            int balas = 10 + (_numJugadoresAlSpawn * 2);
+            float paso = 360f / balas;
+            for (int i = 0; i < balas; i++)
+            {
+                float rad = (i * paso) * Mathf.Deg2Rad;
+                Vector2 dir = new Vector2(Mathf.Cos(rad), Mathf.Sin(rad));
+                DispararProyectilJefe(dir, danoHielo, ralentizacion: true);
+            }
+        }
+
+        private IEnumerator PatronSenorMagma()
+        {
+            int balas = 14 + (_numJugadoresAlSpawn * 2);
+            float paso = 360f / balas;
+            int danoFuego = Mathf.Max(11, Mathf.RoundToInt(dano * 0.85f));
+
+            // Primera oleada de bolas de magma ardientes (queman intensamente)
+            for (int i = 0; i < balas; i++)
+            {
+                float rad = (i * paso) * Mathf.Deg2Rad;
+                Vector2 dir = new Vector2(Mathf.Cos(rad), Mathf.Sin(rad));
+                DispararProyectilJefe(dir, danoFuego, quemadura: true);
+            }
+
+            yield return new WaitForSeconds(0.35f);
+            if (EstaCongelado.Value || VidaActual.Value <= 0) yield break;
+
+            // Segunda oleada radial intercalada
+            for (int i = 0; i < balas; i++)
+            {
+                float rad = ((i + 0.5f) * paso) * Mathf.Deg2Rad;
+                Vector2 dir = new Vector2(Mathf.Cos(rad), Mathf.Sin(rad));
+                DispararProyectilJefe(dir, danoFuego, quemadura: true);
+            }
+
+            yield return new WaitForSeconds(0.3f);
+            if (EstaCongelado.Value || VidaActual.Value <= 0) yield break;
+
+            // Ráfaga concentrada hacia el jugador más cercano
+            Personaje obj = ObtenerJugadorMasCercano();
+            if (obj != null)
+            {
+                Vector2 dir = ((Vector2)obj.transform.position - (Vector2)transform.position).normalized;
+                for (int m = 0; m < 3; m++)
+                {
+                    DispararProyectilJefe(dir, danoFuego + 3, quemadura: true);
+                    yield return new WaitForSeconds(0.12f);
+                }
+            }
+        }
+
+        private IEnumerator PatronReinaEspora()
+        {
+            // Nube de 10 esporas tóxicas radiales que envenenan con daño continuo
+            int balas = 10 + (_numJugadoresAlSpawn * 2);
+            float paso = 360f / balas;
+            int danoEspora = Mathf.Max(9, Mathf.RoundToInt(dano * 0.75f));
+
+            for (int i = 0; i < balas; i++)
+            {
+                float rad = (i * paso) * Mathf.Deg2Rad;
+                Vector2 dir = new Vector2(Mathf.Cos(rad), Mathf.Sin(rad));
+                DispararProyectilJefe(dir, danoEspora, esporas: true);
+            }
+
+            yield return new WaitForSeconds(0.4f);
+            if (EstaCongelado.Value || VidaActual.Value <= 0) yield break;
+
+            // Pulso de fotosíntesis/curación de la Reina Espora (+8% de vida)
+            int curacion = Mathf.Max(35, Mathf.RoundToInt(vidaMax * 0.08f));
+            int vidaAntes = VidaActual.Value;
+            VidaActual.Value = Mathf.Min(vidaMax, VidaActual.Value + curacion);
+            int curadoReal = VidaActual.Value - vidaAntes;
+            if (curadoReal > 0)
+            {
+                TextoFlotante.Crear(transform.position + Vector3.up * 1.5f, $"+{curadoReal} HP", new Color(0.2f, 1f, 0.4f));
+            }
+        }
+
+        private IEnumerator PatronFaraonEterno()
+        {
+            // Pequeño desplazamiento ceremonial
+            Personaje obj = ObtenerJugadorMasCercano();
+            if (obj != null)
+            {
+                Vector2 dir = ((Vector2)obj.transform.position - (Vector2)transform.position).normalized;
+                Vector2 dirEscape = -dir;
+                transform.position = (Vector2)transform.position + dirEscape * 1.8f;
+            }
+
+            yield return new WaitForSeconds(0.2f);
+            if (EstaCongelado.Value || VidaActual.Value <= 0) yield break;
+
+            // Ráfaga cuádruple de rayos solares dorados hacia el objetivo
+            if (obj != null)
+            {
+                Vector2 dirDisparo = ((Vector2)obj.transform.position - (Vector2)transform.position).normalized;
+                int danoRayo = Mathf.Max(10, Mathf.RoundToInt(dano * 0.85f));
+                for (int r = 0; r < 4; r++)
+                {
+                    DispararProyectilJefe(dirDisparo, danoRayo);
+                    yield return new WaitForSeconds(0.12f);
+                }
+            }
+
+            // Invocación de la Tumba: Invoca 1 o 2 esbirros de arena (Momia o Rata)
+            if (GestorPartida.Instancia != null)
+            {
+                RolEnemigo rolEsbirro = Random.value < 0.5f ? RolEnemigo.MeleeRapido : RolEnemigo.Especial;
+                Vector2 posSpawn = (Vector2)transform.position + Random.insideUnitCircle * 2.2f;
+                GestorPartida.Instancia.SpawnearEsbirroEmergente(posSpawn, TipoBioma.Arena, rolEsbirro);
+            }
+        }
+
+        protected void DispararProyectilJefe(Vector2 dir, int danoProj, bool quemadura = false, bool congelacion = false, bool ralentizacion = false, bool esporas = false)
         {
             if (prefabProyectilJefe == null) return;
             if (GestorPartida.Instancia != null && (GestorPartida.Instancia.PartidaTerminada || GestorPartida.Instancia.ObtenerJugadoresVivos().Count == 0)) return;
@@ -382,7 +657,12 @@ namespace SoulKnight
             var proj = p.GetComponent<Proyectil>();
             if (proj != null)
             {
+                proj.proyectilEnemigo = true;
                 proj.Configurar(dir, danoProj, 999999);
+                proj.aplicaQuemadura = quemadura;
+                proj.aplicaCongelacion = congelacion;
+                proj.aplicaRalentizacion = ralentizacion;
+                proj.aplicaEsporas = esporas;
             }
             var no = p.GetComponent<NetworkObject>();
             if (no != null) no.Spawn();

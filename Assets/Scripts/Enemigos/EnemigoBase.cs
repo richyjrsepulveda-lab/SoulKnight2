@@ -43,6 +43,13 @@ namespace SoulKnight
         public NetworkVariable<bool> EstaRalentizado = new NetworkVariable<bool>(false);
         public NetworkVariable<bool> EstaQuemado = new NetworkVariable<bool>(false);
 
+        [Header("Bioma y Rol")]
+        public NetworkVariable<int> BiomaActualNet = new NetworkVariable<int>(0);
+        public NetworkVariable<int> RolActualNet = new NetworkVariable<int>(0);
+        public NetworkVariable<float> EscalaVisualNet = new NetworkVariable<float>(1.0f);
+
+        private float _timerHabilidadRol = 0f;
+
         protected Rigidbody2D _rb;
         protected Collider2D _col;
 
@@ -131,9 +138,106 @@ namespace SoulKnight
                 ActualizarTinteVisual();
             };
 
+            BiomaActualNet.OnValueChanged += (prev, act) => ActualizarVisualPixelArt();
+            RolActualNet.OnValueChanged += (prev, act) => ActualizarVisualPixelArt();
+            EscalaVisualNet.OnValueChanged += (prev, act) => ActualizarVisualPixelArt();
+
             if (barraVida != null) barraVida.Establecer(VidaActual.Value, vidaMax);
             if (spriteCongelado != null) spriteCongelado.SetActive(EstaCongelado.Value);
             ActualizarTinteVisual();
+            ActualizarVisualPixelArt();
+        }
+
+        public void ConfigurarRolYBioma(TipoBioma bioma, RolEnemigo rol, float multDificultad = 1.0f)
+        {
+            if (!IsServer) return;
+            BiomaActualNet.Value = (int)bioma;
+            RolActualNet.Value = (int)rol;
+
+            switch (rol)
+            {
+                case RolEnemigo.Tanque:
+                    vidaMax = Mathf.RoundToInt(240 * multDificultad);
+                    velocidadBase = 2.4f;
+                    dano = Mathf.RoundToInt(15 * multDificultad);
+                    rangoAtaque = 2.2f;
+                    EscalaVisualNet.Value = 1.35f;
+                    break;
+                case RolEnemigo.MeleeRapido:
+                    vidaMax = Mathf.RoundToInt(85 * multDificultad);
+                    velocidadBase = 4.7f;
+                    dano = Mathf.RoundToInt(9 * multDificultad);
+                    rangoAtaque = 2.0f;
+                    EscalaVisualNet.Value = 0.95f;
+                    break;
+                case RolEnemigo.Rango:
+                    vidaMax = Mathf.RoundToInt(110 * multDificultad);
+                    velocidadBase = 2.7f;
+                    dano = Mathf.RoundToInt(12 * multDificultad);
+                    rangoAtaque = 8.5f;
+                    EscalaVisualNet.Value = 1.05f;
+                    break;
+                case RolEnemigo.Especial:
+                    vidaMax = Mathf.RoundToInt(135 * multDificultad);
+                    velocidadBase = 3.3f;
+                    dano = Mathf.RoundToInt(14 * multDificultad);
+                    rangoAtaque = 4.0f;
+                    EscalaVisualNet.Value = 1.1f;
+                    break;
+                case RolEnemigo.Spawner:
+                    vidaMax = Mathf.RoundToInt(320 * multDificultad);
+                    velocidadBase = 0f;
+                    dano = 0;
+                    rangoAtaque = 0f;
+                    EscalaVisualNet.Value = 1.4f;
+                    if (_rb != null) _rb.isKinematic = true;
+                    break;
+            }
+
+            _velocidadActual = velocidadBase;
+            VidaActual.Value = vidaMax;
+            ActualizarVisualPixelArt();
+        }
+
+        public void ActualizarVisualPixelArt()
+        {
+            if (this is JefeBase) return;
+            var sr = GetComponent<SpriteRenderer>();
+            if (sr != null)
+            {
+                sr.sprite = CatalogoPixelArtEnemigos.ObtenerSpriteEnemigo((TipoBioma)BiomaActualNet.Value, (RolEnemigo)RolActualNet.Value);
+            }
+            float esc = EscalaVisualNet.Value > 0.1f ? EscalaVisualNet.Value : 1.0f;
+            transform.localScale = new Vector3(esc, esc, 1f);
+        }
+
+        private void PulsoCuracionPlanta()
+        {
+            if (!IsServer || VidaActual.Value <= 0) return;
+            // Curar a aliados cercanos en 6 metros
+            Collider2D[] aliados = Physics2D.OverlapCircleAll(transform.position, 6.5f);
+            foreach (var col in aliados)
+            {
+                var e = col.GetComponent<EnemigoBase>();
+                if (e != null && e.gameObject.activeInHierarchy && e.VidaActual.Value > 0)
+                {
+                    int heal = 25;
+                    e.VidaActual.Value = Mathf.Min(e.vidaMax, e.VidaActual.Value + heal);
+                    TextoFlotante.Crear(e.transform.position + new Vector3(0, 1.2f, 0), $"+{heal} HP", Color.green);
+                }
+            }
+        }
+
+        private void InvocarEsbirroAtaud()
+        {
+            if (!IsServer || VidaActual.Value <= 0) return;
+            if (GestorPartida.Instancia != null)
+            {
+                // Invocar 1 momia o 1 rata cerca
+                RolEnemigo subrol = (UnityEngine.Random.value < 0.5f) ? RolEnemigo.MeleeRapido : RolEnemigo.Rango;
+                Vector2 posSpawn = (Vector2)transform.position + UnityEngine.Random.insideUnitCircle.normalized * 1.6f;
+                GestorPartida.Instancia.SpawnearEsbirroEmergente(posSpawn, TipoBioma.Arena, subrol);
+            }
         }
 
         private void ActualizarTinteVisual()
@@ -209,6 +313,27 @@ namespace SoulKnight
                 }
             }
 
+            if (IsServer)
+            {
+                _timerHabilidadRol += Time.deltaTime;
+                if (BiomaActualNet.Value == (int)TipoBioma.Planta && RolActualNet.Value == (int)RolEnemigo.Tanque)
+                {
+                    if (_timerHabilidadRol >= 5.5f)
+                    {
+                        _timerHabilidadRol = 0f;
+                        PulsoCuracionPlanta();
+                    }
+                }
+                else if (RolActualNet.Value == (int)RolEnemigo.Spawner)
+                {
+                    if (_timerHabilidadRol >= 5.0f)
+                    {
+                        _timerHabilidadRol = 0f;
+                        InvocarEsbirroAtaud();
+                    }
+                }
+            }
+
             if (enAnimacionEntrada)
             {
                 if (_rb != null) _rb.velocity = Vector2.zero;
@@ -230,6 +355,20 @@ namespace SoulKnight
                     jugadorCercano.RecibirDano(dano);
                     Vector2 dirEmpuje = ((Vector2)jugadorCercano.transform.position - (Vector2)transform.position).normalized;
                     jugadorCercano.AplicarKnockback(dirEmpuje, 350f);
+
+                    // Efectos de estado de bioma al golpear a un jugador
+                    if (BiomaActualNet.Value == (int)TipoBioma.Hielo)
+                    {
+                        jugadorCercano.AplicarRalentizacion(3.5f);
+                    }
+                    else if (BiomaActualNet.Value == (int)TipoBioma.Fuego)
+                    {
+                        jugadorCercano.AplicarQuemadura(4.0f, 6);
+                    }
+                    else if (BiomaActualNet.Value == (int)TipoBioma.Planta)
+                    {
+                        jugadorCercano.AplicarEsporasVeneno(4.0f, 5);
+                    }
 
                     // Si el jugador tiene la Armadura de Fuego activa, quema al enemigo que lo golpeó a melee
                     if (jugadorCercano is PersonajeFuego pjFuego && pjFuego.ArmaduraActiva.Value)
@@ -436,6 +575,12 @@ namespace SoulKnight
 
             if (GestorPartida.Instancia != null)
             {
+                // Si era un Sarcófago Andante en el Desierto, al morir emerge una Momia
+                if (BiomaActualNet.Value == (int)TipoBioma.Arena && RolActualNet.Value == (int)RolEnemigo.Tanque)
+                {
+                    GestorPartida.Instancia.SpawnearEsbirroEmergente(transform.position, TipoBioma.Arena, RolEnemigo.MeleeRapido);
+                }
+
                 GestorPartida.Instancia.EnemigoEliminado(this);
             }
 

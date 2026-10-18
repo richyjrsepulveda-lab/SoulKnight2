@@ -36,6 +36,20 @@ namespace SoulKnight
         public NetworkVariable<int> NivelMaestriaSincronizado = new NetworkVariable<int>(1);
         public NetworkVariable<int> OroRun = new NetworkVariable<int>(0);
 
+        [Header("Efectos de Estado de Biomas")]
+        public NetworkVariable<bool> JugadorCongelado = new NetworkVariable<bool>(false);
+        public NetworkVariable<bool> JugadorRalentizado = new NetworkVariable<bool>(false);
+        public NetworkVariable<bool> JugadorQuemado = new NetworkVariable<bool>(false);
+        public NetworkVariable<bool> JugadorEnvenenado = new NetworkVariable<bool>(false);
+
+        private float _tiempoCongeladoPj = 0f;
+        private float _tiempoRalentizadoPj = 0f;
+        private float _tiempoQuemadoPj = 0f;
+        private float _tiempoVenenoPj = 0f;
+        private float _tickDanoEstadoPj = 0f;
+        private int _danoTickQuemadoPj = 4;
+        private int _danoTickVenenoPj = 4;
+
         protected Rigidbody2D _rb;
         protected Collider2D _col;
         protected Vector2 _knockback = Vector2.zero;
@@ -400,6 +414,14 @@ namespace SoulKnight
 
             // Manejo físico del movimiento y knockback inmediatamente en la máquina local (0ms delay)
             float vel = (_corriendo ? ObtenerVelocidadCorrer() : _velocidadActual) * MultiplicadorVelocidadLoot.Value;
+            if (JugadorCongelado.Value)
+            {
+                vel = 0f;
+            }
+            else if (JugadorRalentizado.Value)
+            {
+                vel *= 0.50f;
+            }
             Vector2 movimiento = _inputMovimiento.normalized * vel;
 
             if (_knockback.sqrMagnitude > 0.01f)
@@ -505,6 +527,113 @@ namespace SoulKnight
                     }
                 }
             }
+
+            // Actualizar estados alterados de biomas en el servidor
+            if (_tiempoCongeladoPj > 0f)
+            {
+                _tiempoCongeladoPj -= dt;
+                if (_tiempoCongeladoPj <= 0f)
+                {
+                    _tiempoCongeladoPj = 0f;
+                    JugadorCongelado.Value = false;
+                }
+            }
+
+            if (_tiempoRalentizadoPj > 0f)
+            {
+                _tiempoRalentizadoPj -= dt;
+                if (_tiempoRalentizadoPj <= 0f)
+                {
+                    _tiempoRalentizadoPj = 0f;
+                    JugadorRalentizado.Value = false;
+                }
+            }
+
+            if (_tiempoQuemadoPj > 0f)
+            {
+                _tiempoQuemadoPj -= dt;
+                _tickDanoEstadoPj += dt;
+                if (_tickDanoEstadoPj >= 0.5f)
+                {
+                    _tickDanoEstadoPj = 0f;
+                    RecibirDanoPorEstado(_danoTickQuemadoPj, new Color(1f, 0.45f, 0.1f));
+                }
+                if (_tiempoQuemadoPj <= 0f)
+                {
+                    _tiempoQuemadoPj = 0f;
+                    JugadorQuemado.Value = false;
+                }
+            }
+
+            if (_tiempoVenenoPj > 0f)
+            {
+                _tiempoVenenoPj -= dt;
+                _tickDanoEstadoPj += dt;
+                if (_tickDanoEstadoPj >= 0.5f)
+                {
+                    _tickDanoEstadoPj = 0f;
+                    RecibirDanoPorEstado(_danoTickVenenoPj, new Color(0.35f, 0.95f, 0.35f));
+                }
+                if (_tiempoVenenoPj <= 0f)
+                {
+                    _tiempoVenenoPj = 0f;
+                    JugadorEnvenenado.Value = false;
+                }
+            }
+        }
+
+        private void RecibirDanoPorEstado(int cantidad, Color color)
+        {
+            if (!IsServer || EstaMuerto.Value) return;
+            VidaActual.Value = Mathf.Max(0, VidaActual.Value - cantidad);
+            MostrarDanoClientRpc(cantidad, color);
+            if (VidaActual.Value <= 0)
+            {
+                Morir();
+            }
+        }
+
+        public void AplicarCongelacion(float duracion)
+        {
+            if (!IsServer || EstaMuerto.Value) return;
+            _tiempoCongeladoPj = Mathf.Max(_tiempoCongeladoPj, duracion);
+            JugadorCongelado.Value = true;
+            MostrarTextoFlotanteClientRpc("¡CONGELADO!", new Color(0.4f, 0.8f, 1f));
+        }
+
+        public void AplicarRalentizacion(float duracion)
+        {
+            if (!IsServer || EstaMuerto.Value || JugadorCongelado.Value) return;
+            _tiempoRalentizadoPj = Mathf.Max(_tiempoRalentizadoPj, duracion);
+            JugadorRalentizado.Value = true;
+            MostrarTextoFlotanteClientRpc("¡Ralentizado!", new Color(0.6f, 0.9f, 1f));
+        }
+
+        public void AplicarQuemadura(float duracion, int danoPorTick = 5)
+        {
+            if (!IsServer || EstaMuerto.Value) return;
+            _tiempoQuemadoPj = Mathf.Max(_tiempoQuemadoPj, duracion);
+            _danoTickQuemadoPj = danoPorTick;
+            JugadorQuemado.Value = true;
+            MostrarTextoFlotanteClientRpc("¡En Llamas!", new Color(1f, 0.4f, 0.1f));
+        }
+
+        public void AplicarEsporasVeneno(float duracion, int danoPorTick = 4)
+        {
+            if (!IsServer || EstaMuerto.Value) return;
+            _tiempoVenenoPj = Mathf.Max(_tiempoVenenoPj, duracion);
+            _danoTickVenenoPj = danoPorTick;
+            JugadorEnvenenado.Value = true;
+            MostrarTextoFlotanteClientRpc("¡Esporas Tóxicas!", new Color(0.4f, 0.9f, 0.3f));
+        }
+
+        public void PerderMejorasTemporalesPorMuerteEnLoop()
+        {
+            if (!IsServer) return;
+            MultiplicadorDanoLoot.Value = 1.0f;
+            ReduccionDanoLoot.Value = 0f;
+            MultiplicadorVelocidadLoot.Value = 1.0f;
+            MostrarTextoFlotanteClientRpc("⚠️ Mejoras de la run perdidas por muerte en el Bucle", Color.red);
         }
 
         public void AgregarOro(int cantidad)
@@ -897,6 +1026,18 @@ namespace SoulKnight
         {
             // Solo reiniciamos cooldowns para que el jugador entre al nuevo piso con habilidades listas.
             ReiniciarCooldowns();
+
+            if (IsServer)
+            {
+                JugadorCongelado.Value = false;
+                JugadorRalentizado.Value = false;
+                JugadorQuemado.Value = false;
+                JugadorEnvenenado.Value = false;
+            }
+            _tiempoCongeladoPj = 0f;
+            _tiempoRalentizadoPj = 0f;
+            _tiempoQuemadoPj = 0f;
+            _tiempoVenenoPj = 0f;
 
             // NOTA: Las mejoras acumulativas de la run (MultiplicadorDanoLoot, ReduccionDanoLoot,
             // MultiplicadorVelocidadLoot, vidaMax extra y OroRun) son permanentes durante TODA la run

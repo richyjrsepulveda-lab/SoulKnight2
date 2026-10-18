@@ -25,6 +25,8 @@ namespace SoulKnight
         public bool aplicaQuemadura = false;
         public bool aplicaCongelacion = false;
         public float probCongelacion = 1f;
+        public bool aplicaRalentizacion = false;
+        public bool aplicaEsporas = false;
 
         [Header("Explosión en Área")]
         public bool tieneExplosionArea = false;
@@ -195,6 +197,22 @@ namespace SoulKnight
                 {
                     personaje.RecibirDano(dano);
                     personaje.AplicarKnockback(_direccion, 220f);
+                    if (aplicaCongelacion)
+                    {
+                        personaje.AplicarCongelacion(2.0f);
+                    }
+                    else if (aplicaRalentizacion)
+                    {
+                        personaje.AplicarRalentizacion(3.0f);
+                    }
+                    if (aplicaQuemadura)
+                    {
+                        personaje.AplicarQuemadura(4.0f, Mathf.Max(3, Mathf.RoundToInt(dano * 0.35f)));
+                    }
+                    if (aplicaEsporas)
+                    {
+                        personaje.AplicarEsporasVeneno(4.0f, Mathf.Max(3, Mathf.RoundToInt(dano * 0.3f)));
+                    }
                     DestruirProyectil();
                     return true;
                 }
