@@ -742,7 +742,15 @@ namespace SoulKnight
         private void MostrarDanoClientRpc(int cantidad, Color color)
         {
             TextoFlotante.Crear(transform.position + new Vector3(0, 1.25f, 0), cantidad.ToString(), color);
-            GestorAudio.PlaySFX(TipoSFX.ImpactoEnemigo, 0.65f);
+            bool esDanoHielo = color.b > 0.7f && color.r < 0.6f;
+            if (esDanoHielo)
+            {
+                GestorAudio.PlaySFX(TipoSFX.ImpactoHielo, 1.0f);
+            }
+            else
+            {
+                GestorAudio.PlaySFX(TipoSFX.ImpactoEnemigo, 0.95f);
+            }
         }
 
         public void AplicarKnockback(Vector2 direccion, float fuerza)

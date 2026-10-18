@@ -42,7 +42,8 @@ namespace SoulKnight
         Escudo,
         FuegoDisparo,
         FuegoLlamas,
-        HieloDisparo
+        HieloDisparo,
+        ImpactoHielo
     }
 
     public class MarcadorAudioBoton : MonoBehaviour { }
@@ -194,6 +195,7 @@ namespace SoulKnight
             RegistrarSFX(TipoSFX.FuegoDisparo, "Audio/SFX/FuegoDisparo");
             RegistrarSFX(TipoSFX.FuegoLlamas, "Audio/SFX/FuegoLlamas");
             RegistrarSFX(TipoSFX.HieloDisparo, "Audio/SFX/HieloDisparo");
+            RegistrarSFX(TipoSFX.ImpactoHielo, "Audio/SFX/ImpactoHielo");
         }
 
         private void RegistrarMusica(TipoMusica tipo, string rutaResources)
