@@ -758,6 +758,10 @@ namespace SoulKnight
         private void MostrarDanoClientRpc(int cantidad, Color color)
         {
             TextoFlotante.Crear(transform.position + new Vector3(0, 1.25f, 0), cantidad.ToString(), color);
+            if (color != Color.green && IsOwner)
+            {
+                GestorAudio.PlaySFX(TipoSFX.DanoJugador);
+            }
         }
 
         public virtual void Curar(int cantidad)
@@ -999,6 +1003,7 @@ namespace SoulKnight
                 if (IsOwner)
                 {
                     TextoFlotante.Crear(transform.position + Vector3.up * 1.5f, "¡HAS CAÍDO! Espera a tu compañero", Color.red);
+                    GestorAudio.PlaySFX(TipoSFX.MuerteJugador);
                 }
             }
             else

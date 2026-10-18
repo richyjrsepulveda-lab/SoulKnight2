@@ -534,12 +534,20 @@ namespace SoulKnight
                     pj.MostrarTextoFlotanteClientRpc($"¡{nombreMejora}!", color);
                 }
 
+                NotificarRecogidoClientRpc();
+
                 if (NetworkObject != null && NetworkObject.IsSpawned)
                 {
                     NetworkObject.Despawn();
                 }
                 Destroy(gameObject);
             }
+        }
+
+        [ClientRpc]
+        private void NotificarRecogidoClientRpc()
+        {
+            GestorAudio.PlaySFX(TipoSFX.Mejora);
         }
     }
 }

@@ -610,6 +610,7 @@ namespace SoulKnight
         [ClientRpc]
         private void DetonarSupernovaClientRpc(Vector3 pos)
         {
+            GestorAudio.PlaySFX(TipoSFX.Explosion);
             CamaraSeguir.Instancia?.Sacudir(0.45f, 0.32f);
             TextoFlotante.Crear(pos + Vector3.up * 1.5f, "¡SUPERNOVA!", new Color(1f, 0.82f, 0.15f));
 

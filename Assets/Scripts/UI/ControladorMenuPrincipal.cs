@@ -35,6 +35,7 @@ namespace SoulKnight
             if (botonOpciones) botonOpciones.onClick.AddListener(AlPresionarOpciones);
             if (botonSalir) botonSalir.onClick.AddListener(AlPresionarSalir);
 
+            GestorAudio.PlayBGM(TipoMusica.Lobby);
             AsegurarBotonCambiarNombre();
         }
 
@@ -120,6 +121,7 @@ namespace SoulKnight
 
         private void AlPresionarJugar()
         {
+            GestorAudio.PlaySFX(TipoSFX.ClickUI);
             SceneManager.LoadScene(Escenas.MenuJugar);
         }
 
@@ -127,6 +129,7 @@ namespace SoulKnight
 
         private void AlPresionarOpciones()
         {
+            GestorAudio.PlaySFX(TipoSFX.ClickUI);
             if (panelOpciones != null)
             {
                 panelOpciones.Abrir();
@@ -139,6 +142,7 @@ namespace SoulKnight
 
         private void AlPresionarSalir()
         {
+            GestorAudio.PlaySFX(TipoSFX.ClickUI);
             Application.Quit();
         }
     }

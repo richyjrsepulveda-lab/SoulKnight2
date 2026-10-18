@@ -72,7 +72,13 @@ namespace SoulKnight
         {
             base.OnNetworkSpawn();
             RayoCargando.OnValueChanged += (prev, act) => { if (visualCargaRayo) visualCargaRayo.enabled = act; };
-            RayoLanzado.OnValueChanged += (prev, act) => { if (visualRayoElectrico) visualRayoElectrico.enabled = act; };
+            RayoLanzado.OnValueChanged += (prev, act) => {
+                if (visualRayoElectrico) visualRayoElectrico.enabled = act;
+                if (act) GestorAudio.PlaySFX(TipoSFX.RayoElectrico);
+            };
+            DashActivo.OnValueChanged += (prev, act) => {
+                if (act) GestorAudio.PlaySFX(TipoSFX.Dash);
+            };
         }
 
         protected override void Update()
@@ -338,6 +344,7 @@ namespace SoulKnight
         [ClientRpc]
         private void MostrarEspadaClientRpc(Vector2 dir)
         {
+            GestorAudio.PlaySFX(TipoSFX.Espada);
             if (visualEspada != null)
             {
                 StopCoroutine("RutinaAnimacionEspada");
@@ -481,6 +488,7 @@ namespace SoulKnight
         [ClientRpc]
         private void MostrarTeleportEfectoClientRpc(Vector2 origen, Vector2 destino)
         {
+            GestorAudio.PlaySFX(TipoSFX.Teleport);
             if (prefabEfectoTeleport != null)
             {
                 Instantiate(prefabEfectoTeleport, origen, Quaternion.identity);

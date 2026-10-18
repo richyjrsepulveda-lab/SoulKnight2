@@ -490,6 +490,8 @@ namespace SoulKnight
             }
 
             PartidaTerminada?.Invoke(victoria);
+            GestorAudio.PlayBGM(TipoMusica.Ninguna, 0.4f);
+            GestorAudio.PlaySFX(victoria ? TipoSFX.Victoria : TipoSFX.MuerteJugador);
         }
 
         [ClientRpc]
@@ -544,6 +546,7 @@ namespace SoulKnight
             {
                 GeneradorMazmorra.Instancia.GenerarConSemilla(semilla, bioma, tieneJefe, esNivelDecisionLoop);
             }
+            GestorAudio.PlayBGM(tieneJefe ? TipoMusica.Jefe : TipoMusica.Mazmorra);
         }
 
         [ClientRpc]
@@ -559,9 +562,24 @@ namespace SoulKnight
             sala.BloquearSala(bloqueada);
             sala.despejada = despejada;
 
-            if (despejada && sala.esSalaJefe)
+            if (bloqueada)
             {
-                sala.AbrirMuroSalidaJefe();
+                GestorAudio.PlaySFX(TipoSFX.PuertaCerrar);
+                if (sala.esSalaJefe)
+                {
+                    GestorAudio.PlayBGM(TipoMusica.Jefe);
+                    GestorAudio.PlaySFX(TipoSFX.RugidoJefe);
+                }
+            }
+            else if (despejada)
+            {
+                GestorAudio.PlaySFX(TipoSFX.PuertaAbrir);
+                GestorAudio.PlaySFX(TipoSFX.SalaDespejada);
+                if (sala.esSalaJefe)
+                {
+                    GestorAudio.PlayBGM(TipoMusica.Mazmorra);
+                    sala.AbrirMuroSalidaJefe();
+                }
             }
         }
 
@@ -575,6 +593,10 @@ namespace SoulKnight
             if (sala != null)
             {
                 sala.MostrarPortalesSpawn(mostrar);
+                if (mostrar)
+                {
+                    GestorAudio.PlaySFX(TipoSFX.Portal);
+                }
             }
         }
 

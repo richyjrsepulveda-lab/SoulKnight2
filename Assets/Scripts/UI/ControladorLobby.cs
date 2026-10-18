@@ -125,6 +125,7 @@ namespace SoulKnight
             CambiarVista(EstadoLobbyUI.VistaGeneral);
             ActualizarUI();
             ActualizarPersonajesLobbyServer();
+            GestorAudio.PlayBGM(TipoMusica.Lobby);
 
             // Si este jugador aún no ha pulsado "Volver al Lobby" tras caer todo el equipo,
             // mantener su pantalla de fin de partida activa hasta que lo pulse individualmente

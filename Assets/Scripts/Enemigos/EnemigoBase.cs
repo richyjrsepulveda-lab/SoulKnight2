@@ -129,6 +129,7 @@ namespace SoulKnight
                     spriteCongelado.SetActive(act);
                     if (act) AjustarVisualCongelado();
                 }
+                if (act) GestorAudio.PlaySFX(TipoSFX.Congelar);
                 ActualizarTinteVisual();
             };
 
@@ -741,6 +742,7 @@ namespace SoulKnight
         private void MostrarDanoClientRpc(int cantidad, Color color)
         {
             TextoFlotante.Crear(transform.position + new Vector3(0, 1.25f, 0), cantidad.ToString(), color);
+            GestorAudio.PlaySFX(TipoSFX.ImpactoEnemigo, 0.65f);
         }
 
         public void AplicarKnockback(Vector2 direccion, float fuerza)
@@ -814,8 +816,15 @@ namespace SoulKnight
                 GestorPartida.Instancia.EnemigoEliminado(this);
             }
 
+            MostrarMuerteClientRpc();
             GetComponent<NetworkObject>().Despawn();
             Destroy(gameObject);
+        }
+
+        [ClientRpc]
+        private void MostrarMuerteClientRpc()
+        {
+            GestorAudio.PlaySFX(TipoSFX.MuerteEnemigo, 0.75f, 0.1f);
         }
 
         public void Detener()
@@ -853,6 +862,7 @@ namespace SoulKnight
         [ClientRpc]
         private void MostrarZarpazoClientRpc(Vector2 pos, Vector2 dir, int bioma)
         {
+            GestorAudio.PlaySFX(TipoSFX.Zarpazo);
             var swipeObj = new GameObject("ZarpazoEnemigo");
             swipeObj.transform.position = new Vector3(pos.x, pos.y, -0.45f);
 

@@ -75,6 +75,16 @@ namespace SoulKnight
             // Adelantar Z para estar al frente de la cámara ortográfica
             transform.position = new Vector3(transform.position.x, transform.position.y, -0.4f);
 
+            bool esProyHielo = aplicaCongelacion || aplicaRalentizacion || TipoElemento.Value == 2;
+            if (esProyHielo)
+            {
+                GestorAudio.PlaySFX(TipoSFX.Laser, 0.55f);
+            }
+            else
+            {
+                GestorAudio.PlaySFX(TipoSFX.Disparo, 0.55f);
+            }
+
             if (IsServer)
             {
                 DireccionSincronizada.Value = _direccion;
@@ -357,6 +367,7 @@ namespace SoulKnight
         [ClientRpc]
         private void MostrarEfectoExplosionClientRpc(Vector2 pos, bool esHielo)
         {
+            GestorAudio.PlaySFX(TipoSFX.Explosion, 0.7f);
             var efectoObj = new GameObject("EfectoExplosionProyectil");
             efectoObj.transform.position = new Vector3(pos.x, pos.y, -0.6f);
 
