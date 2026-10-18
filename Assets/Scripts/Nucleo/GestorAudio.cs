@@ -23,6 +23,7 @@ namespace SoulKnight
         Espada,
         Dash,
         Teleport,
+        RayoTP,
         RayoElectrico,
         Explosion,
         Congelar,
@@ -177,7 +178,8 @@ namespace SoulKnight
             RegistrarSFX(TipoSFX.Laser, "Audio/SFX/Laser");
             RegistrarSFX(TipoSFX.Espada, "Audio/SFX/Espada");
             RegistrarSFX(TipoSFX.Dash, "Audio/SFX/Dash");
-            RegistrarSFX(TipoSFX.Teleport, "Audio/SFX/Teleport");
+            RegistrarSFX(TipoSFX.Teleport, "Audio/SFX/RayoTP");
+            RegistrarSFX(TipoSFX.RayoTP, "Audio/SFX/RayoTP");
             RegistrarSFX(TipoSFX.RayoElectrico, "Audio/SFX/RayoElectrico");
             RegistrarSFX(TipoSFX.Explosion, "Audio/SFX/Explosion");
             RegistrarSFX(TipoSFX.Congelar, "Audio/SFX/Congelar");

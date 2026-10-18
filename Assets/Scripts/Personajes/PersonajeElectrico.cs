@@ -297,7 +297,14 @@ namespace SoulKnight
                 if (PuedeUsarHabilidad(IdHabilidad.Elec_Teleport, out string motivo))
                 {
                     _cdTeleportRestante = cooldownTeleport;
-                    TeleportServerRpc(Controles.PosicionMouseMundo());
+                    if (NetworkManager != null && NetworkManager.IsListening)
+                    {
+                        TeleportServerRpc(Controles.PosicionMouseMundo());
+                    }
+                    else
+                    {
+                        EjecutarTeleportLocal(Controles.PosicionMouseMundo());
+                    }
                 }
                 else
                 {
@@ -491,11 +498,68 @@ namespace SoulKnight
         [ClientRpc]
         private void MostrarTeleportEfectoClientRpc(Vector2 origen, Vector2 destino)
         {
-            GestorAudio.PlaySFX(TipoSFX.Teleport);
+            GestorAudio.PlaySFX(TipoSFX.Teleport, 1.2f);
+
+            // 2 Rayos celestiales de alto impacto ("toda god"):
+            // 1 donde estaba el jugador (origen) y 1 donde apunta el cursor/reaparece (destino)
+            EfectoRayoTeleport.Crear(origen);
+            EfectoRayoTeleport.Crear(destino);
+
             if (prefabEfectoTeleport != null)
             {
                 Instantiate(prefabEfectoTeleport, origen, Quaternion.identity);
                 Instantiate(prefabEfectoTeleport, destino, Quaternion.identity);
+            }
+
+            if (CamaraSeguir.Instancia != null)
+            {
+                CamaraSeguir.Instancia.Sacudir(0.35f, 0.42f);
+            }
+        }
+
+        private void EjecutarTeleportLocal(Vector2 targetPos)
+        {
+            Vector2 origen = transform.position;
+            Vector2 delta = targetPos - origen;
+            float dist = delta.magnitude;
+
+            if (dist > 0.05f)
+            {
+                Vector2 dir = delta.normalized;
+                int rayCount = Physics2D.RaycastNonAlloc(origen, dir, _rayHitsBuffer, dist);
+                for (int i = 0; i < rayCount; i++)
+                {
+                    var hm = _rayHitsBuffer[i];
+                    if (hm.collider != null && hm.collider.gameObject != gameObject && EsMuroDelMapa(hm.collider))
+                    {
+                        targetPos = hm.point - dir * 0.55f;
+                        break;
+                    }
+                }
+            }
+
+            int puntoCount = Physics2D.OverlapCircleNonAlloc(targetPos, 0.4f, _colHitsBuffer);
+            for (int i = 0; i < puntoCount; i++)
+            {
+                var ph = _colHitsBuffer[i];
+                if (ph != null && ph.gameObject != gameObject && EsMuroDelMapa(ph))
+                {
+                    return;
+                }
+            }
+
+            AplicarImpactoTeleport(origen);
+            transform.position = targetPos;
+            if (_rb != null) _rb.position = targetPos;
+            AplicarImpactoTeleport(targetPos);
+
+            GestorAudio.PlaySFX(TipoSFX.Teleport, 1.2f);
+            EfectoRayoTeleport.Crear(origen);
+            EfectoRayoTeleport.Crear(targetPos);
+
+            if (CamaraSeguir.Instancia != null)
+            {
+                CamaraSeguir.Instancia.Sacudir(0.35f, 0.42f);
             }
         }
 
