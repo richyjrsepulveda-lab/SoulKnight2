@@ -237,48 +237,11 @@ namespace SoulKnight
         }
 
         /// <summary>
-        /// Devuelve true si el punto es visible (dentro de una sala descubierta o en el rango de luz del jugador/antorchas).
+        /// Devuelve true si el punto es visible (visibilidad completa de todas las entidades).
         /// </summary>
         public bool TieneVisionEnPunto(Vector2 pos)
         {
-            var gen = GeneradorMazmorra.Instancia;
-            ControladorSala salaCerrada = ObtenerSalaBloqueadaActiva();
-
-            // 1. Visión total del 100% en cualquier sala descubierta o accesible
-            if (gen != null && gen.salasGeneradas != null)
-            {
-                for (int i = 0; i < gen.salasGeneradas.Count; i++)
-                {
-                    var s = gen.salasGeneradas[i];
-                    if (s == null || !s.descubierta) continue;
-                    if (salaCerrada != null && salaCerrada != s) continue;
-                    Rect rSalaVision = new Rect(
-                        s.limitesSala.xMin - 2.5f,
-                        s.limitesSala.yMin - 2.5f,
-                        s.limitesSala.width + 5.0f,
-                        s.limitesSala.height + 5.0f
-                    );
-                    if (rSalaVision.Contains(pos))
-                    {
-                        return true;
-                    }
-                }
-            }
-
-            // 2. Visión del jugador (radio amplio de 26 unidades, cubre toda la pantalla)
-            float rJugSq = radioLuzJugador * radioLuzJugador;
-            for (int i = 0; i < Personaje.Todos.Count; i++)
-            {
-                var pj = Personaje.Todos[i];
-                if (pj == null || !pj.gameObject.activeInHierarchy) continue;
-                Vector2 posPj = pj.transform.position;
-                if ((posPj - pos).sqrMagnitude <= rJugSq)
-                {
-                    return true;
-                }
-            }
-
-            return true; // En rango visual general, las entidades permanecen visibles
+            return true;
         }
 
         void LateUpdate()
@@ -290,20 +253,10 @@ namespace SoulKnight
 
             var gen = GeneradorMazmorra.Instancia;
 
-            radioLuzJugador = Mathf.Max(26f, radioLuzJugador);
-            radioLuzAntorcha = Mathf.Max(25f, radioLuzAntorcha);
+            radioLuzJugador = Mathf.Max(32f, radioLuzJugador);
+            radioLuzAntorcha = Mathf.Max(28f, radioLuzAntorcha);
 
-            // 1. Cubrir el 100% de la cámara con margen de sobra
-            float altoCam = cam.orthographicSize * 2f + 2f;
-            float anchoCam = altoCam * cam.aspect + 2f;
-            Vector3 posCam = cam.transform.position;
-            _overlayNiebla.transform.position = new Vector3(posCam.x, posCam.y, 0f);
-
-            float spriteW = TEX_W / 10f;
-            float spriteH = TEX_H / 10f;
-            _overlayNiebla.transform.localScale = new Vector3(anchoCam / spriteW, altoCam / spriteH, 1f);
-
-            // 2. Recolectar posición de los jugadores
+            // 1. Recolectar posición de los jugadores
             _fuentesJugadores.Clear();
             for (int i = 0; i < Personaje.Todos.Count; i++)
             {
@@ -314,7 +267,59 @@ namespace SoulKnight
                 }
             }
 
-            // 3. Recolectar salas descubiertas y antorchas encendidas cercanas a la cámara
+            // 2. Comprobar si algún jugador está dentro o en las entradas de una sala descubierta
+            bool jugadorEnSalaDescubierta = false;
+            if (gen != null && gen.salasGeneradas != null)
+            {
+                for (int i = 0; i < gen.salasGeneradas.Count; i++)
+                {
+                    var s = gen.salasGeneradas[i];
+                    if (s == null || !s.descubierta) continue;
+
+                    for (int j = 0; j < _fuentesJugadores.Count; j++)
+                    {
+                        Rect rSalaExt = new Rect(
+                            s.limitesSala.xMin - 8f,
+                            s.limitesSala.yMin - 8f,
+                            s.limitesSala.width + 16f,
+                            s.limitesSala.height + 16f
+                        );
+                        if (rSalaExt.Contains(_fuentesJugadores[j]))
+                        {
+                            jugadorEnSalaDescubierta = true;
+                            break;
+                        }
+                    }
+                    if (jugadorEnSalaDescubierta) break;
+                }
+            }
+
+            // ¡Al estar en cualquier habitación descubierta: APAGAR EL OVERLAY DE OSCURIDAD POR COMPLETO!
+            // La habitación entera se ve 100% despejada, nítida, iluminada y sin ningún recorte ni sombra.
+            if (jugadorEnSalaDescubierta)
+            {
+                _overlayNiebla.enabled = false;
+                for (int i = 0; i < EnemigoBase.Todos.Count; i++)
+                {
+                    var e = EnemigoBase.Todos[i];
+                    if (e != null) e.EstablecerVisibilidad(true);
+                }
+                return;
+            }
+
+            _overlayNiebla.enabled = true;
+
+            // 3. En pasillos: cubrir el 100% de la cámara con margen de sobra
+            float altoCam = cam.orthographicSize * 2f + 2f;
+            float anchoCam = altoCam * cam.aspect + 2f;
+            Vector3 posCam = cam.transform.position;
+            _overlayNiebla.transform.position = new Vector3(posCam.x, posCam.y, 0f);
+
+            float spriteW = TEX_W / 10f;
+            float spriteH = TEX_H / 10f;
+            _overlayNiebla.transform.localScale = new Vector3(anchoCam / spriteW, altoCam / spriteH, 1f);
+
+            // 4. Recolectar salas descubiertas y antorchas encendidas cercanas a la cámara
             _salasDescubiertasEnCamara.Clear();
             _fuentesAntorchas.Clear();
             ControladorSala salaCerrada = ObtenerSalaBloqueadaActiva();
@@ -342,10 +347,10 @@ namespace SoulKnight
 
                     // Iluminar toda la sala por completo (con margen generoso para cubrir paredes, puertas y alrededores)
                     Rect rSala = new Rect(
-                        s.limitesSala.xMin - 2.5f,
-                        s.limitesSala.yMin - 2.5f,
-                        s.limitesSala.width + 5.0f,
-                        s.limitesSala.height + 5.0f
+                        s.limitesSala.xMin - 6f,
+                        s.limitesSala.yMin - 6f,
+                        s.limitesSala.width + 12.0f,
+                        s.limitesSala.height + 12.0f
                     );
                     if (rSala.Overlaps(rectCamLuz))
                     {
