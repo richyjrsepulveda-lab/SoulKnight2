@@ -50,16 +50,17 @@ namespace SoulKnight
             // Margen interior de 2.2 unidades para asegurar que el jugador ya entró a la sala antes de cerrar puertas
             limitesInteriores = new Rect(xMin + 1.8f, yMin + 1.8f, Mathf.Max(2f, w - 3.6f), Mathf.Max(2f, h - 3.6f));
 
+            // Todas las salas y pasillos del mapa nacen descubiertos e iluminados con sus antorchas encendidas
+            descubierta = true;
+            EncenderAntorchas(true);
+
             if (esSalaInicio)
             {
-                descubierta = true;
                 despejada = true;
-                EncenderAntorchas(true);
             }
             else if (esSalaTienda)
             {
-                descubierta = false;
-                despejada = true; // Despejada para que no haya combate ni puertas cerradas
+                despejada = true;
             }
         }
 
@@ -175,14 +176,14 @@ namespace SoulKnight
 
                     if (_llamasAntorchas[i] != null)
                     {
-                        float escLlamaX = 1.35f + Mathf.Sin(Time.time * 14f + desfase) * 0.18f;
-                        float escLlamaY = 1.48f + Mathf.Cos(Time.time * 18f + desfase) * 0.22f;
+                        float escLlamaX = 0.82f + Mathf.Sin(Time.time * 14f + desfase) * 0.10f;
+                        float escLlamaY = 0.90f + Mathf.Cos(Time.time * 18f + desfase) * 0.12f;
                         _llamasAntorchas[i].transform.localScale = new Vector3(escLlamaX, escLlamaY, 1f);
                     }
 
                     if (i < _lucesAntorchas.Count && _lucesAntorchas[i] != null)
                     {
-                        float escHalo = 26.0f * _progresoEncendido * flicker;
+                        float escHalo = 42.0f * _progresoEncendido * flicker;
                         _lucesAntorchas[i].transform.localScale = new Vector3(escHalo, escHalo, 1f);
                     }
                 }
