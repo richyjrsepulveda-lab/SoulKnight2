@@ -54,6 +54,16 @@ namespace SoulKnight
             descubierta = true;
             EncenderAntorchas(true);
 
+            // Luz ambiental total que inunda la sala entera permanentemente durante toda la run
+            var luzObj = new GameObject("LuzTotalSala");
+            luzObj.transform.SetParent(transform, false);
+            luzObj.transform.localPosition = Vector3.zero;
+            var srLuz = luzObj.AddComponent<SpriteRenderer>();
+            srLuz.sprite = GeneradorMazmorra.ObtenerSpriteLuzSala();
+            srLuz.sortingOrder = 0;
+            srLuz.transform.localScale = new Vector3(w + 2f, h + 2f, 1f);
+            srLuz.color = new Color(1f, 0.96f, 0.85f, 0.45f);
+
             if (esSalaInicio)
             {
                 despejada = true;

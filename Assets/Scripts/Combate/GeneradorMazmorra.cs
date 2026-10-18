@@ -797,6 +797,7 @@ namespace SoulKnight
 
         private static Sprite _spriteHaloLuzCalida;
         private static Sprite _spritePortalInvocacion;
+        private static Sprite _spriteLuzSala;
 
         private void AsegurarSpritesAntorcha()
         {
@@ -830,36 +831,8 @@ namespace SoulKnight
                 _spriteCirculoLuz = Sprite.Create(texLlama, new Rect(0, 0, 12, 16), new Vector2(0.5f, 0.2f), 16f);
             }
 
-            if (_spriteHaloLuzCalida == null)
-            {
-                // Halo radial cálido (48x48) que hace evidente que la luz emana de cada antorcha
-                int tam = 48;
-                Texture2D texHalo = new Texture2D(tam, tam, TextureFormat.RGBA32, false);
-                texHalo.filterMode = FilterMode.Bilinear;
-                texHalo.wrapMode = TextureWrapMode.Clamp;
-                Vector2 centro = new Vector2((tam - 1) * 0.5f, (tam - 1) * 0.5f);
-                float maxR = tam * 0.5f;
-                for (int y = 0; y < tam; y++)
-                {
-                    for (int x = 0; x < tam; x++)
-                    {
-                        float d = Vector2.Distance(new Vector2(x, y), centro) / maxR;
-                        if (d >= 1f)
-                        {
-                            texHalo.SetPixel(x, y, Color.clear);
-                        }
-                        else
-                        {
-                            float falloff = (1f - d) * (1f - d);
-                            Color col = Color.Lerp(new Color(1f, 0.55f, 0.12f, 0f), new Color(1f, 0.88f, 0.42f, 0.55f), falloff);
-                            col.a = falloff * 0.58f;
-                            texHalo.SetPixel(x, y, col);
-                        }
-                    }
-                }
-                texHalo.Apply();
-                _spriteHaloLuzCalida = Sprite.Create(texHalo, new Rect(0, 0, tam, tam), new Vector2(0.5f, 0.5f), 24f);
-            }
+            ObtenerSpriteHaloLuz();
+            ObtenerSpriteLuzSala();
 
             if (_spritePortalInvocacion == null)
             {
@@ -912,6 +885,63 @@ namespace SoulKnight
                 texA.Apply();
                 _spriteAntorchaBase = Sprite.Create(texA, new Rect(0, 0, 12, 20), new Vector2(0.5f, 0.5f), 16f);
             }
+        }
+
+        public static Sprite ObtenerSpriteHaloLuz()
+        {
+            if (_spriteHaloLuzCalida != null) return _spriteHaloLuzCalida;
+            int tam = 48;
+            Texture2D texHalo = new Texture2D(tam, tam, TextureFormat.RGBA32, false);
+            texHalo.filterMode = FilterMode.Bilinear;
+            texHalo.wrapMode = TextureWrapMode.Clamp;
+            Vector2 centro = new Vector2((tam - 1) * 0.5f, (tam - 1) * 0.5f);
+            float maxR = tam * 0.5f;
+            for (int y = 0; y < tam; y++)
+            {
+                for (int x = 0; x < tam; x++)
+                {
+                    float d = Vector2.Distance(new Vector2(x, y), centro) / maxR;
+                    if (d >= 1f)
+                    {
+                        texHalo.SetPixel(x, y, Color.clear);
+                    }
+                    else
+                    {
+                        float falloff = Mathf.SmoothStep(1f, 0f, d);
+                        Color col = Color.Lerp(new Color(1f, 0.65f, 0.20f, 0f), new Color(1f, 0.95f, 0.60f, 0.85f), falloff);
+                        col.a = falloff * 0.75f;
+                        texHalo.SetPixel(x, y, col);
+                    }
+                }
+            }
+            texHalo.Apply();
+            _spriteHaloLuzCalida = Sprite.Create(texHalo, new Rect(0, 0, tam, tam), new Vector2(0.5f, 0.5f), 24f);
+            return _spriteHaloLuzCalida;
+        }
+
+        public static Sprite ObtenerSpriteLuzSala()
+        {
+            if (_spriteLuzSala != null) return _spriteLuzSala;
+            int tam = 32;
+            Texture2D tex = new Texture2D(tam, tam, TextureFormat.RGBA32, false);
+            tex.filterMode = FilterMode.Bilinear;
+            tex.wrapMode = TextureWrapMode.Clamp;
+            Vector2 c = new Vector2((tam - 1) * 0.5f, (tam - 1) * 0.5f);
+            float maxR = tam * 0.5f;
+            for (int y = 0; y < tam; y++)
+            {
+                for (int x = 0; x < tam; x++)
+                {
+                    float nx = Mathf.Abs(x - c.x) / maxR;
+                    float ny = Mathf.Abs(y - c.y) / maxR;
+                    float borde = Mathf.Max(nx, ny);
+                    float alpha = borde > 0.88f ? (1f - borde) / 0.12f : 1f;
+                    tex.SetPixel(x, y, new Color(1f, 0.98f, 0.88f, alpha));
+                }
+            }
+            tex.Apply();
+            _spriteLuzSala = Sprite.Create(tex, new Rect(0, 0, tam, tam), new Vector2(0.5f, 0.5f), (float)tam);
+            return _spriteLuzSala;
         }
 
         private void CrearPortalSpawnEnSala(ControladorSala ctrl, Vector2 pos)
@@ -995,6 +1025,7 @@ namespace SoulKnight
             sr.drawMode = SpriteDrawMode.Tiled;
             sr.size = size;
             sr.sortingOrder = -1;
+            sr.color = new Color(1.15f, 1.15f, 1.18f, 1f); // Suelo claro y nitido
         }
 
         private void CrearMuroSegmento(int gx1, int gx2, int gy, int minX, int minY, Sprite spriteMuro)
@@ -1017,6 +1048,7 @@ namespace SoulKnight
             sr.drawMode = SpriteDrawMode.Tiled;
             sr.size = tam;
             sr.sortingOrder = 2; // Todos los bloques de los bordes siempre visibles por encima de la oscuridad (1)
+            sr.color = new Color(1.15f, 1.15f, 1.18f, 1f); // Muros claros y nitidos
 
             var col = go.AddComponent<BoxCollider2D>();
             col.size = tam;
@@ -1034,6 +1066,7 @@ namespace SoulKnight
             var sr = go.AddComponent<SpriteRenderer>();
             sr.sprite = spriteColumna;
             sr.sortingOrder = 3;
+            sr.color = new Color(1.15f, 1.15f, 1.18f, 1f);
 
             var col = go.AddComponent<BoxCollider2D>();
             col.size = new Vector2(0.9f, 1.3f);
