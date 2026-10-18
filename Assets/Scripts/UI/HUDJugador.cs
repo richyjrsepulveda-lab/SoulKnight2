@@ -2617,6 +2617,7 @@ namespace SoulKnight
                     0 => IdHabilidad.Fuego_BolaFuego,
                     1 => IdHabilidad.Fuego_Lanzallamas,
                     2 => IdHabilidad.Fuego_Armadura,
+                    3 => IdHabilidad.Fuego_Meteorito,
                     _ => IdHabilidad.Ninguna
                 },
                 TipoPersonaje.Hielo => index switch

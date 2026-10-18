@@ -29,7 +29,7 @@ namespace SoulKnight
             if (_sr == null) _sr = gameObject.AddComponent<SpriteRenderer>();
             _sr.sprite = _spriteRastro;
             _sr.sortingOrder = 2; // Por detrás de entidades pero sobre el suelo
-            transform.localScale = Vector3.one * 0.9f;
+            transform.localScale = Vector3.one * 1.25f;
         }
 
         private static void AsegurarSprite()
@@ -71,7 +71,7 @@ namespace SoulKnight
             _tiempoVida += Time.deltaTime;
 
             // Crepitación y pulsación visual
-            float pulso = 0.88f + Mathf.Sin(_tiempoVida * 16f) * 0.09f;
+            float pulso = 1.22f + Mathf.Sin(_tiempoVida * 16f) * 0.12f;
 
             // Desvanecimiento suave en los últimos instantes
             if (_tiempoVida > _duracion - 0.6f)
@@ -106,7 +106,7 @@ namespace SoulKnight
             if (Unity.Netcode.NetworkManager.Singleton != null && !Unity.Netcode.NetworkManager.Singleton.IsServer)
                 return;
 
-            Collider2D[] cols = Physics2D.OverlapCircleAll(transform.position, 0.75f);
+            Collider2D[] cols = Physics2D.OverlapCircleAll(transform.position, 0.85f);
             foreach (var col in cols)
             {
                 if (col == null || col.isTrigger) continue;

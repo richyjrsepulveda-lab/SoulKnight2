@@ -51,6 +51,7 @@ namespace SoulKnight
 
         // Control de efectos y rastro de fuego
         private float _timerRastroFuego = 0f;
+        private Vector2 _ultimaPosRastroFuego = Vector2.zero;
         private GameObject _auraSupernova;
 
         // Lógica de daño continuo para cabeza de fuego
@@ -240,13 +241,15 @@ namespace SoulKnight
                 }
             }
 
-            // Generación de rastro de fuego ardiente al caminar en Supernova (Servidor)
+            // Generación continua y densa de rastro de fuego ardiente al caminar en Supernova (Servidor)
             if (IsServer && SupernovaActiva.Value)
             {
                 _timerRastroFuego -= Time.deltaTime;
-                if (_timerRastroFuego <= 0f && ObtenerMovimientoEfectivo().sqrMagnitude > 0.05f)
+                float distDesdeUltimo = Vector2.Distance(transform.position, _ultimaPosRastroFuego);
+                if ((_timerRastroFuego <= 0f || distDesdeUltimo > 0.40f) && ObtenerMovimientoEfectivo().sqrMagnitude > 0.04f)
                 {
-                    _timerRastroFuego = 0.16f;
+                    _timerRastroFuego = 0.05f;
+                    _ultimaPosRastroFuego = transform.position;
                     CrearRastroFuego(transform.position);
                     CrearRastroFuegoClientRpc(transform.position);
                 }
