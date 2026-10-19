@@ -77,14 +77,17 @@ namespace SoulKnight
 
         private AudioSource _fuenteAudioEra;
 
+        [Header("Dimensiones")]
+        public float radioZona = 8.5f;
+
         void Awake()
         {
-            // Radio de congelación equilibrado para combate sin cubrir todo el mapa
+            // Radio de la ulti: el collider y todas las capas visuales sincronizadas al mismo tamaño exacto
             var col = GetComponent<CircleCollider2D>();
             if (col != null)
             {
                 col.isTrigger = true;
-                col.radius = 4.8f;
+                col.radius = radioZona;
             }
 
             _escalaObjetivo = Vector3.one * 1.0f;
@@ -116,6 +119,11 @@ namespace SoulKnight
         {
             GenerarSpritesProcedurales();
 
+            // Los sprites procedurales tienen textura 128x128 con PPU 32 -> diámetro base en unidades = 128 / 32 = 4.0 unidades
+            // Para que el diámetro visual coincida exactamente con el diámetro del collider (2 * radioZona):
+            float baseSpriteUnits = 128f / 32f;
+            float escalaVisual = (radioZona * 2f) / baseSpriteUnits;
+
             // 1. Fondo de Escarcha y Suelo Congelado (Capa 1)
             if (fondoAura == null)
             {
@@ -127,10 +135,10 @@ namespace SoulKnight
                 fondoAura.sprite = _spriteAuraBlizzard;
                 fondoAura.color = new Color(0.18f, 0.65f, 1f, 0.40f);
                 fondoAura.sortingOrder = 1;
-                fondoAura.transform.localScale = Vector3.one * 9.6f;
+                fondoAura.transform.localScale = Vector3.one * escalaVisual;
             }
 
-            // 2. Vórtice Interior de Viento Huracanado (Capa 2)
+            // 2. Vórtice Interior de Viento Huracanado (Capa 2) - Se ajusta exactamente al área de la ulti
             if (vorticeInterior == null)
             {
                 var vObj = transform.Find("VorticeInterior");
@@ -145,10 +153,10 @@ namespace SoulKnight
                     sr.color = new Color(0.65f, 0.92f, 1f, 0.75f);
                     sr.sortingOrder = 2;
                 }
-                vorticeInterior.localScale = Vector3.one * 8.2f;
+                vorticeInterior.localScale = Vector3.one * (escalaVisual * 0.98f);
             }
 
-            // 3. Anillo Exterior de Tormenta de Nieve (Capa 3)
+            // 3. Anillo Exterior de Tormenta de Nieve (Capa 3) - Marca el límite perimetral exacto
             if (anilloExterior == null)
             {
                 var aObj = transform.Find("AnilloExterior");
@@ -163,7 +171,7 @@ namespace SoulKnight
                     sr.color = new Color(0.85f, 0.98f, 1f, 0.80f);
                     sr.sortingOrder = 3;
                 }
-                anilloExterior.localScale = Vector3.one * 9.8f;
+                anilloExterior.localScale = Vector3.one * escalaVisual;
             }
 
             // 4. Destello de Tick Radial (Capa 4)
@@ -177,7 +185,7 @@ namespace SoulKnight
                 destelloTick.sprite = _spriteAuraBlizzard;
                 destelloTick.color = new Color(1f, 1f, 1f, 0f);
                 destelloTick.sortingOrder = 4;
-                destelloTick.transform.localScale = Vector3.one * 10.2f;
+                destelloTick.transform.localScale = Vector3.one * escalaVisual;
             }
 
             // 5. Enjambre Dinámico de Copos y Esquirlas de Hielo
@@ -202,16 +210,16 @@ namespace SoulKnight
                     : new Color(0.95f, 0.98f, 1f, UnityEngine.Random.Range(0.70f, 0.98f));
                 sr.sortingOrder = 5;
 
-                float escala = UnityEngine.Random.Range(0.45f, 0.90f);
+                float escala = UnityEngine.Random.Range(0.40f, 0.75f);
                 pObj.transform.localScale = Vector3.one * escala;
 
                 var part = new ParticulaVentisca
                 {
                     transform = pObj.transform,
                     renderer = sr,
-                    distanciaOrbital = UnityEngine.Random.Range(1.0f, 4.5f),
+                    distanciaOrbital = UnityEngine.Random.Range(0.8f, radioZona * 0.92f),
                     anguloActual = (360f / totalParticulas) * i + UnityEngine.Random.Range(-12f, 12f),
-                    velocidadOrbital = UnityEngine.Random.Range(110f, 210f),
+                    velocidadOrbital = UnityEngine.Random.Range(100f, 190f),
                     desfaseOscilacion = UnityEngine.Random.Range(0f, Mathf.PI * 2f),
                     escalaBase = escala
                 };
@@ -276,8 +284,8 @@ namespace SoulKnight
                 p.anguloActual += p.velocidadOrbital * Time.deltaTime;
                 float rad = p.anguloActual * Mathf.Deg2Rad;
 
-                // Oscilación radial turbulenta del viento (acerca y aleja los copos del ojo de la tormenta)
-                float radioDinamico = p.distanciaOrbital + Mathf.Sin(Time.time * 3.5f + p.desfaseOscilacion) * 0.40f;
+                // Oscilación radial turbulenta del viento (acerca y aleja los copos del ojo de la tormenta dentro de la zona de la ulti)
+                float radioDinamico = Mathf.Clamp(p.distanciaOrbital + Mathf.Sin(Time.time * 3.5f + p.desfaseOscilacion) * 0.35f, 0.4f, radioZona * 0.96f);
                 Vector3 nuevaPos = new Vector3(Mathf.Cos(rad) * radioDinamico, Mathf.Sin(rad) * radioDinamico, 0f);
                 p.transform.localPosition = nuevaPos;
 
