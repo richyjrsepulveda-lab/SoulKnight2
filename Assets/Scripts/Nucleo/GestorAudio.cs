@@ -248,6 +248,14 @@ namespace SoulKnight
             if (clip != null) _clipsSFX[tipo] = clip;
         }
 
+        public AudioClip ObtenerClipSFX(TipoSFX tipo)
+        {
+            if (_clipsSFX.TryGetValue(tipo, out var c)) return c;
+            return null;
+        }
+
+        public static AudioClip GetClipSFX(TipoSFX tipo) => Instancia != null ? Instancia.ObtenerClipSFX(tipo) : null;
+
         private void CargarPreferenciasVolumen()
         {
             VolumenMaster = PlayerPrefs.GetFloat("VolumenMaster", 1.0f);

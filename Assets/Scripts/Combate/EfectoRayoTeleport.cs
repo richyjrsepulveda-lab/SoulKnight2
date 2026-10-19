@@ -43,22 +43,23 @@ namespace SoulKnight
         public static void Crear(Vector2 posicion)
         {
             var go = new GameObject("EfectoRayoTeleport");
-            go.transform.position = new Vector3(posicion.x, posicion.y, -0.6f);
+            go.transform.position = new Vector3(posicion.x, posicion.y, -1.2f);
             var efecto = go.AddComponent<EfectoRayoTeleport>();
             efecto.Inicializar(posicion);
         }
 
         public void Inicializar(Vector2 centro)
         {
-            transform.position = new Vector3(centro.x, centro.y, -0.6f);
+            transform.position = new Vector3(centro.x, centro.y, -1.2f);
             Material mat = MaterialUtil.SpritesDefault;
 
             // 1. Rayo Principal - Halo Glow exterior (Cian eléctrico / Oro)
             _lrGlow = gameObject.AddComponent<LineRenderer>();
             _lrGlow.material = mat;
-            _lrGlow.sortingOrder = 14;
-            _lrGlow.startWidth = 0.60f;
-            _lrGlow.endWidth = 0.35f;
+            _lrGlow.useWorldSpace = false;
+            _lrGlow.sortingOrder = 55;
+            _lrGlow.startWidth = 0.70f;
+            _lrGlow.endWidth = 0.40f;
             _lrGlow.startColor = new Color(0.1f, 0.88f, 1f, 0.95f);
             _lrGlow.endColor = new Color(1f, 0.95f, 0.25f, 0.95f);
 
@@ -67,9 +68,10 @@ namespace SoulKnight
             coreObj.transform.SetParent(transform, false);
             _lrCore = coreObj.AddComponent<LineRenderer>();
             _lrCore.material = mat;
-            _lrCore.sortingOrder = 16;
-            _lrCore.startWidth = 0.22f;
-            _lrCore.endWidth = 0.12f;
+            _lrCore.useWorldSpace = false;
+            _lrCore.sortingOrder = 56;
+            _lrCore.startWidth = 0.28f;
+            _lrCore.endWidth = 0.16f;
             _lrCore.startColor = Color.white;
             _lrCore.endColor = new Color(1f, 1f, 0.9f, 1f);
 
@@ -78,9 +80,10 @@ namespace SoulKnight
             rama1Obj.transform.SetParent(transform, false);
             _lrRama1 = rama1Obj.AddComponent<LineRenderer>();
             _lrRama1.material = mat;
-            _lrRama1.sortingOrder = 15;
-            _lrRama1.startWidth = 0.18f;
-            _lrRama1.endWidth = 0.04f;
+            _lrRama1.useWorldSpace = false;
+            _lrRama1.sortingOrder = 54;
+            _lrRama1.startWidth = 0.22f;
+            _lrRama1.endWidth = 0.05f;
             _lrRama1.startColor = new Color(0.3f, 0.95f, 1f, 0.9f);
             _lrRama1.endColor = new Color(1f, 1f, 1f, 0.3f);
 
@@ -89,9 +92,10 @@ namespace SoulKnight
             rama2Obj.transform.SetParent(transform, false);
             _lrRama2 = rama2Obj.AddComponent<LineRenderer>();
             _lrRama2.material = mat;
-            _lrRama2.sortingOrder = 15;
-            _lrRama2.startWidth = 0.16f;
-            _lrRama2.endWidth = 0.03f;
+            _lrRama2.useWorldSpace = false;
+            _lrRama2.sortingOrder = 54;
+            _lrRama2.startWidth = 0.20f;
+            _lrRama2.endWidth = 0.04f;
             _lrRama2.startColor = new Color(1f, 0.92f, 0.3f, 0.9f);
             _lrRama2.endColor = new Color(1f, 1f, 1f, 0.3f);
 
@@ -100,11 +104,12 @@ namespace SoulKnight
             pilarObj.transform.SetParent(transform, false);
             _lrPilarDestello = pilarObj.AddComponent<LineRenderer>();
             _lrPilarDestello.material = mat;
-            _lrPilarDestello.sortingOrder = 13;
-            _lrPilarDestello.startWidth = 1.35f;
-            _lrPilarDestello.endWidth = 0.70f;
-            _lrPilarDestello.startColor = new Color(0.7f, 0.95f, 1f, 0.75f);
-            _lrPilarDestello.endColor = new Color(1f, 1f, 0.8f, 0.5f);
+            _lrPilarDestello.useWorldSpace = false;
+            _lrPilarDestello.sortingOrder = 52;
+            _lrPilarDestello.startWidth = 1.45f;
+            _lrPilarDestello.endWidth = 0.80f;
+            _lrPilarDestello.startColor = new Color(0.7f, 0.95f, 1f, 0.85f);
+            _lrPilarDestello.endColor = new Color(1f, 1f, 0.8f, 0.55f);
             _lrPilarDestello.positionCount = 2;
             _lrPilarDestello.SetPosition(0, new Vector3(0f, ALTURA_CIELO, 0f));
             _lrPilarDestello.SetPosition(1, Vector3.zero);
@@ -114,9 +119,10 @@ namespace SoulKnight
             anilloObj.transform.SetParent(transform, false);
             _lrAnilloSuelo = anilloObj.AddComponent<LineRenderer>();
             _lrAnilloSuelo.material = mat;
-            _lrAnilloSuelo.sortingOrder = 12;
-            _lrAnilloSuelo.startWidth = 0.30f;
-            _lrAnilloSuelo.endWidth = 0.06f;
+            _lrAnilloSuelo.useWorldSpace = false;
+            _lrAnilloSuelo.sortingOrder = 51;
+            _lrAnilloSuelo.startWidth = 0.35f;
+            _lrAnilloSuelo.endWidth = 0.08f;
             _lrAnilloSuelo.startColor = new Color(0.2f, 0.9f, 1f, 0.95f);
             _lrAnilloSuelo.endColor = new Color(1f, 0.95f, 0.3f, 0.75f);
             _lrAnilloSuelo.positionCount = 24;
@@ -233,7 +239,7 @@ namespace SoulKnight
                 var sr = sparkObj.AddComponent<SpriteRenderer>();
                 sr.sprite = _spriteChispa;
                 sr.material = MaterialUtil.SpritesDefault;
-                sr.sortingOrder = 17;
+                sr.sortingOrder = 57;
                 sr.color = (i % 2 == 0)
                     ? new Color(0.2f, 0.95f, 1f, 1f)
                     : new Color(1f, 0.95f, 0.35f, 1f);
@@ -336,7 +342,7 @@ namespace SoulKnight
                 var ch = _chispas[i];
                 if (ch.go == null) continue;
 
-                ch.go.transform.position += (Vector3)(ch.vel * dt);
+                ch.go.transform.localPosition += (Vector3)(ch.vel * dt);
                 ch.go.transform.Rotate(0f, 0f, ch.rotSpeed * dt);
                 ch.vel *= Mathf.Exp(-5.5f * dt); // Fricción atmosférica
 

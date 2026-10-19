@@ -67,38 +67,113 @@ namespace SoulKnight
         private float _timerTickRayo = 0f;
         private float _tiempoRayoActivo = 0f;
 
+        // Efectos audiovisuales sincronizados
+        private AudioSource _fuenteAudioCarga;
+        private AudioSource _fuenteAudioDisparo;
+        private float _timerAfterImageDash = 0f;
+
         private static readonly RaycastHit2D[] _rayHitsBuffer = new RaycastHit2D[32];
         private static readonly Collider2D[] _colHitsBuffer = new Collider2D[32];
 
         protected override float ObtenerVelocidadCorrer() => velocidadBase * 2.0f; // Correr = 800 px/s
 
+        private void AsegurarFuentesAudio()
+        {
+            if (_fuenteAudioCarga == null)
+            {
+                _fuenteAudioCarga = gameObject.AddComponent<AudioSource>();
+                _fuenteAudioCarga.loop = true;
+                _fuenteAudioCarga.playOnAwake = false;
+                _fuenteAudioCarga.spatialBlend = 0f;
+            }
+            if (_fuenteAudioDisparo == null)
+            {
+                _fuenteAudioDisparo = gameObject.AddComponent<AudioSource>();
+                _fuenteAudioDisparo.loop = true;
+                _fuenteAudioDisparo.playOnAwake = false;
+                _fuenteAudioDisparo.spatialBlend = 0f;
+            }
+        }
+
+        private void IniciarAudioCarga()
+        {
+            AsegurarFuentesAudio();
+            var clip = GestorAudio.GetClipSFX(TipoSFX.CargandoUltiRayo);
+            if (clip != null)
+            {
+                _fuenteAudioCarga.clip = clip;
+                _fuenteAudioCarga.volume = (GestorAudio.Instancia != null ? GestorAudio.Instancia.VolumenMaster * GestorAudio.Instancia.VolumenSFX : 0.85f);
+                if (!_fuenteAudioCarga.isPlaying) _fuenteAudioCarga.Play();
+            }
+        }
+
+        private void DetenerAudioCarga()
+        {
+            if (_fuenteAudioCarga != null && _fuenteAudioCarga.isPlaying)
+            {
+                _fuenteAudioCarga.Stop();
+            }
+            GestorAudio.DetenerSFXLoop();
+        }
+
+        private void IniciarAudioDisparo()
+        {
+            AsegurarFuentesAudio();
+            DetenerAudioCarga();
+            var clip = GestorAudio.GetClipSFX(TipoSFX.LanzandoUltiRayo);
+            if (clip != null)
+            {
+                _fuenteAudioDisparo.clip = clip;
+                _fuenteAudioDisparo.volume = (GestorAudio.Instancia != null ? GestorAudio.Instancia.VolumenMaster * GestorAudio.Instancia.VolumenSFX : 0.85f) * 1.35f;
+                _fuenteAudioDisparo.Play();
+            }
+        }
+
+        private void DetenerAudioDisparo()
+        {
+            if (_fuenteAudioDisparo != null && _fuenteAudioDisparo.isPlaying)
+            {
+                _fuenteAudioDisparo.Stop();
+            }
+        }
+
         public override void OnNetworkSpawn()
         {
             base.OnNetworkSpawn();
+            AsegurarFuentesAudio();
+
             RayoCargando.OnValueChanged += (prev, act) => {
                 if (visualCargaRayo) visualCargaRayo.enabled = act;
                 if (act)
                 {
-                    if (IsOwner) GestorAudio.PlaySFXLoop(TipoSFX.CargandoUltiRayo);
+                    IniciarAudioCarga();
                 }
                 else
                 {
-                    if (IsOwner) GestorAudio.DetenerSFXLoop();
+                    DetenerAudioCarga();
                 }
             };
             RayoLanzado.OnValueChanged += (prev, act) => {
                 if (visualRayoElectrico) visualRayoElectrico.enabled = act;
                 if (act)
                 {
-                    GestorAudio.PlaySFX(TipoSFX.LanzandoUltiRayo, 1.35f);
+                    IniciarAudioDisparo();
                     if (CamaraSeguir.Instancia != null)
                     {
                         CamaraSeguir.Instancia.Sacudir(0.45f + EscalaCargaRayo.Value * 0.12f, 0.45f);
                     }
                 }
+                else
+                {
+                    DetenerAudioDisparo();
+                }
             };
             DashActivo.OnValueChanged += (prev, act) => {
-                if (act) GestorAudio.PlaySFX(TipoSFX.DashElectrico);
+                if (act)
+                {
+                    GestorAudio.PlaySFX(TipoSFX.DashElectrico, 1.25f);
+                    CrearArcoRayoDash(_dirDash);
+                }
             };
         }
 
@@ -118,6 +193,18 @@ namespace SoulKnight
             }
 
             base.Update();
+
+            // Animación cinematográfica de velocidad para el Dash Eléctrico (After-images + Arcos Zenitsu)
+            if (DashActivo.Value)
+            {
+                _timerAfterImageDash -= Time.deltaTime;
+                if (_timerAfterImageDash <= 0f)
+                {
+                    _timerAfterImageDash = 0.032f;
+                    CrearAfterImageDash();
+                    CrearArcoRayoDash(_dirDash);
+                }
+            }
 
             if (EsControlLocal)
             {
@@ -346,10 +433,6 @@ namespace SoulKnight
                     Vector2 origen = transform.position;
                     Vector2 destino = Controles.PosicionMouseMundo();
 
-                    // 1 Rayo celestial donde está el jugador (origen) antes de ser teletransportado
-                    EfectoRayoTeleport.Crear(origen);
-                    GestorAudio.PlaySFX(TipoSFX.Teleport, 1.2f);
-
                     if (NetworkManager != null && NetworkManager.IsListening)
                     {
                         TeleportServerRpc(destino);
@@ -373,6 +456,7 @@ namespace SoulKnight
                 if (!Controles.Mantenida(Controles.Ultimate) || _tiempoCargaLocal >= tiempoCargaMaximo)
                 {
                     _cargandoLocal = false;
+                    DetenerAudioCarga();
                     _cdRayoRestante = cooldownRayo;
                     if (NetworkManager != null && NetworkManager.IsListening)
                     {
@@ -390,6 +474,7 @@ namespace SoulKnight
                 {
                     _cargandoLocal = true;
                     _tiempoCargaLocal = 0f;
+                    IniciarAudioCarga();
                     if (NetworkManager != null && NetworkManager.IsListening)
                     {
                         ComenzarCargaRayoServerRpc();
@@ -399,7 +484,6 @@ namespace SoulKnight
                         RayoCargando.Value = true;
                         _tiempoCargaActual = 0f;
                         _timerRayoEntorno = 0.08f;
-                        GestorAudio.PlaySFXLoop(TipoSFX.CargandoUltiRayo);
                     }
                 }
                 else
@@ -407,6 +491,98 @@ namespace SoulKnight
                     NotificarHabilidadBloqueada(motivo, Color.yellow, true);
                 }
             }
+        }
+
+        private void CrearAfterImageDash()
+        {
+            var srOriginal = GetComponent<SpriteRenderer>();
+            if (srOriginal == null || srOriginal.sprite == null) return;
+
+            var ghostObj = new GameObject("AfterImageDash");
+            ghostObj.transform.position = transform.position;
+            ghostObj.transform.rotation = transform.rotation;
+            ghostObj.transform.localScale = transform.localScale;
+
+            var sr = ghostObj.AddComponent<SpriteRenderer>();
+            sr.sprite = srOriginal.sprite;
+            sr.flipX = srOriginal.flipX;
+            sr.flipY = srOriginal.flipY;
+            sr.material = MaterialUtil.SpritesDefault;
+            sr.sortingOrder = Mathf.Max(1, srOriginal.sortingOrder - 1);
+            sr.color = new Color(0.25f, 0.90f, 1f, 0.75f); // Azul eléctrico / Cian brillante
+
+            StartCoroutine(RutinaFadeAfterImage(sr, ghostObj));
+        }
+
+        private IEnumerator RutinaFadeAfterImage(SpriteRenderer sr, GameObject go)
+        {
+            float dur = 0.28f;
+            float t = 0f;
+            Color baseCol = sr != null ? sr.color : Color.white;
+            while (t < dur)
+            {
+                t += Time.deltaTime;
+                float p = t / dur;
+                if (sr != null)
+                {
+                    sr.color = new Color(baseCol.r, baseCol.g, baseCol.b, Mathf.Lerp(baseCol.a, 0f, p));
+                }
+                yield return null;
+            }
+            if (go != null) Destroy(go);
+        }
+
+        private void CrearArcoRayoDash(Vector2 dir)
+        {
+            if (dir.sqrMagnitude < 0.001f) dir = Vector2.right;
+            var boltObj = new GameObject("ArcoRayoDash");
+            boltObj.transform.position = transform.position;
+            var lr = boltObj.AddComponent<LineRenderer>();
+            lr.material = MaterialUtil.SpritesDefault;
+            lr.useWorldSpace = true;
+            lr.sortingOrder = 35;
+            lr.startWidth = 0.26f;
+            lr.endWidth = 0.08f;
+            lr.startColor = Color.white;
+            lr.endColor = new Color(1f, 0.95f, 0.25f, 0.85f);
+
+            const int pts = 6;
+            lr.positionCount = pts;
+            Vector2 normal = new Vector2(-dir.y, dir.x);
+            Vector3 inicio = transform.position - (Vector3)(dir * 0.9f);
+            Vector3 fin = transform.position + (Vector3)(dir * 0.7f);
+
+            for (int i = 0; i < pts; i++)
+            {
+                float frac = (float)i / (pts - 1);
+                Vector3 pt = Vector3.Lerp(inicio, fin, frac);
+                if (i > 0 && i < pts - 1)
+                {
+                    float jitter = (UnityEngine.Random.value - 0.5f) * 0.75f;
+                    pt += (Vector3)(normal * jitter);
+                }
+                lr.SetPosition(i, new Vector3(pt.x, pt.y, -0.2f));
+            }
+
+            StartCoroutine(RutinaFadeArcoDash(lr, boltObj));
+        }
+
+        private IEnumerator RutinaFadeArcoDash(LineRenderer lr, GameObject go)
+        {
+            float dur = 0.18f;
+            float t = 0f;
+            while (t < dur)
+            {
+                t += Time.deltaTime;
+                float alpha = Mathf.Clamp01(1f - (t / dur));
+                if (lr != null)
+                {
+                    lr.startColor = new Color(1f, 1f, 1f, alpha);
+                    lr.endColor = new Color(1f, 0.95f, 0.25f, alpha * 0.85f);
+                }
+                yield return null;
+            }
+            if (go != null) Destroy(go);
         }
 
         [ServerRpc(RequireOwnership = false)]
@@ -721,7 +897,8 @@ namespace SoulKnight
             _cdRayoRestante = 0f;
             _cargandoLocal = false;
             _tiempoCargaLocal = 0f;
-            GestorAudio.DetenerSFXLoop();
+            DetenerAudioCarga();
+            DetenerAudioDisparo();
 
             if (EsControlLocal && HUDJugador.Instancia != null)
             {
@@ -753,7 +930,8 @@ namespace SoulKnight
             _longitudRayoActual = 0f;
             _distanciaRecorridaDash = 0f;
 
-            GestorAudio.DetenerSFXLoop();
+            DetenerAudioCarga();
+            DetenerAudioDisparo();
 
             if (visualCargaRayo != null)
             {

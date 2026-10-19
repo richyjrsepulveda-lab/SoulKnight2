@@ -48,7 +48,10 @@ namespace SoulKnight
         // Comandos y Canje de Códigos
         private InputField _inputCodigoAdmin;
         private Text _txtFeedbackComando;
-        private GameObject _seccionBotonesAdmin;
+        private GameObject _seccionAccesoAdmin;
+        private GameObject _modalAdmin;
+        private Text _txtFeedbackModalAdmin;
+        private InputField _inputComandoModal;
         private bool _adminDesbloqueado = false;
 
         private PestanaOpciones _pestanaActual = PestanaOpciones.Audio;
@@ -430,72 +433,56 @@ namespace SoulKnight
             rtFeedback.anchoredPosition = new Vector2(0f, -294f);
             rtFeedback.sizeDelta = new Vector2(820f, 26f);
 
-            // ==================== SECCIÓN ADMIN (DESBLOQUEADA POR CÓDIGO SECRETO) ====================
-            _seccionBotonesAdmin = new GameObject("SeccionBotonesAdmin");
-            _seccionBotonesAdmin.transform.SetParent(_panelAudio.transform, false);
-            var rtSecAdmin = _seccionBotonesAdmin.AddComponent<RectTransform>();
-            rtSecAdmin.anchorMin = new Vector2(0.5f, 1f);
-            rtSecAdmin.anchorMax = new Vector2(0.5f, 1f);
-            rtSecAdmin.pivot = new Vector2(0.5f, 1f);
-            rtSecAdmin.anchoredPosition = new Vector2(0f, -324f);
-            rtSecAdmin.sizeDelta = new Vector2(820f, 165f);
+            // ==================== BOTÓN ACCESO ADMIN (SOLO VISIBLE SI ESTÁ DESBLOQUEADO) ====================
+            _seccionAccesoAdmin = new GameObject("SeccionAccesoAdmin");
+            _seccionAccesoAdmin.transform.SetParent(_panelAudio.transform, false);
+            var rtAccesoAdmin = _seccionAccesoAdmin.AddComponent<RectTransform>();
+            rtAccesoAdmin.anchorMin = new Vector2(0.5f, 1f);
+            rtAccesoAdmin.anchorMax = new Vector2(0.5f, 1f);
+            rtAccesoAdmin.pivot = new Vector2(0.5f, 1f);
+            rtAccesoAdmin.anchoredPosition = new Vector2(0f, -345f);
+            rtAccesoAdmin.sizeDelta = new Vector2(820f, 60f);
 
-            var titAdmin = new GameObject("TituloAdmin");
-            titAdmin.transform.SetParent(_seccionBotonesAdmin.transform, false);
-            var txtTitAdmin = titAdmin.AddComponent<Text>();
-            txtTitAdmin.font = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            txtTitAdmin.fontSize = 12;
-            txtTitAdmin.fontStyle = FontStyle.Bold;
-            txtTitAdmin.alignment = TextAnchor.MiddleLeft;
-            txtTitAdmin.color = new Color(1f, 0.85f, 0.25f, 1f);
-            txtTitAdmin.text = "⚡ PANEL DE ADMINISTRADOR & DESARROLLADOR DESBLOQUEADO";
-            AgregarOutline(txtTitAdmin);
-            var rtTitAdmin = titAdmin.GetComponent<RectTransform>();
-            rtTitAdmin.anchorMin = new Vector2(0f, 1f);
-            rtTitAdmin.anchorMax = new Vector2(1f, 1f);
-            rtTitAdmin.pivot = new Vector2(0f, 1f);
-            rtTitAdmin.anchoredPosition = new Vector2(15f, 0f);
-            rtTitAdmin.sizeDelta = new Vector2(0f, 20f);
+            // Botón Abrir Panel Admin
+            var btnAbrirModalObj = new GameObject("BotonAbrirModalAdmin");
+            btnAbrirModalObj.transform.SetParent(_seccionAccesoAdmin.transform, false);
+            var rtAbrirM = btnAbrirModalObj.AddComponent<RectTransform>();
+            rtAbrirM.anchorMin = new Vector2(0.5f, 0.5f);
+            rtAbrirM.anchorMax = new Vector2(0.5f, 0.5f);
+            rtAbrirM.pivot = new Vector2(0.5f, 0.5f);
+            rtAbrirM.anchoredPosition = new Vector2(-155f, 0f);
+            rtAbrirM.sizeDelta = new Vector2(360f, 42f);
+            var imgAbrirM = btnAbrirModalObj.AddComponent<Image>();
+            imgAbrirM.color = new Color(0.85f, 0.55f, 0.12f, 1f);
+            var btnAbrirM = btnAbrirModalObj.AddComponent<Button>();
 
-            var descAdmin = new GameObject("DescAdmin");
-            descAdmin.transform.SetParent(_seccionBotonesAdmin.transform, false);
-            var txtDescAdmin = descAdmin.AddComponent<Text>();
-            txtDescAdmin.font = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            txtDescAdmin.fontSize = 10;
-            txtDescAdmin.alignment = TextAnchor.MiddleLeft;
-            txtDescAdmin.color = new Color(0.70f, 0.78f, 0.90f, 1f);
-            txtDescAdmin.text = "Atajos de testeo rápido sin fricción:";
-            AgregarOutline(txtDescAdmin);
-            var rtDescAdmin = descAdmin.GetComponent<RectTransform>();
-            rtDescAdmin.anchorMin = new Vector2(0f, 1f);
-            rtDescAdmin.anchorMax = new Vector2(1f, 1f);
-            rtDescAdmin.pivot = new Vector2(0f, 1f);
-            rtDescAdmin.anchoredPosition = new Vector2(15f, -20f);
-            rtDescAdmin.sizeDelta = new Vector2(0f, 16f);
-
-            // Botones de Acceso Rápido Fila 1
-            CrearBotonCheat(_seccionBotonesAdmin.transform, "BtnCheatLvl5", "⭐ +5 NIVELES", new Vector2(-305f, -48f), new Color(0.18f, 0.40f, 0.65f, 1f), () => EjecutarCheat("lvl 5"));
-            CrearBotonCheat(_seccionBotonesAdmin.transform, "BtnCheatMaxLvl", "👑 MAX NIVEL (10)", new Vector2(-102f, -48f), new Color(0.20f, 0.45f, 0.75f, 1f), () => EjecutarCheat("maxlvl"));
-            CrearBotonCheat(_seccionBotonesAdmin.transform, "BtnCheatUnlock", "🔓 UNLOCK ALL SKILLS", new Vector2(102f, -48f), new Color(0.65f, 0.45f, 0.15f, 1f), () => EjecutarCheat("unlockall"));
-            CrearBotonCheat(_seccionBotonesAdmin.transform, "BtnCheatMaestria", "✨ +1000 MAESTRÍA", new Vector2(305f, -48f), new Color(0.55f, 0.35f, 0.65f, 1f), () => EjecutarCheat("maestria 1000"));
-
-            // Botones de Acceso Rápido Fila 2
-            CrearBotonCheat(_seccionBotonesAdmin.transform, "BtnCheatGod", "❤️ MODO DIOS (9999 HP)", new Vector2(-305f, -86f), new Color(0.75f, 0.20f, 0.25f, 1f), () => EjecutarCheat("god"));
-            CrearBotonCheat(_seccionBotonesAdmin.transform, "BtnCheatKill", "💀 MATAR ENEMIGOS", new Vector2(-102f, -86f), new Color(0.45f, 0.18f, 0.22f, 1f), () => EjecutarCheat("killall"));
-            CrearBotonCheat(_seccionBotonesAdmin.transform, "BtnCheatSkip", "🌀 SALTAR NIVEL (Skip)", new Vector2(102f, -86f), new Color(0.20f, 0.50f, 0.45f, 1f), () => EjecutarCheat("skip"));
-            CrearBotonCheat(_seccionBotonesAdmin.transform, "BtnCheatNoCD", "⚡ RESET COOLDOWNS", new Vector2(305f, -86f), new Color(0.25f, 0.45f, 0.30f, 1f), () => EjecutarCheat("resetcd"));
+            var txtAbrirMObj = new GameObject("Texto");
+            txtAbrirMObj.transform.SetParent(btnAbrirModalObj.transform, false);
+            var txtAbrirM = txtAbrirMObj.AddComponent<Text>();
+            txtAbrirM.font = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            txtAbrirM.fontSize = 12;
+            txtAbrirM.fontStyle = FontStyle.Bold;
+            txtAbrirM.alignment = TextAnchor.MiddleCenter;
+            txtAbrirM.color = Color.white;
+            txtAbrirM.text = "👑 ABRIR PANEL DE ADMIN ▾";
+            AgregarOutline(txtAbrirM);
+            var rtTxtAM = txtAbrirMObj.GetComponent<RectTransform>();
+            rtTxtAM.anchorMin = Vector2.zero;
+            rtTxtAM.anchorMax = Vector2.one;
+            rtTxtAM.sizeDelta = Vector2.zero;
+            btnAbrirM.onClick.AddListener(AbrirModalAdmin);
 
             // Botón Bloquear Modo Admin
             var btnBloquearObj = new GameObject("BotonBloquearAdmin");
-            btnBloquearObj.transform.SetParent(_seccionBotonesAdmin.transform, false);
+            btnBloquearObj.transform.SetParent(_seccionAccesoAdmin.transform, false);
             var rtBloquear = btnBloquearObj.AddComponent<RectTransform>();
-            rtBloquear.anchorMin = new Vector2(0.5f, 1f);
-            rtBloquear.anchorMax = new Vector2(0.5f, 1f);
-            rtBloquear.pivot = new Vector2(0.5f, 1f);
-            rtBloquear.anchoredPosition = new Vector2(0f, -126f);
-            rtBloquear.sizeDelta = new Vector2(280f, 30f);
+            rtBloquear.anchorMin = new Vector2(0.5f, 0.5f);
+            rtBloquear.anchorMax = new Vector2(0.5f, 0.5f);
+            rtBloquear.pivot = new Vector2(0.5f, 0.5f);
+            rtBloquear.anchoredPosition = new Vector2(215f, 0f);
+            rtBloquear.sizeDelta = new Vector2(260f, 42f);
             var imgBloquear = btnBloquearObj.AddComponent<Image>();
-            imgBloquear.color = new Color(0.45f, 0.20f, 0.22f, 1f);
+            imgBloquear.color = new Color(0.48f, 0.20f, 0.22f, 1f);
             var btnBloquear = btnBloquearObj.AddComponent<Button>();
 
             var txtBloquearObj = new GameObject("Texto");
@@ -633,6 +620,7 @@ namespace SoulKnight
             botonCerrar.onClick.AddListener(Cerrar);
             botonRestaurar.onClick.AddListener(RestaurarPorDefecto);
 
+            ConstruirModalAdmin(transform);
             ConstruirFilas();
             CambiarPestana(PestanaOpciones.Audio);
         }
@@ -651,6 +639,7 @@ namespace SoulKnight
                 PlayerPrefs.SetInt("AdminDesbloqueado", 1);
                 PlayerPrefs.Save();
                 ActualizarVisibilidadAdmin();
+                AbrirModalAdmin();
                 if (_txtFeedbackComando != null)
                 {
                     _txtFeedbackComando.text = "🔓 ¡MODO ADMIN DESBLOQUEADO! Has habilitado el panel de trucos y desarrollo.";
@@ -722,16 +711,27 @@ namespace SoulKnight
         {
             if (string.IsNullOrWhiteSpace(codigo)) return;
             string resultado = ComandosAdmin.EjecutarComando(codigo);
+            Color col = resultado.StartsWith("✓") 
+                ? new Color(0.40f, 1f, 0.55f, 1f) 
+                : new Color(1f, 0.55f, 0.55f, 1f);
+
             if (_txtFeedbackComando != null)
             {
                 _txtFeedbackComando.text = resultado;
-                _txtFeedbackComando.color = resultado.StartsWith("✓") 
-                    ? new Color(0.40f, 1f, 0.55f, 1f) 
-                    : new Color(1f, 0.55f, 0.55f, 1f);
+                _txtFeedbackComando.color = col;
+            }
+            if (_txtFeedbackModalAdmin != null)
+            {
+                _txtFeedbackModalAdmin.text = resultado;
+                _txtFeedbackModalAdmin.color = col;
             }
             if (_inputCodigoAdmin != null)
             {
                 _inputCodigoAdmin.text = "";
+            }
+            if (_inputComandoModal != null)
+            {
+                _inputComandoModal.text = "";
             }
             GestorAudio.PlaySFX(TipoSFX.Mejora, 0.8f);
         }
@@ -741,6 +741,7 @@ namespace SoulKnight
             _adminDesbloqueado = false;
             PlayerPrefs.SetInt("AdminDesbloqueado", 0);
             PlayerPrefs.Save();
+            CerrarModalAdmin();
             ActualizarVisibilidadAdmin();
             if (_txtFeedbackComando != null)
             {
@@ -752,10 +753,340 @@ namespace SoulKnight
 
         private void ActualizarVisibilidadAdmin()
         {
-            if (_seccionBotonesAdmin != null)
+            if (_seccionAccesoAdmin != null)
             {
-                _seccionBotonesAdmin.SetActive(_adminDesbloqueado);
+                _seccionAccesoAdmin.SetActive(_adminDesbloqueado);
             }
+        }
+
+        public void AbrirModalAdmin()
+        {
+            if (_modalAdmin != null)
+            {
+                _modalAdmin.transform.SetAsLastSibling();
+                _modalAdmin.SetActive(true);
+                if (_txtFeedbackModalAdmin != null)
+                {
+                    _txtFeedbackModalAdmin.text = "Selecciona una herramienta rápida o ingresa un comando:";
+                    _txtFeedbackModalAdmin.color = new Color(0.70f, 0.85f, 1f, 1f);
+                }
+            }
+        }
+
+        public void CerrarModalAdmin()
+        {
+            if (_modalAdmin != null)
+            {
+                _modalAdmin.SetActive(false);
+            }
+        }
+
+        private void ConstruirModalAdmin(Transform parent)
+        {
+            if (_modalAdmin != null) return;
+
+            _modalAdmin = new GameObject("ModalAdmin");
+            _modalAdmin.transform.SetParent(parent, false);
+
+            var rtModal = _modalAdmin.AddComponent<RectTransform>();
+            rtModal.anchorMin = Vector2.zero;
+            rtModal.anchorMax = Vector2.one;
+            rtModal.sizeDelta = Vector2.zero;
+            rtModal.anchoredPosition = Vector2.zero;
+
+            var imgFondoOscuro = _modalAdmin.AddComponent<Image>();
+            imgFondoOscuro.color = new Color(0.02f, 0.03f, 0.06f, 0.88f);
+
+            // Ventana flotante de herramientas de Admin
+            var dialogObj = new GameObject("DialogoAdmin");
+            dialogObj.transform.SetParent(_modalAdmin.transform, false);
+            var rtDialog = dialogObj.AddComponent<RectTransform>();
+            rtDialog.anchorMin = new Vector2(0.5f, 0.5f);
+            rtDialog.anchorMax = new Vector2(0.5f, 0.5f);
+            rtDialog.pivot = new Vector2(0.5f, 0.5f);
+            rtDialog.sizeDelta = new Vector2(840f, 520f);
+
+            var imgDialog = dialogObj.AddComponent<Image>();
+            imgDialog.color = new Color(0.08f, 0.11f, 0.18f, 0.99f);
+
+            // Cabecera Modal
+            var barraTopModal = new GameObject("BarraTopModal");
+            barraTopModal.transform.SetParent(dialogObj.transform, false);
+            var rtBarraTop = barraTopModal.AddComponent<RectTransform>();
+            rtBarraTop.anchorMin = new Vector2(0f, 1f);
+            rtBarraTop.anchorMax = new Vector2(1f, 1f);
+            rtBarraTop.pivot = new Vector2(0.5f, 1f);
+            rtBarraTop.sizeDelta = new Vector2(0f, 46f);
+            var imgBarra = barraTopModal.AddComponent<Image>();
+            imgBarra.color = new Color(0.14f, 0.18f, 0.28f, 1f);
+
+            // Título
+            var titModal = new GameObject("Titulo");
+            titModal.transform.SetParent(barraTopModal.transform, false);
+            var txtTit = titModal.AddComponent<Text>();
+            txtTit.font = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            txtTit.fontSize = 14;
+            txtTit.fontStyle = FontStyle.Bold;
+            txtTit.alignment = TextAnchor.MiddleLeft;
+            txtTit.color = new Color(1f, 0.85f, 0.25f, 1f);
+            txtTit.text = "  👑 PANEL DE CONTROL DE ADMINISTRADOR & TESTEO";
+            AgregarOutline(txtTit);
+            var rtTit = titModal.GetComponent<RectTransform>();
+            rtTit.anchorMin = Vector2.zero;
+            rtTit.anchorMax = Vector2.one;
+            rtTit.offsetMax = new Vector2(-50f, 0f);
+
+            // Botón X cerrar en esquina
+            var btnXObj = new GameObject("BtnCerrarX");
+            btnXObj.transform.SetParent(barraTopModal.transform, false);
+            var rtX = btnXObj.AddComponent<RectTransform>();
+            rtX.anchorMin = new Vector2(1f, 0.5f);
+            rtX.anchorMax = new Vector2(1f, 0.5f);
+            rtX.pivot = new Vector2(1f, 0.5f);
+            rtX.anchoredPosition = new Vector2(-8f, 0f);
+            rtX.sizeDelta = new Vector2(34f, 34f);
+            var imgX = btnXObj.AddComponent<Image>();
+            imgX.color = new Color(0.55f, 0.22f, 0.22f, 1f);
+            var btnX = btnXObj.AddComponent<Button>();
+
+            var txtXObj = new GameObject("Texto");
+            txtXObj.transform.SetParent(btnXObj.transform, false);
+            var txtX = txtXObj.AddComponent<Text>();
+            txtX.font = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            txtX.fontSize = 15;
+            txtX.fontStyle = FontStyle.Bold;
+            txtX.alignment = TextAnchor.MiddleCenter;
+            txtX.color = Color.white;
+            txtX.text = "✕";
+            AgregarOutline(txtX);
+            var rtTxtX = txtXObj.GetComponent<RectTransform>();
+            rtTxtX.anchorMin = Vector2.zero;
+            rtTxtX.anchorMax = Vector2.one;
+            rtTxtX.sizeDelta = Vector2.zero;
+            btnX.onClick.AddListener(CerrarModalAdmin);
+
+            // Subtítulo
+            var subModal = new GameObject("Subtitulo");
+            subModal.transform.SetParent(dialogObj.transform, false);
+            var txtSub = subModal.AddComponent<Text>();
+            txtSub.font = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            txtSub.fontSize = 11;
+            txtSub.fontStyle = FontStyle.Bold;
+            txtSub.alignment = TextAnchor.MiddleLeft;
+            txtSub.color = new Color(0.40f, 0.85f, 1f, 1f);
+            txtSub.text = "⚡ ACCESOS RÁPIDOS DE DESARROLLO:";
+            AgregarOutline(txtSub);
+            var rtSub = subModal.GetComponent<RectTransform>();
+            rtSub.anchorMin = new Vector2(0f, 1f);
+            rtSub.anchorMax = new Vector2(1f, 1f);
+            rtSub.pivot = new Vector2(0f, 1f);
+            rtSub.anchoredPosition = new Vector2(20f, -56f);
+            rtSub.sizeDelta = new Vector2(0f, 22f);
+
+            // Botones de Acceso Rápido Fila 1 (y = -86f)
+            CrearBotonCheat(dialogObj.transform, "BtnCheatLvl5", "⭐ +5 NIVELES", new Vector2(-295f, -86f), new Color(0.18f, 0.40f, 0.65f, 1f), () => EjecutarCheat("lvl 5"));
+            CrearBotonCheat(dialogObj.transform, "BtnCheatMaxLvl", "👑 MAX NIVEL (10)", new Vector2(-98f, -86f), new Color(0.20f, 0.45f, 0.75f, 1f), () => EjecutarCheat("maxlvl"));
+            CrearBotonCheat(dialogObj.transform, "BtnCheatUnlock", "🔓 UNLOCK ALL SKILLS", new Vector2(98f, -86f), new Color(0.65f, 0.45f, 0.15f, 1f), () => EjecutarCheat("unlockall"));
+            CrearBotonCheat(dialogObj.transform, "BtnCheatMaestria", "✨ +1000 MAESTRÍA", new Vector2(295f, -86f), new Color(0.55f, 0.35f, 0.65f, 1f), () => EjecutarCheat("maestria 1000"));
+
+            // Botones de Acceso Rápido Fila 2 (y = -134f)
+            CrearBotonCheat(dialogObj.transform, "BtnCheatGod", "❤️ MODO DIOS (9999 HP)", new Vector2(-295f, -134f), new Color(0.75f, 0.20f, 0.25f, 1f), () => EjecutarCheat("god"));
+            CrearBotonCheat(dialogObj.transform, "BtnCheatKill", "💀 MATAR ENEMIGOS", new Vector2(-98f, -134f), new Color(0.45f, 0.18f, 0.22f, 1f), () => EjecutarCheat("killall"));
+            CrearBotonCheat(dialogObj.transform, "BtnCheatSkip", "🌀 SALTAR NIVEL (Skip)", new Vector2(98f, -134f), new Color(0.20f, 0.50f, 0.45f, 1f), () => EjecutarCheat("skip"));
+            CrearBotonCheat(dialogObj.transform, "BtnCheatNoCD", "⚡ RESET COOLDOWNS", new Vector2(295f, -134f), new Color(0.25f, 0.45f, 0.30f, 1f), () => EjecutarCheat("resetcd"));
+
+            // Divisor Modal
+            var divModal = new GameObject("DivisorModal");
+            divModal.transform.SetParent(dialogObj.transform, false);
+            var rtDivM = divModal.AddComponent<RectTransform>();
+            rtDivM.anchorMin = new Vector2(0.5f, 1f);
+            rtDivM.anchorMax = new Vector2(0.5f, 1f);
+            rtDivM.pivot = new Vector2(0.5f, 1f);
+            rtDivM.anchoredPosition = new Vector2(0f, -184f);
+            rtDivM.sizeDelta = new Vector2(790f, 2f);
+            var imgDivM = divModal.AddComponent<Image>();
+            imgDivM.color = new Color(0.20f, 0.26f, 0.38f, 0.8f);
+
+            // Subtítulo Comandos Manuales
+            var subCmd = new GameObject("SubtituloComandos");
+            subCmd.transform.SetParent(dialogObj.transform, false);
+            var txtSubCmd = subCmd.AddComponent<Text>();
+            txtSubCmd.font = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            txtSubCmd.fontSize = 11;
+            txtSubCmd.fontStyle = FontStyle.Bold;
+            txtSubCmd.alignment = TextAnchor.MiddleLeft;
+            txtSubCmd.color = new Color(1f, 0.85f, 0.25f, 1f);
+            txtSubCmd.text = "💻 CONSOLA DE COMANDOS MANUALES:";
+            AgregarOutline(txtSubCmd);
+            var rtSubCmd = subCmd.GetComponent<RectTransform>();
+            rtSubCmd.anchorMin = new Vector2(0f, 1f);
+            rtSubCmd.anchorMax = new Vector2(1f, 1f);
+            rtSubCmd.pivot = new Vector2(0f, 1f);
+            rtSubCmd.anchoredPosition = new Vector2(20f, -198f);
+            rtSubCmd.sizeDelta = new Vector2(0f, 20f);
+
+            var descCmd = new GameObject("DescComandos");
+            descCmd.transform.SetParent(dialogObj.transform, false);
+            var txtDescCmd = descCmd.AddComponent<Text>();
+            txtDescCmd.font = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            txtDescCmd.fontSize = 10;
+            txtDescCmd.alignment = TextAnchor.MiddleLeft;
+            txtDescCmd.color = new Color(0.70f, 0.78f, 0.90f, 1f);
+            txtDescCmd.text = "Ejemplos: 'lvl 8', 'ouro 999', 'vida 500', 'xp 1000', 'spawn jefe', 'dano 100'";
+            AgregarOutline(txtDescCmd);
+            var rtDescCmd = descCmd.GetComponent<RectTransform>();
+            rtDescCmd.anchorMin = new Vector2(0f, 1f);
+            rtDescCmd.anchorMax = new Vector2(1f, 1f);
+            rtDescCmd.pivot = new Vector2(0f, 1f);
+            rtDescCmd.anchoredPosition = new Vector2(20f, -220f);
+            rtDescCmd.sizeDelta = new Vector2(0f, 16f);
+
+            // Barra Input Modal
+            var barInputModal = new GameObject("BarraInputModal");
+            barInputModal.transform.SetParent(dialogObj.transform, false);
+            var rtBarInputM = barInputModal.AddComponent<RectTransform>();
+            rtBarInputM.anchorMin = new Vector2(0.5f, 1f);
+            rtBarInputM.anchorMax = new Vector2(0.5f, 1f);
+            rtBarInputM.pivot = new Vector2(0.5f, 1f);
+            rtBarInputM.anchoredPosition = new Vector2(0f, -246f);
+            rtBarInputM.sizeDelta = new Vector2(790f, 38f);
+
+            var inpModalObj = new GameObject("InputFieldModal");
+            inpModalObj.transform.SetParent(barInputModal.transform, false);
+            var rtInpM = inpModalObj.AddComponent<RectTransform>();
+            rtInpM.anchorMin = new Vector2(0f, 0.5f);
+            rtInpM.anchorMax = new Vector2(0f, 0.5f);
+            rtInpM.pivot = new Vector2(0f, 0.5f);
+            rtInpM.anchoredPosition = new Vector2(0f, 0f);
+            rtInpM.sizeDelta = new Vector2(570f, 36f);
+
+            var imgInpM = inpModalObj.AddComponent<Image>();
+            imgInpM.color = new Color(0.05f, 0.07f, 0.11f, 1f);
+
+            _inputComandoModal = inpModalObj.AddComponent<InputField>();
+
+            var phMObj = new GameObject("Placeholder");
+            phMObj.transform.SetParent(inpModalObj.transform, false);
+            var txtPhM = phMObj.AddComponent<Text>();
+            txtPhM.font = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            txtPhM.fontSize = 11;
+            txtPhM.fontStyle = FontStyle.Italic;
+            txtPhM.color = new Color(0.48f, 0.55f, 0.65f, 0.75f);
+            txtPhM.text = "Escribe comando y pulsa Enter o Ejecutar...";
+            txtPhM.alignment = TextAnchor.MiddleLeft;
+            var rtPhM = phMObj.GetComponent<RectTransform>();
+            rtPhM.anchorMin = Vector2.zero;
+            rtPhM.anchorMax = Vector2.one;
+            rtPhM.offsetMin = new Vector2(10f, 0f);
+            rtPhM.offsetMax = new Vector2(-10f, 0f);
+
+            var txtInpMObj = new GameObject("Text");
+            txtInpMObj.transform.SetParent(inpModalObj.transform, false);
+            var txtInpM = txtInpMObj.AddComponent<Text>();
+            txtInpM.font = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            txtInpM.fontSize = 12;
+            txtInpM.color = Color.white;
+            txtInpM.alignment = TextAnchor.MiddleLeft;
+            txtInpM.supportRichText = false;
+            AgregarOutline(txtInpM);
+            var rtTxtInpM = txtInpMObj.GetComponent<RectTransform>();
+            rtTxtInpM.anchorMin = Vector2.zero;
+            rtTxtInpM.anchorMax = Vector2.one;
+            rtTxtInpM.offsetMin = new Vector2(10f, 0f);
+            rtTxtInpM.offsetMax = new Vector2(-10f, 0f);
+
+            _inputComandoModal.textComponent = txtInpM;
+            _inputComandoModal.placeholder = txtPhM;
+            _inputComandoModal.onEndEdit.AddListener((val) =>
+            {
+                if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter))
+                {
+                    EjecutarCheat(val);
+                }
+            });
+
+            // Botón Ejecutar en Modal
+            var btnEjMObj = new GameObject("BtnEjecutarModal");
+            btnEjMObj.transform.SetParent(barInputModal.transform, false);
+            var rtBtnEjM = btnEjMObj.AddComponent<RectTransform>();
+            rtBtnEjM.anchorMin = new Vector2(1f, 0.5f);
+            rtBtnEjM.anchorMax = new Vector2(1f, 0.5f);
+            rtBtnEjM.pivot = new Vector2(1f, 0.5f);
+            rtBtnEjM.anchoredPosition = new Vector2(0f, 0f);
+            rtBtnEjM.sizeDelta = new Vector2(200f, 36f);
+            var imgEjM = btnEjMObj.AddComponent<Image>();
+            imgEjM.color = new Color(0.12f, 0.55f, 0.32f, 1f);
+            var btnEjM = btnEjMObj.AddComponent<Button>();
+
+            var txtBtnEjMObj = new GameObject("Texto");
+            txtBtnEjMObj.transform.SetParent(btnEjMObj.transform, false);
+            var txtBtnEjM = txtBtnEjMObj.AddComponent<Text>();
+            txtBtnEjM.font = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            txtBtnEjM.fontSize = 11;
+            txtBtnEjM.fontStyle = FontStyle.Bold;
+            txtBtnEjM.alignment = TextAnchor.MiddleCenter;
+            txtBtnEjM.color = Color.white;
+            txtBtnEjM.text = "▶ EJECUTAR";
+            AgregarOutline(txtBtnEjM);
+            var rtTxtEjM = txtBtnEjMObj.GetComponent<RectTransform>();
+            rtTxtEjM.anchorMin = Vector2.zero;
+            rtTxtEjM.anchorMax = Vector2.one;
+            rtTxtEjM.sizeDelta = Vector2.zero;
+            btnEjM.onClick.AddListener(() =>
+            {
+                if (_inputComandoModal != null)
+                {
+                    EjecutarCheat(_inputComandoModal.text);
+                }
+            });
+
+            // Feedback en Modal
+            var fbMObj = new GameObject("FeedbackModal");
+            fbMObj.transform.SetParent(dialogObj.transform, false);
+            _txtFeedbackModalAdmin = fbMObj.AddComponent<Text>();
+            _txtFeedbackModalAdmin.font = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            _txtFeedbackModalAdmin.fontSize = 11;
+            _txtFeedbackModalAdmin.alignment = TextAnchor.MiddleCenter;
+            _txtFeedbackModalAdmin.color = new Color(0.45f, 0.85f, 1f, 1f);
+            _txtFeedbackModalAdmin.text = "Selecciona una herramienta rápida o escribe un comando personalizado:";
+            AgregarOutline(_txtFeedbackModalAdmin);
+            var rtFbM = fbMObj.GetComponent<RectTransform>();
+            rtFbM.anchorMin = new Vector2(0.5f, 1f);
+            rtFbM.anchorMax = new Vector2(0.5f, 1f);
+            rtFbM.pivot = new Vector2(0.5f, 1f);
+            rtFbM.anchoredPosition = new Vector2(0f, -295f);
+            rtFbM.sizeDelta = new Vector2(790f, 26f);
+
+            // Botón Cerrar en Modal
+            var btnCerrarMObj = new GameObject("BtnCerrarModal");
+            btnCerrarMObj.transform.SetParent(dialogObj.transform, false);
+            var rtBtnCerrarM = btnCerrarMObj.AddComponent<RectTransform>();
+            rtBtnCerrarM.anchorMin = new Vector2(0.5f, 0f);
+            rtBtnCerrarM.anchorMax = new Vector2(0.5f, 0f);
+            rtBtnCerrarM.pivot = new Vector2(0.5f, 0f);
+            rtBtnCerrarM.anchoredPosition = new Vector2(0f, 20f);
+            rtBtnCerrarM.sizeDelta = new Vector2(300f, 40f);
+            var imgCerrarM = btnCerrarMObj.AddComponent<Image>();
+            imgCerrarM.color = new Color(0.35f, 0.40f, 0.50f, 1f);
+            var btnCerrarM = btnCerrarMObj.AddComponent<Button>();
+
+            var txtCerrarMObj = new GameObject("Texto");
+            txtCerrarMObj.transform.SetParent(btnCerrarMObj.transform, false);
+            var txtCerrarM = txtCerrarMObj.AddComponent<Text>();
+            txtCerrarM.font = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            txtCerrarM.fontSize = 12;
+            txtCerrarM.fontStyle = FontStyle.Bold;
+            txtCerrarM.alignment = TextAnchor.MiddleCenter;
+            txtCerrarM.color = Color.white;
+            txtCerrarM.text = "✕ CERRAR PANEL ADMIN";
+            AgregarOutline(txtCerrarM);
+            var rtTxtCM = txtCerrarMObj.GetComponent<RectTransform>();
+            rtTxtCM.anchorMin = Vector2.zero;
+            rtTxtCM.anchorMax = Vector2.one;
+            rtTxtCM.sizeDelta = Vector2.zero;
+            btnCerrarM.onClick.AddListener(CerrarModalAdmin);
+
+            _modalAdmin.SetActive(false);
         }
 
         private static void CrearBotonCheat(Transform parent, string nombre, string texto, Vector2 pos, Color colorBase, Action onClick)
@@ -986,6 +1317,10 @@ namespace SoulKnight
                     }
                 }
             }
+            else if (_modalAdmin != null && _modalAdmin.activeSelf && Input.GetKeyDown(KeyCode.Escape))
+            {
+                CerrarModalAdmin();
+            }
             else if (panelContenedor != null && panelContenedor.activeSelf && Input.GetKeyDown(KeyCode.Escape))
             {
                 Cerrar();
@@ -1027,6 +1362,7 @@ namespace SoulKnight
         public void Cerrar()
         {
             FinalizarEsperaTecla();
+            CerrarModalAdmin();
             if (panelContenedor) panelContenedor.SetActive(false);
             else gameObject.SetActive(false);
         }
