@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Unity.Collections;
 using Unity.Netcode;
 using UnityEngine;
@@ -196,6 +197,18 @@ namespace SoulKnight
             _velocidadActual = velocidadBase;
             nivelProgreso = GetComponent<NivelEnPartida>() ?? gameObject.AddComponent<NivelEnPartida>();
 
+            // Asignar material sin fricción y detección continua para evitar atascarse en paredes o atravesarlas
+            PhysicsMaterial2D matSinFriccion = new PhysicsMaterial2D("SinFriccionJugador") { friction = 0f, bounciness = 0f };
+            if (_rb != null)
+            {
+                _rb.sharedMaterial = matSinFriccion;
+                _rb.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
+            }
+            if (_col != null)
+            {
+                _col.sharedMaterial = matSinFriccion;
+            }
+
             // Calibrar hitbox precisa del jugador para evitar colisiones excesivas con puertas y esquinas
             var box = GetComponent<BoxCollider2D>();
             if (box != null)
@@ -210,6 +223,20 @@ namespace SoulKnight
                 circle.offset = new Vector2(0f, -0.05f);
             }
         }
+
+        private readonly Dictionary<TipoMejoraTienda, int> _nivelesMejorasTienda = new Dictionary<TipoMejoraTienda, int>();
+
+        public int ObtenerNivelMejora(TipoMejoraTienda tipo)
+        {
+            return _nivelesMejorasTienda.TryGetValue(tipo, out int nv) ? nv : 0;
+        }
+
+        public void EstablecerNivelMejora(TipoMejoraTienda tipo, int nivel)
+        {
+            _nivelesMejorasTienda[tipo] = nivel;
+        }
+
+        public float FactorReduccionCooldown => Mathf.Clamp(1f - (ObtenerNivelMejora(TipoMejoraTienda.CooldownUniversal) * 0.07f), 0.50f, 1.0f);
 
         protected virtual void Start()
         {
@@ -682,18 +709,39 @@ namespace SoulKnight
         }
 
         [ServerRpc]
-        public void ComprarMejoraTiendaServerRpc(byte tipoMejora, int costo)
+        public void ComprarMejoraTiendaServerRpc(byte tipoMejoraByte, int costo)
         {
             if (EstaMuerto.Value) return;
+            TipoMejoraTienda tipo = (TipoMejoraTienda)tipoMejoraByte;
+            int nvActual = ObtenerNivelMejora(tipo);
+            if (tipo != TipoMejoraTienda.PescadoAsado && nvActual >= 5) return;
+
             if (GastarOro(costo))
             {
-                AplicarMejoraRun((TipoMejoraRun)tipoMejora);
+                int nuevoNv = nvActual + 1;
+                EstablecerNivelMejora(tipo, nuevoNv);
+                AplicarEfectoMejoraTienda(tipo, nuevoNv);
+                SincronizarMejoraTiendaClientRpc(tipoMejoraByte, nuevoNv);
             }
         }
 
-        public bool SolicitarCompraTienda(TipoMejoraRun tipo, int costo)
+        [ClientRpc]
+        private void SincronizarMejoraTiendaClientRpc(byte tipoMejoraByte, int nuevoNv)
+        {
+            TipoMejoraTienda tipo = (TipoMejoraTienda)tipoMejoraByte;
+            EstablecerNivelMejora(tipo, nuevoNv);
+            if (HUDJugador.Instancia != null && HUDJugador.Instancia.TiendaAbierta)
+            {
+                HUDJugador.Instancia.ActualizarItemsTiendaUI();
+            }
+        }
+
+        public bool SolicitarCompraTienda(TipoMejoraTienda tipo, int costo)
         {
             if (OroRun.Value < costo) return false;
+            int nvActual = ObtenerNivelMejora(tipo);
+            if (tipo != TipoMejoraTienda.PescadoAsado && nvActual >= 5) return false;
+
             if (NetworkManager != null && NetworkManager.IsListening)
             {
                 ComprarMejoraTiendaServerRpc((byte)tipo, costo);
@@ -702,10 +750,90 @@ namespace SoulKnight
             {
                 if (GastarOro(costo))
                 {
-                    AplicarMejoraRun(tipo);
+                    int nuevoNv = nvActual + 1;
+                    EstablecerNivelMejora(tipo, nuevoNv);
+                    AplicarEfectoMejoraTienda(tipo, nuevoNv);
+                    if (HUDJugador.Instancia != null && HUDJugador.Instancia.TiendaAbierta)
+                    {
+                        HUDJugador.Instancia.ActualizarItemsTiendaUI();
+                    }
                 }
             }
             return true;
+        }
+
+        public virtual void AplicarEfectoMejoraTienda(TipoMejoraTienda tipo, int nivel)
+        {
+            if (!IsServer) return;
+
+            switch (tipo)
+            {
+                case TipoMejoraTienda.VidaMaxima:
+                    const int TOPE_MAXIMO_VIDA = 300;
+                    if (vidaMax >= TOPE_MAXIMO_VIDA)
+                    {
+                        MostrarTextoFlotanteClientRpc("¡Vida Máxima al Límite (300 HP)!", Color.yellow);
+                        break;
+                    }
+                    int nuevaVidaMax = Mathf.Min(TOPE_MAXIMO_VIDA, vidaMax + 30);
+                    int inc = nuevaVidaMax - vidaMax;
+                    vidaMax = nuevaVidaMax;
+                    VidaMaxSincronizada.Value = vidaMax;
+                    Curar(inc);
+                    MostrarTextoFlotanteClientRpc($"¡+{inc} Vida Máxima! ({vidaMax}/{TOPE_MAXIMO_VIDA} HP)", new Color(1f, 0.25f, 0.45f));
+                    break;
+
+                case TipoMejoraTienda.PescadoAsado:
+                    Curar(60);
+                    if (NetworkManager != null && NetworkManager.IsListening)
+                    {
+                        NotificarComerPescadoClientRpc();
+                    }
+                    else
+                    {
+                        GestorAudio.PlaySFX(TipoSFX.ComerPescado);
+                    }
+                    break;
+
+                case TipoMejoraTienda.DanoUniversal:
+                    MultiplicadorDanoLoot.Value = Mathf.Clamp(MultiplicadorDanoLoot.Value + 0.08f, 1.0f, 1.50f);
+                    MostrarTextoFlotanteClientRpc($"¡+8% Daño General! (Nv {nivel}/5)", new Color(1f, 0.45f, 0.2f));
+                    break;
+
+                case TipoMejoraTienda.CooldownUniversal:
+                    MostrarTextoFlotanteClientRpc($"¡-7% Tiempos de Cooldown! (Nv {nivel}/5)", new Color(0.35f, 0.85f, 1f));
+                    break;
+
+                case TipoMejoraTienda.Fuego_DanoQuemadura:
+                    MostrarTextoFlotanteClientRpc($"¡+6 Daño por Quemadura! (Nv {nivel}/5)", new Color(1f, 0.5f, 0.1f));
+                    break;
+                case TipoMejoraTienda.Fuego_Area:
+                    MostrarTextoFlotanteClientRpc($"¡+15% Área Ígnea! (Nv {nivel}/5)", new Color(1f, 0.6f, 0.2f));
+                    break;
+                case TipoMejoraTienda.Fuego_Duracion:
+                    MostrarTextoFlotanteClientRpc($"¡+1.0s Fuego Prolongado! (Nv {nivel}/5)", new Color(1f, 0.35f, 0.1f));
+                    break;
+
+                case TipoMejoraTienda.Hielo_DuracionCongelacion:
+                    MostrarTextoFlotanteClientRpc($"¡+0.6s Cero Absoluto! (Nv {nivel}/5)", new Color(0.4f, 0.85f, 1f));
+                    break;
+                case TipoMejoraTienda.Hielo_AreaVentisca:
+                    MostrarTextoFlotanteClientRpc($"¡+15% Ventisca Ampliada! (Nv {nivel}/5)", new Color(0.6f, 0.95f, 1f));
+                    break;
+                case TipoMejoraTienda.Hielo_PotenciaGlacial:
+                    MostrarTextoFlotanteClientRpc($"¡+12% Fragmentación Glacial! (Nv {nivel}/5)", new Color(0.7f, 0.9f, 1f));
+                    break;
+
+                case TipoMejoraTienda.Elec_Voltaje:
+                    MostrarTextoFlotanteClientRpc($"¡+15% Alto Voltaje! (Nv {nivel}/5)", new Color(1f, 0.95f, 0.25f));
+                    break;
+                case TipoMejoraTienda.Elec_AreaTeleport:
+                    MostrarTextoFlotanteClientRpc($"¡+20% Área Teleport! (Nv {nivel}/5)", new Color(1f, 1f, 0.4f));
+                    break;
+                case TipoMejoraTienda.Elec_CooldownDash:
+                    MostrarTextoFlotanteClientRpc($"¡-0.3s Recarga Dash! (Nv {nivel}/5)", new Color(1f, 0.9f, 0.3f));
+                    break;
+            }
         }
 
         public virtual void AplicarMejoraRun(TipoMejoraRun mejora)
@@ -730,30 +858,35 @@ namespace SoulKnight
                     }
                     break;
                 case TipoMejoraRun.AumentoDano:
-                    // Mejora permanente acumulativa en toda la run (+15% por cada item recogido)
-                    MultiplicadorDanoLoot.Value += def.valor;
+                    // Mejora permanente acotada en la run (tope máx +50% daño extra por tienda)
+                    MultiplicadorDanoLoot.Value = Mathf.Clamp(MultiplicadorDanoLoot.Value + def.valor, 1.0f, 1.50f);
                     MostrarTextoFlotanteClientRpc($"¡+{Mathf.RoundToInt(def.valor * 100f)}% Daño Permanente!", new Color(1f, 0.45f, 0.2f));
                     MostrarEfectoConsumibleHUDClientRpc((byte)mejora, 9999f);
                     break;
                 case TipoMejoraRun.AumentoDefensa:
-                    // Mejora permanente acumulativa en toda la run (+10% de reducción, tope 75%)
-                    ReduccionDanoLoot.Value = Mathf.Clamp(ReduccionDanoLoot.Value + def.valor, 0f, 0.75f);
+                    // Mejora permanente acotada en la run (tope máx 35% de reducción por tienda)
+                    ReduccionDanoLoot.Value = Mathf.Clamp(ReduccionDanoLoot.Value + def.valor, 0f, 0.35f);
                     MostrarTextoFlotanteClientRpc($"¡+{Mathf.RoundToInt(def.valor * 100f)}% Armadura Permanente!", new Color(0.35f, 0.85f, 1f));
                     MostrarEfectoConsumibleHUDClientRpc((byte)mejora, 9999f);
                     break;
                 case TipoMejoraRun.AumentoVelocidad:
-                    // Desactivadas las botas de velocidad para evitar entorpecer la run: se otorga +10% de daño permanente en su lugar
-                    MultiplicadorDanoLoot.Value += 0.10f;
-                    MostrarTextoFlotanteClientRpc($"¡+10% Daño Permanente!", new Color(1f, 0.45f, 0.2f));
-                    MostrarEfectoConsumibleHUDClientRpc((byte)TipoMejoraRun.AumentoDano, 9999f);
+                    // Desactivadas las botas de velocidad para evitar entorpecer la run
                     break;
                 case TipoMejoraRun.AumentoVidaMaxima:
-                    // Mejora permanente acumulativa en toda la run (+30 vida máxima)
+                    // Mejora permanente con TOPE MÁXIMO ESTRICTO DE 300 HP
+                    const int TOPE_MAXIMO_VIDA = 300;
+                    if (vidaMax >= TOPE_MAXIMO_VIDA)
+                    {
+                        MostrarTextoFlotanteClientRpc("¡Vida Máxima al Límite (300 HP)!", Color.yellow);
+                        break;
+                    }
                     int bonoHp = Mathf.RoundToInt(def.valor);
-                    vidaMax += bonoHp;
+                    int nuevaVidaMax = Mathf.Min(TOPE_MAXIMO_VIDA, vidaMax + bonoHp);
+                    int incrementoEfectivo = nuevaVidaMax - vidaMax;
+                    vidaMax = nuevaVidaMax;
                     VidaMaxSincronizada.Value = vidaMax;
-                    Curar(bonoHp);
-                    MostrarTextoFlotanteClientRpc($"¡+{bonoHp} Vida Máxima Permanente!", new Color(1f, 0.25f, 0.45f));
+                    Curar(incrementoEfectivo);
+                    MostrarTextoFlotanteClientRpc($"¡+{incrementoEfectivo} Vida Máxima! ({vidaMax}/{TOPE_MAXIMO_VIDA} HP)", new Color(1f, 0.25f, 0.45f));
                     MostrarEfectoConsumibleHUDClientRpc((byte)mejora, 9999f);
                     break;
             }
@@ -767,6 +900,7 @@ namespace SoulKnight
             vidaMax = 100;
             if (VidaMaxSincronizada != null) VidaMaxSincronizada.Value = 100;
             if (VidaActual != null) VidaActual.Value = 100;
+            _nivelesMejorasTienda.Clear();
 
             if (NetworkManager != null && NetworkManager.IsListening)
             {

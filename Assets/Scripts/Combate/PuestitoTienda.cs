@@ -4,28 +4,20 @@ using UnityEngine;
 namespace SoulKnight
 {
     /// <summary>
-    /// Puestito físico de tienda secreta dentro de habitaciones de relleno.
-    /// Al acercarse o entrar en su puerta, la pantalla se oscurece y se abre
-    /// el menú de compras en el HUD para adquirir mejoras de la run con oro.
+    /// Puestito físico de tienda mística dentro de habitaciones de relleno.
+    /// Al acercarse o entrar en su puerta, se interactúa con [F] para abrir
+    /// el menú de compras en el HUD con hasta 6 mejoras de características
+    /// basadas en los personajes activos en la run y universales.
     /// </summary>
     public class PuestitoTienda : MonoBehaviour
     {
         public static readonly List<PuestitoTienda> Todos = new List<PuestitoTienda>();
 
-        public struct ArticuloTienda
-        {
-            public TipoMejoraRun tipo;
-            public int costoOro;
-            public string nombre;
-            public string descripcion;
-            public bool comprado;
-        }
-
-        public readonly List<ArticuloTienda> articulos = new List<ArticuloTienda>();
+        public readonly List<TipoMejoraTienda> itemsOfrecidos = new List<TipoMejoraTienda>();
 
         private TextMesh _textoIndicador;
         private static Sprite _spritePuestito;
-        private bool _jugadorEnPuerta = false;
+        private bool _articulosInicializados = false;
 
         void OnEnable()
         {
@@ -48,48 +40,113 @@ namespace SoulKnight
 
         void Awake()
         {
-            InicializarArticulos();
             ConstruirVisualYPuestito();
+        }
+
+        void Start()
+        {
+            AsegurarArticulos();
+        }
+
+        public void AsegurarArticulos()
+        {
+            if (_articulosInicializados && itemsOfrecidos.Count >= 6) return;
+            InicializarArticulos();
+            _articulosInicializados = true;
         }
 
         private void InicializarArticulos()
         {
-            articulos.Clear();
-            articulos.Add(new ArticuloTienda
-            {
-                tipo = TipoMejoraRun.AumentoDano,
-                costoOro = 30,
-                nombre = "ESPADA ÍGNEA",
-                descripcion = "+15% Daño Permanente en la Run",
-                comprado = false
-            });
+            itemsOfrecidos.Clear();
 
-            articulos.Add(new ArticuloTienda
-            {
-                tipo = TipoMejoraRun.AumentoDefensa,
-                costoOro = 25,
-                nombre = "ESCUDO RUNA",
-                descripcion = "+10% Armadura Permanente en la Run",
-                comprado = false
-            });
+            // Detectar qué personajes están activos en la run
+            bool hayFuego = false;
+            bool hayHielo = false;
+            bool hayElec = false;
 
-            articulos.Add(new ArticuloTienda
+            if (SalaRed.Instancia != null && SalaRed.Instancia.Jugadores.Count > 0)
             {
-                tipo = TipoMejoraRun.AumentoVidaMaxima,
-                costoOro = 35,
-                nombre = "CORAZÓN VITAL",
-                descripcion = "+30 Vida Máxima Permanente en la Run",
-                comprado = false
-            });
+                foreach (var j in SalaRed.Instancia.Jugadores)
+                {
+                    if (j.personaje == TipoPersonaje.Fuego) hayFuego = true;
+                    if (j.personaje == TipoPersonaje.Hielo) hayHielo = true;
+                    if (j.personaje == TipoPersonaje.Electrico) hayElec = true;
+                }
+            }
 
-            articulos.Add(new ArticuloTienda
+            for (int i = 0; i < Personaje.Todos.Count; i++)
             {
-                tipo = TipoMejoraRun.PescadoCompleto,
-                costoOro = 20,
-                nombre = "PESCADO ASADO",
-                descripcion = "Restaura 60 Puntos de Vida al Instante",
-                comprado = false
-            });
+                var pj = Personaje.Todos[i];
+                if (pj != null)
+                {
+                    if (pj.TipoPj == TipoPersonaje.Fuego) hayFuego = true;
+                    if (pj.TipoPj == TipoPersonaje.Hielo) hayHielo = true;
+                    if (pj.TipoPj == TipoPersonaje.Electrico) hayElec = true;
+                }
+            }
+
+            // Si por timing de inicio no se detectó ninguno, asumir todos los personajes posibles
+            if (!hayFuego && !hayHielo && !hayElec)
+            {
+                hayFuego = true;
+                hayHielo = true;
+                hayElec = true;
+            }
+
+            // Construir el pool candidato con universales + los activos en la partida
+            var pool = new List<TipoMejoraTienda>();
+
+            // Universales (siempre presentes en la baraja de opciones)
+            pool.Add(TipoMejoraTienda.VidaMaxima);
+            pool.Add(TipoMejoraTienda.DanoUniversal);
+            pool.Add(TipoMejoraTienda.CooldownUniversal);
+            pool.Add(TipoMejoraTienda.PescadoAsado);
+
+            if (hayFuego)
+            {
+                pool.Add(TipoMejoraTienda.Fuego_DanoQuemadura);
+                pool.Add(TipoMejoraTienda.Fuego_Area);
+                pool.Add(TipoMejoraTienda.Fuego_Duracion);
+            }
+
+            if (hayHielo)
+            {
+                pool.Add(TipoMejoraTienda.Hielo_DuracionCongelacion);
+                pool.Add(TipoMejoraTienda.Hielo_AreaVentisca);
+                pool.Add(TipoMejoraTienda.Hielo_PotenciaGlacial);
+            }
+
+            if (hayElec)
+            {
+                pool.Add(TipoMejoraTienda.Elec_Voltaje);
+                pool.Add(TipoMejoraTienda.Elec_AreaTeleport);
+                pool.Add(TipoMejoraTienda.Elec_CooldownDash);
+            }
+
+            // Barajar usando semilla sincronizada de la mazmorra para que a TODOS les salga exactamente lo mismo
+            int semilla = (SalaRed.Instancia != null && SalaRed.Instancia.SemillaMapaActual.Value != 0)
+                ? SalaRed.Instancia.SemillaMapaActual.Value + 33881
+                : 987654;
+
+            if (GestorPartida.Instancia != null)
+            {
+                semilla += GestorPartida.Instancia.NivelActual * 1237;
+            }
+
+            var rng = new System.Random(semilla);
+            for (int i = pool.Count - 1; i > 0; i--)
+            {
+                int k = rng.Next(i + 1);
+                var temp = pool[i];
+                pool[i] = pool[k];
+                pool[k] = temp;
+            }
+
+            // Seleccionar un máximo de 6 cosas comprables en la tienda
+            for (int i = 0; i < 6 && i < pool.Count; i++)
+            {
+                itemsOfrecidos.Add(pool[i]);
+            }
         }
 
         private void ConstruirVisualYPuestito()
@@ -124,25 +181,6 @@ namespace SoulKnight
             if (mr != null) mr.sortingOrder = 14;
         }
 
-        void OnTriggerEnter2D(Collider2D other)
-        {
-            var pj = other.GetComponent<Personaje>();
-            if (pj != null && pj.EsControlLocal)
-            {
-                _jugadorEnPuerta = true;
-                // No abrir automáticamente: la tienda se abre ÚNICAMENTE pulsando [F]
-            }
-        }
-
-        void OnTriggerExit2D(Collider2D other)
-        {
-            var pj = other.GetComponent<Personaje>();
-            if (pj != null && pj.EsControlLocal)
-            {
-                _jugadorEnPuerta = false;
-            }
-        }
-
         void Update()
         {
             // Permitir abrir con [F] ÚNICAMENTE si está cerca
@@ -171,9 +209,14 @@ namespace SoulKnight
                     if (HUDJugador.Instancia != null)
                     {
                         if (HUDJugador.Instancia.TiendaAbierta)
+                        {
                             HUDJugador.Instancia.CerrarTienda();
+                        }
                         else
+                        {
+                            AsegurarArticulos();
                             HUDJugador.Instancia.AbrirTienda(this);
+                        }
                     }
                 }
                 else if (dist > 3.6f)
@@ -184,16 +227,6 @@ namespace SoulKnight
                         HUDJugador.Instancia.CerrarTienda();
                     }
                 }
-            }
-        }
-
-        public void MarcarArticuloComprado(int index)
-        {
-            if (index >= 0 && index < articulos.Count)
-            {
-                var art = articulos[index];
-                art.comprado = true;
-                articulos[index] = art;
             }
         }
 

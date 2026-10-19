@@ -1703,7 +1703,7 @@ namespace SoulKnight
             rtCard.anchorMax = new Vector2(0.5f, 0.5f);
             rtCard.pivot = new Vector2(0.5f, 0.5f);
             rtCard.anchoredPosition = Vector2.zero;
-            rtCard.sizeDelta = new Vector2(700f, 440f);
+            rtCard.sizeDelta = new Vector2(760f, 480f);
 
             var imgCard = cardObj.AddComponent<Image>();
             imgCard.color = new Color(0.08f, 0.10f, 0.15f, 0.98f);
@@ -1717,13 +1717,13 @@ namespace SoulKnight
             txtTit.fontStyle = FontStyle.Bold;
             txtTit.alignment = TextAnchor.MiddleCenter;
             txtTit.color = new Color(1f, 0.88f, 0.25f);
-            txtTit.text = "🏪 TIENDA SECRETA DEL GATO MERCADER";
+            txtTit.text = "🏪 TIENDA MÍSTICA DEL GATO MERCADER";
             var rtTit = titObj.GetComponent<RectTransform>();
             rtTit.anchorMin = new Vector2(0.5f, 1f);
             rtTit.anchorMax = new Vector2(0.5f, 1f);
             rtTit.pivot = new Vector2(0.5f, 1f);
-            rtTit.anchoredPosition = new Vector2(0f, -16f);
-            rtTit.sizeDelta = new Vector2(660f, 32f);
+            rtTit.anchoredPosition = new Vector2(0f, -14f);
+            rtTit.sizeDelta = new Vector2(720f, 30f);
 
             // Subtítulo
             var subObj = new GameObject("SubtituloTienda");
@@ -1733,13 +1733,13 @@ namespace SoulKnight
             txtSub.fontSize = 11;
             txtSub.alignment = TextAnchor.MiddleCenter;
             txtSub.color = new Color(0.75f, 0.82f, 0.92f);
-            txtSub.text = "Haz clic sobre una mejora para adquirirla con tu oro de la run.";
+            txtSub.text = "Mejoras de características para tu gato en esta run. Hasta 5 niveles por rasgo.";
             var rtSub = subObj.GetComponent<RectTransform>();
             rtSub.anchorMin = new Vector2(0.5f, 1f);
             rtSub.anchorMax = new Vector2(0.5f, 1f);
             rtSub.pivot = new Vector2(0.5f, 1f);
-            rtSub.anchoredPosition = new Vector2(0f, -48f);
-            rtSub.sizeDelta = new Vector2(660f, 22f);
+            rtSub.anchoredPosition = new Vector2(0f, -44f);
+            rtSub.sizeDelta = new Vector2(720f, 20f);
 
             // Contador de Oro
             var oroObj = new GameObject("TextoOroTienda");
@@ -1755,15 +1755,16 @@ namespace SoulKnight
             rtOro.anchorMin = new Vector2(0.5f, 1f);
             rtOro.anchorMax = new Vector2(0.5f, 1f);
             rtOro.pivot = new Vector2(0.5f, 1f);
-            rtOro.anchoredPosition = new Vector2(0f, -72f);
+            rtOro.anchoredPosition = new Vector2(0f, -68f);
             rtOro.sizeDelta = new Vector2(400f, 24f);
 
-            // Contenedor de Artículos (4 columnas)
-            float[] posX = new float[] { -234f, -78f, 78f, 234f };
+            // Contenedor de 6 Artículos (2 filas de 3 columnas)
+            float[] posX = new float[] { -236f, 0f, 236f, -236f, 0f, 236f };
+            float[] posY = new float[] { 40f, 40f, 40f, -100f, -100f, -100f };
             _botonesCompraTienda.Clear();
             _textosBotonTienda.Clear();
 
-            for (int i = 0; i < 4; i++)
+            for (int i = 0; i < 6; i++)
             {
                 int itemIndex = i;
                 var itemCardObj = new GameObject($"CardArticulo_{i}");
@@ -1772,23 +1773,11 @@ namespace SoulKnight
                 rtIc.anchorMin = new Vector2(0.5f, 0.5f);
                 rtIc.anchorMax = new Vector2(0.5f, 0.5f);
                 rtIc.pivot = new Vector2(0.5f, 0.5f);
-                rtIc.anchoredPosition = new Vector2(posX[i], -12f);
-                rtIc.sizeDelta = new Vector2(148f, 240f);
+                rtIc.anchoredPosition = new Vector2(posX[i], posY[i]);
+                rtIc.sizeDelta = new Vector2(224f, 126f);
 
                 var imgIc = itemCardObj.AddComponent<Image>();
-                imgIc.color = new Color(0.12f, 0.16f, 0.24f, 0.95f);
-
-                // Icono
-                var icObj = new GameObject("Icono");
-                icObj.transform.SetParent(itemCardObj.transform, false);
-                var rtIco = icObj.AddComponent<RectTransform>();
-                rtIco.anchorMin = new Vector2(0.5f, 1f);
-                rtIco.anchorMax = new Vector2(0.5f, 1f);
-                rtIco.pivot = new Vector2(0.5f, 1f);
-                rtIco.anchoredPosition = new Vector2(0f, -14f);
-                rtIco.sizeDelta = new Vector2(58f, 58f);
-                var imgSprite = icObj.AddComponent<Image>();
-                imgSprite.preserveAspect = true;
+                imgIc.color = new Color(0.12f, 0.15f, 0.22f, 0.96f);
 
                 // Nombre
                 var nomObj = new GameObject("Nombre");
@@ -1797,14 +1786,30 @@ namespace SoulKnight
                 rtNom.anchorMin = new Vector2(0.5f, 1f);
                 rtNom.anchorMax = new Vector2(0.5f, 1f);
                 rtNom.pivot = new Vector2(0.5f, 1f);
-                rtNom.anchoredPosition = new Vector2(0f, -78f);
-                rtNom.sizeDelta = new Vector2(140f, 32f);
+                rtNom.anchoredPosition = new Vector2(0f, -10f);
+                rtNom.sizeDelta = new Vector2(212f, 22f);
                 var txtNom = nomObj.AddComponent<Text>();
                 txtNom.font = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
                 txtNom.fontSize = 11;
                 txtNom.fontStyle = FontStyle.Bold;
                 txtNom.alignment = TextAnchor.MiddleCenter;
                 txtNom.color = Color.white;
+
+                // Badge de Clase Compatible
+                var badgeObj = new GameObject("ClaseBadge");
+                badgeObj.transform.SetParent(itemCardObj.transform, false);
+                var rtBadge = badgeObj.AddComponent<RectTransform>();
+                rtBadge.anchorMin = new Vector2(0.5f, 1f);
+                rtBadge.anchorMax = new Vector2(0.5f, 1f);
+                rtBadge.pivot = new Vector2(0.5f, 1f);
+                rtBadge.anchoredPosition = new Vector2(0f, -30f);
+                rtBadge.sizeDelta = new Vector2(212f, 18f);
+                var txtBadge = badgeObj.AddComponent<Text>();
+                txtBadge.font = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+                txtBadge.fontSize = 9;
+                txtBadge.fontStyle = FontStyle.Bold;
+                txtBadge.alignment = TextAnchor.MiddleCenter;
+                txtBadge.color = new Color(0.4f, 0.9f, 1f);
 
                 // Descripción
                 var descObj = new GameObject("Desc");
@@ -1813,13 +1818,13 @@ namespace SoulKnight
                 rtDesc.anchorMin = new Vector2(0.5f, 1f);
                 rtDesc.anchorMax = new Vector2(0.5f, 1f);
                 rtDesc.pivot = new Vector2(0.5f, 1f);
-                rtDesc.anchoredPosition = new Vector2(0f, -114f);
-                rtDesc.sizeDelta = new Vector2(136f, 64f);
+                rtDesc.anchoredPosition = new Vector2(0f, -50f);
+                rtDesc.sizeDelta = new Vector2(212f, 38f);
                 var txtDesc = descObj.AddComponent<Text>();
                 txtDesc.font = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
                 txtDesc.fontSize = 9;
                 txtDesc.alignment = TextAnchor.MiddleCenter;
-                txtDesc.color = new Color(0.72f, 0.85f, 0.95f);
+                txtDesc.color = new Color(0.75f, 0.85f, 0.95f);
 
                 // Botón Comprar
                 var btnBuyObj = new GameObject("BotonComprar");
@@ -1828,8 +1833,8 @@ namespace SoulKnight
                 rtBtn.anchorMin = new Vector2(0.5f, 0f);
                 rtBtn.anchorMax = new Vector2(0.5f, 0f);
                 rtBtn.pivot = new Vector2(0.5f, 0f);
-                rtBtn.anchoredPosition = new Vector2(0f, 12f);
-                rtBtn.sizeDelta = new Vector2(134f, 36f);
+                rtBtn.anchoredPosition = new Vector2(0f, 8f);
+                rtBtn.sizeDelta = new Vector2(206f, 28f);
 
                 var imgBtn = btnBuyObj.AddComponent<Image>();
                 imgBtn.color = new Color(0.20f, 0.55f, 0.35f, 1f);
@@ -1843,7 +1848,7 @@ namespace SoulKnight
                 rtTb.sizeDelta = Vector2.zero;
                 var txtBtn = txtBtnObj.AddComponent<Text>();
                 txtBtn.font = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-                txtBtn.fontSize = 11;
+                txtBtn.fontSize = 10;
                 txtBtn.fontStyle = FontStyle.Bold;
                 txtBtn.alignment = TextAnchor.MiddleCenter;
                 txtBtn.color = Color.white;
@@ -1861,8 +1866,8 @@ namespace SoulKnight
             rtSalir.anchorMin = new Vector2(0.5f, 0f);
             rtSalir.anchorMax = new Vector2(0.5f, 0f);
             rtSalir.pivot = new Vector2(0.5f, 0f);
-            rtSalir.anchoredPosition = new Vector2(0f, 14f);
-            rtSalir.sizeDelta = new Vector2(260f, 38f);
+            rtSalir.anchoredPosition = new Vector2(0f, 12f);
+            rtSalir.sizeDelta = new Vector2(280f, 34f);
 
             var imgSalir = btnSalirObj.AddComponent<Image>();
             imgSalir.color = new Color(0.48f, 0.18f, 0.18f, 1f);
@@ -1881,7 +1886,7 @@ namespace SoulKnight
             txtSalir.fontStyle = FontStyle.Bold;
             txtSalir.alignment = TextAnchor.MiddleCenter;
             txtSalir.color = Color.white;
-            txtSalir.text = "✖ SALIR DE LA TIENDA (ESC)";
+            txtSalir.text = "✖ SALIR DE LA TIENDA (ESC / F)";
 
             panelTienda = tiendaObj;
             panelTienda.SetActive(false);
@@ -1923,46 +1928,101 @@ namespace SoulKnight
             var cardObj = panelTienda.transform.Find("VentanaTienda");
             if (cardObj == null) return;
 
-            for (int i = 0; i < _puestitoActivo.articulos.Count && i < _botonesCompraTienda.Count; i++)
+            for (int i = 0; i < 6 && i < _botonesCompraTienda.Count; i++)
             {
-                var art = _puestitoActivo.articulos[i];
                 var card = cardObj.Find($"CardArticulo_{i}");
-                if (card != null)
-                {
-                    var img = card.Find("Icono")?.GetComponent<Image>();
-                    if (img != null) img.sprite = ItemMejoraRun.ObtenerSpriteMejora(art.tipo);
-
-                    var txtNom = card.Find("Nombre")?.GetComponent<Text>();
-                    if (txtNom != null) txtNom.text = art.nombre;
-
-                    var txtDesc = card.Find("Desc")?.GetComponent<Text>();
-                    if (txtDesc != null) txtDesc.text = $"{art.descripcion}\n\n<color=#ffd700><b>{art.costoOro} 💰</b></color>";
-                }
-
                 var btn = _botonesCompraTienda[i];
                 var txtBtn = _textosBotonTienda[i];
                 var imgBtn = btn != null ? btn.GetComponent<Image>() : null;
 
+                if (i >= _puestitoActivo.itemsOfrecidos.Count)
+                {
+                    if (card != null) card.gameObject.SetActive(false);
+                    continue;
+                }
+
+                if (card != null) card.gameObject.SetActive(true);
+
+                TipoMejoraTienda tipo = _puestitoActivo.itemsOfrecidos[i];
+                int nvActual = (_personajeLocal != null) ? _personajeLocal.ObtenerNivelMejora(tipo) : 0;
+                CatalogoMejorasTienda.ObtenerInfoMejora(tipo, nvActual, out string nombre, out string desc, out TipoPersonaje claseReq);
+                int costo = CatalogoMejorasTienda.ObtenerCostoNivel(tipo, nvActual);
+
+                bool esCompatible = (claseReq == TipoPersonaje.Ninguno) || (_personajeLocal != null && _personajeLocal.TipoPj == claseReq);
+
+                if (card != null)
+                {
+                    var txtNom = card.Find("Nombre")?.GetComponent<Text>();
+                    if (txtNom != null) txtNom.text = nombre;
+
+                    var txtBadge = card.Find("ClaseBadge")?.GetComponent<Text>();
+                    if (txtBadge != null)
+                    {
+                        if (claseReq == TipoPersonaje.Ninguno)
+                        {
+                            txtBadge.text = "[Universal]";
+                            txtBadge.color = new Color(0.4f, 0.9f, 1f);
+                        }
+                        else if (claseReq == TipoPersonaje.Fuego)
+                        {
+                            txtBadge.text = "[Solo Gato de Fuego]";
+                            txtBadge.color = new Color(1f, 0.55f, 0.15f);
+                        }
+                        else if (claseReq == TipoPersonaje.Hielo)
+                        {
+                            txtBadge.text = "[Solo Gato de Hielo]";
+                            txtBadge.color = new Color(0.45f, 0.85f, 1f);
+                        }
+                        else if (claseReq == TipoPersonaje.Electrico)
+                        {
+                            txtBadge.text = "[Solo Gato Eléctrico]";
+                            txtBadge.color = new Color(1f, 0.95f, 0.25f);
+                        }
+                    }
+
+                    var txtDesc = card.Find("Desc")?.GetComponent<Text>();
+                    if (txtDesc != null)
+                    {
+                        txtDesc.text = desc;
+                    }
+                }
+
                 if (btn != null && txtBtn != null)
                 {
-                    if (art.comprado)
+                    if (!esCompatible)
                     {
                         btn.interactable = false;
-                        txtBtn.text = "✔ COMPRADO";
+                        txtBtn.text = $"❌ Incompatible (Solo {claseReq})";
+                        txtBtn.color = new Color(0.85f, 0.45f, 0.45f);
+                        if (imgBtn != null) imgBtn.color = new Color(0.25f, 0.14f, 0.14f, 1f);
+                    }
+                    else if (tipo != TipoMejoraTienda.PescadoAsado && nvActual >= 5)
+                    {
+                        btn.interactable = false;
+                        txtBtn.text = "✔ NIVEL MÁXIMO (5/5)";
                         txtBtn.color = new Color(0.7f, 0.7f, 0.7f);
                         if (imgBtn != null) imgBtn.color = new Color(0.18f, 0.20f, 0.24f, 1f);
                     }
-                    else if (oroLocal < art.costoOro)
+                    else if (tipo == TipoMejoraTienda.VidaMaxima && _personajeLocal != null && _personajeLocal.vidaMax >= 300)
                     {
                         btn.interactable = false;
-                        txtBtn.text = $"{art.costoOro} 💰 (Falta oro)";
+                        txtBtn.text = "✔ MÁXIMO (300 HP)";
+                        txtBtn.color = new Color(0.7f, 0.7f, 0.7f);
+                        if (imgBtn != null) imgBtn.color = new Color(0.18f, 0.20f, 0.24f, 1f);
+                    }
+                    else if (oroLocal < costo)
+                    {
+                        btn.interactable = false;
+                        txtBtn.text = $"{costo} 💰 (Falta oro)";
                         txtBtn.color = new Color(1f, 0.6f, 0.6f);
                         if (imgBtn != null) imgBtn.color = new Color(0.35f, 0.18f, 0.18f, 1f);
                     }
                     else
                     {
                         btn.interactable = true;
-                        txtBtn.text = $"COMPRAR ({art.costoOro} 💰)";
+                        txtBtn.text = (tipo == TipoMejoraTienda.PescadoAsado)
+                            ? $"COMPRAR ({costo} 💰)"
+                            : $"COMPRAR NV {nvActual + 1} ({costo} 💰)";
                         txtBtn.color = Color.white;
                         if (imgBtn != null) imgBtn.color = new Color(0.18f, 0.60f, 0.35f, 1f);
                     }
@@ -1973,17 +2033,35 @@ namespace SoulKnight
         private void ComprarArticuloTiendaIndex(int index)
         {
             if (_puestitoActivo == null || _personajeLocal == null) return;
-            if (index < 0 || index >= _puestitoActivo.articulos.Count) return;
+            if (index < 0 || index >= _puestitoActivo.itemsOfrecidos.Count) return;
 
-            var art = _puestitoActivo.articulos[index];
-            if (art.comprado) return;
-
-            if (_personajeLocal.OroRun.Value >= art.costoOro)
+            TipoMejoraTienda tipo = _puestitoActivo.itemsOfrecidos[index];
+            TipoPersonaje req = CatalogoMejorasTienda.ObtenerClaseCompatible(tipo);
+            if (req != TipoPersonaje.Ninguno && _personajeLocal.TipoPj != req)
             {
-                bool exito = _personajeLocal.SolicitarCompraTienda(art.tipo, art.costoOro);
+                TextoFlotante.Crear(_personajeLocal.transform.position + Vector3.up * 1.2f, "¡Incompatible con tu gato!", Color.red);
+                return;
+            }
+
+            int nvActual = _personajeLocal.ObtenerNivelMejora(tipo);
+            if (tipo != TipoMejoraTienda.PescadoAsado && nvActual >= 5)
+            {
+                TextoFlotante.Crear(_personajeLocal.transform.position + Vector3.up * 1.2f, "¡Ya tienes el nivel máximo!", Color.yellow);
+                return;
+            }
+
+            if (tipo == TipoMejoraTienda.VidaMaxima && _personajeLocal.vidaMax >= 300)
+            {
+                TextoFlotante.Crear(_personajeLocal.transform.position + Vector3.up * 1.2f, "¡Vida al límite máximo (300 HP)!", Color.yellow);
+                return;
+            }
+
+            int costo = CatalogoMejorasTienda.ObtenerCostoNivel(tipo, nvActual);
+            if (_personajeLocal.OroRun.Value >= costo)
+            {
+                bool exito = _personajeLocal.SolicitarCompraTienda(tipo, costo);
                 if (exito)
                 {
-                    _puestitoActivo.MarcarArticuloComprado(index);
                     ActualizarItemsTiendaUI();
                 }
             }

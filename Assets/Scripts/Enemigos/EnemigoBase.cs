@@ -47,6 +47,7 @@ namespace SoulKnight
         public NetworkVariable<int> BiomaActualNet = new NetworkVariable<int>(0);
         public NetworkVariable<int> RolActualNet = new NetworkVariable<int>(0);
         public NetworkVariable<float> EscalaVisualNet = new NetworkVariable<float>(1.0f);
+        public bool EsInvocado { get; set; } = false;
 
         private float _timerHabilidadRol = 0f;
 
@@ -85,12 +86,29 @@ namespace SoulKnight
             Todos.Remove(this);
         }
 
+        private VisualEfectoQuemadura _visualQuemadura;
+        private static readonly Collider2D[] _murosCheckBuffer = new Collider2D[8];
+
         protected virtual void Awake()
         {
             _rb = GetComponent<Rigidbody2D>();
             _col = GetComponent<Collider2D>();
             _velocidadActual = velocidadBase;
             _renderersCacheados = GetComponentsInChildren<SpriteRenderer>(true);
+
+            _visualQuemadura = GetComponent<VisualEfectoQuemadura>();
+            if (_visualQuemadura == null) _visualQuemadura = gameObject.AddComponent<VisualEfectoQuemadura>();
+
+            PhysicsMaterial2D matSinFriccion = new PhysicsMaterial2D("SinFriccionEnemigo") { friction = 0f, bounciness = 0f };
+            if (_rb != null)
+            {
+                _rb.sharedMaterial = matSinFriccion;
+                _rb.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
+            }
+            if (_col != null)
+            {
+                _col.sharedMaterial = matSinFriccion;
+            }
         }
 
         public void EstablecerVisibilidad(bool visible)
@@ -432,6 +450,11 @@ namespace SoulKnight
 
         private void ActualizarTinteVisual()
         {
+            if (_visualQuemadura != null)
+            {
+                _visualQuemadura.SetActivo(EstaQuemado.Value);
+            }
+
             var sr = GetComponent<SpriteRenderer>();
             if (sr != null)
             {
@@ -440,13 +463,9 @@ namespace SoulKnight
                     // Filtro azul clarito helado para enemigos ralentizados o congelados
                     sr.color = new Color(0.48f, 0.85f, 1f, 1f);
                 }
-                else if (EstaQuemado.Value)
-                {
-                    // Filtro naranja para quemadura
-                    sr.color = new Color(1f, 0.52f, 0.25f, 1f);
-                }
                 else
                 {
+                    // Se mantiene el color blanco limpio original del pixel art para que no parezca que están enojados
                     sr.color = Color.white;
                 }
             }
@@ -651,6 +670,22 @@ namespace SoulKnight
             }
 
             _rb.velocity = movimiento + _knockback;
+
+            // Seguridad anti-atasco en muros: si el enemigo overlap con un muro o columna, expulsarlo suavemente hacia afuera
+            int hitsMuro = Physics2D.OverlapCircleNonAlloc(_rb.position, 0.35f, _murosCheckBuffer);
+            for (int i = 0; i < hitsMuro; i++)
+            {
+                var m = _murosCheckBuffer[i];
+                if (m != null && !m.isTrigger && (m.CompareTag("Pared") || m.name.IndexOf("muro", System.StringComparison.OrdinalIgnoreCase) >= 0 || m.name.IndexOf("columna", System.StringComparison.OrdinalIgnoreCase) >= 0))
+                {
+                    Vector2 posMuro = m.transform.position;
+                    Vector2 dirEscape = ((Vector2)transform.position - posMuro);
+                    if (dirEscape.sqrMagnitude < 0.001f) dirEscape = Vector2.down;
+                    _rb.position += dirEscape.normalized * (1.2f * Time.fixedDeltaTime);
+                    _knockback = Vector2.zero;
+                    break;
+                }
+            }
         }
 
         private void TomarDecisionProbabilistica(Personaje jugador)
@@ -756,7 +791,14 @@ namespace SoulKnight
         public void AplicarKnockback(Vector2 direccion, float fuerza)
         {
             if (!IsServer) return;
-            _knockback = direccion.normalized * (fuerza / 32f);
+            // Prevenir empujar al enemigo dentro de una pared sólida
+            RaycastHit2D hitCercano = Physics2D.Raycast(transform.position, direccion, 0.6f);
+            if (hitCercano.collider != null && !hitCercano.collider.isTrigger && (hitCercano.collider.CompareTag("Pared") || hitCercano.collider.name.IndexOf("muro", System.StringComparison.OrdinalIgnoreCase) >= 0 || hitCercano.collider.name.IndexOf("columna", System.StringComparison.OrdinalIgnoreCase) >= 0))
+            {
+                _knockback = Vector2.zero;
+                return;
+            }
+            _knockback = direccion.normalized * Mathf.Min(fuerza / 32f, 10f);
         }
 
         public void AplicarRalentizacion()

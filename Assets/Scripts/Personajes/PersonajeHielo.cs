@@ -815,7 +815,7 @@ namespace SoulKnight
             {
                 if (PuedeUsarHabilidad(IdHabilidad.Hielo_BolaHielo, out string motivo))
                 {
-                    _cdBolaHieloRestante = cooldownBolaHielo;
+                    _cdBolaHieloRestante = cooldownBolaHielo * FactorReduccionCooldown;
                     Vector2 dir = ((Vector2)Controles.PosicionMouseMundo() - (Vector2)transform.position).normalized;
                     if (dir.sqrMagnitude < 0.001f) dir = Vector2.right;
                     GestorAudio.PlaySFX(TipoSFX.HieloDisparo, 0.95f);
@@ -833,7 +833,7 @@ namespace SoulKnight
             {
                 if (PuedeUsarHabilidad(IdHabilidad.Hielo_Armadura, out string motivo))
                 {
-                    _cdArmaduraRestante = cooldownArmadura;
+                    _cdArmaduraRestante = cooldownArmadura * FactorReduccionCooldown;
                     GestorAudio.PlaySFX(TipoSFX.Escudo);
                     GestorAudio.PlaySFX(TipoSFX.Congelar, 0.9f);
                     ActivarArmaduraServerRpc();
@@ -849,7 +849,7 @@ namespace SoulKnight
             {
                 if (PuedeUsarHabilidad(IdHabilidad.Hielo_EraHielo, out string motivo))
                 {
-                    _cdEraHieloRestante = cooldownEraHielo;
+                    _cdEraHieloRestante = cooldownEraHielo * FactorReduccionCooldown;
                     GestorAudio.PlaySFX(TipoSFX.EraDeHielo, 1.15f);
                     NotificarAtaqueLocal(0.5f);
                     if (NetworkManager != null && NetworkManager.IsListening)
@@ -900,7 +900,12 @@ namespace SoulKnight
                 var enemigo = hit.collider.GetComponent<EnemigoBase>();
                 if (enemigo != null)
                 {
-                    int danoEscalado = Mathf.RoundToInt(danoRayo * MultiplicadorDanoTotal);
+                    float multGlacial = 1f;
+                    if (enemigo.EstaCongelado.Value || enemigo.EstaRalentizado.Value)
+                    {
+                        multGlacial += ObtenerNivelMejora(TipoMejoraTienda.Hielo_PotenciaGlacial) * 0.12f;
+                    }
+                    int danoEscalado = Mathf.RoundToInt(danoRayo * MultiplicadorDanoTotal * multGlacial);
                     enemigo.RecibirDano(danoEscalado, new Color(0.42f, 0.88f, 1f, 1f)); // Azul clarito helado
                     enemigo.AplicarRalentizacion();
                     // NO rompemos el bucle: atraviesa a todos los enemigos en el haz

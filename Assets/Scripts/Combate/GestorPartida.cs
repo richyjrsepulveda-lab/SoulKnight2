@@ -511,6 +511,7 @@ namespace SoulKnight
             var enemigo = go.GetComponent<EnemigoBase>();
             if (enemigo != null)
             {
+                enemigo.EsInvocado = true; // Minion invocado: no da XP
                 int nivelEnCiclo = ((NivelActual - 1) % 10) + 1;
                 float mult = (1.0f + (nivelEnCiclo - 1) * 0.12f) * (1.0f + (LoopActual * 0.65f));
                 enemigo.ConfigurarRolYBioma(bioma, rol, mult, NivelActual);
@@ -566,15 +567,23 @@ namespace SoulKnight
 
             if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsServer && !PartidaTerminada)
             {
-                foreach (var p in _personajesActivos)
+                // ÚNICAMENTE los enemigos naturales/invocadores dan XP; los esbirros invocados NO dan XP
+                if (enemigo != null && !enemigo.EsInvocado)
                 {
-                    if (p != null && p.nivelProgreso != null)
+                    // Experiencia moderada y controlada (16 XP por normal, 28 XP por tanque o invocador)
+                    int rolVal = enemigo.RolActualNet.Value;
+                    int xpOtorgada = (rolVal == (int)RolEnemigo.Tanque || rolVal == (int)RolEnemigo.Especial || rolVal == (int)RolEnemigo.Spawner) ? 28 : 16;
+
+                    foreach (var p in _personajesActivos)
                     {
-                        p.nivelProgreso.AgregarXP(35);
+                        if (p != null && p.nivelProgreso != null)
+                        {
+                            p.nivelProgreso.AgregarXP(xpOtorgada);
+                        }
                     }
                 }
 
-                if (prefabItemMejoraRun != null && UnityEngine.Random.value < 0.32f && enemigo != null)
+                if (prefabItemMejoraRun != null && enemigo != null && !enemigo.EsInvocado && UnityEngine.Random.value < 0.22f)
                 {
                     GameObject itemObj = Instantiate(prefabItemMejoraRun, enemigo.transform.position, Quaternion.identity);
                     var item = itemObj.GetComponent<ItemMejoraRun>();

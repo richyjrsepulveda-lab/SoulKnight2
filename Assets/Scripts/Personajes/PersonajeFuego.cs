@@ -437,7 +437,7 @@ namespace SoulKnight
                         else
                         {
                             // Disparo estándar
-                            _cdBolaFuegoRestante = cooldownBolaFuego;
+                            _cdBolaFuegoRestante = cooldownBolaFuego * FactorReduccionCooldown;
                             GestorAudio.PlaySFX(TipoSFX.FuegoDisparo, 0.95f);
                             LanzarBolaFuegoServerRpc(dir);
                         }
@@ -474,7 +474,7 @@ namespace SoulKnight
                 {
                     if (PuedeUsarHabilidad(IdHabilidad.Fuego_Lanzallamas, out string motivo))
                     {
-                        _cdCabezaFuegoRestante = cooldownCabezaFuego;
+                        _cdCabezaFuegoRestante = cooldownCabezaFuego * FactorReduccionCooldown;
                         GestorAudio.PlaySFX(TipoSFX.FuegoLlamas, 0.8f);
                         ActivarCabezaFuegoServerRpc();
                     }
@@ -493,7 +493,7 @@ namespace SoulKnight
                 {
                     if (PuedeUsarHabilidad(IdHabilidad.Fuego_Armadura, out string motivo))
                     {
-                        _cdArmaduraRestante = cooldownArmadura;
+                        _cdArmaduraRestante = cooldownArmadura * FactorReduccionCooldown;
                         GestorAudio.PlaySFX(TipoSFX.Escudo);
                         ActivarArmaduraServerRpc();
                     }
@@ -514,7 +514,7 @@ namespace SoulKnight
             {
                 if (PuedeUsarHabilidad(IdHabilidad.Fuego_Meteorito, out string motivoUlti))
                 {
-                    _cdSupernovaRestante = cooldownSupernova;
+                    _cdSupernovaRestante = cooldownSupernova * FactorReduccionCooldown;
                     GestorAudio.PlayUltiFuegoCompleta(1.20f);
                     ActivarSupernovaServerRpc();
                 }
@@ -733,10 +733,13 @@ namespace SoulKnight
         {
             _danadosCache.Clear();
 
+            float multArea = 1f + (ObtenerNivelMejora(TipoMejoraTienda.Fuego_Area) * 0.15f);
+            int bonoQuem = ObtenerNivelMejora(TipoMejoraTienda.Fuego_DanoQuemadura) * 6;
+
             for (int i = 0; i < NUM_NODOS_LLAMA; i++)
             {
                 Vector2 posNodo = _posicionesLlamas[i];
-                float radioNodo = 0.5f + (float)i / NUM_NODOS_LLAMA * 0.95f;
+                float radioNodo = (0.5f + (float)i / NUM_NODOS_LLAMA * 0.95f) * multArea;
 
                 int hitCount = Physics2D.OverlapCircleNonAlloc(posNodo, radioNodo, _fireOverlapBuffer);
                 for (int c = 0; c < hitCount; c++)
@@ -748,7 +751,7 @@ namespace SoulKnight
                     {
                         int danoEscalado = Mathf.RoundToInt(danoCabezaFuego * MultiplicadorDanoTotal);
                         enemigo.RecibirDano(danoEscalado, new Color(0.96f, 0.40f, 0.05f, 1f)); // Naranja oscuro
-                        int danoQuemaduraEscalado = Mathf.RoundToInt(18 * MultiplicadorDanoTotal);
+                        int danoQuemaduraEscalado = Mathf.RoundToInt((18 + bonoQuem) * MultiplicadorDanoTotal);
                         enemigo.AplicarQuemadura(danoQuemaduraEscalado);
                     }
                 }

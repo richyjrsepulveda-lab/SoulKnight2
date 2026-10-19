@@ -119,14 +119,12 @@ namespace SoulKnight
 
         public static TipoMejoraRun ObtenerAleatoria()
         {
-            // Mayor probabilidad de soltar pescaditos curativos (60% pescaditos: 25% esqueleto, 20% medio, 15% completo; 40% mejoras de stats)
+            // Las mejoras infinitas de estadísticas (daño, vida y escudo) están desactivadas como drops.
+            // En el suelo y salas solo caen los 3 pescaditos de curación (esqueleto, medio y completo).
             float r = UnityEngine.Random.value;
-            if (r < 0.25f) return TipoMejoraRun.PescadoEsqueleto;
-            if (r < 0.45f) return TipoMejoraRun.PescadoMedio;
-            if (r < 0.60f) return TipoMejoraRun.PescadoCompleto;
-            if (r < 0.70f) return TipoMejoraRun.AumentoDano;
-            if (r < 0.85f) return TipoMejoraRun.AumentoDefensa;
-            return TipoMejoraRun.AumentoVidaMaxima;
+            if (r < 0.50f) return TipoMejoraRun.PescadoEsqueleto; // 50% Poco pescado (cura 20)
+            if (r < 0.82f) return TipoMejoraRun.PescadoMedio;     // 32% Medio pescado (cura 50)
+            return TipoMejoraRun.PescadoCompleto;                 // 18% Pescado completo (cura 80)
         }
     }
 }

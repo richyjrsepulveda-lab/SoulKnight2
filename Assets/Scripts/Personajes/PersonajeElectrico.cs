@@ -344,17 +344,16 @@ namespace SoulKnight
             {
                 float pasoDist = velocidadDash * Time.fixedDeltaTime;
 
-                // Raycast para detectar muros del mapa antes de avanzar (evita salir del mapa)
-                int rayCount = Physics2D.RaycastNonAlloc(_rb.position, _dirDash, _rayHitsBuffer, pasoDist + 0.45f);
+                // CircleCast en la dirección del dash para detectar CUALQUIER obstáculo sólido (muros, columnas, props)
+                int rayCount = Physics2D.CircleCastNonAlloc(_rb.position, 0.35f, _dirDash, _rayHitsBuffer, pasoDist + 0.35f);
                 for (int i = 0; i < rayCount; i++)
                 {
                     var rh = _rayHitsBuffer[i];
-                    if (rh.collider != null && rh.collider.gameObject != gameObject && EsMuroDelMapa(rh.collider))
+                    if (rh.collider != null && rh.collider.gameObject != gameObject && EsObstaculoSolido(rh.collider))
                     {
-                        // Detenerse exactamente frente al muro del mapa
-                        _rb.position = rh.point - _dirDash * 0.45f;
+                        // Detener el dash inmediatamente frente al obstáculo sin atravesarlo
+                        _rb.position = rh.point - _dirDash * 0.40f;
                         DashActivo.Value = false;
-                        _col.enabled = true;
                         _rb.velocity = Vector2.zero;
                         return;
                     }
@@ -364,7 +363,7 @@ namespace SoulKnight
                 _rb.position += avance;
                 _distanciaRecorridaDash += avance.magnitude;
 
-                // Daño en el camino del Dash (atraviesa enemigos y estructuras comunes)
+                // Daño en el camino del Dash a los enemigos
                 int colCount = Physics2D.OverlapCircleNonAlloc(_rb.position, 0.8f, _colHitsBuffer);
                 for (int i = 0; i < colCount; i++)
                 {
@@ -373,7 +372,8 @@ namespace SoulKnight
                     var enemigo = hit.GetComponent<EnemigoBase>();
                     if (enemigo != null)
                     {
-                        int danoEscalado = Mathf.RoundToInt(danoDash * MultiplicadorDanoTotal);
+                        float multVolt = 1f + (ObtenerNivelMejora(TipoMejoraTienda.Elec_Voltaje) * 0.15f);
+                        int danoEscalado = Mathf.RoundToInt(danoDash * MultiplicadorDanoTotal * multVolt);
                         enemigo.RecibirDano(danoEscalado, new Color(1f, 0.96f, 0.22f, 1f)); // Amarillo rayo
                     }
                 }
@@ -381,7 +381,6 @@ namespace SoulKnight
                 if (_distanciaRecorridaDash >= distanciaMaximaDash)
                 {
                     DashActivo.Value = false;
-                    _col.enabled = true;
                     _rb.velocity = Vector2.zero;
                 }
                 return;
@@ -397,7 +396,7 @@ namespace SoulKnight
             {
                 if (PuedeUsarHabilidad(IdHabilidad.Elec_Espada, out string motivo))
                 {
-                    _cdEspadaRestante = cooldownEspada;
+                    _cdEspadaRestante = cooldownEspada * FactorReduccionCooldown;
                     Vector2 dir = ((Vector2)Controles.PosicionMouseMundo() - (Vector2)transform.position).normalized;
                     if (dir.sqrMagnitude < 0.001f) dir = Vector2.right;
                     UsarEspadaServerRpc(dir);
@@ -413,7 +412,8 @@ namespace SoulKnight
             {
                 if (PuedeUsarHabilidad(IdHabilidad.Elec_Dash, out string motivo))
                 {
-                    _cdDashRestante = cooldownDash;
+                    float cdDashEfectivo = Mathf.Max(0.35f, (cooldownDash - (ObtenerNivelMejora(TipoMejoraTienda.Elec_CooldownDash) * 0.15f)) * FactorReduccionCooldown);
+                    _cdDashRestante = cdDashEfectivo;
                     Vector2 dir = ((Vector2)Controles.PosicionMouseMundo() - (Vector2)transform.position).normalized;
                     if (dir.sqrMagnitude < 0.001f) dir = Vector2.right;
                     IniciarDashServerRpc(dir);
@@ -429,7 +429,7 @@ namespace SoulKnight
             {
                 if (PuedeUsarHabilidad(IdHabilidad.Elec_Teleport, out string motivo))
                 {
-                    _cdTeleportRestante = cooldownTeleport;
+                    _cdTeleportRestante = cooldownTeleport * FactorReduccionCooldown;
                     Vector2 origen = transform.position;
                     Vector2 destino = Controles.PosicionMouseMundo();
 
@@ -457,7 +457,7 @@ namespace SoulKnight
                 {
                     _cargandoLocal = false;
                     DetenerAudioCarga();
-                    _cdRayoRestante = cooldownRayo;
+                    _cdRayoRestante = cooldownRayo * FactorReduccionCooldown;
                     if (NetworkManager != null && NetworkManager.IsListening)
                     {
                         DispararRayoServerRpc(_tiempoCargaLocal);
@@ -600,7 +600,8 @@ namespace SoulKnight
                 var enemigo = col.GetComponent<EnemigoBase>();
                 if (enemigo != null)
                 {
-                    int danoEscalado = Mathf.RoundToInt(danoEspada * MultiplicadorDanoTotal);
+                    float multVolt = 1f + (ObtenerNivelMejora(TipoMejoraTienda.Elec_Voltaje) * 0.15f);
+                    int danoEscalado = Mathf.RoundToInt(danoEspada * MultiplicadorDanoTotal * multVolt);
                     enemigo.RecibirDano(danoEscalado, new Color(1f, 0.96f, 0.22f, 1f)); // Amarillo rayo
                     enemigo.AplicarKnockback(dir, 350f);
                 }
@@ -667,7 +668,7 @@ namespace SoulKnight
             _dirDash = dir;
             DashActivo.Value = true;
             _distanciaRecorridaDash = 0f;
-            _col.enabled = false;
+            // No deshabilitamos _col para evitar atravesar o incrustarse en obstáculos sólidos
         }
 
         [ServerRpc(RequireOwnership = false)]
@@ -681,28 +682,28 @@ namespace SoulKnight
             if (dist > 0.05f)
             {
                 Vector2 dir = delta.normalized;
-                // Raycast a lo largo del trayecto de teleportación para no atravesar muros del mapa
+                // Raycast a lo largo del trayecto de teleportación para no atravesar muros u obstáculos
                 int rayCount = Physics2D.RaycastNonAlloc(origen, dir, _rayHitsBuffer, dist);
                 for (int i = 0; i < rayCount; i++)
                 {
                     var hm = _rayHitsBuffer[i];
-                    if (hm.collider != null && hm.collider.gameObject != gameObject && EsMuroDelMapa(hm.collider))
+                    if (hm.collider != null && hm.collider.gameObject != gameObject && EsObstaculoSolido(hm.collider))
                     {
-                        // Detener la teleportación justo antes del muro del mapa
+                        // Detener la teleportación justo antes del muro u obstáculo
                         targetPos = hm.point - dir * 0.55f;
                         break;
                     }
                 }
             }
 
-            // Validar que el destino no quede empotrado dentro de un muro del mapa
+            // Validar que el destino no quede empotrado dentro de un obstáculo del mapa
             int puntoCount = Physics2D.OverlapCircleNonAlloc(targetPos, 0.4f, _colHitsBuffer);
             for (int i = 0; i < puntoCount; i++)
             {
                 var ph = _colHitsBuffer[i];
-                if (ph != null && ph.gameObject != gameObject && EsMuroDelMapa(ph))
+                if (ph != null && ph.gameObject != gameObject && EsObstaculoSolido(ph))
                 {
-                    // Si el destino quedó dentro de la pared, cancelar teleport
+                    // Si el destino quedó dentro del obstáculo, cancelar teleport
                     return;
                 }
             }
@@ -715,29 +716,23 @@ namespace SoulKnight
             MostrarTeleportEfectoClientRpc(origen, targetPos);
         }
 
-        private bool EsMuroDelMapa(Collider2D col)
+        private bool EsObstaculoSolido(Collider2D col)
         {
             if (col == null || col.isTrigger) return false;
-
-            // Estructuras comunes (columnas, props interiores) SÍ se pueden atravesar
-            if (col.name.IndexOf("columna", System.StringComparison.OrdinalIgnoreCase) >= 0) return false;
+            if (col.gameObject == gameObject) return false;
+            if (col.GetComponent<Personaje>() != null) return false;
+            if (col.GetComponent<EnemigoBase>() != null) return false;
+            if (col.GetComponent<ItemMejoraRun>() != null) return false;
             if (col.name.IndexOf("portal", System.StringComparison.OrdinalIgnoreCase) >= 0) return false;
 
-            // Muros y paredes perimetrales del mapa NO se pueden atravesar
-            bool esPared = false;
-            try { esPared = col.CompareTag("Pared"); } catch { esPared = false; }
-            if (esPared ||
-                col.name.IndexOf("muro", System.StringComparison.OrdinalIgnoreCase) >= 0 ||
-                col.name.IndexOf("pared", System.StringComparison.OrdinalIgnoreCase) >= 0)
-            {
-                return true;
-            }
-            return false;
+            // Bloquear ante cualquier obstáculo del mapa: muros, columnas, props y paredes
+            return true;
         }
 
         private void AplicarImpactoTeleport(Vector2 pos)
         {
-            int count = Physics2D.OverlapCircleNonAlloc(pos, radioTeleport, _colHitsBuffer);
+            float radioEfectivo = radioTeleport * (1f + (ObtenerNivelMejora(TipoMejoraTienda.Elec_AreaTeleport) * 0.20f));
+            int count = Physics2D.OverlapCircleNonAlloc(pos, radioEfectivo, _colHitsBuffer);
             for (int i = 0; i < count; i++)
             {
                 var hit = _colHitsBuffer[i];
@@ -745,7 +740,8 @@ namespace SoulKnight
                 var enemigo = hit.GetComponent<EnemigoBase>();
                 if (enemigo != null)
                 {
-                    int danoEscalado = Mathf.RoundToInt(danoTeleport * MultiplicadorDanoTotal);
+                    float multVolt = 1f + (ObtenerNivelMejora(TipoMejoraTienda.Elec_Voltaje) * 0.15f);
+                    int danoEscalado = Mathf.RoundToInt(danoTeleport * MultiplicadorDanoTotal * multVolt);
                     enemigo.RecibirDano(danoEscalado, new Color(1f, 0.96f, 0.22f, 1f)); // Amarillo rayo
                     Vector2 dirKnock = ((Vector2)enemigo.transform.position - pos).normalized;
                     enemigo.AplicarKnockback(dirKnock, 1000f);
@@ -788,7 +784,7 @@ namespace SoulKnight
                 for (int i = 0; i < rayCount; i++)
                 {
                     var hm = _rayHitsBuffer[i];
-                    if (hm.collider != null && hm.collider.gameObject != gameObject && EsMuroDelMapa(hm.collider))
+                    if (hm.collider != null && hm.collider.gameObject != gameObject && EsObstaculoSolido(hm.collider))
                     {
                         targetPos = hm.point - dir * 0.55f;
                         break;
@@ -800,7 +796,7 @@ namespace SoulKnight
             for (int i = 0; i < puntoCount; i++)
             {
                 var ph = _colHitsBuffer[i];
-                if (ph != null && ph.gameObject != gameObject && EsMuroDelMapa(ph))
+                if (ph != null && ph.gameObject != gameObject && EsObstaculoSolido(ph))
                 {
                     return;
                 }
