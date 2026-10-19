@@ -78,7 +78,7 @@ namespace SoulKnight
         private AudioSource _fuenteAudioEra;
 
         [Header("Dimensiones")]
-        public float radioZona = 8.5f;
+        public float radioZona = 10.0f;
 
         void Awake()
         {
