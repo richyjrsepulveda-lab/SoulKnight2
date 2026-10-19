@@ -79,15 +79,15 @@ namespace SoulKnight
 
         void Awake()
         {
-            // Radio de congelación expandido y mayor tamaño de tormenta
+            // Radio de congelación equilibrado para combate sin cubrir todo el mapa
             var col = GetComponent<CircleCollider2D>();
             if (col != null)
             {
                 col.isTrigger = true;
-                col.radius = 8.5f;
+                col.radius = 4.8f;
             }
 
-            _escalaObjetivo = Vector3.one * 1.45f;
+            _escalaObjetivo = Vector3.one * 1.0f;
             transform.localScale = Vector3.one * 0.1f;
         }
 
@@ -127,7 +127,7 @@ namespace SoulKnight
                 fondoAura.sprite = _spriteAuraBlizzard;
                 fondoAura.color = new Color(0.18f, 0.65f, 1f, 0.40f);
                 fondoAura.sortingOrder = 1;
-                fondoAura.transform.localScale = Vector3.one * 16.5f;
+                fondoAura.transform.localScale = Vector3.one * 9.6f;
             }
 
             // 2. Vórtice Interior de Viento Huracanado (Capa 2)
@@ -145,7 +145,7 @@ namespace SoulKnight
                     sr.color = new Color(0.65f, 0.92f, 1f, 0.75f);
                     sr.sortingOrder = 2;
                 }
-                vorticeInterior.localScale = Vector3.one * 14.0f;
+                vorticeInterior.localScale = Vector3.one * 8.2f;
             }
 
             // 3. Anillo Exterior de Tormenta de Nieve (Capa 3)
@@ -163,7 +163,7 @@ namespace SoulKnight
                     sr.color = new Color(0.85f, 0.98f, 1f, 0.80f);
                     sr.sortingOrder = 3;
                 }
-                anilloExterior.localScale = Vector3.one * 17.0f;
+                anilloExterior.localScale = Vector3.one * 9.8f;
             }
 
             // 4. Destello de Tick Radial (Capa 4)
@@ -177,7 +177,7 @@ namespace SoulKnight
                 destelloTick.sprite = _spriteAuraBlizzard;
                 destelloTick.color = new Color(1f, 1f, 1f, 0f);
                 destelloTick.sortingOrder = 4;
-                destelloTick.transform.localScale = Vector3.one * 17.5f;
+                destelloTick.transform.localScale = Vector3.one * 10.2f;
             }
 
             // 5. Enjambre Dinámico de Copos y Esquirlas de Hielo
@@ -202,14 +202,14 @@ namespace SoulKnight
                     : new Color(0.95f, 0.98f, 1f, UnityEngine.Random.Range(0.70f, 0.98f));
                 sr.sortingOrder = 5;
 
-                float escala = UnityEngine.Random.Range(0.7f, 1.45f);
+                float escala = UnityEngine.Random.Range(0.45f, 0.90f);
                 pObj.transform.localScale = Vector3.one * escala;
 
                 var part = new ParticulaVentisca
                 {
                     transform = pObj.transform,
                     renderer = sr,
-                    distanciaOrbital = UnityEngine.Random.Range(1.8f, 8.0f),
+                    distanciaOrbital = UnityEngine.Random.Range(1.0f, 4.5f),
                     anguloActual = (360f / totalParticulas) * i + UnityEngine.Random.Range(-12f, 12f),
                     velocidadOrbital = UnityEngine.Random.Range(110f, 210f),
                     desfaseOscilacion = UnityEngine.Random.Range(0f, Mathf.PI * 2f),
@@ -277,7 +277,7 @@ namespace SoulKnight
                 float rad = p.anguloActual * Mathf.Deg2Rad;
 
                 // Oscilación radial turbulenta del viento (acerca y aleja los copos del ojo de la tormenta)
-                float radioDinamico = p.distanciaOrbital + Mathf.Sin(Time.time * 3.5f + p.desfaseOscilacion) * 0.75f;
+                float radioDinamico = p.distanciaOrbital + Mathf.Sin(Time.time * 3.5f + p.desfaseOscilacion) * 0.40f;
                 Vector3 nuevaPos = new Vector3(Mathf.Cos(rad) * radioDinamico, Mathf.Sin(rad) * radioDinamico, 0f);
                 p.transform.localPosition = nuevaPos;
 
