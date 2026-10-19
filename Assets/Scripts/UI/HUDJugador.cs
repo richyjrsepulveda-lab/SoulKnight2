@@ -2292,6 +2292,18 @@ namespace SoulKnight
 
         private readonly System.Collections.Generic.List<SlotEfectoConsumibleHUD> _efectosActivosDerecha = new System.Collections.Generic.List<SlotEfectoConsumibleHUD>();
 
+        public void LimpiarEfectosConsumibles()
+        {
+            for (int i = _efectosActivosDerecha.Count - 1; i >= 0; i--)
+            {
+                if (_efectosActivosDerecha[i].contenedor != null)
+                {
+                    Destroy(_efectosActivosDerecha[i].contenedor);
+                }
+            }
+            _efectosActivosDerecha.Clear();
+        }
+
         public void ActivarEfectoConsumibleDerecha(TipoMejoraRun tipo, float duracion)
         {
             if (duracion <= 0f) return;

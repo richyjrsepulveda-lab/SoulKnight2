@@ -11,6 +11,9 @@ namespace SoulKnight
     /// </summary>
     public static class ComandosAdmin
     {
+        public static bool ModoCeroCooldowns = false;
+        public static bool ModoSinEnemigosEnSalas = false;
+
         public static string EjecutarComando(string comandoRaw)
         {
             if (string.IsNullOrWhiteSpace(comandoRaw))
@@ -110,13 +113,84 @@ namespace SoulKnight
                         return "✓ ¡Maestría nivel 20 (Máxima) otorgada a Fuego, Hielo y Eléctrico!";
                     }
 
+                    case "resetlvl":
+                    case "resetnivel":
+                    case "reiniciarnivel":
+                    {
+                        foreach (var pj in Personaje.Todos)
+                        {
+                            if (pj == null) continue;
+                            var nivel = pj.GetComponent<NivelEnPartida>();
+                            if (nivel != null)
+                            {
+                                nivel.NivelActual.Value = 1;
+                                nivel.XPActual.Value = 0;
+                                nivel.XPSiguienteNivel.Value = 100;
+                                TextoFlotante.Crear(pj.transform.position + Vector3.up * 2f, "¡NIVEL 1!", Color.white);
+                            }
+                        }
+                        return "✓ Nivel de run reiniciado a Nivel 1 (0 XP).";
+                    }
+
                     case "resetmaestria":
+                    case "resetmastery":
+                    case "reiniciarmaestria":
                     {
                         PlayerPrefs.DeleteKey("maestria_xp_Fuego");
                         PlayerPrefs.DeleteKey("maestria_xp_Hielo");
                         PlayerPrefs.DeleteKey("maestria_xp_Electrico");
                         PlayerPrefs.Save();
-                        return "✓ Maestría reiniciada a nivel 1 para pruebas de progresión limpia.";
+                        GestorMaestria.AgregarPuntos(TipoPersonaje.Fuego, 0);
+                        GestorMaestria.AgregarPuntos(TipoPersonaje.Hielo, 0);
+                        GestorMaestria.AgregarPuntos(TipoPersonaje.Electrico, 0);
+                        return "✓ Maestría de todos los personajes reiniciada a Nivel 1 (0 XP).";
+                    }
+
+                    case "resetpoderes":
+                    case "resetmejoras":
+                    case "resetupgrades":
+                    case "resetrun":
+                    {
+                        foreach (var pj in Personaje.Todos)
+                        {
+                            if (pj == null) continue;
+                            pj.ResetearPoderesRun();
+                            TextoFlotante.Crear(pj.transform.position + Vector3.up * 2f, "¡PODERES REINICIADOS!", Color.white);
+                        }
+                        if (HUDJugador.Instancia != null)
+                        {
+                            HUDJugador.Instancia.LimpiarEfectosConsumibles();
+                        }
+                        return "✓ Todos los poderes, stats y mejoras acumuladas en la run han sido reiniciadas a valores base.";
+                    }
+
+                    case "resetall":
+                    case "reiniciartodo":
+                    {
+                        foreach (var pj in Personaje.Todos)
+                        {
+                            if (pj == null) continue;
+                            var nivel = pj.GetComponent<NivelEnPartida>();
+                            if (nivel != null)
+                            {
+                                nivel.NivelActual.Value = 1;
+                                nivel.XPActual.Value = 0;
+                                nivel.XPSiguienteNivel.Value = 100;
+                            }
+                            pj.ResetearPoderesRun();
+                        }
+                        PlayerPrefs.DeleteKey("maestria_xp_Fuego");
+                        PlayerPrefs.DeleteKey("maestria_xp_Hielo");
+                        PlayerPrefs.DeleteKey("maestria_xp_Electrico");
+                        PlayerPrefs.Save();
+                        GestorMaestria.AgregarPuntos(TipoPersonaje.Fuego, 0);
+                        GestorMaestria.AgregarPuntos(TipoPersonaje.Hielo, 0);
+                        GestorMaestria.AgregarPuntos(TipoPersonaje.Electrico, 0);
+                        if (HUDJugador.Instancia != null)
+                        {
+                            HUDJugador.Instancia.LimpiarEfectosConsumibles();
+                        }
+                        return "✓ ¡RESETEO COMPLETO! Nivel 1, Maestría 1 y Poderes de run devueltos a valores iniciales.";
                     }
 
                     case "god":
@@ -175,8 +249,68 @@ namespace SoulKnight
                         return "El salto de nivel solo está disponible durante una Run en mazmorra.";
                     }
 
-                    case "resetcd":
+                    case "skipsalas":
+                    case "saltarsalas":
+                    case "clearsalas":
+                    case "noenemigos":
+                    case "paz":
+                    {
+                        ModoSinEnemigosEnSalas = true;
+                        int salasContadas = 0;
+                        var salas = UnityEngine.Object.FindObjectsOfType<ControladorSala>();
+                        foreach (var sala in salas)
+                        {
+                            if (sala == null) continue;
+                            sala.despejada = true;
+                            sala.enCombate = false;
+                            sala.BloquearSala(false);
+                            sala.EncenderAntorchas(true);
+                            sala.AbrirMuroSalidaJefe();
+                            salasContadas++;
+                        }
+
+                        int eliminados = 0;
+                        for (int i = EnemigoBase.Todos.Count - 1; i >= 0; i--)
+                        {
+                            var enemigo = EnemigoBase.Todos[i];
+                            if (enemigo != null && enemigo.gameObject.activeInHierarchy)
+                            {
+                                enemigo.RecibirDano(999999);
+                                eliminados++;
+                            }
+                        }
+
+                        if (GestorPartida.Instancia != null)
+                        {
+                            GestorPartida.Instancia.ActivarPasajeSiguienteNivel();
+                        }
+
+                        return $"✓ ¡Todas las salas del nivel saltadas ({salasContadas} salas)! No saldrán más enemigos al entrar.";
+                    }
+
+                    case "0cd":
                     case "nocd":
+                    case "zerocd":
+                    case "cerocd":
+                    case "infinitocd":
+                    {
+                        ModoCeroCooldowns = !ModoCeroCooldowns;
+                        if (ModoCeroCooldowns)
+                        {
+                            foreach (var pj in Personaje.Todos)
+                            {
+                                if (pj == null) continue;
+                                pj.ReiniciarCooldowns();
+                            }
+                            return "✓ ¡MODO 0 COOLDOWNS ACTIVADO! Habilidades sin ningún tiempo de espera.";
+                        }
+                        else
+                        {
+                            return "✓ Modo 0 Cooldowns desactivado. Cooldowns normales restaurados.";
+                        }
+                    }
+
+                    case "resetcd":
                     case "cooldown":
                     {
                         foreach (var pj in Personaje.Todos)

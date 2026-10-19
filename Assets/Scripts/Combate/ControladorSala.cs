@@ -222,6 +222,15 @@ namespace SoulKnight
             // En el servidor: detectar si algún jugador vivo entró a una sala aún no despejada ni en combate
             if (!esSalaInicio && !esSalaTienda && !despejada && !enCombate)
             {
+                if (ComandosAdmin.ModoSinEnemigosEnSalas)
+                {
+                    despejada = true;
+                    EncenderAntorchas(true);
+                    BloquearSala(false);
+                    AbrirMuroSalidaJefe();
+                    return;
+                }
+
                 if (Unity.Netcode.NetworkManager.Singleton != null && Unity.Netcode.NetworkManager.Singleton.IsServer)
                 {
                     if (GestorPartida.Instancia != null && !GestorPartida.Instancia.PartidaTerminada)

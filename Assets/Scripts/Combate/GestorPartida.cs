@@ -937,7 +937,6 @@ namespace SoulKnight
                 TipoMejoraRun.AumentoDano,
                 TipoMejoraRun.AumentoDefensa,
                 TipoMejoraRun.AumentoVidaMaxima,
-                TipoMejoraRun.AumentoVelocidad,
                 TipoMejoraRun.PescadoMedio,
                 TipoMejoraRun.PescadoCompleto
             };

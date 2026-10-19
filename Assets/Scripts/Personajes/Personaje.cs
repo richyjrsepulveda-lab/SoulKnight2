@@ -351,6 +351,11 @@ namespace SoulKnight
                 ActualizarEfectosConsumiblesServidor(Time.deltaTime);
             }
 
+            if (ComandosAdmin.ModoCeroCooldowns)
+            {
+                ReiniciarCooldowns();
+            }
+
             bool esControlLocal = EsControlLocal;
             if (esControlLocal)
             {
@@ -737,10 +742,10 @@ namespace SoulKnight
                     MostrarEfectoConsumibleHUDClientRpc((byte)mejora, 9999f);
                     break;
                 case TipoMejoraRun.AumentoVelocidad:
-                    // Mejora permanente acumulativa en toda la run (+12% de velocidad)
-                    MultiplicadorVelocidadLoot.Value += def.valor;
-                    MostrarTextoFlotanteClientRpc($"¡+{Mathf.RoundToInt(def.valor * 100f)}% Velocidad Permanente!", new Color(0.45f, 1f, 0.45f));
-                    MostrarEfectoConsumibleHUDClientRpc((byte)mejora, 9999f);
+                    // Desactivadas las botas de velocidad para evitar entorpecer la run: se otorga +10% de daño permanente en su lugar
+                    MultiplicadorDanoLoot.Value += 0.10f;
+                    MostrarTextoFlotanteClientRpc($"¡+10% Daño Permanente!", new Color(1f, 0.45f, 0.2f));
+                    MostrarEfectoConsumibleHUDClientRpc((byte)TipoMejoraRun.AumentoDano, 9999f);
                     break;
                 case TipoMejoraRun.AumentoVidaMaxima:
                     // Mejora permanente acumulativa en toda la run (+30 vida máxima)
@@ -751,6 +756,37 @@ namespace SoulKnight
                     MostrarTextoFlotanteClientRpc($"¡+{bonoHp} Vida Máxima Permanente!", new Color(1f, 0.25f, 0.45f));
                     MostrarEfectoConsumibleHUDClientRpc((byte)mejora, 9999f);
                     break;
+            }
+        }
+
+        public void ResetearPoderesRun()
+        {
+            MultiplicadorDanoLoot.Value = 1f;
+            ReduccionDanoLoot.Value = 0f;
+            MultiplicadorVelocidadLoot.Value = 1f;
+            vidaMax = 100;
+            if (VidaMaxSincronizada != null) VidaMaxSincronizada.Value = 100;
+            if (VidaActual != null) VidaActual.Value = 100;
+
+            if (NetworkManager != null && NetworkManager.IsListening)
+            {
+                LimpiarEfectosRunClientRpc();
+            }
+            else
+            {
+                if (HUDJugador.Instancia != null)
+                {
+                    HUDJugador.Instancia.LimpiarEfectosConsumibles();
+                }
+            }
+        }
+
+        [ClientRpc]
+        private void LimpiarEfectosRunClientRpc()
+        {
+            if (HUDJugador.Instancia != null)
+            {
+                HUDJugador.Instancia.LimpiarEfectosConsumibles();
             }
         }
 

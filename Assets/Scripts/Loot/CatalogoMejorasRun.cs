@@ -125,8 +125,7 @@ namespace SoulKnight
             if (r < 0.45f) return TipoMejoraRun.PescadoMedio;
             if (r < 0.60f) return TipoMejoraRun.PescadoCompleto;
             if (r < 0.70f) return TipoMejoraRun.AumentoDano;
-            if (r < 0.80f) return TipoMejoraRun.AumentoDefensa;
-            if (r < 0.90f) return TipoMejoraRun.AumentoVelocidad;
+            if (r < 0.85f) return TipoMejoraRun.AumentoDefensa;
             return TipoMejoraRun.AumentoVidaMaxima;
         }
     }

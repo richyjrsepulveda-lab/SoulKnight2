@@ -804,7 +804,7 @@ namespace SoulKnight
             rtDialog.anchorMin = new Vector2(0.5f, 0.5f);
             rtDialog.anchorMax = new Vector2(0.5f, 0.5f);
             rtDialog.pivot = new Vector2(0.5f, 0.5f);
-            rtDialog.sizeDelta = new Vector2(840f, 520f);
+            rtDialog.sizeDelta = new Vector2(840f, 575f);
 
             var imgDialog = dialogObj.AddComponent<Image>();
             imgDialog.color = new Color(0.08f, 0.11f, 0.18f, 0.99f);
@@ -880,20 +880,26 @@ namespace SoulKnight
             rtSub.anchorMin = new Vector2(0f, 1f);
             rtSub.anchorMax = new Vector2(1f, 1f);
             rtSub.pivot = new Vector2(0f, 1f);
-            rtSub.anchoredPosition = new Vector2(20f, -56f);
+            rtSub.anchoredPosition = new Vector2(20f, -54f);
             rtSub.sizeDelta = new Vector2(0f, 22f);
 
-            // Botones de Acceso Rápido Fila 1 (y = -86f)
-            CrearBotonCheat(dialogObj.transform, "BtnCheatLvl5", "⭐ +5 NIVELES", new Vector2(-295f, -86f), new Color(0.18f, 0.40f, 0.65f, 1f), () => EjecutarCheat("lvl 5"));
-            CrearBotonCheat(dialogObj.transform, "BtnCheatMaxLvl", "👑 MAX NIVEL (10)", new Vector2(-98f, -86f), new Color(0.20f, 0.45f, 0.75f, 1f), () => EjecutarCheat("maxlvl"));
-            CrearBotonCheat(dialogObj.transform, "BtnCheatUnlock", "🔓 UNLOCK ALL SKILLS", new Vector2(98f, -86f), new Color(0.65f, 0.45f, 0.15f, 1f), () => EjecutarCheat("unlockall"));
-            CrearBotonCheat(dialogObj.transform, "BtnCheatMaestria", "✨ +1000 MAESTRÍA", new Vector2(295f, -86f), new Color(0.55f, 0.35f, 0.65f, 1f), () => EjecutarCheat("maestria 1000"));
+            // Botones de Acceso Rápido Fila 1 (y = -80f)
+            CrearBotonCheat(dialogObj.transform, "BtnCheatLvl5", "⭐ +5 NIVELES", new Vector2(-295f, -80f), new Color(0.18f, 0.40f, 0.65f, 1f), () => EjecutarCheat("lvl 5"));
+            CrearBotonCheat(dialogObj.transform, "BtnCheatMaxLvl", "👑 MAX NIVEL (10)", new Vector2(-98f, -80f), new Color(0.20f, 0.45f, 0.75f, 1f), () => EjecutarCheat("maxlvl"));
+            CrearBotonCheat(dialogObj.transform, "BtnCheatUnlock", "🔓 UNLOCK ALL SKILLS", new Vector2(98f, -80f), new Color(0.65f, 0.45f, 0.15f, 1f), () => EjecutarCheat("unlockall"));
+            CrearBotonCheat(dialogObj.transform, "BtnCheatMaestria", "✨ +1000 MAESTRÍA", new Vector2(295f, -80f), new Color(0.55f, 0.35f, 0.65f, 1f), () => EjecutarCheat("maestria 1000"));
 
-            // Botones de Acceso Rápido Fila 2 (y = -134f)
-            CrearBotonCheat(dialogObj.transform, "BtnCheatGod", "❤️ MODO DIOS (9999 HP)", new Vector2(-295f, -134f), new Color(0.75f, 0.20f, 0.25f, 1f), () => EjecutarCheat("god"));
-            CrearBotonCheat(dialogObj.transform, "BtnCheatKill", "💀 MATAR ENEMIGOS", new Vector2(-98f, -134f), new Color(0.45f, 0.18f, 0.22f, 1f), () => EjecutarCheat("killall"));
-            CrearBotonCheat(dialogObj.transform, "BtnCheatSkip", "🌀 SALTAR NIVEL (Skip)", new Vector2(98f, -134f), new Color(0.20f, 0.50f, 0.45f, 1f), () => EjecutarCheat("skip"));
-            CrearBotonCheat(dialogObj.transform, "BtnCheatNoCD", "⚡ RESET COOLDOWNS", new Vector2(295f, -134f), new Color(0.25f, 0.45f, 0.30f, 1f), () => EjecutarCheat("resetcd"));
+            // Botones de Acceso Rápido Fila 2 (y = -122f)
+            CrearBotonCheat(dialogObj.transform, "BtnCheatGod", "❤️ MODO DIOS (9999 HP)", new Vector2(-295f, -122f), new Color(0.75f, 0.20f, 0.25f, 1f), () => EjecutarCheat("god"));
+            CrearBotonCheat(dialogObj.transform, "BtnCheatKill", "💀 MATAR ENEMIGOS", new Vector2(-98f, -122f), new Color(0.45f, 0.18f, 0.22f, 1f), () => EjecutarCheat("killall"));
+            CrearBotonCheat(dialogObj.transform, "BtnCheatSkip", "🌀 SALTAR NIVEL (Skip)", new Vector2(98f, -122f), new Color(0.20f, 0.50f, 0.45f, 1f), () => EjecutarCheat("skip"));
+            CrearBotonCheat(dialogObj.transform, "BtnCheat0CD", "⚡ 0 COOLDOWNS", new Vector2(295f, -122f), new Color(0.20f, 0.55f, 0.35f, 1f), () => EjecutarCheat("0cd"));
+
+            // Botones de Acceso Rápido Fila 3 (y = -164f)
+            CrearBotonCheat(dialogObj.transform, "BtnCheatSkipSalas", "🌀 SALTAR TODAS SALAS", new Vector2(-295f, -164f), new Color(0.28f, 0.40f, 0.60f, 1f), () => EjecutarCheat("skipsalas"));
+            CrearBotonCheat(dialogObj.transform, "BtnCheatResetLvl", "↺ RESET NIVEL (1)", new Vector2(-98f, -164f), new Color(0.50f, 0.30f, 0.25f, 1f), () => EjecutarCheat("resetlvl"));
+            CrearBotonCheat(dialogObj.transform, "BtnCheatResetMaestria", "↺ RESET MAESTRÍA", new Vector2(98f, -164f), new Color(0.55f, 0.25f, 0.35f, 1f), () => EjecutarCheat("resetmaestria"));
+            CrearBotonCheat(dialogObj.transform, "BtnCheatResetPoderes", "↺ RESET PODERES RUN", new Vector2(295f, -164f), new Color(0.60f, 0.20f, 0.20f, 1f), () => EjecutarCheat("resetpoderes"));
 
             // Divisor Modal
             var divModal = new GameObject("DivisorModal");
@@ -902,7 +908,7 @@ namespace SoulKnight
             rtDivM.anchorMin = new Vector2(0.5f, 1f);
             rtDivM.anchorMax = new Vector2(0.5f, 1f);
             rtDivM.pivot = new Vector2(0.5f, 1f);
-            rtDivM.anchoredPosition = new Vector2(0f, -184f);
+            rtDivM.anchoredPosition = new Vector2(0f, -208f);
             rtDivM.sizeDelta = new Vector2(790f, 2f);
             var imgDivM = divModal.AddComponent<Image>();
             imgDivM.color = new Color(0.20f, 0.26f, 0.38f, 0.8f);
@@ -922,7 +928,7 @@ namespace SoulKnight
             rtSubCmd.anchorMin = new Vector2(0f, 1f);
             rtSubCmd.anchorMax = new Vector2(1f, 1f);
             rtSubCmd.pivot = new Vector2(0f, 1f);
-            rtSubCmd.anchoredPosition = new Vector2(20f, -198f);
+            rtSubCmd.anchoredPosition = new Vector2(20f, -222f);
             rtSubCmd.sizeDelta = new Vector2(0f, 20f);
 
             var descCmd = new GameObject("DescComandos");
@@ -932,13 +938,13 @@ namespace SoulKnight
             txtDescCmd.fontSize = 10;
             txtDescCmd.alignment = TextAnchor.MiddleLeft;
             txtDescCmd.color = new Color(0.70f, 0.78f, 0.90f, 1f);
-            txtDescCmd.text = "Ejemplos: 'lvl 8', 'ouro 999', 'vida 500', 'xp 1000', 'spawn jefe', 'dano 100'";
+            txtDescCmd.text = "Ejemplos: '0cd', 'skipsalas', 'resetrun', 'resetlvl', 'lvl 8', 'ouro 999', 'vida 500', 'dano 100'";
             AgregarOutline(txtDescCmd);
             var rtDescCmd = descCmd.GetComponent<RectTransform>();
             rtDescCmd.anchorMin = new Vector2(0f, 1f);
             rtDescCmd.anchorMax = new Vector2(1f, 1f);
             rtDescCmd.pivot = new Vector2(0f, 1f);
-            rtDescCmd.anchoredPosition = new Vector2(20f, -220f);
+            rtDescCmd.anchoredPosition = new Vector2(20f, -244f);
             rtDescCmd.sizeDelta = new Vector2(0f, 16f);
 
             // Barra Input Modal
@@ -948,7 +954,7 @@ namespace SoulKnight
             rtBarInputM.anchorMin = new Vector2(0.5f, 1f);
             rtBarInputM.anchorMax = new Vector2(0.5f, 1f);
             rtBarInputM.pivot = new Vector2(0.5f, 1f);
-            rtBarInputM.anchoredPosition = new Vector2(0f, -246f);
+            rtBarInputM.anchoredPosition = new Vector2(0f, -270f);
             rtBarInputM.sizeDelta = new Vector2(790f, 38f);
 
             var inpModalObj = new GameObject("InputFieldModal");
@@ -1054,7 +1060,7 @@ namespace SoulKnight
             rtFbM.anchorMin = new Vector2(0.5f, 1f);
             rtFbM.anchorMax = new Vector2(0.5f, 1f);
             rtFbM.pivot = new Vector2(0.5f, 1f);
-            rtFbM.anchoredPosition = new Vector2(0f, -295f);
+            rtFbM.anchoredPosition = new Vector2(0f, -318f);
             rtFbM.sizeDelta = new Vector2(790f, 26f);
 
             // Botón Cerrar en Modal
@@ -1281,6 +1287,36 @@ namespace SoulKnight
 
             if (_panelAudio != null) _panelAudio.SetActive(pestana == PestanaOpciones.Audio);
             if (_panelControles != null) _panelControles.SetActive(pestana == PestanaOpciones.Controles);
+
+            // La opción de resetear controles solo debe de salir en el apartado de controles
+            if (botonRestaurar != null)
+            {
+                botonRestaurar.gameObject.SetActive(pestana == PestanaOpciones.Controles);
+            }
+
+            if (botonCerrar != null)
+            {
+                var rtC = botonCerrar.GetComponent<RectTransform>();
+                if (rtC != null)
+                {
+                    if (pestana == PestanaOpciones.Controles)
+                    {
+                        rtC.anchorMin = new Vector2(1f, 0.5f);
+                        rtC.anchorMax = new Vector2(1f, 0.5f);
+                        rtC.pivot = new Vector2(1f, 0.5f);
+                        rtC.anchoredPosition = new Vector2(0f, 0f);
+                        rtC.sizeDelta = new Vector2(270f, 40f);
+                    }
+                    else
+                    {
+                        rtC.anchorMin = new Vector2(0.5f, 0.5f);
+                        rtC.anchorMax = new Vector2(0.5f, 0.5f);
+                        rtC.pivot = new Vector2(0.5f, 0.5f);
+                        rtC.anchoredPosition = new Vector2(0f, 0f);
+                        rtC.sizeDelta = new Vector2(340f, 40f);
+                    }
+                }
+            }
 
             if (_imgTabAudio != null)
             {

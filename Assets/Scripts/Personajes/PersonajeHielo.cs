@@ -862,7 +862,8 @@ namespace SoulKnight
                         var eraComponente = era.GetComponent<ZonaEraHielo>();
                         if (eraComponente != null)
                         {
-                            eraComponente.Configurar(duracionEraHielo, danoTickEraHielo);
+                            int danoEscalado = Mathf.RoundToInt(danoTickEraHielo * MultiplicadorDanoTotal);
+                            eraComponente.Configurar(duracionEraHielo, danoEscalado, this);
                         }
                     }
                 }
@@ -972,7 +973,8 @@ namespace SoulKnight
             var eraComponente = era.GetComponent<ZonaEraHielo>();
             if (eraComponente != null)
             {
-                eraComponente.Configurar(duracionEraHielo, danoTickEraHielo);
+                int danoEscalado = Mathf.RoundToInt(danoTickEraHielo * MultiplicadorDanoTotal);
+                eraComponente.Configurar(duracionEraHielo, danoEscalado, this);
             }
             era.GetComponent<NetworkObject>().Spawn();
         }

@@ -6,9 +6,12 @@ namespace SoulKnight
 {
     /// <summary>
     /// Zona de área para la ultimate "Era de Hielo".
-    /// Daña y congela periódicamente a todos los enemigos dentro durante su duración.
-    /// Visuales mejorados: vórtice de hielo giratorio, copos de nieve orbitales,
-    /// pulsaciones de escarcha y anillo exterior rúnico.
+    /// Transforma el área en una feroz ventisca ártica (Blizzard):
+    /// - Escala ampliada con radio de congelación masivo.
+    /// - Ráfagas y vórtices de viento helado en espiral giratoria continua (sin iconos planos).
+    /// - Enjambre de 24 copos de nieve y esquirlas de hielo en órbita turbulenta.
+    /// - Ondas y pulsos de escarcha que dañan y congelan a todos los enemigos periódicamente.
+    /// - El daño por tick escala con el nivel del jugador y multiplicadores de run.
     /// </summary>
     public class ZonaEraHielo : NetworkBehaviour
     {
@@ -26,15 +29,38 @@ namespace SoulKnight
         private float _timerTick = 0f;
         private readonly List<EnemigoBase> _enemigosEnZona = new List<EnemigoBase>();
 
-        private Vector3 _escalaObjetivo;
+        private Vector3 _escalaObjetivo = Vector3.one * 1.45f;
         private float _tiempoAparicion = 0f;
+        private Personaje _lanzador;
 
         public static readonly List<ZonaEraHielo> Todas = new List<ZonaEraHielo>();
 
-        public void Configurar(float duracion, int danoTick)
+        // Partículas orbitales de la ventisca
+        private struct ParticulaVentisca
+        {
+            public Transform transform;
+            public SpriteRenderer renderer;
+            public float distanciaOrbital;
+            public float anguloActual;
+            public float velocidadOrbital;
+            public float desfaseOscilacion;
+            public float escalaBase;
+        }
+
+        private readonly List<ParticulaVentisca> _particulasVentisca = new List<ParticulaVentisca>();
+
+        // Sprites procedurales cacheados de la ventisca
+        private static Sprite _spriteAuraBlizzard;
+        private static Sprite _spriteVorticeBlizzard;
+        private static Sprite _spriteCopoBlizzard;
+        private static Sprite _spriteCristalBlizzard;
+        private static Sprite _spriteAnilloBlizzard;
+
+        public void Configurar(float duracion, int danoTick, Personaje lanzador = null)
         {
             _duracion = duracion;
             _danoPorTick = danoTick;
+            _lanzador = lanzador;
         }
 
         public override void OnNetworkSpawn()
@@ -53,12 +79,22 @@ namespace SoulKnight
 
         void Awake()
         {
-            _escalaObjetivo = transform.localScale;
-            transform.localScale = Vector3.one * 0.1f; // Comienza pequeño para expandirse
+            // Radio de congelación expandido y mayor tamaño de tormenta
+            var col = GetComponent<CircleCollider2D>();
+            if (col != null)
+            {
+                col.isTrigger = true;
+                col.radius = 8.5f;
+            }
+
+            _escalaObjetivo = Vector3.one * 1.45f;
+            transform.localScale = Vector3.one * 0.1f;
         }
 
         void Start()
         {
+            ConfigurarVisualesVentisca();
+
             _fuenteAudioEra = gameObject.AddComponent<AudioSource>();
             _fuenteAudioEra.loop = true;
             _fuenteAudioEra.spatialBlend = 0f;
@@ -69,10 +105,118 @@ namespace SoulKnight
             {
                 _fuenteAudioEra.clip = clip;
                 float vol = GestorAudio.Instancia != null 
-                    ? GestorAudio.Instancia.VolumenMaster * GestorAudio.Instancia.VolumenSFX * 0.9f 
-                    : 0.8f;
+                    ? GestorAudio.Instancia.VolumenMaster * GestorAudio.Instancia.VolumenSFX * 0.95f 
+                    : 0.85f;
                 _fuenteAudioEra.volume = vol;
                 _fuenteAudioEra.Play();
+            }
+        }
+
+        private void ConfigurarVisualesVentisca()
+        {
+            GenerarSpritesProcedurales();
+
+            // 1. Fondo de Escarcha y Suelo Congelado (Capa 1)
+            if (fondoAura == null)
+            {
+                var fObj = transform.Find("FondoAura");
+                if (fObj != null) fondoAura = fObj.GetComponent<SpriteRenderer>();
+            }
+            if (fondoAura != null)
+            {
+                fondoAura.sprite = _spriteAuraBlizzard;
+                fondoAura.color = new Color(0.18f, 0.65f, 1f, 0.40f);
+                fondoAura.sortingOrder = 1;
+                fondoAura.transform.localScale = Vector3.one * 16.5f;
+            }
+
+            // 2. Vórtice Interior de Viento Huracanado (Capa 2)
+            if (vorticeInterior == null)
+            {
+                var vObj = transform.Find("VorticeInterior");
+                if (vObj != null) vorticeInterior = vObj;
+            }
+            if (vorticeInterior != null)
+            {
+                var sr = vorticeInterior.GetComponent<SpriteRenderer>();
+                if (sr != null)
+                {
+                    sr.sprite = _spriteVorticeBlizzard;
+                    sr.color = new Color(0.65f, 0.92f, 1f, 0.75f);
+                    sr.sortingOrder = 2;
+                }
+                vorticeInterior.localScale = Vector3.one * 14.0f;
+            }
+
+            // 3. Anillo Exterior de Tormenta de Nieve (Capa 3)
+            if (anilloExterior == null)
+            {
+                var aObj = transform.Find("AnilloExterior");
+                if (aObj != null) anilloExterior = aObj;
+            }
+            if (anilloExterior != null)
+            {
+                var sr = anilloExterior.GetComponent<SpriteRenderer>();
+                if (sr != null)
+                {
+                    sr.sprite = _spriteAnilloBlizzard;
+                    sr.color = new Color(0.85f, 0.98f, 1f, 0.80f);
+                    sr.sortingOrder = 3;
+                }
+                anilloExterior.localScale = Vector3.one * 17.0f;
+            }
+
+            // 4. Destello de Tick Radial (Capa 4)
+            if (destelloTick == null)
+            {
+                var dObj = transform.Find("DestelloTick");
+                if (dObj != null) destelloTick = dObj.GetComponent<SpriteRenderer>();
+            }
+            if (destelloTick != null)
+            {
+                destelloTick.sprite = _spriteAuraBlizzard;
+                destelloTick.color = new Color(1f, 1f, 1f, 0f);
+                destelloTick.sortingOrder = 4;
+                destelloTick.transform.localScale = Vector3.one * 17.5f;
+            }
+
+            // 5. Enjambre Dinámico de Copos y Esquirlas de Hielo
+            CrearEnjambreCopos();
+        }
+
+        private void CrearEnjambreCopos()
+        {
+            _particulasVentisca.Clear();
+            int totalParticulas = 24;
+
+            for (int i = 0; i < totalParticulas; i++)
+            {
+                var pObj = new GameObject($"CopoVentisca_{i}");
+                pObj.transform.SetParent(transform, false);
+
+                var sr = pObj.AddComponent<SpriteRenderer>();
+                bool esCristal = (i % 2 == 0);
+                sr.sprite = esCristal ? _spriteCristalBlizzard : _spriteCopoBlizzard;
+                sr.color = esCristal 
+                    ? new Color(0.70f, 0.92f, 1f, UnityEngine.Random.Range(0.65f, 0.95f))
+                    : new Color(0.95f, 0.98f, 1f, UnityEngine.Random.Range(0.70f, 0.98f));
+                sr.sortingOrder = 5;
+
+                float escala = UnityEngine.Random.Range(0.7f, 1.45f);
+                pObj.transform.localScale = Vector3.one * escala;
+
+                var part = new ParticulaVentisca
+                {
+                    transform = pObj.transform,
+                    renderer = sr,
+                    distanciaOrbital = UnityEngine.Random.Range(1.8f, 8.0f),
+                    anguloActual = (360f / totalParticulas) * i + UnityEngine.Random.Range(-12f, 12f),
+                    velocidadOrbital = UnityEngine.Random.Range(110f, 210f),
+                    desfaseOscilacion = UnityEngine.Random.Range(0f, Mathf.PI * 2f),
+                    escalaBase = escala
+                };
+
+                _particulasVentisca.Add(part);
             }
         }
 
@@ -96,7 +240,7 @@ namespace SoulKnight
 
         void Update()
         {
-            // Animación de aparición rápida con rebote elástico (0.3s)
+            // Animación de aparición rápida con rebote elástico (0.35s)
             if (_tiempoAparicion < 0.35f)
             {
                 _tiempoAparicion += Time.deltaTime;
@@ -106,28 +250,56 @@ namespace SoulKnight
             }
             else
             {
-                // Pulsación suave de respiración helada
-                float pulso = 1f + Mathf.Sin(Time.time * 3f) * 0.04f;
+                // Pulsación sutil de expansión helada
+                float pulso = 1f + Mathf.Sin(Time.time * 2.5f) * 0.035f;
                 transform.localScale = _escalaObjetivo * pulso;
             }
 
-            // Rotación del vórtice interior en sentido horario
+            // Rotación rápida del vórtice interior (ráfagas de viento en remolino)
             if (vorticeInterior != null)
             {
-                vorticeInterior.Rotate(0f, 0f, -50f * Time.deltaTime);
+                vorticeInterior.Rotate(0f, 0f, -125f * Time.deltaTime);
             }
 
-            // Rotación del anillo exterior en sentido antihorario
+            // Rotación del anillo exterior en contra-viento
             if (anilloExterior != null)
             {
-                anilloExterior.Rotate(0f, 0f, 30f * Time.deltaTime);
+                anilloExterior.Rotate(0f, 0f, 75f * Time.deltaTime);
+            }
+
+            // Animar el enjambre de copos y cristales de la ventisca
+            for (int i = 0; i < _particulasVentisca.Count; i++)
+            {
+                var p = _particulasVentisca[i];
+                if (p.transform == null) continue;
+
+                p.anguloActual += p.velocidadOrbital * Time.deltaTime;
+                float rad = p.anguloActual * Mathf.Deg2Rad;
+
+                // Oscilación radial turbulenta del viento (acerca y aleja los copos del ojo de la tormenta)
+                float radioDinamico = p.distanciaOrbital + Mathf.Sin(Time.time * 3.5f + p.desfaseOscilacion) * 0.75f;
+                Vector3 nuevaPos = new Vector3(Mathf.Cos(rad) * radioDinamico, Mathf.Sin(rad) * radioDinamico, 0f);
+                p.transform.localPosition = nuevaPos;
+
+                // Rotación del copo sobre su eje
+                p.transform.Rotate(0f, 0f, 180f * Time.deltaTime);
+
+                // Pulso de brillo por viento
+                if (p.renderer != null)
+                {
+                    Color c = p.renderer.color;
+                    c.a = 0.55f + Mathf.Sin(Time.time * 5f + p.desfaseOscilacion) * 0.40f;
+                    p.renderer.color = c;
+                }
+
+                _particulasVentisca[i] = p;
             }
 
             // Atenuar destello del tick
             if (destelloTick != null && destelloTick.color.a > 0.01f)
             {
                 Color c = destelloTick.color;
-                c.a = Mathf.MoveTowards(c.a, 0f, Time.deltaTime * 2.5f);
+                c.a = Mathf.MoveTowards(c.a, 0f, Time.deltaTime * 2.8f);
                 destelloTick.color = c;
             }
 
@@ -163,18 +335,25 @@ namespace SoulKnight
             GestorAudio.PlaySFX(TipoSFX.EraHieloHit, 1.0f);
             if (destelloTick != null)
             {
-                destelloTick.color = new Color(0.85f, 0.98f, 1f, 0.55f);
+                destelloTick.color = new Color(0.88f, 0.98f, 1f, 0.65f);
             }
         }
 
         private void AplicarTicks()
         {
+            int danoFinal = _danoPorTick;
+            if (_lanzador != null)
+            {
+                // Si el lanzador sigue vivo, sincronizar con su multiplicador total de daño por nivel de run
+                danoFinal = Mathf.Max(_danoPorTick, Mathf.RoundToInt(_danoPorTick * _lanzador.MultiplicadorDanoTotal));
+            }
+
             for (int i = _enemigosEnZona.Count - 1; i >= 0; i--)
             {
                 var enemigo = _enemigosEnZona[i];
                 if (enemigo != null && enemigo.gameObject.activeInHierarchy)
                 {
-                    enemigo.RecibirDano(_danoPorTick, new Color(0.42f, 0.88f, 1f, 1f));
+                    enemigo.RecibirDano(danoFinal, new Color(0.42f, 0.88f, 1f, 1f));
                     enemigo.Freeze();
                 }
                 else
@@ -203,6 +382,166 @@ namespace SoulKnight
             {
                 _enemigosEnZona.Remove(enemigo);
             }
+        }
+
+        // ==================== GENERACIÓN PROCEDURAL DE SPRITES DE VENTISCA ====================
+        private static void GenerarSpritesProcedurales()
+        {
+            if (_spriteAuraBlizzard != null) return;
+
+            // 1. Aura circular de escarcha con degradado radial
+            int dimAura = 128;
+            var texAura = new Texture2D(dimAura, dimAura, TextureFormat.RGBA32, false);
+            texAura.filterMode = FilterMode.Bilinear;
+            float centroAura = dimAura / 2f;
+            float radioAura = dimAura * 0.48f;
+
+            for (int y = 0; y < dimAura; y++)
+            {
+                for (int x = 0; x < dimAura; x++)
+                {
+                    float dist = Vector2.Distance(new Vector2(x, y), new Vector2(centroAura, centroAura));
+                    if (dist > radioAura)
+                    {
+                        texAura.SetPixel(x, y, Color.clear);
+                    }
+                    else
+                    {
+                        float norm = dist / radioAura;
+                        float alpha = Mathf.Pow(1f - norm, 1.8f) * 0.85f;
+                        Color col = Color.Lerp(new Color(0.85f, 0.96f, 1f, alpha), new Color(0.18f, 0.55f, 0.95f, alpha * 0.6f), norm);
+                        texAura.SetPixel(x, y, col);
+                    }
+                }
+            }
+            texAura.Apply();
+            _spriteAuraBlizzard = Sprite.Create(texAura, new Rect(0, 0, dimAura, dimAura), new Vector2(0.5f, 0.5f), 32f);
+
+            // 2. Vórtice de viento en espiral (racha huracanada)
+            int dimVor = 128;
+            var texVor = new Texture2D(dimVor, dimVor, TextureFormat.RGBA32, false);
+            texVor.filterMode = FilterMode.Bilinear;
+            float cVor = dimVor / 2f;
+
+            for (int y = 0; y < dimVor; y++)
+            {
+                for (int x = 0; x < dimVor; x++)
+                {
+                    Vector2 d = new Vector2(x - cVor, y - cVor);
+                    float dist = d.magnitude;
+                    if (dist > cVor || dist < 4f)
+                    {
+                        texVor.SetPixel(x, y, Color.clear);
+                    }
+                    else
+                    {
+                        float angulo = Mathf.Atan2(d.y, d.x);
+                        // Espiral de 3 brazos de viento
+                        float espiral = Mathf.Sin(angulo * 3f + (dist * 0.22f));
+                        float intensidad = Mathf.Clamp01((espiral - 0.1f) / 0.9f);
+                        float bordeSuave = Mathf.Sin((dist / cVor) * Mathf.PI);
+                        float a = intensidad * bordeSuave * 0.85f;
+                        texVor.SetPixel(x, y, new Color(0.80f, 0.95f, 1f, a));
+                    }
+                }
+            }
+            texVor.Apply();
+            _spriteVorticeBlizzard = Sprite.Create(texVor, new Rect(0, 0, dimVor, dimVor), new Vector2(0.5f, 0.5f), 32f);
+
+            // 3. Anillo exterior de ráfagas periféricas
+            int dimAnillo = 128;
+            var texAnillo = new Texture2D(dimAnillo, dimAnillo, TextureFormat.RGBA32, false);
+            texAnillo.filterMode = FilterMode.Bilinear;
+            float cAnillo = dimAnillo / 2f;
+            float rAnilloMin = dimAnillo * 0.32f;
+            float rAnilloMax = dimAnillo * 0.48f;
+
+            for (int y = 0; y < dimAnillo; y++)
+            {
+                for (int x = 0; x < dimAnillo; x++)
+                {
+                    float dist = Vector2.Distance(new Vector2(x, y), new Vector2(cAnillo, cAnillo));
+                    if (dist < rAnilloMin || dist > rAnilloMax)
+                    {
+                        texAnillo.SetPixel(x, y, Color.clear);
+                    }
+                    else
+                    {
+                        float angulo = Mathf.Atan2(y - cAnillo, x - cAnillo);
+                        float patron = Mathf.Sin(angulo * 6f + dist * 0.3f);
+                        float norm = (dist - rAnilloMin) / (rAnilloMax - rAnilloMin);
+                        float curva = Mathf.Sin(norm * Mathf.PI);
+                        float a = Mathf.Clamp01((patron + 1f) * 0.5f) * curva * 0.75f;
+                        texAnillo.SetPixel(x, y, new Color(0.75f, 0.95f, 1f, a));
+                    }
+                }
+            }
+            texAnillo.Apply();
+            _spriteAnilloBlizzard = Sprite.Create(texAnillo, new Rect(0, 0, dimAnillo, dimAnillo), new Vector2(0.5f, 0.5f), 32f);
+
+            // 4. Copo de nieve de 6 puntas
+            int dimCopo = 32;
+            var texCopo = new Texture2D(dimCopo, dimCopo, TextureFormat.RGBA32, false);
+            texCopo.filterMode = FilterMode.Point;
+            float cCopo = dimCopo / 2f;
+
+            for (int y = 0; y < dimCopo; y++)
+            {
+                for (int x = 0; x < dimCopo; x++)
+                {
+                    Vector2 d = new Vector2(x - cCopo, y - cCopo);
+                    float dist = d.magnitude;
+                    if (dist > cCopo)
+                    {
+                        texCopo.SetPixel(x, y, Color.clear);
+                    }
+                    else
+                    {
+                        float ang = Mathf.Atan2(d.y, d.x);
+                        float puntas = Mathf.Abs(Mathf.Cos(ang * 3f)); // 6 puntas simétricas
+                        bool rayo = puntas > 0.88f && dist < (cCopo * 0.9f);
+                        bool centro = dist < 3.2f;
+                        bool rama = puntas > 0.70f && dist > 5f && dist < 10f;
+
+                        if (rayo || centro || rama)
+                        {
+                            texCopo.SetPixel(x, y, new Color(1f, 1f, 1f, 0.95f));
+                        }
+                        else
+                        {
+                            texCopo.SetPixel(x, y, Color.clear);
+                        }
+                    }
+                }
+            }
+            texCopo.Apply();
+            _spriteCopoBlizzard = Sprite.Create(texCopo, new Rect(0, 0, dimCopo, dimCopo), new Vector2(0.5f, 0.5f), 16f);
+
+            // 5. Cristal de hielo en diamante
+            int dimCris = 32;
+            var texCris = new Texture2D(dimCris, dimCris, TextureFormat.RGBA32, false);
+            texCris.filterMode = FilterMode.Point;
+            float cCris = dimCris / 2f;
+
+            for (int y = 0; y < dimCris; y++)
+            {
+                for (int x = 0; x < dimCris; x++)
+                {
+                    float dx = Mathf.Abs(x - cCris) / (cCris * 0.65f);
+                    float dy = Mathf.Abs(y - cCris) / (cCris * 0.95f);
+                    if (dx + dy <= 1f)
+                    {
+                        float brillo = 1f - (dx + dy) * 0.5f;
+                        texCris.SetPixel(x, y, new Color(0.70f, 0.95f, 1f, brillo));
+                    }
+                    else
+                    {
+                        texCris.SetPixel(x, y, Color.clear);
+                    }
+                }
+            }
+            texCris.Apply();
+            _spriteCristalBlizzard = Sprite.Create(texCris, new Rect(0, 0, dimCris, dimCris), new Vector2(0.5f, 0.5f), 16f);
         }
     }
 }
