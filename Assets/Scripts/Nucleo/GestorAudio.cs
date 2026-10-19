@@ -57,7 +57,11 @@ namespace SoulKnight
         SubirMaestria,
         CargandoUltiRayo,
         LanzandoUltiRayo,
-        ComerPescado
+        ComerPescado,
+        UltiExplosionFuego,
+        UltiMaullidoFuego,
+        UltiSiceoFuego,
+        Lanzallamas
     }
 
     public class MarcadorAudioBoton : MonoBehaviour { }
@@ -234,6 +238,11 @@ namespace SoulKnight
             RegistrarSFX(TipoSFX.CargandoUltiRayo, "Audio/SFX/CargandoUltiRayo");
             RegistrarSFX(TipoSFX.LanzandoUltiRayo, "Audio/SFX/LanzandoUltiRayo");
             RegistrarSFX(TipoSFX.ComerPescado, "Audio/SFX/ComerPescado");
+            RegistrarSFX(TipoSFX.FuegoLlamas, "Audio/SFX/Lanzallamas", "Audio/SFX/FuegoLlamas");
+            RegistrarSFX(TipoSFX.Lanzallamas, "Audio/SFX/Lanzallamas", "Audio/SFX/FuegoLlamas");
+            RegistrarSFX(TipoSFX.UltiExplosionFuego, "Audio/SFX/UltiExplosionFuego", "Audio/SFX/UltiExplosionFuegoFinal");
+            RegistrarSFX(TipoSFX.UltiMaullidoFuego, "Audio/SFX/UltiMaullidoFuego", "Audio/SFX/UltiMaullidoFinal");
+            RegistrarSFX(TipoSFX.UltiSiceoFuego, "Audio/SFX/UltiSiceoFuego", "Audio/SFX/UltiSiceoFuegoFinal");
         }
 
         private void RegistrarMusica(TipoMusica tipo, string rutaResources)
@@ -242,9 +251,13 @@ namespace SoulKnight
             if (clip != null) _clipsMusica[tipo] = clip;
         }
 
-        private void RegistrarSFX(TipoSFX tipo, string rutaResources)
+        private void RegistrarSFX(TipoSFX tipo, string rutaResources, string rutaAlternativa = null)
         {
             var clip = Resources.Load<AudioClip>(rutaResources);
+            if (clip == null && !string.IsNullOrEmpty(rutaAlternativa))
+            {
+                clip = Resources.Load<AudioClip>(rutaAlternativa);
+            }
             if (clip != null) _clipsSFX[tipo] = clip;
         }
 
@@ -328,6 +341,13 @@ namespace SoulKnight
                 _ => TipoSFX.GatoDano3
             };
             PlaySFX(sfx, volumenMultiplicador, 0.03f);
+        }
+
+        public static void PlayUltiFuegoCompleta(float volumenMultiplicador = 1.0f)
+        {
+            PlaySFX(TipoSFX.UltiExplosionFuego, volumenMultiplicador * 1.15f, 0.02f);
+            PlaySFX(TipoSFX.UltiMaullidoFuego, volumenMultiplicador * 1.05f, 0.02f);
+            PlaySFX(TipoSFX.UltiSiceoFuego, volumenMultiplicador * 1.0f, 0.02f);
         }
 
         public static void PlaySFX(TipoSFX tipo, float volumenMultiplicador = 1.0f, float pitchRandom = 0.06f)

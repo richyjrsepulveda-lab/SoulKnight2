@@ -67,6 +67,7 @@ namespace SoulKnight
         private LineRenderer _nucleoLanzallamas;
         private readonly List<SpriteRenderer> _lenguasFuego = new List<SpriteRenderer>();
         private static Sprite _spriteLenguaFuego;
+        private AudioSource _fuenteAudioLanzallamas;
 
         private void AsegurarVisualesLanzallamas()
         {
@@ -199,6 +200,7 @@ namespace SoulKnight
         {
             if (EstaMuerto.Value)
             {
+                DetenerAudioLanzallamasLoop();
                 if (IsServer && DisparandoCabezaFuego.Value) DisparandoCabezaFuego.Value = false;
                 if (IsServer && CabezaFuegoActiva.Value) CabezaFuegoActiva.Value = false;
                 if (IsServer && SupernovaActiva.Value) SupernovaActiva.Value = false;
@@ -261,13 +263,15 @@ namespace SoulKnight
                 }
             }
 
-            // Actualización visual del lanzallamas de fuego fluido (se curva como látigo/cuerda al girar el apuntado)
+            // Actualización visual y sonora del lanzallamas de fuego fluido
             if (DisparandoCabezaFuego.Value && rayoCabezaFuego != null)
             {
+                ReproducirAudioLanzallamasLoop();
                 ActualizarLanzallamasCurvado();
             }
             else
             {
+                DetenerAudioLanzallamasLoop();
                 _flamallamaIniciada = false;
                 if (rayoCabezaFuego != null && rayoCabezaFuego.enabled)
                 {
@@ -294,13 +298,6 @@ namespace SoulKnight
             AsegurarVisualesLanzallamas();
             rayoCabezaFuego.enabled = true;
             if (_nucleoLanzallamas != null) _nucleoLanzallamas.enabled = true;
-
-            _tiempoSonidoLlamas -= Time.deltaTime;
-            if (_tiempoSonidoLlamas <= 0f)
-            {
-                _tiempoSonidoLlamas = 0.32f;
-                GestorAudio.PlaySFX(TipoSFX.FuegoLlamas, 0.75f);
-            }
 
             Vector2 origen = transform.position;
             Vector2 dirActual = IsOwner ? ((Vector2)Controles.PosicionMouseMundo() - origen).normalized : DireccionApuntado.Value;
@@ -518,7 +515,7 @@ namespace SoulKnight
                 if (PuedeUsarHabilidad(IdHabilidad.Fuego_Meteorito, out string motivoUlti))
                 {
                     _cdSupernovaRestante = cooldownSupernova;
-                    GestorAudio.PlaySFX(TipoSFX.Explosion, 1.25f);
+                    GestorAudio.PlayUltiFuegoCompleta(1.20f);
                     ActivarSupernovaServerRpc();
                 }
                 else
@@ -629,7 +626,10 @@ namespace SoulKnight
         [ClientRpc]
         private void DetonarSupernovaClientRpc(Vector3 pos)
         {
-            GestorAudio.PlaySFX(TipoSFX.Explosion);
+            if (!IsOwner)
+            {
+                GestorAudio.PlayUltiFuegoCompleta(1.15f);
+            }
             CamaraSeguir.Instancia?.Sacudir(0.45f, 0.32f);
             TextoFlotante.Crear(pos + Vector3.up * 1.5f, "¡SUPERNOVA!", new Color(1f, 0.82f, 0.15f));
 
@@ -801,6 +801,7 @@ namespace SoulKnight
         public override void LimpiarEstadosYHabilidades()
         {
             base.LimpiarEstadosYHabilidades();
+            DetenerAudioLanzallamasLoop();
 
             if (IsServer)
             {
@@ -827,6 +828,55 @@ namespace SoulKnight
             {
                 _auraSupernova.SetActive(false);
             }
+        }
+
+        private void ReproducirAudioLanzallamasLoop()
+        {
+            if (_fuenteAudioLanzallamas == null)
+            {
+                _fuenteAudioLanzallamas = gameObject.AddComponent<AudioSource>();
+                _fuenteAudioLanzallamas.loop = true;
+                _fuenteAudioLanzallamas.playOnAwake = false;
+                _fuenteAudioLanzallamas.spatialBlend = 0f;
+            }
+
+            if (_fuenteAudioLanzallamas.clip == null)
+            {
+                _fuenteAudioLanzallamas.clip = GestorAudio.GetClipSFX(TipoSFX.Lanzallamas) 
+                    ?? GestorAudio.GetClipSFX(TipoSFX.FuegoLlamas) 
+                    ?? Resources.Load<AudioClip>("Audio/SFX/Lanzallamas");
+            }
+
+            if (_fuenteAudioLanzallamas.clip != null)
+            {
+                float vol = GestorAudio.Instancia != null 
+                    ? GestorAudio.Instancia.VolumenMaster * GestorAudio.Instancia.VolumenSFX * 0.88f 
+                    : 0.85f;
+                _fuenteAudioLanzallamas.volume = vol;
+                if (!_fuenteAudioLanzallamas.isPlaying)
+                {
+                    _fuenteAudioLanzallamas.Play();
+                }
+            }
+        }
+
+        private void DetenerAudioLanzallamasLoop()
+        {
+            if (_fuenteAudioLanzallamas != null && _fuenteAudioLanzallamas.isPlaying)
+            {
+                _fuenteAudioLanzallamas.Stop();
+            }
+        }
+
+        protected override void OnDisable()
+        {
+            DetenerAudioLanzallamasLoop();
+            base.OnDisable();
+        }
+
+        protected virtual void OnDestroy()
+        {
+            DetenerAudioLanzallamasLoop();
         }
     }
 }
