@@ -24,9 +24,9 @@ namespace SoulKnight
         public LineRenderer rayoHieloHalo;
 
         [Header("Estadísticas")]
-        public int danoRayo = 7;
+        public int danoRayo = 4;
         public float rangoRayo = 7.5f;           // Alcance moderado balanceado (no infinito)
-        public float intervaloTickRayo = 0.038f; // Ticks continuos ultra-rápidos a alta frecuencia
+        public float intervaloTickRayo = 0.020f; // Ticks continuos ultra-rápidos a 50 impactos por segundo
         public float cooldownBolaHielo = 7.0f;
         public int danoBolaHielo = 100;
 
@@ -495,15 +495,18 @@ namespace SoulKnight
                 }
             }
 
-            // Daño continuo rayo de hielo en servidor (pega más rápido)
+            // Daño continuo rayo de hielo en servidor (alta cadencia de impactos continuos)
             if (IsServer && DisparandoRayo.Value)
             {
                 _tickTimerRayo -= Time.deltaTime;
-                if (_tickTimerRayo <= 0f)
+                int maxTicksPorFrame = 4;
+                while (_tickTimerRayo <= 0f && maxTicksPorFrame > 0)
                 {
-                    _tickTimerRayo = intervaloTickRayo;
+                    _tickTimerRayo += intervaloTickRayo;
+                    maxTicksPorFrame--;
                     EjecutarRaycastRayoHielo();
                 }
+                if (_tickTimerRayo < -0.05f) _tickTimerRayo = 0f;
             }
 
             // Decrementar temporizador de mirada por ataque
