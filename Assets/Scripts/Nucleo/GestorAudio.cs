@@ -135,6 +135,11 @@ namespace SoulKnight
 
         private void AlCargarEscena(Scene scene, LoadSceneMode mode)
         {
+            DetenerTodosLosSFX();
+            if (scene.name == Escenas.MenuPrincipal || scene.name == Escenas.Lobby)
+            {
+                ComandosAdmin.ResetearAjustesAdmin();
+            }
             StartCoroutine(RutinaAsignarClicksBotones());
         }
 
@@ -363,6 +368,27 @@ namespace SoulKnight
         public static void DetenerSFXLoop()
         {
             Instancia.DetenerSFXLoopInterno();
+        }
+
+        public static void DetenerTodosLosSFX()
+        {
+            if (_instancia != null)
+            {
+                _instancia.DetenerTodosLosSFXInterno();
+            }
+        }
+
+        private void DetenerTodosLosSFXInterno()
+        {
+            DetenerSFXLoopInterno();
+            for (int i = 0; i < _poolSFX.Count; i++)
+            {
+                if (_poolSFX[i] != null && _poolSFX[i].isPlaying)
+                {
+                    _poolSFX[i].Stop();
+                    _poolSFX[i].clip = null;
+                }
+            }
         }
 
         public static void PlayBGM(TipoMusica tipo, float tiempoFade = 0.6f)

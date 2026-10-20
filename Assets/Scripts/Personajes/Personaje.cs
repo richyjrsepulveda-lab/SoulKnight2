@@ -237,6 +237,20 @@ namespace SoulKnight
         }
 
         public float FactorReduccionCooldown => Mathf.Clamp(1f - (ObtenerNivelMejora(TipoMejoraTienda.CooldownUniversal) * 0.07f), 0.50f, 1.0f);
+        public float FactorReduccionCooldownUlti => Mathf.Clamp(FactorReduccionCooldown - (ObtenerNivelMejora(TipoMejoraTienda.CooldownDefinitiva) * 0.10f), 0.35f, 1.0f);
+        public float MultiplicadorAreaHabilidades => 1.0f + (ObtenerNivelMejora(TipoMejoraTienda.AreaHabilidades) * 0.12f);
+        public float ProbabilidadCritico => ObtenerNivelMejora(TipoMejoraTienda.GolpeCritico) * 0.08f;
+
+        public int AplicarCriticoSiProcede(int danoBase, out bool esCritico)
+        {
+            if (UnityEngine.Random.value < ProbabilidadCritico)
+            {
+                esCritico = true;
+                return Mathf.RoundToInt(danoBase * 1.8f);
+            }
+            esCritico = false;
+            return danoBase;
+        }
 
         protected virtual void Start()
         {
@@ -413,7 +427,12 @@ namespace SoulKnight
                     }
                 }
 
-                ProcesarInputsHabilidadesLocales();
+                // En el Lobby pacífico o pantallas no se procesan inputs de combate ni habilidades
+                bool enMazmorraCombate = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name == Escenas.Juego && ControladorLobby.Instancia == null;
+                if (enMazmorraCombate)
+                {
+                    ProcesarInputsHabilidadesLocales();
+                }
                 ProcesarRevivirAliadosLocales();
             }
             else
@@ -730,6 +749,10 @@ namespace SoulKnight
         {
             TipoMejoraTienda tipo = (TipoMejoraTienda)tipoMejoraByte;
             EstablecerNivelMejora(tipo, nuevoNv);
+            if (IsOwner)
+            {
+                GestorAudio.PlaySFX(tipo == TipoMejoraTienda.PescadoAsado ? TipoSFX.ComerPescado : TipoSFX.Mejora);
+            }
             if (HUDJugador.Instancia != null && HUDJugador.Instancia.TiendaAbierta)
             {
                 HUDJugador.Instancia.ActualizarItemsTiendaUI();
@@ -803,6 +826,15 @@ namespace SoulKnight
                 case TipoMejoraTienda.CooldownUniversal:
                     MostrarTextoFlotanteClientRpc($"¡-7% Tiempos de Cooldown! (Nv {nivel}/5)", new Color(0.35f, 0.85f, 1f));
                     break;
+                case TipoMejoraTienda.AreaHabilidades:
+                    MostrarTextoFlotanteClientRpc($"¡+12% Tamaño/Área de Habilidades! (Nv {nivel}/5)", new Color(0.6f, 1f, 0.5f));
+                    break;
+                case TipoMejoraTienda.CooldownDefinitiva:
+                    MostrarTextoFlotanteClientRpc($"¡-10% Recarga de Ulti! (Nv {nivel}/5)", new Color(1f, 0.85f, 0.3f));
+                    break;
+                case TipoMejoraTienda.GolpeCritico:
+                    MostrarTextoFlotanteClientRpc($"¡+8% Probabilidad Crítica (1.8x)! (Nv {nivel}/5)", new Color(1f, 0.3f, 0.3f));
+                    break;
 
                 case TipoMejoraTienda.Fuego_DanoQuemadura:
                     MostrarTextoFlotanteClientRpc($"¡+6 Daño por Quemadura! (Nv {nivel}/5)", new Color(1f, 0.5f, 0.1f));
@@ -812,6 +844,9 @@ namespace SoulKnight
                     break;
                 case TipoMejoraTienda.Fuego_Duracion:
                     MostrarTextoFlotanteClientRpc($"¡+1.0s Fuego Prolongado! (Nv {nivel}/5)", new Color(1f, 0.35f, 0.1f));
+                    break;
+                case TipoMejoraTienda.Fuego_SupernovaGigante:
+                    MostrarTextoFlotanteClientRpc($"¡+25% Radio Supernova Titánica! (Nv {nivel}/5)", new Color(1f, 0.4f, 0.05f));
                     break;
 
                 case TipoMejoraTienda.Hielo_DuracionCongelacion:
@@ -823,6 +858,9 @@ namespace SoulKnight
                 case TipoMejoraTienda.Hielo_PotenciaGlacial:
                     MostrarTextoFlotanteClientRpc($"¡+12% Fragmentación Glacial! (Nv {nivel}/5)", new Color(0.7f, 0.9f, 1f));
                     break;
+                case TipoMejoraTienda.Hielo_TormentaEterna:
+                    MostrarTextoFlotanteClientRpc($"¡+20% Ventisca Eterna (+1.5s)! (Nv {nivel}/5)", new Color(0.5f, 0.95f, 1f));
+                    break;
 
                 case TipoMejoraTienda.Elec_Voltaje:
                     MostrarTextoFlotanteClientRpc($"¡+15% Alto Voltaje! (Nv {nivel}/5)", new Color(1f, 0.95f, 0.25f));
@@ -832,6 +870,9 @@ namespace SoulKnight
                     break;
                 case TipoMejoraTienda.Elec_CooldownDash:
                     MostrarTextoFlotanteClientRpc($"¡-0.3s Recarga Dash! (Nv {nivel}/5)", new Color(1f, 0.9f, 0.3f));
+                    break;
+                case TipoMejoraTienda.Elec_RayoCataclismico:
+                    MostrarTextoFlotanteClientRpc($"¡+30% Rayo Cataclísmico! (Nv {nivel}/5)", new Color(1f, 1f, 0.5f));
                     break;
             }
         }

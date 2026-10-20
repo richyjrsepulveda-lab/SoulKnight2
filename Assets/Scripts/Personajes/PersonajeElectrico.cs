@@ -304,7 +304,8 @@ namespace SoulKnight
             if (RayoLanzado.Value && visualRayoElectrico != null)
             {
                 visualRayoElectrico.enabled = true;
-                float escala = Mathf.Max(1.0f, EscalaCargaRayo.Value);
+                float factorCataclismico = 1.0f + ObtenerNivelMejora(TipoMejoraTienda.Elec_RayoCataclismico) * 0.30f;
+                float escala = Mathf.Max(1.0f, EscalaCargaRayo.Value) * MultiplicadorAreaHabilidades * factorCataclismico;
                 visualRayoElectrico.startWidth = 0.50f * escala;
                 visualRayoElectrico.endWidth = 0.85f * escala;
 
@@ -452,12 +453,13 @@ namespace SoulKnight
             if (_cargandoLocal)
             {
                 _tiempoCargaLocal += Time.deltaTime;
-                // Si el jugador suelta la tecla R o si se alcanza el tiempo máximo de carga (4.0s)
-                if (!Controles.Mantenida(Controles.Ultimate) || _tiempoCargaLocal >= tiempoCargaMaximo)
+                float tiempoCargaReal = tiempoCargaMaximo * Mathf.Max(0.40f, 1.0f - ObtenerNivelMejora(TipoMejoraTienda.Elec_RayoCataclismico) * 0.20f);
+                // Si el jugador suelta la tecla R o si se alcanza el tiempo máximo de carga
+                if (!Controles.Mantenida(Controles.Ultimate) || _tiempoCargaLocal >= tiempoCargaReal)
                 {
                     _cargandoLocal = false;
                     DetenerAudioCarga();
-                    _cdRayoRestante = cooldownRayo * FactorReduccionCooldown;
+                    _cdRayoRestante = cooldownRayo * FactorReduccionCooldownUlti;
                     if (NetworkManager != null && NetworkManager.IsListening)
                     {
                         DispararRayoServerRpc(_tiempoCargaLocal);
@@ -642,6 +644,7 @@ namespace SoulKnight
                 // Dibujar arco de hoja eléctrica si tiene LineRenderer
                 if (lr != null)
                 {
+                    lr.useWorldSpace = true;
                     const int pts = 8;
                     if (lr.positionCount != pts) lr.positionCount = pts;
                     for (int i = 0; i < pts; i++)

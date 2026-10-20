@@ -1695,7 +1695,7 @@ namespace SoulKnight
             var imgFondo = tiendaObj.AddComponent<Image>();
             imgFondo.color = new Color(0.02f, 0.02f, 0.04f, 0.88f);
 
-            // Ventana modal centrada
+            // Ventana modal centrada (ampliada y con excelente aire/interlineado)
             var cardObj = new GameObject("VentanaTienda");
             cardObj.transform.SetParent(tiendaObj.transform, false);
             var rtCard = cardObj.AddComponent<RectTransform>();
@@ -1703,64 +1703,72 @@ namespace SoulKnight
             rtCard.anchorMax = new Vector2(0.5f, 0.5f);
             rtCard.pivot = new Vector2(0.5f, 0.5f);
             rtCard.anchoredPosition = Vector2.zero;
-            rtCard.sizeDelta = new Vector2(760f, 480f);
+            rtCard.sizeDelta = new Vector2(960f, 620f);
 
             var imgCard = cardObj.AddComponent<Image>();
-            imgCard.color = new Color(0.08f, 0.10f, 0.15f, 0.98f);
+            imgCard.color = new Color(0.07f, 0.09f, 0.14f, 0.98f);
 
             // Título
             var titObj = new GameObject("TituloTienda");
             titObj.transform.SetParent(cardObj.transform, false);
             var txtTit = titObj.AddComponent<Text>();
             txtTit.font = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            txtTit.fontSize = 20;
+            txtTit.fontSize = 24;
             txtTit.fontStyle = FontStyle.Bold;
             txtTit.alignment = TextAnchor.MiddleCenter;
             txtTit.color = new Color(1f, 0.88f, 0.25f);
             txtTit.text = "🏪 TIENDA MÍSTICA DEL GATO MERCADER";
+            var outlineTit = titObj.AddComponent<Outline>();
+            outlineTit.effectColor = Color.black;
+            outlineTit.effectDistance = new Vector2(1.5f, -1.5f);
+
             var rtTit = titObj.GetComponent<RectTransform>();
             rtTit.anchorMin = new Vector2(0.5f, 1f);
             rtTit.anchorMax = new Vector2(0.5f, 1f);
             rtTit.pivot = new Vector2(0.5f, 1f);
             rtTit.anchoredPosition = new Vector2(0f, -14f);
-            rtTit.sizeDelta = new Vector2(720f, 30f);
+            rtTit.sizeDelta = new Vector2(880f, 34f);
 
             // Subtítulo
             var subObj = new GameObject("SubtituloTienda");
             subObj.transform.SetParent(cardObj.transform, false);
             var txtSub = subObj.AddComponent<Text>();
             txtSub.font = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            txtSub.fontSize = 11;
+            txtSub.fontSize = 13;
             txtSub.alignment = TextAnchor.MiddleCenter;
-            txtSub.color = new Color(0.75f, 0.82f, 0.92f);
+            txtSub.color = new Color(0.78f, 0.85f, 0.95f);
             txtSub.text = "Mejoras de características para tu gato en esta run. Hasta 5 niveles por rasgo.";
             var rtSub = subObj.GetComponent<RectTransform>();
             rtSub.anchorMin = new Vector2(0.5f, 1f);
             rtSub.anchorMax = new Vector2(0.5f, 1f);
             rtSub.pivot = new Vector2(0.5f, 1f);
-            rtSub.anchoredPosition = new Vector2(0f, -44f);
-            rtSub.sizeDelta = new Vector2(720f, 20f);
+            rtSub.anchoredPosition = new Vector2(0f, -48f);
+            rtSub.sizeDelta = new Vector2(880f, 24f);
 
             // Contador de Oro
             var oroObj = new GameObject("TextoOroTienda");
             oroObj.transform.SetParent(cardObj.transform, false);
             _textoOroTienda = oroObj.AddComponent<Text>();
             _textoOroTienda.font = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            _textoOroTienda.fontSize = 14;
+            _textoOroTienda.fontSize = 17;
             _textoOroTienda.fontStyle = FontStyle.Bold;
             _textoOroTienda.alignment = TextAnchor.MiddleCenter;
             _textoOroTienda.color = new Color(1f, 0.85f, 0.2f);
             _textoOroTienda.text = "💰 Oro Disponible: 0";
+            var outlineOro = oroObj.AddComponent<Outline>();
+            outlineOro.effectColor = Color.black;
+            outlineOro.effectDistance = new Vector2(1.5f, -1.5f);
+
             var rtOro = oroObj.GetComponent<RectTransform>();
             rtOro.anchorMin = new Vector2(0.5f, 1f);
             rtOro.anchorMax = new Vector2(0.5f, 1f);
             rtOro.pivot = new Vector2(0.5f, 1f);
-            rtOro.anchoredPosition = new Vector2(0f, -68f);
-            rtOro.sizeDelta = new Vector2(400f, 24f);
+            rtOro.anchoredPosition = new Vector2(0f, -74f);
+            rtOro.sizeDelta = new Vector2(500f, 26f);
 
-            // Contenedor de 6 Artículos (2 filas de 3 columnas)
-            float[] posX = new float[] { -236f, 0f, 236f, -236f, 0f, 236f };
-            float[] posY = new float[] { 40f, 40f, 40f, -100f, -100f, -100f };
+            // Contenedor de 6 Artículos (2 filas de 3 columnas con amplias dimensiones)
+            float[] posX = new float[] { -305f, 0f, 305f, -305f, 0f, 305f };
+            float[] posY = new float[] { 62f, 62f, 62f, -135f, -135f, -135f };
             _botonesCompraTienda.Clear();
             _textosBotonTienda.Clear();
 
@@ -1774,10 +1782,10 @@ namespace SoulKnight
                 rtIc.anchorMax = new Vector2(0.5f, 0.5f);
                 rtIc.pivot = new Vector2(0.5f, 0.5f);
                 rtIc.anchoredPosition = new Vector2(posX[i], posY[i]);
-                rtIc.sizeDelta = new Vector2(224f, 126f);
+                rtIc.sizeDelta = new Vector2(290f, 175f);
 
                 var imgIc = itemCardObj.AddComponent<Image>();
-                imgIc.color = new Color(0.12f, 0.15f, 0.22f, 0.96f);
+                imgIc.color = new Color(0.12f, 0.15f, 0.23f, 0.96f);
 
                 // Nombre
                 var nomObj = new GameObject("Nombre");
@@ -1787,13 +1795,16 @@ namespace SoulKnight
                 rtNom.anchorMax = new Vector2(0.5f, 1f);
                 rtNom.pivot = new Vector2(0.5f, 1f);
                 rtNom.anchoredPosition = new Vector2(0f, -10f);
-                rtNom.sizeDelta = new Vector2(212f, 22f);
+                rtNom.sizeDelta = new Vector2(276f, 24f);
                 var txtNom = nomObj.AddComponent<Text>();
                 txtNom.font = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-                txtNom.fontSize = 11;
+                txtNom.fontSize = 13;
                 txtNom.fontStyle = FontStyle.Bold;
                 txtNom.alignment = TextAnchor.MiddleCenter;
                 txtNom.color = Color.white;
+                var outlineNom = nomObj.AddComponent<Outline>();
+                outlineNom.effectColor = Color.black;
+                outlineNom.effectDistance = new Vector2(1.2f, -1.2f);
 
                 // Badge de Clase Compatible
                 var badgeObj = new GameObject("ClaseBadge");
@@ -1802,29 +1813,30 @@ namespace SoulKnight
                 rtBadge.anchorMin = new Vector2(0.5f, 1f);
                 rtBadge.anchorMax = new Vector2(0.5f, 1f);
                 rtBadge.pivot = new Vector2(0.5f, 1f);
-                rtBadge.anchoredPosition = new Vector2(0f, -30f);
-                rtBadge.sizeDelta = new Vector2(212f, 18f);
+                rtBadge.anchoredPosition = new Vector2(0f, -34f);
+                rtBadge.sizeDelta = new Vector2(276f, 20f);
                 var txtBadge = badgeObj.AddComponent<Text>();
                 txtBadge.font = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-                txtBadge.fontSize = 9;
+                txtBadge.fontSize = 11;
                 txtBadge.fontStyle = FontStyle.Bold;
                 txtBadge.alignment = TextAnchor.MiddleCenter;
                 txtBadge.color = new Color(0.4f, 0.9f, 1f);
 
-                // Descripción
+                // Descripción con interlineado generoso
                 var descObj = new GameObject("Desc");
                 descObj.transform.SetParent(itemCardObj.transform, false);
                 var rtDesc = descObj.AddComponent<RectTransform>();
                 rtDesc.anchorMin = new Vector2(0.5f, 1f);
                 rtDesc.anchorMax = new Vector2(0.5f, 1f);
                 rtDesc.pivot = new Vector2(0.5f, 1f);
-                rtDesc.anchoredPosition = new Vector2(0f, -50f);
-                rtDesc.sizeDelta = new Vector2(212f, 38f);
+                rtDesc.anchoredPosition = new Vector2(0f, -56f);
+                rtDesc.sizeDelta = new Vector2(276f, 52f);
                 var txtDesc = descObj.AddComponent<Text>();
                 txtDesc.font = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-                txtDesc.fontSize = 9;
+                txtDesc.fontSize = 11;
+                txtDesc.lineSpacing = 1.25f;
                 txtDesc.alignment = TextAnchor.MiddleCenter;
-                txtDesc.color = new Color(0.75f, 0.85f, 0.95f);
+                txtDesc.color = new Color(0.78f, 0.88f, 0.98f);
 
                 // Botón Comprar
                 var btnBuyObj = new GameObject("BotonComprar");
@@ -1833,11 +1845,11 @@ namespace SoulKnight
                 rtBtn.anchorMin = new Vector2(0.5f, 0f);
                 rtBtn.anchorMax = new Vector2(0.5f, 0f);
                 rtBtn.pivot = new Vector2(0.5f, 0f);
-                rtBtn.anchoredPosition = new Vector2(0f, 8f);
-                rtBtn.sizeDelta = new Vector2(206f, 28f);
+                rtBtn.anchoredPosition = new Vector2(0f, 10f);
+                rtBtn.sizeDelta = new Vector2(270f, 36f);
 
                 var imgBtn = btnBuyObj.AddComponent<Image>();
-                imgBtn.color = new Color(0.20f, 0.55f, 0.35f, 1f);
+                imgBtn.color = new Color(0.20f, 0.58f, 0.35f, 1f);
                 var btn = btnBuyObj.AddComponent<Button>();
 
                 var txtBtnObj = new GameObject("TextoBtn");
@@ -1848,11 +1860,16 @@ namespace SoulKnight
                 rtTb.sizeDelta = Vector2.zero;
                 var txtBtn = txtBtnObj.AddComponent<Text>();
                 txtBtn.font = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-                txtBtn.fontSize = 10;
+                txtBtn.fontSize = 13;
                 txtBtn.fontStyle = FontStyle.Bold;
                 txtBtn.alignment = TextAnchor.MiddleCenter;
                 txtBtn.color = Color.white;
                 txtBtn.text = "COMPRAR";
+
+                // Trazo negro profesional en el texto de compra
+                var outlineBtn = txtBtnObj.AddComponent<Outline>();
+                outlineBtn.effectColor = Color.black;
+                outlineBtn.effectDistance = new Vector2(1.5f, -1.5f);
 
                 btn.onClick.AddListener(() => ComprarArticuloTiendaIndex(itemIndex));
                 _botonesCompraTienda.Add(btn);
@@ -1866,8 +1883,8 @@ namespace SoulKnight
             rtSalir.anchorMin = new Vector2(0.5f, 0f);
             rtSalir.anchorMax = new Vector2(0.5f, 0f);
             rtSalir.pivot = new Vector2(0.5f, 0f);
-            rtSalir.anchoredPosition = new Vector2(0f, 12f);
-            rtSalir.sizeDelta = new Vector2(280f, 34f);
+            rtSalir.anchoredPosition = new Vector2(0f, 14f);
+            rtSalir.sizeDelta = new Vector2(340f, 40f);
 
             var imgSalir = btnSalirObj.AddComponent<Image>();
             imgSalir.color = new Color(0.48f, 0.18f, 0.18f, 1f);
@@ -1882,11 +1899,14 @@ namespace SoulKnight
             rtTs.sizeDelta = Vector2.zero;
             var txtSalir = txtSalirObj.AddComponent<Text>();
             txtSalir.font = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            txtSalir.fontSize = 12;
+            txtSalir.fontSize = 13;
             txtSalir.fontStyle = FontStyle.Bold;
             txtSalir.alignment = TextAnchor.MiddleCenter;
             txtSalir.color = Color.white;
             txtSalir.text = "✖ SALIR DE LA TIENDA (ESC / F)";
+            var outlineSalir = txtSalirObj.AddComponent<Outline>();
+            outlineSalir.effectColor = Color.black;
+            outlineSalir.effectDistance = new Vector2(1.5f, -1.5f);
 
             panelTienda = tiendaObj;
             panelTienda.SetActive(false);

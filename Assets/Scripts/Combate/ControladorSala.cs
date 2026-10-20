@@ -15,6 +15,7 @@ namespace SoulKnight
         public bool esSalaInicio;
         public bool esSalaJefe;
         public bool esSalaTienda;
+        public bool esSalaCofreTesoro;
 
         public Rect limitesSala;       // xMin, yMin, width, height
         public Rect limitesInteriores; // un poco más adentro para que el jugador ya haya cruzado el umbral
@@ -37,12 +38,13 @@ namespace SoulKnight
         private bool _portalesActivos = false;
         private float _escalaPortales = 0f;
 
-        public void Inicializar(int idx, int xMin, int xMax, int yMin, int yMax, bool inicio, bool jefe, bool tienda = false)
+        public void Inicializar(int idx, int xMin, int xMax, int yMin, int yMax, bool inicio, bool jefe, bool tienda = false, bool cofreTesoro = false)
         {
             indiceSala = idx;
             esSalaInicio = inicio;
             esSalaJefe = jefe;
             esSalaTienda = tienda;
+            esSalaCofreTesoro = cofreTesoro;
 
             float w = xMax - xMin + 1;
             float h = yMax - yMin + 1;
@@ -57,7 +59,7 @@ namespace SoulKnight
                 despejada = true;
                 EncenderAntorchas(true);
             }
-            else if (esSalaTienda)
+            else if (esSalaTienda || esSalaCofreTesoro)
             {
                 descubierta = false;
                 despejada = true; // Despejada para que no haya combate ni puertas cerradas
@@ -220,7 +222,7 @@ namespace SoulKnight
             }
 
             // En el servidor: detectar si algún jugador vivo entró a una sala aún no despejada ni en combate
-            if (!esSalaInicio && !esSalaTienda && !despejada && !enCombate)
+            if (!esSalaInicio && !esSalaTienda && !esSalaCofreTesoro && !despejada && !enCombate)
             {
                 if (ComandosAdmin.ModoSinEnemigosEnSalas)
                 {

@@ -849,7 +849,7 @@ namespace SoulKnight
             {
                 if (PuedeUsarHabilidad(IdHabilidad.Hielo_EraHielo, out string motivo))
                 {
-                    _cdEraHieloRestante = cooldownEraHielo * FactorReduccionCooldown;
+                    _cdEraHieloRestante = cooldownEraHielo * FactorReduccionCooldownUlti;
                     GestorAudio.PlaySFX(TipoSFX.EraDeHielo, 1.15f);
                     NotificarAtaqueLocal(0.5f);
                     if (NetworkManager != null && NetworkManager.IsListening)
@@ -862,8 +862,9 @@ namespace SoulKnight
                         var eraComponente = era.GetComponent<ZonaEraHielo>();
                         if (eraComponente != null)
                         {
+                            float duracionReal = duracionEraHielo + (ObtenerNivelMejora(TipoMejoraTienda.Hielo_TormentaEterna) * 1.5f);
                             int danoEscalado = Mathf.RoundToInt(danoTickEraHielo * MultiplicadorDanoTotal);
-                            eraComponente.Configurar(duracionEraHielo, danoEscalado, this);
+                            eraComponente.Configurar(duracionReal, danoEscalado, this);
                         }
                     }
                 }
@@ -978,8 +979,9 @@ namespace SoulKnight
             var eraComponente = era.GetComponent<ZonaEraHielo>();
             if (eraComponente != null)
             {
+                float duracionReal = duracionEraHielo + (ObtenerNivelMejora(TipoMejoraTienda.Hielo_TormentaEterna) * 1.5f);
                 int danoEscalado = Mathf.RoundToInt(danoTickEraHielo * MultiplicadorDanoTotal);
-                eraComponente.Configurar(duracionEraHielo, danoEscalado, this);
+                eraComponente.Configurar(duracionReal, danoEscalado, this);
             }
             era.GetComponent<NetworkObject>().Spawn();
         }

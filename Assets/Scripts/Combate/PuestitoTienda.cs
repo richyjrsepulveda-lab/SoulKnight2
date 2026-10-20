@@ -101,12 +101,16 @@ namespace SoulKnight
             pool.Add(TipoMejoraTienda.DanoUniversal);
             pool.Add(TipoMejoraTienda.CooldownUniversal);
             pool.Add(TipoMejoraTienda.PescadoAsado);
+            pool.Add(TipoMejoraTienda.AreaHabilidades);
+            pool.Add(TipoMejoraTienda.CooldownDefinitiva);
+            pool.Add(TipoMejoraTienda.GolpeCritico);
 
             if (hayFuego)
             {
                 pool.Add(TipoMejoraTienda.Fuego_DanoQuemadura);
                 pool.Add(TipoMejoraTienda.Fuego_Area);
                 pool.Add(TipoMejoraTienda.Fuego_Duracion);
+                pool.Add(TipoMejoraTienda.Fuego_SupernovaGigante);
             }
 
             if (hayHielo)
@@ -114,6 +118,7 @@ namespace SoulKnight
                 pool.Add(TipoMejoraTienda.Hielo_DuracionCongelacion);
                 pool.Add(TipoMejoraTienda.Hielo_AreaVentisca);
                 pool.Add(TipoMejoraTienda.Hielo_PotenciaGlacial);
+                pool.Add(TipoMejoraTienda.Hielo_TormentaEterna);
             }
 
             if (hayElec)
@@ -121,6 +126,7 @@ namespace SoulKnight
                 pool.Add(TipoMejoraTienda.Elec_Voltaje);
                 pool.Add(TipoMejoraTienda.Elec_AreaTeleport);
                 pool.Add(TipoMejoraTienda.Elec_CooldownDash);
+                pool.Add(TipoMejoraTienda.Elec_RayoCataclismico);
             }
 
             // Barajar usando semilla sincronizada de la mazmorra para que a TODOS les salga exactamente lo mismo

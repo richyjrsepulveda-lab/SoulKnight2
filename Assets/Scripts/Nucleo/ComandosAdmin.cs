@@ -14,6 +14,12 @@ namespace SoulKnight
         public static bool ModoCeroCooldowns = false;
         public static bool ModoSinEnemigosEnSalas = false;
 
+        public static void ResetearAjustesAdmin()
+        {
+            ModoCeroCooldowns = false;
+            ModoSinEnemigosEnSalas = false;
+        }
+
         public static string EjecutarComando(string comandoRaw)
         {
             if (string.IsNullOrWhiteSpace(comandoRaw))

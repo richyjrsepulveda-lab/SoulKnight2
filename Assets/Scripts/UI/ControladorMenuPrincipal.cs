@@ -19,6 +19,9 @@ namespace SoulKnight
 
         void Start()
         {
+            ComandosAdmin.ResetearAjustesAdmin();
+            GestorAudio.DetenerTodosLosSFX();
+
             if (Global.Instancia != null && !Global.Instancia.HayNombreGuardado)
             {
                 SceneManager.LoadScene(Escenas.PedirNombre);

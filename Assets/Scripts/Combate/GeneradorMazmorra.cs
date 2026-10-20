@@ -154,6 +154,7 @@ namespace SoulKnight
         private void LimpiarMapaExistente()
         {
             PuestitoTienda.DestruirTodos();
+            CofreOro.DestruirTodos();
             puntosSpawnJugadores.Clear();
             puntosSpawnEnemigos.Clear();
             salasGeneradas.Clear();
@@ -555,18 +556,24 @@ namespace SoulKnight
                 bool esSalaFinal = (idx == totalSalasCaminoPrincipal - 1);
                 bool esJefe = esSalaFinal && tieneJefe;
                 bool esTienda = (idx == indiceSalaTienda && !esInicio && !esSalaFinal);
+                bool esCofre = (idx > totalSalasCaminoPrincipal && idx != indiceSalaTienda && !esInicio && !esSalaFinal);
 
                 var salaObj = new GameObject($"Sala_{idx}");
                 salaObj.transform.SetParent(contenedorMapa);
                 salaObj.transform.position = new Vector3(s.cx, s.cy, 0f);
 
                 var ctrl = salaObj.AddComponent<ControladorSala>();
-                ctrl.Inicializar(idx, s.xMin, s.xMax, s.yMin, s.yMax, esInicio, esSalaFinal, esTienda);
+                ctrl.Inicializar(idx, s.xMin, s.xMax, s.yMin, s.yMax, esInicio, esSalaFinal, esTienda, esCofre);
 
                 if (esTienda)
                 {
                     // La tienda se instancia ÚNICAMENTE en el centro de su habitación designada y como hija de ella
                     PuestitoTienda.CrearPuestito(new Vector2(s.cx, s.cy), salaObj.transform);
+                }
+                else if (esCofre)
+                {
+                    // En las salas de ramificación secundarias se instancia un Cofre de Oro
+                    CofreOro.CrearCofre(new Vector2(s.cx, s.cy), salaObj.transform);
                 }
 
                 // Colocar Antorchas en las esquinas interiores de la sala

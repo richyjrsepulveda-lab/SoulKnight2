@@ -461,6 +461,9 @@ namespace SoulKnight
             if (Red.IsListening) Red.Shutdown();
             while (Red.ShutdownInProgress) yield return null;
 
+            ComandosAdmin.ResetearAjustesAdmin();
+            GestorAudio.DetenerTodosLosSFX();
+
             Controles.Bloqueado = false;
             SceneManager.LoadScene(Escenas.MenuPrincipal);
             _saliendo = false;

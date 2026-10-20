@@ -514,7 +514,7 @@ namespace SoulKnight
             {
                 if (PuedeUsarHabilidad(IdHabilidad.Fuego_Meteorito, out string motivoUlti))
                 {
-                    _cdSupernovaRestante = cooldownSupernova * FactorReduccionCooldown;
+                    _cdSupernovaRestante = cooldownSupernova * FactorReduccionCooldownUlti;
                     GestorAudio.PlayUltiFuegoCompleta(1.20f);
                     ActivarSupernovaServerRpc();
                 }
@@ -588,10 +588,12 @@ namespace SoulKnight
 
         private void DetonarSupernova()
         {
-            // 1. Onda de choque 360° con daño y knockback
-            int danoExp = Mathf.RoundToInt(danoSupernovaExplosion * MultiplicadorDanoTotal);
+            // 1. Onda de choque 360° con daño y knockback escalada por mejoras de tienda
+            float factorTitanica = 1.0f + ObtenerNivelMejora(TipoMejoraTienda.Fuego_SupernovaGigante) * 0.25f;
+            float radioExp = 5.0f * MultiplicadorAreaHabilidades * factorTitanica;
+            int danoExp = Mathf.RoundToInt(danoSupernovaExplosion * MultiplicadorDanoTotal * factorTitanica);
             int danoQuem = Mathf.RoundToInt(30 * MultiplicadorDanoTotal);
-            int hitCount = Physics2D.OverlapCircleNonAlloc(transform.position, 5.0f, _fireOverlapBuffer);
+            int hitCount = Physics2D.OverlapCircleNonAlloc(transform.position, radioExp, _fireOverlapBuffer);
 
             for (int i = 0; i < hitCount; i++)
             {
@@ -877,9 +879,10 @@ namespace SoulKnight
             base.OnDisable();
         }
 
-        protected virtual void OnDestroy()
+        public override void OnDestroy()
         {
             DetenerAudioLanzallamasLoop();
+            base.OnDestroy();
         }
     }
 }

@@ -145,6 +145,7 @@ namespace SoulKnight
             if (_partidaIniciada || !NetworkManager.Singleton.IsServer) return;
             _partidaIniciada = true;
 
+            GestorAudio.DetenerTodosLosSFX();
             NivelActual = 1;
             LoopActual = 0;
             EnNivelDecisionLoop = false;
@@ -582,23 +583,6 @@ namespace SoulKnight
                         }
                     }
                 }
-
-                if (prefabItemMejoraRun != null && enemigo != null && !enemigo.EsInvocado && UnityEngine.Random.value < 0.22f)
-                {
-                    GameObject itemObj = Instantiate(prefabItemMejoraRun, enemigo.transform.position, Quaternion.identity);
-                    var item = itemObj.GetComponent<ItemMejoraRun>();
-                    var tipoElegido = CatalogoMejorasRun.ObtenerAleatoria();
-                    if (item != null)
-                    {
-                        item.Configurar(tipoElegido);
-                    }
-                    var no = itemObj.GetComponent<NetworkObject>();
-                    if (no != null) no.Spawn(destroyWithScene: true);
-                    if (item != null)
-                    {
-                        item.Configurar(tipoElegido);
-                    }
-                }
             }
 
             RevisarFinDePartida();
@@ -773,6 +757,8 @@ namespace SoulKnight
                 NivelActual++;
             }
 
+            GestorAudio.DetenerTodosLosSFX();
+
             for (int i = Proyectil.Todos.Count - 1; i >= 0; i--)
             {
                 var p = Proyectil.Todos[i];
@@ -937,41 +923,16 @@ namespace SoulKnight
 
         private void SpawnearRecompensaFinSala(ControladorSala sala)
         {
-            if (prefabItemMejoraRun == null || sala == null || NetworkManager.Singleton == null || !NetworkManager.Singleton.IsServer) return;
+            if (sala == null || NetworkManager.Singleton == null || !NetworkManager.Singleton.IsServer) return;
 
-            Vector2 centro = sala.limitesSala.center;
-
-            TipoMejoraRun[] posibles = new TipoMejoraRun[]
+            // Recompensa de sala: Oro directo para todos los jugadores vivos en la run
+            int oroRecompensa = UnityEngine.Random.Range(18, 26);
+            foreach (var pj in _personajesActivos)
             {
-                TipoMejoraRun.AumentoDano,
-                TipoMejoraRun.AumentoDefensa,
-                TipoMejoraRun.AumentoVidaMaxima,
-                TipoMejoraRun.PescadoMedio,
-                TipoMejoraRun.PescadoCompleto
-            };
-
-            TipoMejoraRun elegida1 = posibles[UnityEngine.Random.Range(0, posibles.Length)];
-            GameObject itemObj = Instantiate(prefabItemMejoraRun, centro + new Vector2(-1.2f, 0f), Quaternion.identity);
-            var item = itemObj.GetComponent<ItemMejoraRun>();
-            if (item != null)
-            {
-                item.Configurar(elegida1, 0); // Recompensa de sala garantizada y gratuita
-            }
-            var no1 = itemObj.GetComponent<NetworkObject>();
-            if (no1 != null) no1.Spawn();
-
-            // 65% de probabilidad de generar una segunda opción gratuita en salas comunes
-            if (UnityEngine.Random.value < 0.65f)
-            {
-                TipoMejoraRun elegida2 = posibles[UnityEngine.Random.Range(0, posibles.Length)];
-                GameObject itemObj2 = Instantiate(prefabItemMejoraRun, centro + new Vector2(1.2f, 0f), Quaternion.identity);
-                var item2 = itemObj2.GetComponent<ItemMejoraRun>();
-                if (item2 != null)
+                if (pj != null && !pj.EstaMuerto.Value)
                 {
-                    item2.Configurar(elegida2, 0);
+                    pj.AgregarOro(oroRecompensa);
                 }
-                var no2 = itemObj2.GetComponent<NetworkObject>();
-                if (no2 != null) no2.Spawn();
             }
         }
     }

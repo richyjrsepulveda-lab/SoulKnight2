@@ -75,6 +75,8 @@ namespace SoulKnight
         void Start()
         {
             Controles.Bloqueado = false;
+            ComandosAdmin.ResetearAjustesAdmin();
+            GestorAudio.DetenerTodosLosSFX();
             SalaRed.ListaActualizada += ActualizarUI;
             SalaRed.ListaActualizada += ActualizarPersonajesLobbyServer;
 
@@ -1040,6 +1042,15 @@ namespace SoulKnight
 
             if (_fadeNegroLobby != null) _fadeNegroLobby.color = Color.black;
             yield return new WaitForSeconds(0.25f);
+
+            foreach (var p in Personaje.Todos)
+            {
+                if (p != null)
+                {
+                    p.LimpiarEstadosYHabilidades();
+                }
+            }
+            GestorAudio.DetenerTodosLosSFX();
 
             SalaRed.Instancia.IniciarPartida();
         }

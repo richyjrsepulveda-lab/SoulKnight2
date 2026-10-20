@@ -61,6 +61,15 @@ namespace SoulKnight
             _duracion = duracion;
             _danoPorTick = danoTick;
             _lanzador = lanzador;
+
+            if (_lanzador != null)
+            {
+                float factorEterna = 1.0f + _lanzador.ObtenerNivelMejora(TipoMejoraTienda.Hielo_TormentaEterna) * 0.20f;
+                radioZona = 10.0f * _lanzador.MultiplicadorAreaHabilidades * factorEterna;
+                var col = GetComponent<CircleCollider2D>();
+                if (col != null) col.radius = radioZona;
+                ConfigurarVisualesVentisca();
+            }
         }
 
         public override void OnNetworkSpawn()
@@ -237,13 +246,14 @@ namespace SoulKnight
             }
         }
 
-        void OnDestroy()
+        public override void OnDestroy()
         {
             Todas.Remove(this);
             if (_fuenteAudioEra != null && _fuenteAudioEra.isPlaying)
             {
                 _fuenteAudioEra.Stop();
             }
+            base.OnDestroy();
         }
 
         void Update()

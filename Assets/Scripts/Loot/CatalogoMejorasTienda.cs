@@ -10,21 +10,27 @@ namespace SoulKnight
         PescadoAsado = 1,
         DanoUniversal = 2,
         CooldownUniversal = 3,
+        AreaHabilidades = 4,
+        CooldownDefinitiva = 5,
+        GolpeCritico = 6,
 
         // Gato de Fuego
         Fuego_DanoQuemadura = 10,
         Fuego_Area = 11,
         Fuego_Duracion = 12,
+        Fuego_SupernovaGigante = 13,
 
         // Gato de Hielo
         Hielo_DuracionCongelacion = 20,
         Hielo_AreaVentisca = 21,
         Hielo_PotenciaGlacial = 22,
+        Hielo_TormentaEterna = 23,
 
         // Gato Eléctrico
         Elec_Voltaje = 30,
         Elec_AreaTeleport = 31,
-        Elec_CooldownDash = 32
+        Elec_CooldownDash = 32,
+        Elec_RayoCataclismico = 33
     }
 
     public static class CatalogoMejorasTienda
@@ -36,16 +42,19 @@ namespace SoulKnight
                 case TipoMejoraTienda.Fuego_DanoQuemadura:
                 case TipoMejoraTienda.Fuego_Area:
                 case TipoMejoraTienda.Fuego_Duracion:
+                case TipoMejoraTienda.Fuego_SupernovaGigante:
                     return TipoPersonaje.Fuego;
 
                 case TipoMejoraTienda.Hielo_DuracionCongelacion:
                 case TipoMejoraTienda.Hielo_AreaVentisca:
                 case TipoMejoraTienda.Hielo_PotenciaGlacial:
+                case TipoMejoraTienda.Hielo_TormentaEterna:
                     return TipoPersonaje.Hielo;
 
                 case TipoMejoraTienda.Elec_Voltaje:
                 case TipoMejoraTienda.Elec_AreaTeleport:
                 case TipoMejoraTienda.Elec_CooldownDash:
+                case TipoMejoraTienda.Elec_RayoCataclismico:
                     return TipoPersonaje.Electrico;
 
                 default:
@@ -95,6 +104,24 @@ namespace SoulKnight
                         ? "Enfriamiento al nivel máximo (5/5)."
                         : $"+7% Reducción de Enfriamiento en habilidades.\nNivel actual: {nivelActual}/5";
                     break;
+                case TipoMejoraTienda.AreaHabilidades:
+                    nombre = "AMPLITUD MÍSTICA";
+                    desc = (nivelActual >= 5)
+                        ? "Área al nivel máximo (5/5)."
+                        : $"+12% Tamaño y área de todas tus habilidades.\nNivel actual: {nivelActual}/5";
+                    break;
+                case TipoMejoraTienda.CooldownDefinitiva:
+                    nombre = "ENERGÍA CELESTIAL";
+                    desc = (nivelActual >= 5)
+                        ? "Enfriamiento de Ulti al tope (5/5)."
+                        : $"+10% Reducción de recarga en tu Habilidad Definitiva.\nNivel actual: {nivelActual}/5";
+                    break;
+                case TipoMejoraTienda.GolpeCritico:
+                    nombre = "ZARPA FULMINANTE";
+                    desc = (nivelActual >= 5)
+                        ? "Críticos al nivel máximo (5/5)."
+                        : $"+8% Probabilidad de Golpe Crítico (1.8x daño).\nNivel actual: {nivelActual}/5";
+                    break;
 
                 // Fuego
                 case TipoMejoraTienda.Fuego_DanoQuemadura:
@@ -114,6 +141,12 @@ namespace SoulKnight
                     desc = (nivelActual >= 5)
                         ? "Duración al nivel máximo (5/5)."
                         : $"+1.0s Duración del fuego en suelo y armadura.\nNivel actual: {nivelActual}/5";
+                    break;
+                case TipoMejoraTienda.Fuego_SupernovaGigante:
+                    nombre = "SUPERNOVA TITÁNICA";
+                    desc = (nivelActual >= 5)
+                        ? "Supernova Titánica al máximo (5/5)."
+                        : $"+25% Radio y explosión de la Supernova.\nNivel actual: {nivelActual}/5";
                     break;
 
                 // Hielo
@@ -135,6 +168,12 @@ namespace SoulKnight
                         ? "Potencia al nivel máximo (5/5)."
                         : $"+12% Daño contra objetivos congelados/lentos.\nNivel actual: {nivelActual}/5";
                     break;
+                case TipoMejoraTienda.Hielo_TormentaEterna:
+                    nombre = "VENTISCA ETERNA";
+                    desc = (nivelActual >= 5)
+                        ? "Ventisca Eterna al máximo (5/5)."
+                        : $"+20% Radio de Era de Hielo y +1.5s duración.\nNivel actual: {nivelActual}/5";
+                    break;
 
                 // Eléctrico
                 case TipoMejoraTienda.Elec_Voltaje:
@@ -154,6 +193,12 @@ namespace SoulKnight
                     desc = (nivelActual >= 5)
                         ? "Velocidad al nivel máximo (5/5)."
                         : $"Reduce 0.3s el enfriamiento del dash eléctrico.\nNivel actual: {nivelActual}/5";
+                    break;
+                case TipoMejoraTienda.Elec_RayoCataclismico:
+                    nombre = "RAYO CATACLÍSMICO";
+                    desc = (nivelActual >= 5)
+                        ? "Rayo Catacl羅smico al máximo (5/5)."
+                        : $"+30% Ancho del Rayo y carga 20% más rápido.\nNivel actual: {nivelActual}/5";
                     break;
 
                 default:
