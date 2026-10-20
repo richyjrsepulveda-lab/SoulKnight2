@@ -1423,6 +1423,7 @@ namespace SoulKnight
             if (_txtPctMusica != null) _txtPctMusica.text = $"{Mathf.RoundToInt(GestorAudio.Instancia.VolumenMusica * 100f)}%";
             if (_txtPctSFX != null) _txtPctSFX.text = $"{Mathf.RoundToInt(GestorAudio.Instancia.VolumenSFX * 100f)}%";
 
+            ActualizarTodosVisualesVideo();
             ActualizarTextos();
         }
 
@@ -1507,8 +1508,13 @@ namespace SoulKnight
                 "",
                 () =>
                 {
-                    Screen.fullScreen = !Screen.fullScreen;
-                    ActualizarVisualPantallaCompleta();
+                    bool nuevaCompleta = !Screen.fullScreen;
+                    FullScreenMode modo = nuevaCompleta ? FullScreenMode.FullScreenWindow : FullScreenMode.Windowed;
+                    var resActual = _resolucionesDisponibles[_indiceResolucion];
+                    Screen.SetResolution(resActual.width, resActual.height, modo);
+                    PlayerPrefs.SetInt("PantallaCompleta", nuevaCompleta ? 1 : 0);
+                    PlayerPrefs.Save();
+                    ActualizarVisualPantallaCompleta(nuevaCompleta);
                 },
                 out _txtPantallaCompleta);
 
@@ -1552,8 +1558,12 @@ namespace SoulKnight
                 {
                     _indiceResolucion = (_indiceResolucion + 1) % _resolucionesDisponibles.Length;
                     var res = _resolucionesDisponibles[_indiceResolucion];
-                    Screen.SetResolution(res.width, res.height, Screen.fullScreen);
-                    ActualizarVisualResolucion();
+                    FullScreenMode modo = Screen.fullScreen ? FullScreenMode.FullScreenWindow : FullScreenMode.Windowed;
+                    Screen.SetResolution(res.width, res.height, modo);
+                    PlayerPrefs.SetInt("ResWidth", res.width);
+                    PlayerPrefs.SetInt("ResHeight", res.height);
+                    PlayerPrefs.Save();
+                    ActualizarVisualResolucion(res.width, res.height);
                 },
                 out _txtResolucion);
 
@@ -1625,8 +1635,53 @@ namespace SoulKnight
             return btn;
         }
 
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+        private static void AplicarAjustesVideoGuardados()
+        {
+            if (PlayerPrefs.HasKey("ResWidth") && PlayerPrefs.HasKey("ResHeight"))
+            {
+                int w = PlayerPrefs.GetInt("ResWidth");
+                int h = PlayerPrefs.GetInt("ResHeight");
+                bool fs = PlayerPrefs.GetInt("PantallaCompleta", Screen.fullScreen ? 1 : 0) == 1;
+                FullScreenMode modo = fs ? FullScreenMode.FullScreenWindow : FullScreenMode.Windowed;
+                Screen.SetResolution(w, h, modo);
+            }
+            if (PlayerPrefs.HasKey("VSyncSetting"))
+            {
+                QualitySettings.vSyncCount = PlayerPrefs.GetInt("VSyncSetting");
+            }
+        }
+
+        private void SincronizarResolucionActual()
+        {
+            int wActual = PlayerPrefs.GetInt("ResWidth", Screen.width);
+            int hActual = PlayerPrefs.GetInt("ResHeight", Screen.height);
+
+            int mejorIndice = 0;
+            int menorDiferencia = int.MaxValue;
+
+            for (int i = 0; i < _resolucionesDisponibles.Length; i++)
+            {
+                var r = _resolucionesDisponibles[i];
+                if (r.width == wActual && r.height == hActual)
+                {
+                    mejorIndice = i;
+                    break;
+                }
+                int diff = Mathf.Abs(r.width - wActual) + Mathf.Abs(r.height - hActual);
+                if (diff < menorDiferencia)
+                {
+                    menorDiferencia = diff;
+                    mejorIndice = i;
+                }
+            }
+
+            _indiceResolucion = mejorIndice;
+        }
+
         private void ActualizarTodosVisualesVideo()
         {
+            SincronizarResolucionActual();
             ActualizarVisualDanoAcumulativo();
             ActualizarVisualPantallaCompleta();
             ActualizarVisualVSync();
@@ -1644,11 +1699,11 @@ namespace SoulKnight
             }
         }
 
-        private void ActualizarVisualPantallaCompleta()
+        private void ActualizarVisualPantallaCompleta(bool? esCompleta = null)
         {
             if (_txtPantallaCompleta != null)
             {
-                bool fs = Screen.fullScreen;
+                bool fs = esCompleta ?? Screen.fullScreen;
                 _txtPantallaCompleta.text = fs ? "🖥️ PANTALLA COMPLETA" : "🪟 MODO VENTANA";
                 _txtPantallaCompleta.color = fs ? new Color(0.40f, 0.85f, 1f, 1f) : new Color(1f, 0.85f, 0.35f, 1f);
             }
@@ -1674,11 +1729,13 @@ namespace SoulKnight
             }
         }
 
-        private void ActualizarVisualResolucion()
+        private void ActualizarVisualResolucion(int? ancho = null, int? alto = null)
         {
             if (_txtResolucion != null)
             {
-                _txtResolucion.text = $"📐 {Screen.width} x {Screen.height}";
+                int w = ancho ?? (_resolucionesDisponibles != null && _resolucionesDisponibles.Length > 0 ? _resolucionesDisponibles[_indiceResolucion].width : Screen.width);
+                int h = alto ?? (_resolucionesDisponibles != null && _resolucionesDisponibles.Length > 0 ? _resolucionesDisponibles[_indiceResolucion].height : Screen.height);
+                _txtResolucion.text = $"📐 {w} x {h}";
                 _txtResolucion.color = Color.white;
             }
         }

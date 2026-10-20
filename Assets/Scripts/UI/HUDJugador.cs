@@ -1143,14 +1143,16 @@ namespace SoulKnight
                 txtTit.color = Color.white;
             }
 
-            // 2. Columna izquierda: 5 botones verticales alineados a la izquierda
+            // 2. Columna izquierda: 4 botones verticales limpios
+            if (botonVideoPausa != null) botonVideoPausa.gameObject.SetActive(false);
+            var bVidExist = panelPausa.transform.Find("BotonVideoPausa");
+            if (bVidExist != null) bVidExist.gameObject.SetActive(false);
+
             AsegurarBotonControlesPausa();
-            AsegurarBotonVideoPausa();
-            AjustarBotonPausaIndividual(botonReanudar, "▶ REANUDAR", -235f, 95f);
-            AjustarBotonPausaIndividual(botonVideoPausa, "🖥️ VIDEO", -235f, 45f);
-            AjustarBotonPausaIndividual(botonControlesPausa, "⚙️ OPCIONES", -235f, -5f);
-            AjustarBotonPausaIndividual(botonVolverLobbyPausa, "🏠 VOLVER AL LOBBY", -235f, -55f);
-            AjustarBotonPausaIndividual(botonSalirPartida, "🚪 SALIR AL MENÚ", -235f, -105f);
+            AjustarBotonPausaIndividual(botonReanudar, "▶ REANUDAR", -235f, 75f);
+            AjustarBotonPausaIndividual(botonControlesPausa, "⚙️ OPCIONES", -235f, 20f);
+            AjustarBotonPausaIndividual(botonVolverLobbyPausa, "🏠 VOLVER AL LOBBY", -235f, -35f);
+            AjustarBotonPausaIndividual(botonSalirPartida, "🚪 SALIR AL MENÚ", -235f, -90f);
 
             // 3. Columna derecha: Habilidades arriba, Tarjeta de Descripción en medio, Mapa abajo
             CrearOActualizarSeccionDerechaPausa();
