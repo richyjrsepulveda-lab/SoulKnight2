@@ -62,6 +62,7 @@ namespace SoulKnight
         [Header("Menú de Pausa")]
         public GameObject panelPausa;
         public Button botonReanudar;
+        public Button botonVideoPausa;
         public Button botonControlesPausa;
         public Button botonVolverLobbyPausa;
         public Button botonSalirPartida;
@@ -1142,12 +1143,14 @@ namespace SoulKnight
                 txtTit.color = Color.white;
             }
 
-            // 2. Columna izquierda: 4 botones verticales alineados a la izquierda
+            // 2. Columna izquierda: 5 botones verticales alineados a la izquierda
             AsegurarBotonControlesPausa();
-            AjustarBotonPausaIndividual(botonReanudar, "▶ REANUDAR", -235f, 75f);
-            AjustarBotonPausaIndividual(botonControlesPausa, "⚙️ OPCIONES", -235f, 20f);
-            AjustarBotonPausaIndividual(botonVolverLobbyPausa, "🏠 VOLVER AL LOBBY", -235f, -35f);
-            AjustarBotonPausaIndividual(botonSalirPartida, "🚪 SALIR AL MENÚ", -235f, -90f);
+            AsegurarBotonVideoPausa();
+            AjustarBotonPausaIndividual(botonReanudar, "▶ REANUDAR", -235f, 95f);
+            AjustarBotonPausaIndividual(botonVideoPausa, "🖥️ VIDEO", -235f, 45f);
+            AjustarBotonPausaIndividual(botonControlesPausa, "⚙️ OPCIONES", -235f, -5f);
+            AjustarBotonPausaIndividual(botonVolverLobbyPausa, "🏠 VOLVER AL LOBBY", -235f, -55f);
+            AjustarBotonPausaIndividual(botonSalirPartida, "🚪 SALIR AL MENÚ", -235f, -105f);
 
             // 3. Columna derecha: Habilidades arriba, Tarjeta de Descripción en medio, Mapa abajo
             CrearOActualizarSeccionDerechaPausa();
@@ -1641,6 +1644,55 @@ namespace SoulKnight
             botonControlesPausa.onClick.AddListener(() =>
             {
                 PanelOpcionesControles.ObtenerOCrear(transform).Abrir();
+            });
+        }
+
+        private void AsegurarBotonVideoPausa()
+        {
+            if (panelPausa == null) return;
+
+            if (botonVideoPausa == null)
+            {
+                var exist = panelPausa.transform.Find("BotonVideoPausa");
+                if (exist != null)
+                {
+                    botonVideoPausa = exist.GetComponent<Button>();
+                }
+            }
+
+            if (botonVideoPausa == null)
+            {
+                var btnObj = new GameObject("BotonVideoPausa", typeof(RectTransform));
+                btnObj.transform.SetParent(panelPausa.transform, false);
+                var img = btnObj.AddComponent<Image>();
+                img.color = new Color(0.18f, 0.24f, 0.36f, 1f);
+                botonVideoPausa = btnObj.AddComponent<Button>();
+
+                var rt = btnObj.GetComponent<RectTransform>();
+                rt.anchorMin = new Vector2(0.5f, 0.5f);
+                rt.anchorMax = new Vector2(0.5f, 0.5f);
+                rt.pivot = new Vector2(0.5f, 0.5f);
+                rt.sizeDelta = new Vector2(230f, 44f);
+
+                var txtObj = new GameObject("Texto", typeof(RectTransform));
+                txtObj.transform.SetParent(btnObj.transform, false);
+                var txt = txtObj.AddComponent<Text>();
+                txt.font = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+                txt.fontSize = 14;
+                txt.fontStyle = FontStyle.Bold;
+                txt.alignment = TextAnchor.MiddleCenter;
+                txt.color = Color.white;
+                txt.text = "🖥️ VIDEO";
+                var rtTxt = txtObj.GetComponent<RectTransform>();
+                rtTxt.anchorMin = Vector2.zero;
+                rtTxt.anchorMax = Vector2.one;
+                rtTxt.sizeDelta = Vector2.zero;
+            }
+
+            botonVideoPausa.onClick.RemoveAllListeners();
+            botonVideoPausa.onClick.AddListener(() =>
+            {
+                PanelOpcionesControles.ObtenerOCrear(transform).Abrir(PestanaOpciones.Video);
             });
         }
 

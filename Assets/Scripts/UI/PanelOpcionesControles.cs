@@ -8,6 +8,7 @@ namespace SoulKnight
     public enum PestanaOpciones
     {
         Audio,
+        Video,
         Controles
     }
 
@@ -29,13 +30,37 @@ namespace SoulKnight
 
         // Pestañas
         private GameObject _panelAudio;
+        private GameObject _panelVideo;
         private GameObject _panelControles;
         private Button _btnTabAudio;
+        private Button _btnTabVideo;
         private Button _btnTabControles;
         private Image _imgTabAudio;
+        private Image _imgTabVideo;
         private Image _imgTabControles;
         private Text _txtTabAudio;
+        private Text _txtTabVideo;
         private Text _txtTabControles;
+
+        // Opciones de Video
+        private Button _btnDanoAcumulativo;
+        private Text _txtDanoAcumulativo;
+        private Button _btnPantallaCompleta;
+        private Text _txtPantallaCompleta;
+        private Button _btnVSync;
+        private Text _txtVSync;
+        private Button _btnCalidad;
+        private Text _txtCalidad;
+        private Button _btnResolucion;
+        private Text _txtResolucion;
+        private readonly Resolution[] _resolucionesDisponibles = new Resolution[]
+        {
+            new Resolution { width = 1920, height = 1080 },
+            new Resolution { width = 1600, height = 900 },
+            new Resolution { width = 1366, height = 768 },
+            new Resolution { width = 1280, height = 720 }
+        };
+        private int _indiceResolucion = 0;
 
         // Sliders Audio
         private Slider _sliderMaster;
@@ -100,7 +125,7 @@ namespace SoulKnight
 
         public void AsegurarInterfazCompleta()
         {
-            if (_panelAudio != null && _panelControles != null) return;
+            if (_panelAudio != null && _panelVideo != null && _panelControles != null) return;
 
             // Limpiar hijos residuales antiguos para garantizar diseño renovado espacioso
             for (int i = transform.childCount - 1; i >= 0; i--)
@@ -181,8 +206,9 @@ namespace SoulKnight
             rtTabs.anchoredPosition = new Vector2(0f, -56f);
             rtTabs.sizeDelta = new Vector2(850f, 44f);
 
-            _btnTabAudio = CrearBotonTab(barraTabs.transform, "TabAudio", "🔊 AUDIO & CANJEAR CÓDIGO", new Vector2(-215f, 0f), 410f, out _imgTabAudio, out _txtTabAudio);
-            _btnTabControles = CrearBotonTab(barraTabs.transform, "TabControles", "🎮 CONTROLES DE JUEGO", new Vector2(215f, 0f), 410f, out _imgTabControles, out _txtTabControles);
+            _btnTabAudio = CrearBotonTab(barraTabs.transform, "TabAudio", "🔊 AUDIO", new Vector2(-280f, 0f), 270f, out _imgTabAudio, out _txtTabAudio);
+            _btnTabVideo = CrearBotonTab(barraTabs.transform, "TabVideo", "🖥️ VIDEO", new Vector2(0f, 0f), 270f, out _imgTabVideo, out _txtTabVideo);
+            _btnTabControles = CrearBotonTab(barraTabs.transform, "TabControles", "🎮 CONTROLES", new Vector2(280f, 0f), 270f, out _imgTabControles, out _txtTabControles);
 
             // ==================== PANEL AUDIO Y COMANDOS / CÓDIGOS ====================
             _panelAudio = new GameObject("PanelAudio");
@@ -503,6 +529,9 @@ namespace SoulKnight
 
             ActualizarVisibilidadAdmin();
 
+            // ==================== PANEL VIDEO ====================
+            ConstruirPanelVideo(ventanaObj.transform);
+
             // ==================== PANEL CONTROLES AMPLIADO ====================
             _panelControles = new GameObject("PanelControles");
             _panelControles.transform.SetParent(ventanaObj.transform, false);
@@ -616,6 +645,7 @@ namespace SoulKnight
 
             // Listeners
             _btnTabAudio.onClick.AddListener(() => CambiarPestana(PestanaOpciones.Audio));
+            if (_btnTabVideo != null) _btnTabVideo.onClick.AddListener(() => CambiarPestana(PestanaOpciones.Video));
             _btnTabControles.onClick.AddListener(() => CambiarPestana(PestanaOpciones.Controles));
             botonCerrar.onClick.AddListener(Cerrar);
             botonRestaurar.onClick.AddListener(RestaurarPorDefecto);
@@ -1286,6 +1316,11 @@ namespace SoulKnight
             _pestanaActual = pestana;
 
             if (_panelAudio != null) _panelAudio.SetActive(pestana == PestanaOpciones.Audio);
+            if (_panelVideo != null)
+            {
+                _panelVideo.SetActive(pestana == PestanaOpciones.Video);
+                if (pestana == PestanaOpciones.Video) ActualizarTodosVisualesVideo();
+            }
             if (_panelControles != null) _panelControles.SetActive(pestana == PestanaOpciones.Controles);
 
             // La opción de resetear controles solo debe de salir en el apartado de controles
@@ -1318,14 +1353,11 @@ namespace SoulKnight
                 }
             }
 
-            if (_imgTabAudio != null)
-            {
-                _imgTabAudio.color = pestana == PestanaOpciones.Audio ? new Color(0.25f, 0.55f, 0.85f, 1f) : new Color(0.14f, 0.18f, 0.26f, 1f);
-            }
-            if (_imgTabControles != null)
-            {
-                _imgTabControles.color = pestana == PestanaOpciones.Controles ? new Color(0.25f, 0.55f, 0.85f, 1f) : new Color(0.14f, 0.18f, 0.26f, 1f);
-            }
+            Color cActivo = new Color(0.25f, 0.55f, 0.85f, 1f);
+            Color cInactivo = new Color(0.14f, 0.18f, 0.26f, 1f);
+            if (_imgTabAudio != null) _imgTabAudio.color = (pestana == PestanaOpciones.Audio) ? cActivo : cInactivo;
+            if (_imgTabVideo != null) _imgTabVideo.color = (pestana == PestanaOpciones.Video) ? cActivo : cInactivo;
+            if (_imgTabControles != null) _imgTabControles.color = (pestana == PestanaOpciones.Controles) ? cActivo : cInactivo;
         }
 
         void Start()
@@ -1363,7 +1395,7 @@ namespace SoulKnight
             }
         }
 
-        public void Abrir()
+        public void Abrir(PestanaOpciones pestanaInicial = PestanaOpciones.Audio)
         {
             AsegurarInterfazCompleta();
 
@@ -1380,8 +1412,7 @@ namespace SoulKnight
             if (panelContenedor) panelContenedor.SetActive(true);
             else gameObject.SetActive(true);
 
-            // Siempre abrir con Audio como primera opción seleccionada
-            CambiarPestana(PestanaOpciones.Audio);
+            CambiarPestana(pestanaInicial);
 
             // Sincronizar sliders con volúmenes reales
             if (_sliderMaster != null) _sliderMaster.value = GestorAudio.Instancia.VolumenMaster;
@@ -1408,6 +1439,248 @@ namespace SoulKnight
             GestorControles.RestaurarPorDefecto();
             ActualizarTextos();
             if (textoEstado) textoEstado.text = "¡Controles restaurados por defecto!";
+        }
+
+        private void ConstruirPanelVideo(Transform ventanaTransform)
+        {
+            _panelVideo = new GameObject("PanelVideo");
+            _panelVideo.transform.SetParent(ventanaTransform, false);
+            var rtVideo = _panelVideo.AddComponent<RectTransform>();
+            rtVideo.anchorMin = new Vector2(0.5f, 0.5f);
+            rtVideo.anchorMax = new Vector2(0.5f, 0.5f);
+            rtVideo.pivot = new Vector2(0.5f, 0.5f);
+            rtVideo.anchoredPosition = new Vector2(0f, -12f);
+            rtVideo.sizeDelta = new Vector2(850f, 500f);
+
+            // Subtítulo Video
+            var subVideo = new GameObject("SubtituloVideo");
+            subVideo.transform.SetParent(_panelVideo.transform, false);
+            var txtSubVideo = subVideo.AddComponent<Text>();
+            txtSubVideo.font = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            txtSubVideo.fontSize = 12;
+            txtSubVideo.fontStyle = FontStyle.Bold;
+            txtSubVideo.alignment = TextAnchor.MiddleLeft;
+            txtSubVideo.color = new Color(0.40f, 0.85f, 1f, 1f);
+            txtSubVideo.text = "🖥️ AJUSTES DE VIDEO Y VISUALIZACIÓN EN PANTALLA";
+            AgregarOutline(txtSubVideo);
+            var rtSubVideo = subVideo.GetComponent<RectTransform>();
+            rtSubVideo.anchorMin = new Vector2(0f, 1f);
+            rtSubVideo.anchorMax = new Vector2(1f, 1f);
+            rtSubVideo.pivot = new Vector2(0f, 1f);
+            rtSubVideo.anchoredPosition = new Vector2(15f, -6f);
+            rtSubVideo.sizeDelta = new Vector2(0f, 22f);
+
+            // Contenedor Filas Video
+            var contFilasVideo = new GameObject("ContenedorFilasVideo");
+            contFilasVideo.transform.SetParent(_panelVideo.transform, false);
+            var rtContVideo = contFilasVideo.AddComponent<RectTransform>();
+            rtContVideo.anchorMin = new Vector2(0.5f, 1f);
+            rtContVideo.anchorMax = new Vector2(0.5f, 1f);
+            rtContVideo.pivot = new Vector2(0.5f, 1f);
+            rtContVideo.anchoredPosition = new Vector2(0f, -34f);
+            rtContVideo.sizeDelta = new Vector2(820f, 440f);
+
+            var vlgVideo = contFilasVideo.AddComponent<VerticalLayoutGroup>();
+            vlgVideo.childAlignment = TextAnchor.UpperCenter;
+            vlgVideo.spacing = 8f;
+            vlgVideo.childControlWidth = false;
+            vlgVideo.childControlHeight = false;
+
+            // 1. Daño Acumulativo (Suma de números por tick)
+            _btnDanoAcumulativo = CrearFilaOpcionBoton(contFilasVideo.transform, "FilaDanoAcumulativo",
+                "Daño Acumulativo en Pantalla",
+                "Agrupa y va sumando los impactos continuos del jugador en una sola cifra que sube.",
+                "",
+                () =>
+                {
+                    bool actual = PlayerPrefs.GetInt("DanoAcumulativo", 0) == 1;
+                    PlayerPrefs.SetInt("DanoAcumulativo", actual ? 0 : 1);
+                    PlayerPrefs.Save();
+                    ActualizarVisualDanoAcumulativo();
+                },
+                out _txtDanoAcumulativo);
+
+            // 2. Modo de Pantalla (Fullscreen / Ventana)
+            _btnPantallaCompleta = CrearFilaOpcionBoton(contFilasVideo.transform, "FilaPantallaCompleta",
+                "Modo de Pantalla",
+                "Alterna entre modo ventana y pantalla completa sin bordes.",
+                "",
+                () =>
+                {
+                    Screen.fullScreen = !Screen.fullScreen;
+                    ActualizarVisualPantallaCompleta();
+                },
+                out _txtPantallaCompleta);
+
+            // 3. Sincronización Vertical (V-Sync)
+            _btnVSync = CrearFilaOpcionBoton(contFilasVideo.transform, "FilaVSync",
+                "Sincronización Vertical (V-Sync)",
+                "Limita los FPS a la tasa de refresco del monitor para una fluidez óptima.",
+                "",
+                () =>
+                {
+                    QualitySettings.vSyncCount = (QualitySettings.vSyncCount > 0) ? 0 : 1;
+                    PlayerPrefs.SetInt("VSyncSetting", QualitySettings.vSyncCount);
+                    PlayerPrefs.Save();
+                    ActualizarVisualVSync();
+                },
+                out _txtVSync);
+
+            // 4. Calidad Gráfica
+            _btnCalidad = CrearFilaOpcionBoton(contFilasVideo.transform, "FilaCalidad",
+                "Nivel de Calidad Gráfica",
+                "Ajusta sombras, suavizado y nivel de renderizado gráfico.",
+                "",
+                () =>
+                {
+                    int totalNiveles = QualitySettings.names.Length;
+                    int actual = QualitySettings.GetQualityLevel();
+                    int nuevo = (actual + 1) % totalNiveles;
+                    QualitySettings.SetQualityLevel(nuevo, true);
+                    PlayerPrefs.SetInt("CalidadGrafica", nuevo);
+                    PlayerPrefs.Save();
+                    ActualizarVisualCalidad();
+                },
+                out _txtCalidad);
+
+            // 5. Resolución de Pantalla
+            _btnResolucion = CrearFilaOpcionBoton(contFilasVideo.transform, "FilaResolucion",
+                "Resolución de Pantalla",
+                "Cambia las dimensiones nativas de la ventana.",
+                "",
+                () =>
+                {
+                    _indiceResolucion = (_indiceResolucion + 1) % _resolucionesDisponibles.Length;
+                    var res = _resolucionesDisponibles[_indiceResolucion];
+                    Screen.SetResolution(res.width, res.height, Screen.fullScreen);
+                    ActualizarVisualResolucion();
+                },
+                out _txtResolucion);
+
+            ActualizarTodosVisualesVideo();
+        }
+
+        private Button CrearFilaOpcionBoton(Transform parent, string nombre, string titulo, string descripcion, string textoBotonInicial, Action onBotonClick, out Text outTxtBoton)
+        {
+            var filaObj = new GameObject(nombre);
+            filaObj.transform.SetParent(parent, false);
+            var rtFila = filaObj.AddComponent<RectTransform>();
+            rtFila.sizeDelta = new Vector2(810f, 54f);
+
+            var imgFila = filaObj.AddComponent<Image>();
+            imgFila.color = new Color(0.10f, 0.13f, 0.20f, 0.95f);
+
+            // Textos: Titulo y Descripcion a la izquierda
+            var textCont = new GameObject("ContenedorTextos");
+            textCont.transform.SetParent(filaObj.transform, false);
+            var rtTextCont = textCont.AddComponent<RectTransform>();
+            rtTextCont.anchorMin = new Vector2(0f, 0f);
+            rtTextCont.anchorMax = new Vector2(0.68f, 1f);
+            rtTextCont.offsetMin = new Vector2(16f, 4f);
+            rtTextCont.offsetMax = new Vector2(-8f, -4f);
+
+            var txtTit = textCont.AddComponent<Text>();
+            txtTit.font = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            txtTit.fontSize = 13;
+            txtTit.fontStyle = FontStyle.Bold;
+            txtTit.alignment = TextAnchor.UpperLeft;
+            txtTit.color = Color.white;
+            txtTit.text = $"{titulo}\n<size=10><color=#A0B2C6>{descripcion}</color></size>";
+            txtTit.supportRichText = true;
+            AgregarOutline(txtTit);
+
+            // Botón a la derecha
+            var btnObj = new GameObject("BotonAccion");
+            btnObj.transform.SetParent(filaObj.transform, false);
+            var rtBtn = btnObj.AddComponent<RectTransform>();
+            rtBtn.anchorMin = new Vector2(1f, 0.5f);
+            rtBtn.anchorMax = new Vector2(1f, 0.5f);
+            rtBtn.pivot = new Vector2(1f, 0.5f);
+            rtBtn.anchoredPosition = new Vector2(-16f, 0f);
+            rtBtn.sizeDelta = new Vector2(250f, 38f);
+
+            var imgBtn = btnObj.AddComponent<Image>();
+            imgBtn.color = new Color(0.18f, 0.25f, 0.38f, 1f);
+
+            var btn = btnObj.AddComponent<Button>();
+            if (onBotonClick != null) btn.onClick.AddListener(() => onBotonClick());
+
+            var txtObj = new GameObject("Texto");
+            txtObj.transform.SetParent(btnObj.transform, false);
+            var txt = txtObj.AddComponent<Text>();
+            txt.font = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            txt.fontSize = 12;
+            txt.fontStyle = FontStyle.Bold;
+            txt.alignment = TextAnchor.MiddleCenter;
+            txt.color = Color.white;
+            txt.text = textoBotonInicial;
+            AgregarOutline(txt);
+
+            var rtTxt = txtObj.GetComponent<RectTransform>();
+            rtTxt.anchorMin = Vector2.zero;
+            rtTxt.anchorMax = Vector2.one;
+            rtTxt.sizeDelta = Vector2.zero;
+
+            outTxtBoton = txt;
+            return btn;
+        }
+
+        private void ActualizarTodosVisualesVideo()
+        {
+            ActualizarVisualDanoAcumulativo();
+            ActualizarVisualPantallaCompleta();
+            ActualizarVisualVSync();
+            ActualizarVisualCalidad();
+            ActualizarVisualResolucion();
+        }
+
+        private void ActualizarVisualDanoAcumulativo()
+        {
+            bool activo = PlayerPrefs.GetInt("DanoAcumulativo", 0) == 1;
+            if (_txtDanoAcumulativo != null)
+            {
+                _txtDanoAcumulativo.text = activo ? "✔ ACTIVADO (ACUMULATIVO)" : "✖ DESACTIVADO (POR TICK)";
+                _txtDanoAcumulativo.color = activo ? new Color(0.35f, 0.95f, 0.45f, 1f) : new Color(0.85f, 0.85f, 0.85f, 1f);
+            }
+        }
+
+        private void ActualizarVisualPantallaCompleta()
+        {
+            if (_txtPantallaCompleta != null)
+            {
+                bool fs = Screen.fullScreen;
+                _txtPantallaCompleta.text = fs ? "🖥️ PANTALLA COMPLETA" : "🪟 MODO VENTANA";
+                _txtPantallaCompleta.color = fs ? new Color(0.40f, 0.85f, 1f, 1f) : new Color(1f, 0.85f, 0.35f, 1f);
+            }
+        }
+
+        private void ActualizarVisualVSync()
+        {
+            if (_txtVSync != null)
+            {
+                bool vSync = QualitySettings.vSyncCount > 0;
+                _txtVSync.text = vSync ? "✔ V-SYNC (ACTIVADO)" : "✖ V-SYNC (DESACTIVADO)";
+                _txtVSync.color = vSync ? new Color(0.35f, 0.95f, 0.45f, 1f) : new Color(0.85f, 0.85f, 0.85f, 1f);
+            }
+        }
+
+        private void ActualizarVisualCalidad()
+        {
+            if (_txtCalidad != null)
+            {
+                string nombreCalidad = QualitySettings.names[QualitySettings.GetQualityLevel()];
+                _txtCalidad.text = $"★ {nombreCalidad.ToUpperInvariant()}";
+                _txtCalidad.color = new Color(1f, 0.85f, 0.35f, 1f);
+            }
+        }
+
+        private void ActualizarVisualResolucion()
+        {
+            if (_txtResolucion != null)
+            {
+                _txtResolucion.text = $"📐 {Screen.width} x {Screen.height}";
+                _txtResolucion.color = Color.white;
+            }
         }
 
         private void ConstruirFilas()

@@ -25,7 +25,7 @@ namespace SoulKnight
 
         private static Font _fuente;
 
-        public static void Crear(Vector3 posicion, string texto, Color color)
+        public static TextoFlotante Crear(Vector3 posicion, string texto, Color color)
         {
             if (_fuente == null) _fuente = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
 
@@ -46,6 +46,34 @@ namespace SoulKnight
             tf.transform.position = spawnPos;
             tf.gameObject.SetActive(true);
             tf.Reiniciar(texto, color);
+            return tf;
+        }
+
+        public void ActualizarAcumulado(int nuevoTotal, Color nuevoColor, Vector3 posicionObjetivo)
+        {
+            _color = nuevoColor;
+            _tiempo = 0f; // Reiniciar tiempo de desvanecimiento para combos continuos
+            _vy = 1.5f;   // Pequeño impulso ascendente
+            transform.position = posicionObjetivo + new Vector3(0f, 0.25f, 0f);
+
+            string texto = nuevoTotal.ToString();
+            if (_texto != null)
+            {
+                _texto.text = texto;
+                _texto.color = nuevoColor;
+            }
+
+            if (_bordes != null)
+            {
+                for (int i = 0; i < _bordes.Length; i++)
+                {
+                    if (_bordes[i] != null)
+                    {
+                        _bordes[i].text = texto;
+                        _bordes[i].color = Color.black;
+                    }
+                }
+            }
         }
 
         private static TextoFlotante InstanciarNuevo()

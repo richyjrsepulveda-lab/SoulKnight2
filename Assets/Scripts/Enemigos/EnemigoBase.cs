@@ -62,6 +62,11 @@ namespace SoulKnight
         private float _tiempoTickQuemadoActual = 0f;
         private int _danoQuemadoPersonalizado = 0;
 
+        // Daño Acumulativo (cliente)
+        private TextoFlotante _textoDanoAcumulado = null;
+        private int _danoAcumuladoTotal = 0;
+        private float _timerVentanaAcumulada = 0f;
+
         // IA Probabilística
         private float _timerDecision = 0f;
         private ModoMovimiento _modoActual = ModoMovimiento.Perseguir;
@@ -532,6 +537,17 @@ namespace SoulKnight
                 }
             }
 
+            // Temporizador de ventana de daño acumulativo en cliente
+            if (_timerVentanaAcumulada > 0f)
+            {
+                _timerVentanaAcumulada -= Time.deltaTime;
+                if (_timerVentanaAcumulada <= 0f)
+                {
+                    _textoDanoAcumulado = null;
+                    _danoAcumuladoTotal = 0;
+                }
+            }
+
             if (IsServer)
             {
                 _timerHabilidadRol += Time.deltaTime;
@@ -800,7 +816,29 @@ namespace SoulKnight
         [ClientRpc]
         private void MostrarDanoClientRpc(int cantidad, Color color)
         {
-            TextoFlotante.Crear(transform.position + new Vector3(0, 1.25f, 0), cantidad.ToString(), color);
+            Vector3 posImpacto = transform.position + new Vector3(0, 1.25f, 0);
+            bool danoAcumulativo = PlayerPrefs.GetInt("DanoAcumulativo", 0) == 1;
+
+            if (danoAcumulativo)
+            {
+                if (_textoDanoAcumulado != null && _textoDanoAcumulado.gameObject.activeSelf && _timerVentanaAcumulada > 0f)
+                {
+                    _danoAcumuladoTotal += cantidad;
+                    _timerVentanaAcumulada = 0.70f;
+                    _textoDanoAcumulado.ActualizarAcumulado(_danoAcumuladoTotal, color, posImpacto);
+                }
+                else
+                {
+                    _danoAcumuladoTotal = cantidad;
+                    _timerVentanaAcumulada = 0.70f;
+                    _textoDanoAcumulado = TextoFlotante.Crear(posImpacto, _danoAcumuladoTotal.ToString(), color);
+                }
+            }
+            else
+            {
+                TextoFlotante.Crear(posImpacto, cantidad.ToString(), color);
+            }
+
             bool esDanoHielo = color.b > 0.7f && color.r < 0.6f;
             if (esDanoHielo)
             {
