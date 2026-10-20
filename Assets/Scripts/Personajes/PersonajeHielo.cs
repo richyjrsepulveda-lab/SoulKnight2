@@ -24,9 +24,9 @@ namespace SoulKnight
         public LineRenderer rayoHieloHalo;
 
         [Header("Estadísticas")]
-        public int danoRayo = 8;
+        public int danoRayo = 7;
         public float rangoRayo = 7.5f;           // Alcance moderado balanceado (no infinito)
-        public float intervaloTickRayo = 0.065f; // Ticks continuos ultra-rápidos y fluidos sincronizados al instante
+        public float intervaloTickRayo = 0.038f; // Ticks continuos ultra-rápidos a alta frecuencia
         public float cooldownBolaHielo = 7.0f;
         public int danoBolaHielo = 100;
 

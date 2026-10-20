@@ -520,6 +520,24 @@ namespace SoulKnight
             }
         }
 
+        public int ContarEsbirrosCercanos(Vector2 centro, float radio)
+        {
+            int conteo = 0;
+            float radioSq = radio * radio;
+            for (int i = 0; i < _enemigosActivos.Count; i++)
+            {
+                var e = _enemigosActivos[i];
+                if (e != null && e.gameObject.activeInHierarchy && e.EsInvocado && e.VidaActual.Value > 0)
+                {
+                    if (((Vector2)e.transform.position - centro).sqrMagnitude <= radioSq)
+                    {
+                        conteo++;
+                    }
+                }
+            }
+            return conteo;
+        }
+
         public void DetenerPartida()
         {
             PartidaTerminada = true;

@@ -225,6 +225,7 @@ namespace SoulKnight
                     dano = 0;
                     rangoAtaque = 0f;
                     tiempoEntreAtaques = 2.0f;
+                    rangoMaximoDeteccion = 9.5f; // Rango de detección para despertar e invocar
                     EscalaVisualNet.Value = 2.05f;
                     if (_rb != null) _rb.isKinematic = true;
                     break;
@@ -448,6 +449,15 @@ namespace SoulKnight
             }
         }
 
+        private int ContarEsbirrosCercanos(float radio)
+        {
+            if (GestorPartida.Instancia != null)
+            {
+                return GestorPartida.Instancia.ContarEsbirrosCercanos((Vector2)transform.position, radio);
+            }
+            return 0;
+        }
+
         private void ActualizarTinteVisual()
         {
             if (_visualQuemadura != null)
@@ -559,10 +569,24 @@ namespace SoulKnight
                 }
                 else if (RolActualNet.Value == (int)RolEnemigo.Spawner)
                 {
-                    if (_timerHabilidadRol >= 3.0f)
+                    // Los ataúdes solo invocan si detectan activamente a un jugador cercano (optimización de rendimiento y antispam)
+                    Personaje jugadorDetectado = ObtenerJugadorMasCercano();
+                    if (jugadorDetectado != null)
                     {
+                        if (_timerHabilidadRol >= 3.5f)
+                        {
+                            _timerHabilidadRol = 0f;
+                            // Límite de esbirros activos cercanos a este ataúd para evitar sobrecarga
+                            if (ContarEsbirrosCercanos(9f) < 3)
+                            {
+                                InvocarEsbirroAtaud();
+                            }
+                        }
+                    }
+                    else
+                    {
+                        // Si no hay jugador cerca, se resetea el timer de invocación
                         _timerHabilidadRol = 0f;
-                        InvocarEsbirroAtaud();
                     }
                 }
             }
