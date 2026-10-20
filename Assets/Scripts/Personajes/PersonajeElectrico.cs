@@ -140,6 +140,7 @@ namespace SoulKnight
         public override void OnNetworkSpawn()
         {
             base.OnNetworkSpawn();
+            danoDash = 90;
             AsegurarFuentesAudio();
 
             RayoCargando.OnValueChanged += (prev, act) => {

@@ -349,9 +349,9 @@ MonoBehaviour:
   visualArmaduraHielo: {fileID: 0}
   rayoHielo: {fileID: 5478603783090845187}
   rayoHieloHalo: {fileID: 3832696561998068530}
-  danoRayo: 9
+  danoRayo: 4
   rangoRayo: 7.5
-  intervaloTickRayo: 0.14
+  intervaloTickRayo: 0.02
   cooldownBolaHielo: 7
   danoBolaHielo: 100
   cooldownArmadura: 12

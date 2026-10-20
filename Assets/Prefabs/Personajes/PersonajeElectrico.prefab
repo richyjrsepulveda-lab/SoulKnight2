@@ -496,7 +496,7 @@ MonoBehaviour:
   rangoEspada: 2.5
   velocidadDash: 75
   distanciaMaximaDash: 9.5
-  danoDash: 200
+  danoDash: 90
   cooldownDash: 1
   danoTeleport: 400
   radioTeleport: 3.5

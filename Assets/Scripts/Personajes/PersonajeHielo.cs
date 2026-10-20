@@ -97,6 +97,8 @@ namespace SoulKnight
         {
             base.Awake();
             _boxCol = GetComponent<BoxCollider2D>();
+            danoRayo = 4;
+            intervaloTickRayo = 0.020f;
         }
 
         public void NotificarAtaqueLocal(float duracion = 0.5f)
@@ -296,6 +298,8 @@ namespace SoulKnight
         public override void OnNetworkSpawn()
         {
             base.OnNetworkSpawn();
+            danoRayo = 4;
+            intervaloTickRayo = 0.020f;
             ArmaduraActiva.OnValueChanged += (prev, act) => {
                 if (visualArmaduraHielo) visualArmaduraHielo.SetActive(act);
                 if (act)
