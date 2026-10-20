@@ -24,7 +24,7 @@ namespace SoulKnight
         [Header("Dash")]
         public float velocidadDash = 75f; // ~2500 px/s en Godot
         public float distanciaMaximaDash = 9.5f; // ~300 px
-        public int danoDash = 200;
+        public int danoDash = 90;
         public float cooldownDash = 1.0f;
 
         [Header("Teleport")]
