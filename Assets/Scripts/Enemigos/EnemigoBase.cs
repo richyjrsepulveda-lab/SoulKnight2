@@ -195,7 +195,7 @@ namespace SoulKnight
                 case RolEnemigo.Tanque:
                     vidaMax = Mathf.RoundToInt(250 * multDificultad);
                     velocidadBase = 2.6f * bonusVelocidadNivel;
-                    dano = Mathf.RoundToInt(16 * multDificultad);
+                    dano = Mathf.RoundToInt(11 * multDificultad);
                     rangoAtaque = 1.40f;
                     tiempoEntreAtaques = 1.35f * reduccionCooldownNivel;
                     EscalaVisualNet.Value = 1.95f;
@@ -203,7 +203,7 @@ namespace SoulKnight
                 case RolEnemigo.MeleeRapido:
                     vidaMax = Mathf.RoundToInt(95 * multDificultad);
                     velocidadBase = 4.8f * bonusVelocidadNivel;
-                    dano = Mathf.RoundToInt(10 * multDificultad);
+                    dano = Mathf.RoundToInt(7 * multDificultad);
                     rangoAtaque = 1.25f;
                     tiempoEntreAtaques = 0.75f * reduccionCooldownNivel;
                     EscalaVisualNet.Value = 1.45f;
@@ -211,7 +211,7 @@ namespace SoulKnight
                 case RolEnemigo.Rango:
                     vidaMax = Mathf.RoundToInt(120 * multDificultad);
                     velocidadBase = 2.9f * bonusVelocidadNivel;
-                    dano = Mathf.RoundToInt(13 * multDificultad);
+                    dano = Mathf.RoundToInt(8 * multDificultad);
                     rangoAtaque = 1.05f;
                     tiempoEntreAtaques = 1.10f * reduccionCooldownNivel;
                     EscalaVisualNet.Value = 1.55f;
@@ -219,7 +219,7 @@ namespace SoulKnight
                 case RolEnemigo.Especial:
                     vidaMax = Mathf.RoundToInt(145 * multDificultad);
                     velocidadBase = 3.5f * bonusVelocidadNivel;
-                    dano = Mathf.RoundToInt(14 * multDificultad);
+                    dano = Mathf.RoundToInt(9 * multDificultad);
                     rangoAtaque = 1.30f;
                     tiempoEntreAtaques = 1.05f * reduccionCooldownNivel;
                     EscalaVisualNet.Value = 1.60f;
@@ -647,11 +647,11 @@ namespace SoulKnight
                     }
                     else if (BiomaActualNet.Value == (int)TipoBioma.Fuego)
                     {
-                        jugadorCercano.AplicarQuemadura(4.0f, 6);
+                        jugadorCercano.AplicarQuemadura(4.0f, 2);
                     }
                     else if (BiomaActualNet.Value == (int)TipoBioma.Planta)
                     {
-                        jugadorCercano.AplicarEsporasVeneno(4.0f, 5);
+                        jugadorCercano.AplicarEsporasVeneno(4.0f, 2);
                     }
 
                     // Si el jugador tiene la Armadura de Fuego activa, quema al enemigo que lo golpeó a melee
@@ -871,11 +871,11 @@ namespace SoulKnight
             EstaRalentizado.Value = true;
         }
 
-        public void Freeze()
+        public void Freeze(float duracionPersonalizada = -1f)
         {
             if (!IsServer) return;
             EstaCongelado.Value = true;
-            _tiempoCongelado = duracionCongelacion;
+            _tiempoCongelado = duracionPersonalizada > 0f ? duracionPersonalizada : duracionCongelacion;
             _rb.velocity = Vector2.zero;
         }
 
@@ -896,19 +896,29 @@ namespace SoulKnight
             if (!IsServer) return;
             AlMorir?.Invoke();
 
-            // Otorgar oro de la run a los jugadores (reducido para no saturar de oro)
-            int oroRecompensa = UnityEngine.Random.value < 0.65f ? 1 : 2;
-            for (int i = 0; i < Personaje.Todos.Count; i++)
+            // Soltar monedas de oro físicas que brincan del enemigo abatido
+            int numMonedas = UnityEngine.Random.value < 0.65f ? 1 : 2;
+            if (SalaRed.Instancia != null)
             {
-                var pj = Personaje.Todos[i];
-                if (pj != null && !pj.EstaMuerto.Value)
+                SalaRed.Instancia.SpawnearMonedasEnServidor(transform.position, numMonedas, 1);
+            }
+            else
+            {
+                for (int m = 0; m < numMonedas; m++)
                 {
-                    pj.AgregarOro(oroRecompensa);
+                    var go = new GameObject("MonedaOro_Drop");
+                    go.transform.position = transform.position;
+                    var mon = go.AddComponent<MonedaOro>();
+                    Vector2 dir = UnityEngine.Random.insideUnitCircle.normalized;
+                    mon.IniciarSalto(UnityEngine.Random.Range(1000, 999999), 1, dir, UnityEngine.Random.Range(1.8f, 3.2f), UnityEngine.Random.Range(3.8f, 5.5f));
                 }
             }
 
             if (GestorPartida.Instancia != null)
             {
+                // Probabilidad de soltar pescaditos curativos al morir (~3 pescados por sala recorrida)
+                GestorPartida.Instancia.VerificarDropPescadoEnemigo(transform.position);
+
                 // Si era un Sarcófago Andante en el Desierto, al morir emerge una Momia
                 if (BiomaActualNet.Value == (int)TipoBioma.Arena && RolActualNet.Value == (int)RolEnemigo.Tanque)
                 {

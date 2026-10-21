@@ -601,6 +601,115 @@ namespace SoulKnight
             }
         }
 
+        // ========================================== SISTEMA DE MONEDAS Y COFRES EN RED ==========================================
+        private int _siguienteIdMoneda = 1;
+        private readonly HashSet<int> _monedasReclamadas = new HashSet<int>();
+
+        public void SpawnearMonedasEnServidor(Vector2 posOrigen, int cantidad, int valorPorMoneda = 1)
+        {
+            if (cantidad <= 0) return;
+
+            int[] ids = new int[cantidad];
+            Vector2[] dirs = new Vector2[cantidad];
+            float[] fuerzasH = new float[cantidad];
+            float[] fuerzasV = new float[cantidad];
+
+            for (int i = 0; i < cantidad; i++)
+            {
+                ids[i] = _siguienteIdMoneda++;
+                dirs[i] = UnityEngine.Random.insideUnitCircle.normalized;
+                fuerzasH[i] = UnityEngine.Random.Range(1.8f, 3.4f);
+                fuerzasV[i] = UnityEngine.Random.Range(4.0f, 6.0f);
+            }
+
+            if (NetworkManager != null && NetworkManager.IsListening)
+            {
+                SpawnearMonedasClientRpc(posOrigen, ids, valorPorMoneda, dirs, fuerzasH, fuerzasV);
+            }
+            else
+            {
+                for (int i = 0; i < cantidad; i++)
+                {
+                    var go = new GameObject($"MonedaOro_{ids[i]}");
+                    go.transform.position = posOrigen;
+                    var mon = go.AddComponent<MonedaOro>();
+                    mon.IniciarSalto(ids[i], valorPorMoneda, dirs[i], fuerzasH[i], fuerzasV[i]);
+                }
+            }
+        }
+
+        [ClientRpc]
+        private void SpawnearMonedasClientRpc(Vector2 posOrigen, int[] ids, int valorPorMoneda, Vector2[] dirs, float[] fuerzasHoriz, float[] fuerzasVert)
+        {
+            if (ids == null) return;
+            for (int i = 0; i < ids.Length; i++)
+            {
+                int id = ids[i];
+                if (MonedaOro.Todas.ContainsKey(id)) continue;
+
+                var go = new GameObject($"MonedaOro_{id}");
+                go.transform.position = posOrigen;
+                var mon = go.AddComponent<MonedaOro>();
+                Vector2 dir = (dirs != null && i < dirs.Length) ? dirs[i] : UnityEngine.Random.insideUnitCircle.normalized;
+                float fH = (fuerzasHoriz != null && i < fuerzasHoriz.Length) ? fuerzasHoriz[i] : 2.5f;
+                float fV = (fuerzasVert != null && i < fuerzasVert.Length) ? fuerzasVert[i] : 4.8f;
+                mon.IniciarSalto(id, valorPorMoneda, dir, fH, fV);
+            }
+        }
+
+        public void ReclamarMonedaEnServidor(ulong idCliente, int idMoneda, int valor)
+        {
+            if (!IsServer) return;
+            if (_monedasReclamadas.Contains(idMoneda)) return;
+            _monedasReclamadas.Add(idMoneda);
+
+            for (int i = 0; i < Personaje.Todos.Count; i++)
+            {
+                var pj = Personaje.Todos[i];
+                if (pj != null && pj.OwnerClientId == idCliente)
+                {
+                    pj.AgregarOro(valor);
+                    break;
+                }
+            }
+
+            DestruirMonedaClientRpc(idMoneda);
+        }
+
+        [ClientRpc]
+        public void DestruirMonedaClientRpc(int idMoneda)
+        {
+            if (MonedaOro.Todas.TryGetValue(idMoneda, out var mon) && mon != null)
+            {
+                mon.DesaparecerPorRecoleccion();
+            }
+        }
+
+        [ClientRpc]
+        public void NotificarAperturaCofreClientRpc(Vector2 posCofre)
+        {
+            float menorDist = 3.5f;
+            CofreOro masCercano = null;
+            for (int i = 0; i < CofreOro.Todos.Count; i++)
+            {
+                var c = CofreOro.Todos[i];
+                if (c != null && !c.EstaAbiertoLocal)
+                {
+                    float d = Vector2.Distance(posCofre, c.transform.position);
+                    if (d < menorDist)
+                    {
+                        menorDist = d;
+                        masCercano = c;
+                    }
+                }
+            }
+
+            if (masCercano != null)
+            {
+                masCercano.AplicarVisualAbierto();
+            }
+        }
+
         static string Recortar(string s, int max) =>
             string.IsNullOrEmpty(s) ? "" : (s.Length <= max ? s : s.Substring(0, max));
     }

@@ -236,6 +236,7 @@ namespace SoulKnight
             if (sala == null || sala.despejada || sala.enCombate) return;
 
             _salaActivaEnCombate = sala;
+            _pescadosSoltadosEnSalaActual = 0;
             sala.EncenderAntorchas(true);
             sala.BloquearSala(true);
 
@@ -578,6 +579,33 @@ namespace SoulKnight
             }
 
             PuestitoTienda.DestruirTodos();
+        }
+
+        private int _pescadosSoltadosEnSalaActual = 0;
+
+        public void VerificarDropPescadoEnemigo(Vector2 pos)
+        {
+            if (NetworkManager.Singleton == null || !NetworkManager.Singleton.IsServer) return;
+            if (prefabItemMejoraRun == null || _pescadosSoltadosEnSalaActual >= 3) return;
+
+            // Probabilidad calibrada para que salgan en promedio 3 pescados por sala recorrida (~22%)
+            if (UnityEngine.Random.value < 0.22f)
+            {
+                _pescadosSoltadosEnSalaActual++;
+                TipoMejoraRun tipoPescado = CatalogoMejorasRun.ObtenerAleatoria();
+                GameObject go = Instantiate(prefabItemMejoraRun, (Vector3)pos, Quaternion.identity);
+                var item = go.GetComponent<ItemMejoraRun>();
+                if (item != null)
+                {
+                    item.TipoMejora.Value = (byte)tipoPescado;
+                    item.CostoOro.Value = 0;
+                }
+                var netObj = go.GetComponent<NetworkObject>();
+                if (netObj != null)
+                {
+                    netObj.Spawn();
+                }
+            }
         }
 
         public void EnemigoEliminado(EnemigoBase enemigo)

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Unity.Collections;
 using Unity.Netcode;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace SoulKnight
 {
@@ -48,8 +49,8 @@ namespace SoulKnight
         private float _tiempoQuemadoPj = 0f;
         private float _tiempoVenenoPj = 0f;
         private float _tickDanoEstadoPj = 0f;
-        private int _danoTickQuemadoPj = 4;
-        private int _danoTickVenenoPj = 4;
+        private int _danoTickQuemadoPj = 2;
+        private int _danoTickVenenoPj = 2;
 
         protected Rigidbody2D _rb;
         protected Collider2D _col;
@@ -292,6 +293,14 @@ namespace SoulKnight
             }
 
             VidaActual.OnValueChanged += AlCambiarVida;
+            VidaMaxSincronizada.OnValueChanged += (anterior, actual) =>
+            {
+                vidaMax = actual;
+                if (EsControlLocal && HUDJugador.Instancia != null)
+                {
+                    HUDJugador.Instancia.ActualizarVida(VidaActual.Value, actual);
+                }
+            };
             EstaMuerto.OnValueChanged += AlCambiarEstadoMuerte;
             OroRun.OnValueChanged += (anterior, actual) =>
             {
@@ -390,6 +399,7 @@ namespace SoulKnight
             if (IsServer)
             {
                 ActualizarEfectosConsumiblesServidor(Time.deltaTime);
+                ActualizarRegeneracionPasivaServidor(Time.deltaTime);
             }
 
             if (ComandosAdmin.ModoCeroCooldowns)
@@ -600,6 +610,9 @@ namespace SoulKnight
                 }
             }
 
+            // Regeneración pasiva de vida poco a poco durante la run en el servidor
+            ActualizarRegeneracionPasivaServidor(dt);
+
             // Actualizar estados alterados de biomas en el servidor
             if (_tiempoCongeladoPj > 0f)
             {
@@ -681,20 +694,42 @@ namespace SoulKnight
             MostrarTextoFlotanteClientRpc("¡Ralentizado!", new Color(0.6f, 0.9f, 1f));
         }
 
-        public void AplicarQuemadura(float duracion, int danoPorTick = 5)
+        private float _timerRegenPasiva = 0f;
+
+        private void ActualizarRegeneracionPasivaServidor(float dt)
+        {
+            if (!IsServer || EstaMuerto.Value) return;
+            if (SceneManager.GetActiveScene().name != "Juego") return;
+
+            if (VidaActual.Value < VidaMaxSincronizada.Value)
+            {
+                _timerRegenPasiva += dt;
+                if (_timerRegenPasiva >= 3.0f)
+                {
+                    _timerRegenPasiva = 0f;
+                    Curar(2);
+                }
+            }
+            else
+            {
+                _timerRegenPasiva = 0f;
+            }
+        }
+
+        public void AplicarQuemadura(float duracion, int danoPorTick = 2)
         {
             if (!IsServer || EstaMuerto.Value) return;
             _tiempoQuemadoPj = Mathf.Max(_tiempoQuemadoPj, duracion);
-            _danoTickQuemadoPj = danoPorTick;
+            _danoTickQuemadoPj = Mathf.Min(2, danoPorTick);
             JugadorQuemado.Value = true;
             MostrarTextoFlotanteClientRpc("¡En Llamas!", new Color(1f, 0.4f, 0.1f));
         }
 
-        public void AplicarEsporasVeneno(float duracion, int danoPorTick = 4)
+        public void AplicarEsporasVeneno(float duracion, int danoPorTick = 2)
         {
             if (!IsServer || EstaMuerto.Value) return;
             _tiempoVenenoPj = Mathf.Max(_tiempoVenenoPj, duracion);
-            _danoTickVenenoPj = danoPorTick;
+            _danoTickVenenoPj = Mathf.Min(2, danoPorTick);
             JugadorEnvenenado.Value = true;
             MostrarTextoFlotanteClientRpc("¡Esporas Tóxicas!", new Color(0.4f, 0.9f, 0.3f));
         }
@@ -713,6 +748,82 @@ namespace SoulKnight
             if (!IsServer || cantidad <= 0) return;
             OroRun.Value += cantidad;
             MostrarTextoFlotanteClientRpc($"+{cantidad} Oro 💰", new Color(1f, 0.88f, 0.2f));
+        }
+
+        public void ReclamarMonedaLocalmente(int idMoneda, int valor)
+        {
+            if (MonedaOro.Todas.TryGetValue(idMoneda, out var mon) && mon != null)
+            {
+                mon.DesaparecerPorRecoleccion();
+            }
+
+            if (NetworkManager != null && NetworkManager.IsListening)
+            {
+                ReclamarMonedaServerRpc(idMoneda, valor);
+            }
+            else
+            {
+                AgregarOro(valor);
+            }
+        }
+
+        [ServerRpc(RequireOwnership = false)]
+        public void ReclamarMonedaServerRpc(int idMoneda, int valor, ServerRpcParams rpcParams = default)
+        {
+            if (EstaMuerto.Value) return;
+            if (SalaRed.Instancia != null)
+            {
+                SalaRed.Instancia.ReclamarMonedaEnServidor(rpcParams.Receive.SenderClientId, idMoneda, valor);
+            }
+            else
+            {
+                AgregarOro(valor);
+            }
+        }
+
+        public void InteractuarCofre(CofreOro cofre)
+        {
+            if (cofre == null || cofre.EstaAbiertoLocal) return;
+
+            if (NetworkManager != null && NetworkManager.IsListening)
+            {
+                AbrirCofreCercanoServerRpc(cofre.transform.position);
+            }
+            else
+            {
+                cofre.AbrirLocalmente(this);
+            }
+        }
+
+        [ServerRpc(RequireOwnership = false)]
+        public void AbrirCofreCercanoServerRpc(Vector2 posCofre, ServerRpcParams rpcParams = default)
+        {
+            if (EstaMuerto.Value) return;
+
+            float menorDist = 4.5f;
+            CofreOro cofreCercano = null;
+            for (int i = 0; i < CofreOro.Todos.Count; i++)
+            {
+                var c = CofreOro.Todos[i];
+                if (c != null && !c.EstaAbiertoLocal)
+                {
+                    float d = Vector2.Distance(posCofre, c.transform.position);
+                    if (d < menorDist)
+                    {
+                        menorDist = d;
+                        cofreCercano = c;
+                    }
+                }
+            }
+
+            if (cofreCercano != null)
+            {
+                cofreCercano.AbrirPorServidor();
+                if (SalaRed.Instancia != null)
+                {
+                    SalaRed.Instancia.NotificarAperturaCofreClientRpc(posCofre);
+                }
+            }
         }
 
         public bool GastarOro(int cantidad)
@@ -819,8 +930,8 @@ namespace SoulKnight
                     break;
 
                 case TipoMejoraTienda.DanoUniversal:
-                    MultiplicadorDanoLoot.Value = Mathf.Clamp(MultiplicadorDanoLoot.Value + 0.08f, 1.0f, 1.50f);
-                    MostrarTextoFlotanteClientRpc($"¡+8% Daño General! (Nv {nivel}/5)", new Color(1f, 0.45f, 0.2f));
+                    MultiplicadorDanoLoot.Value = Mathf.Clamp(MultiplicadorDanoLoot.Value + 0.12f, 1.0f, 2.0f);
+                    MostrarTextoFlotanteClientRpc($"¡+12% Daño General! (Nv {nivel}/5)", new Color(1f, 0.45f, 0.2f));
                     break;
 
                 case TipoMejoraTienda.CooldownUniversal:

@@ -15,7 +15,7 @@ namespace SoulKnight
         [Header("Hechizos y Disparo")]
         public GameObject prefabProyectil;
         public float tiempoEntreDisparos = 1.35f;
-        public int danoProyectil = 12;
+        public int danoProyectil = 8;
         public float rangoDisparo = 12f;
         public float distanciaOptima = 5.5f;
 
@@ -26,7 +26,7 @@ namespace SoulKnight
         {
             vidaMax = 95;
             velocidadBase = 3.0f;
-            dano = 8;
+            dano = 6;
             rangoAtaque = 1.8f;
             tiempoEntreAtaques = 1.10f;
             base.Awake();

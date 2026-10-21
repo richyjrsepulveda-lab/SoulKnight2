@@ -89,6 +89,7 @@ namespace SoulKnight
         private Text _textoOroTienda;
         private readonly List<Button> _botonesCompraTienda = new List<Button>();
         private readonly List<Text> _textosBotonTienda = new List<Text>();
+        private int _oroVisualLocal = -1;
 
         [Header("Menú de Pausa Mejorado")]
         private RawImage _rawMapaPausa;
@@ -1555,7 +1556,24 @@ namespace SoulKnight
             {
                 var h = habs[idx];
                 string desc = !string.IsNullOrEmpty(h.descripcionTecnica) ? h.descripcionTecnica : h.descripcion;
-                _textoDescHabilidadPausa.text = $"<b><size=13><color=#5ce1e6>{h.nombre.ToUpper()}</color></size></b> <color=#ffd700>({teclas[idx]})</color>\n{desc}";
+
+                string textoStatsRun = "";
+                if (_personajeLocal != null)
+                {
+                    float multDano = _personajeLocal.MultiplicadorDanoTotal;
+                    float redCd = (1f - _personajeLocal.FactorReduccionCooldown) * 100f;
+                    float incArea = (_personajeLocal.MultiplicadorAreaHabilidades - 1f) * 100f;
+                    float probCrit = _personajeLocal.ProbabilidadCritico * 100f;
+
+                    textoStatsRun = $"\n\n<color=#4ade80><b>ESTADÍSTICAS MEJORADAS DE LA RUN:</b></color>" +
+                                   $"\n• Daño Total: <color=#ffd700>{multDano:F2}x</color>" +
+                                   (redCd > 0.5f ? $"\n• Reducción de Enfriamiento: <color=#38bdf8>-{redCd:F0}%</color>" : "") +
+                                   (incArea > 0.5f ? $"\n• Área / Rango de Habilidad: <color=#a7f3d0>+{incArea:F0}%</color>" : "") +
+                                   (probCrit > 0.5f ? $"\n• Probabilidad Crítica: <color=#f87171>{probCrit:F0}% (1.8x)</color>" : "") +
+                                   $"\n• Vida Máxima: <color=#fb7185>{_personajeLocal.VidaMaxSincronizada.Value} HP</color>";
+                }
+
+                _textoDescHabilidadPausa.text = $"<b><size=13><color=#5ce1e6>{h.nombre.ToUpper()}</color></size></b> <color=#ffd700>({teclas[idx]})</color>\n{desc}{textoStatsRun}";
             }
             else
             {
@@ -1974,6 +1992,7 @@ namespace SoulKnight
 
             CrearPanelTiendaSiNoExiste();
             _puestitoActivo = puestito;
+            _oroVisualLocal = (_personajeLocal != null) ? _personajeLocal.OroRun.Value : 0;
             panelTienda.SetActive(true);
             Controles.Bloqueado = true;
             ActualizarItemsTiendaUI();
@@ -1993,7 +2012,11 @@ namespace SoulKnight
         {
             if (_puestitoActivo == null || panelTienda == null || !panelTienda.activeSelf) return;
 
-            int oroLocal = (_personajeLocal != null) ? _personajeLocal.OroRun.Value : 0;
+            if (_personajeLocal != null && (_oroVisualLocal < 0 || _personajeLocal.OroRun.Value < _oroVisualLocal))
+            {
+                _oroVisualLocal = _personajeLocal.OroRun.Value;
+            }
+            int oroLocal = (_oroVisualLocal >= 0) ? _oroVisualLocal : ((_personajeLocal != null) ? _personajeLocal.OroRun.Value : 0);
             if (_textoOroTienda != null)
             {
                 _textoOroTienda.text = $"💰 Oro Disponible en la Run: {oroLocal}";
@@ -2131,13 +2154,14 @@ namespace SoulKnight
             }
 
             int costo = CatalogoMejorasTienda.ObtenerCostoNivel(tipo, nvActual);
-            if (_personajeLocal.OroRun.Value >= costo)
+            int oroDisponible = (_oroVisualLocal >= 0) ? _oroVisualLocal : _personajeLocal.OroRun.Value;
+            if (oroDisponible >= costo)
             {
-                bool exito = _personajeLocal.SolicitarCompraTienda(tipo, costo);
-                if (exito)
-                {
-                    ActualizarItemsTiendaUI();
-                }
+                // Actualización visual reactiva e instantánea de la tienda en 0ms
+                _oroVisualLocal = Mathf.Max(0, oroDisponible - costo);
+                ActualizarItemsTiendaUI();
+
+                _personajeLocal.SolicitarCompraTienda(tipo, costo);
             }
         }
 
@@ -2639,6 +2663,15 @@ namespace SoulKnight
                     ActualizarProgresoRun(personaje.nivelProgreso.NivelActual.Value, act, personaje.nivelProgreso.XPSiguienteNivel.Value);
                 };
             }
+
+            personaje.OroRun.OnValueChanged += (ant, act) =>
+            {
+                _oroVisualLocal = act;
+                if (TiendaAbierta)
+                {
+                    ActualizarItemsTiendaUI();
+                }
+            };
 
             ActualizarBarraMaestria(personaje.TipoPj);
             ActualizarDesbloqueoHabilidadesVisual();

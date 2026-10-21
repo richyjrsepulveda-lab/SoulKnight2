@@ -32,6 +32,9 @@ namespace SoulKnight
         public bool tieneExplosionArea = false;
         public float radioArea = 3.2f;
         public int danoArea = 22; // Menor daño a los enemigos secundarios en el área
+        public int bonoQuemaduraExtra = 0;
+        public float multiplicadorRadioArea = 1.0f;
+        public float duracionCongelacionPersonalizada = -1f;
 
         public NetworkVariable<Vector2> DireccionSincronizada = new NetworkVariable<Vector2>(
             Vector2.right,
@@ -113,7 +116,7 @@ namespace SoulKnight
             ActualizarVisualElemento(TipoElemento.Value);
         }
 
-        public void Configurar(Vector2 direccion, int danoBase, ulong lanzadorId, bool quemadura = false, bool congelacion = false, float probCong = 1f)
+        public void Configurar(Vector2 direccion, int danoBase, ulong lanzadorId, bool quemadura = false, bool congelacion = false, float probCong = 1f, int bonoQuemadura = 0, float multArea = 1f, float durCongelacion = -1f)
         {
             _direccion = direccion.normalized;
             if (IsSpawned && IsServer)
@@ -125,6 +128,10 @@ namespace SoulKnight
             aplicaQuemadura = quemadura;
             aplicaCongelacion = congelacion;
             probCongelacion = probCong;
+            bonoQuemaduraExtra = bonoQuemadura;
+            multiplicadorRadioArea = multArea;
+            duracionCongelacionPersonalizada = durCongelacion;
+            radioArea = 3.2f * multArea;
 
             if (congelacion)
             {
@@ -253,11 +260,11 @@ namespace SoulKnight
                     }
                     if (aplicaQuemadura)
                     {
-                        personaje.AplicarQuemadura(4.0f, Mathf.Max(3, Mathf.RoundToInt(dano * 0.35f)));
+                        personaje.AplicarQuemadura(4.0f, 2);
                     }
                     if (aplicaEsporas)
                     {
-                        personaje.AplicarEsporasVeneno(4.0f, Mathf.Max(3, Mathf.RoundToInt(dano * 0.3f)));
+                        personaje.AplicarEsporasVeneno(4.0f, 2);
                     }
                     DetonarImpactoEnemigo();
                     DestruirProyectil();
@@ -306,13 +313,13 @@ namespace SoulKnight
 
                     if (aplicaQuemadura)
                     {
-                        int danoTickQuemadura = Mathf.Max(12, Mathf.RoundToInt(dano * 0.45f));
+                        int danoTickQuemadura = Mathf.Max(12 + bonoQuemaduraExtra, Mathf.RoundToInt(dano * 0.45f) + bonoQuemaduraExtra);
                         enemigo.AplicarQuemadura(danoTickQuemadura);
                     }
 
                     if (aplicaCongelacion)
                     {
-                        enemigo.Freeze(); // 100% de probabilidad garantizada al impactar
+                        enemigo.Freeze(duracionCongelacionPersonalizada); // 100% de probabilidad garantizada al impactar
                     }
 
                     // Detonación en área para dañar y congelar a los enemigos cercanos
@@ -351,12 +358,12 @@ namespace SoulKnight
 
                     if (aplicaCongelacion)
                     {
-                        enCercano.Freeze(); // 100% garantizado para todos en el área
+                        enCercano.Freeze(duracionCongelacionPersonalizada); // 100% garantizado para todos en el área
                     }
 
                     if (aplicaQuemadura)
                     {
-                        int danoTickQuemadura = Mathf.Max(10, Mathf.RoundToInt(danoCercanos * 0.45f));
+                        int danoTickQuemadura = Mathf.Max(10 + bonoQuemaduraExtra, Mathf.RoundToInt(danoCercanos * 0.45f) + bonoQuemaduraExtra);
                         enCercano.AplicarQuemadura(danoTickQuemadura);
                     }
 

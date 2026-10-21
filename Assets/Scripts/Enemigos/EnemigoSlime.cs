@@ -19,7 +19,7 @@ namespace SoulKnight
         {
             vidaMax = 65;
             velocidadBase = 4.6f;
-            dano = 8;
+            dano = 6;
             rangoAtaque = 1.4f;
             tiempoEntreAtaques = 0.95f;
             base.Awake();

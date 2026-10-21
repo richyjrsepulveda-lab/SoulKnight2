@@ -342,48 +342,60 @@ namespace SoulKnight
 
         protected override void FixedUpdate()
         {
-            if (IsServer && DashActivo.Value)
+            if (DashActivo.Value)
             {
                 float pasoDist = velocidadDash * Time.fixedDeltaTime;
 
                 // CircleCast en la dirección del dash para detectar CUALQUIER obstáculo sólido (muros, columnas, props)
                 int rayCount = Physics2D.CircleCastNonAlloc(_rb.position, 0.35f, _dirDash, _rayHitsBuffer, pasoDist + 0.35f);
+                bool choco = false;
                 for (int i = 0; i < rayCount; i++)
                 {
                     var rh = _rayHitsBuffer[i];
                     if (rh.collider != null && rh.collider.gameObject != gameObject && EsObstaculoSolido(rh.collider))
                     {
-                        // Detener el dash inmediatamente frente al obstáculo sin atravesarlo
                         _rb.position = rh.point - _dirDash * 0.40f;
-                        DashActivo.Value = false;
-                        _rb.velocity = Vector2.zero;
-                        return;
+                        choco = true;
+                        break;
                     }
+                }
+
+                if (choco)
+                {
+                    if (IsServer) DashActivo.Value = false;
+                    _rb.velocity = Vector2.zero;
+                    return;
                 }
 
                 Vector2 avance = _dirDash * pasoDist;
-                _rb.position += avance;
+                if (IsOwner || IsServer)
+                {
+                    _rb.position += avance;
+                }
                 _distanciaRecorridaDash += avance.magnitude;
 
-                // Daño en el camino del Dash a los enemigos
-                int colCount = Physics2D.OverlapCircleNonAlloc(_rb.position, 0.8f, _colHitsBuffer);
-                for (int i = 0; i < colCount; i++)
+                // Daño en el camino del Dash a los enemigos (servidor autoritativo)
+                if (IsServer)
                 {
-                    var hit = _colHitsBuffer[i];
-                    if (hit == null || hit.gameObject == gameObject) continue;
-                    var enemigo = hit.GetComponent<EnemigoBase>();
-                    if (enemigo != null)
+                    int colCount = Physics2D.OverlapCircleNonAlloc(_rb.position, 0.8f, _colHitsBuffer);
+                    for (int i = 0; i < colCount; i++)
                     {
-                        float multVolt = 1f + (ObtenerNivelMejora(TipoMejoraTienda.Elec_Voltaje) * 0.15f);
-                        int danoEscalado = Mathf.RoundToInt(danoDash * MultiplicadorDanoTotal * multVolt);
-                        enemigo.RecibirDano(danoEscalado, new Color(1f, 0.96f, 0.22f, 1f)); // Amarillo rayo
+                        var hit = _colHitsBuffer[i];
+                        if (hit == null || hit.gameObject == gameObject) continue;
+                        var enemigo = hit.GetComponent<EnemigoBase>();
+                        if (enemigo != null)
+                        {
+                            float multVolt = 1f + (ObtenerNivelMejora(TipoMejoraTienda.Elec_Voltaje) * 0.15f);
+                            int danoEscalado = Mathf.RoundToInt(danoDash * MultiplicadorDanoTotal * multVolt);
+                            enemigo.RecibirDano(danoEscalado, new Color(1f, 0.96f, 0.22f, 1f)); // Amarillo rayo
+                        }
                     }
-                }
 
-                if (_distanciaRecorridaDash >= distanciaMaximaDash)
-                {
-                    DashActivo.Value = false;
-                    _rb.velocity = Vector2.zero;
+                    if (_distanciaRecorridaDash >= distanciaMaximaDash)
+                    {
+                        DashActivo.Value = false;
+                        _rb.velocity = Vector2.zero;
+                    }
                 }
                 return;
             }
@@ -401,7 +413,7 @@ namespace SoulKnight
                     _cdEspadaRestante = cooldownEspada * FactorReduccionCooldown;
                     Vector2 dir = ((Vector2)Controles.PosicionMouseMundo() - (Vector2)transform.position).normalized;
                     if (dir.sqrMagnitude < 0.001f) dir = Vector2.right;
-                    UsarEspadaServerRpc(dir);
+                    UsarEspadaServerRpc(dir, (Vector2)transform.position);
                 }
                 else if (!string.IsNullOrEmpty(motivo))
                 {
@@ -418,6 +430,8 @@ namespace SoulKnight
                     _cdDashRestante = cdDashEfectivo;
                     Vector2 dir = ((Vector2)Controles.PosicionMouseMundo() - (Vector2)transform.position).normalized;
                     if (dir.sqrMagnitude < 0.001f) dir = Vector2.right;
+                    _dirDash = dir;
+                    _distanciaRecorridaDash = 0f;
                     IniciarDashServerRpc(dir);
                 }
                 else
@@ -434,10 +448,18 @@ namespace SoulKnight
                     _cdTeleportRestante = cooldownTeleport * FactorReduccionCooldown;
                     Vector2 origen = transform.position;
                     Vector2 destino = Controles.PosicionMouseMundo();
+                    destino = CalcularDestinoTeleportValido(origen, destino);
+
+                    transform.position = destino;
+                    _rb.position = destino;
+                    GestorAudio.PlaySFX(TipoSFX.Teleport, 1.2f);
+                    EfectoRayoTeleport.Crear(origen);
+                    EfectoRayoTeleport.Crear(destino);
+                    if (CamaraSeguir.Instancia != null) CamaraSeguir.Instancia.Sacudir(0.35f, 0.42f);
 
                     if (NetworkManager != null && NetworkManager.IsListening)
                     {
-                        TeleportServerRpc(destino);
+                        TeleportServerRpc(destino, origen);
                     }
                     else
                     {
@@ -589,12 +611,16 @@ namespace SoulKnight
         }
 
         [ServerRpc(RequireOwnership = false)]
-        private void UsarEspadaServerRpc(Vector2 dir, ServerRpcParams rpcParams = default)
+        private void UsarEspadaServerRpc(Vector2 dir, Vector2 origenCliente = default, ServerRpcParams rpcParams = default)
         {
             if (rpcParams.Receive.SenderClientId != OwnerClientId) return;
             if (dir.sqrMagnitude < 0.001f) dir = Vector2.right;
 
-            Vector2 centroCorte = (Vector2)transform.position + dir * 1.5f;
+            Vector2 origenEfectivo = (origenCliente != Vector2.zero && Vector2.Distance(origenCliente, transform.position) < 4.0f)
+                ? origenCliente
+                : (Vector2)transform.position;
+
+            Vector2 centroCorte = origenEfectivo + dir * 1.5f;
             int count = Physics2D.OverlapCircleNonAlloc(centroCorte, 1.8f, _colHitsBuffer);
             for (int i = 0; i < count; i++)
             {
@@ -610,15 +636,16 @@ namespace SoulKnight
                 }
             }
 
-            MostrarEspadaClientRpc(dir);
+            MostrarEspadaClientRpc(dir, origenEfectivo);
         }
 
         [ClientRpc]
-        private void MostrarEspadaClientRpc(Vector2 dir)
+        private void MostrarEspadaClientRpc(Vector2 dir, Vector2 origenAtaque)
         {
             GestorAudio.PlaySFX(TipoSFX.Espada);
             if (visualEspada != null)
             {
+                visualEspada.transform.position = origenAtaque;
                 StopCoroutine("RutinaAnimacionEspada");
                 StartCoroutine(RutinaAnimacionEspada(dir));
             }
@@ -672,45 +699,59 @@ namespace SoulKnight
             _dirDash = dir;
             DashActivo.Value = true;
             _distanciaRecorridaDash = 0f;
-            // No deshabilitamos _col para evitar atravesar o incrustarse en obstáculos sólidos
+            SincronizarDashClientRpc(dir);
         }
 
-        [ServerRpc(RequireOwnership = false)]
-        private void TeleportServerRpc(Vector2 targetPos, ServerRpcParams rpcParams = default)
+        [ClientRpc]
+        private void SincronizarDashClientRpc(Vector2 dir)
         {
-            if (rpcParams.Receive.SenderClientId != OwnerClientId) return;
-            Vector2 origen = transform.position;
+            _dirDash = dir;
+            _distanciaRecorridaDash = 0f;
+        }
+
+        private Vector2 CalcularDestinoTeleportValido(Vector2 origen, Vector2 targetPos)
+        {
             Vector2 delta = targetPos - origen;
             float dist = delta.magnitude;
 
             if (dist > 0.05f)
             {
                 Vector2 dir = delta.normalized;
-                // Raycast a lo largo del trayecto de teleportación para no atravesar muros u obstáculos
                 int rayCount = Physics2D.RaycastNonAlloc(origen, dir, _rayHitsBuffer, dist);
                 for (int i = 0; i < rayCount; i++)
                 {
                     var hm = _rayHitsBuffer[i];
                     if (hm.collider != null && hm.collider.gameObject != gameObject && EsObstaculoSolido(hm.collider))
                     {
-                        // Detener la teleportación justo antes del muro u obstáculo
                         targetPos = hm.point - dir * 0.55f;
                         break;
                     }
                 }
             }
 
-            // Validar que el destino no quede empotrado dentro de un obstáculo del mapa
             int puntoCount = Physics2D.OverlapCircleNonAlloc(targetPos, 0.4f, _colHitsBuffer);
             for (int i = 0; i < puntoCount; i++)
             {
                 var ph = _colHitsBuffer[i];
                 if (ph != null && ph.gameObject != gameObject && EsObstaculoSolido(ph))
                 {
-                    // Si el destino quedó dentro del obstáculo, cancelar teleport
-                    return;
+                    return origen;
                 }
             }
+
+            return targetPos;
+        }
+
+        [ServerRpc(RequireOwnership = false)]
+        private void TeleportServerRpc(Vector2 targetPos, Vector2 origenCliente = default, ServerRpcParams rpcParams = default)
+        {
+            if (rpcParams.Receive.SenderClientId != OwnerClientId) return;
+
+            Vector2 origen = (origenCliente != Vector2.zero && Vector2.Distance(origenCliente, transform.position) < 4.0f)
+                ? origenCliente
+                : (Vector2)transform.position;
+
+            targetPos = CalcularDestinoTeleportValido(origen, targetPos);
 
             AplicarImpactoTeleport(origen);
             transform.position = targetPos;
@@ -748,7 +789,10 @@ namespace SoulKnight
                     int danoEscalado = Mathf.RoundToInt(danoTeleport * MultiplicadorDanoTotal * multVolt);
                     enemigo.RecibirDano(danoEscalado, new Color(1f, 0.96f, 0.22f, 1f)); // Amarillo rayo
                     Vector2 dirKnock = ((Vector2)enemigo.transform.position - pos).normalized;
-                    enemigo.AplicarKnockback(dirKnock, 1000f);
+                    if (dirKnock.sqrMagnitude > 0.001f)
+                    {
+                        enemigo.AplicarKnockback(dirKnock, 1000f);
+                    }
                 }
             }
         }
@@ -756,6 +800,12 @@ namespace SoulKnight
         [ClientRpc]
         private void MostrarTeleportEfectoClientRpc(Vector2 origen, Vector2 destino)
         {
+            if (!IsOwner)
+            {
+                transform.position = destino;
+                if (_rb != null) _rb.position = destino;
+            }
+
             GestorAudio.PlaySFX(TipoSFX.Teleport, 1.2f);
 
             // 2 Rayos celestiales de alto impacto ("toda god"):
@@ -778,33 +828,7 @@ namespace SoulKnight
         private void EjecutarTeleportLocal(Vector2 targetPos)
         {
             Vector2 origen = transform.position;
-            Vector2 delta = targetPos - origen;
-            float dist = delta.magnitude;
-
-            if (dist > 0.05f)
-            {
-                Vector2 dir = delta.normalized;
-                int rayCount = Physics2D.RaycastNonAlloc(origen, dir, _rayHitsBuffer, dist);
-                for (int i = 0; i < rayCount; i++)
-                {
-                    var hm = _rayHitsBuffer[i];
-                    if (hm.collider != null && hm.collider.gameObject != gameObject && EsObstaculoSolido(hm.collider))
-                    {
-                        targetPos = hm.point - dir * 0.55f;
-                        break;
-                    }
-                }
-            }
-
-            int puntoCount = Physics2D.OverlapCircleNonAlloc(targetPos, 0.4f, _colHitsBuffer);
-            for (int i = 0; i < puntoCount; i++)
-            {
-                var ph = _colHitsBuffer[i];
-                if (ph != null && ph.gameObject != gameObject && EsObstaculoSolido(ph))
-                {
-                    return;
-                }
-            }
+            targetPos = CalcularDestinoTeleportValido(origen, targetPos);
 
             AplicarImpactoTeleport(origen);
             transform.position = targetPos;

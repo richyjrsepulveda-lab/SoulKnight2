@@ -432,14 +432,14 @@ namespace SoulKnight
                             // MODO ESCOPETA TRIPLE DE FUEGO (Cadencia rápida 0.28s)
                             _cdBolaFuegoRestante = 0.28f;
                             GestorAudio.PlaySFX(TipoSFX.FuegoDisparo, 1.15f);
-                            LanzarEscopetaFuegoServerRpc(dir);
+                            LanzarEscopetaFuegoServerRpc(dir, (Vector2)transform.position);
                         }
                         else
                         {
                             // Disparo estándar
                             _cdBolaFuegoRestante = cooldownBolaFuego * FactorReduccionCooldown;
                             GestorAudio.PlaySFX(TipoSFX.FuegoDisparo, 0.95f);
-                            LanzarBolaFuegoServerRpc(dir);
+                            LanzarBolaFuegoServerRpc(dir, (Vector2)transform.position);
                         }
                     }
                     else if (!string.IsNullOrEmpty(motivo))
@@ -525,16 +525,20 @@ namespace SoulKnight
             }
         }
 
-        private void InstanciarBolaFuego(Vector2 dir, int dano)
+        private void InstanciarBolaFuego(Vector2 dir, int dano, Vector2 spawnPos = default)
         {
             if (prefabBolaFuego == null) return;
             if (dir.sqrMagnitude < 0.001f) dir = Vector2.right;
 
-            GameObject bola = Instantiate(prefabBolaFuego, transform.position, Quaternion.identity);
+            Vector2 posReal = (spawnPos != Vector2.zero) ? spawnPos : (Vector2)transform.position;
+            int bonoQuem = ObtenerNivelMejora(TipoMejoraTienda.Fuego_DanoQuemadura) * 8;
+            float multArea = (1.0f + ObtenerNivelMejora(TipoMejoraTienda.Fuego_Area) * 0.20f) * MultiplicadorAreaHabilidades;
+
+            GameObject bola = Instantiate(prefabBolaFuego, new Vector3(posReal.x, posReal.y, -0.4f), Quaternion.identity);
             var proj = bola.GetComponent<Proyectil>();
             if (proj != null)
             {
-                proj.Configurar(dir, dano, OwnerClientId, quemadura: true);
+                proj.Configurar(dir, dano, OwnerClientId, quemadura: true, bonoQuemadura: bonoQuem, multArea: multArea);
             }
             bola.GetComponent<NetworkObject>().Spawn();
             if (proj != null)
@@ -544,27 +548,34 @@ namespace SoulKnight
         }
 
         [ServerRpc(RequireOwnership = false)]
-        private void LanzarBolaFuegoServerRpc(Vector2 dir, ServerRpcParams rpcParams = default)
+        private void LanzarBolaFuegoServerRpc(Vector2 dir, Vector2 origenCliente = default, ServerRpcParams rpcParams = default)
         {
             if (rpcParams.Receive.SenderClientId != OwnerClientId) return;
+            Vector2 spawnPos = (origenCliente != Vector2.zero && Vector2.Distance(origenCliente, transform.position) < 4.0f)
+                ? origenCliente
+                : (Vector2)transform.position;
             int danoEscalado = Mathf.RoundToInt(danoBolaFuego * MultiplicadorDanoTotal);
-            InstanciarBolaFuego(dir, danoEscalado);
+            InstanciarBolaFuego(dir, danoEscalado, spawnPos);
         }
 
         [ServerRpc(RequireOwnership = false)]
-        private void LanzarEscopetaFuegoServerRpc(Vector2 dirPrincipal, ServerRpcParams rpcParams = default)
+        private void LanzarEscopetaFuegoServerRpc(Vector2 dirPrincipal, Vector2 origenCliente = default, ServerRpcParams rpcParams = default)
         {
             if (rpcParams.Receive.SenderClientId != OwnerClientId) return;
             if (prefabBolaFuego == null) return;
             if (dirPrincipal.sqrMagnitude < 0.001f) dirPrincipal = Vector2.right;
 
+            Vector2 spawnPos = (origenCliente != Vector2.zero && Vector2.Distance(origenCliente, transform.position) < 4.0f)
+                ? origenCliente
+                : (Vector2)transform.position;
+
             int danoEscalado = Mathf.RoundToInt(danoBolaFuego * MultiplicadorDanoTotal);
             Vector2 dirIzq = Quaternion.Euler(0f, 0f, 16f) * dirPrincipal;
             Vector2 dirDer = Quaternion.Euler(0f, 0f, -16f) * dirPrincipal;
 
-            InstanciarBolaFuego(dirPrincipal, danoEscalado);
-            InstanciarBolaFuego(dirIzq, danoEscalado);
-            InstanciarBolaFuego(dirDer, danoEscalado);
+            InstanciarBolaFuego(dirPrincipal, danoEscalado, spawnPos);
+            InstanciarBolaFuego(dirIzq, danoEscalado, spawnPos);
+            InstanciarBolaFuego(dirDer, danoEscalado, spawnPos);
         }
 
         [ServerRpc(RequireOwnership = false)]

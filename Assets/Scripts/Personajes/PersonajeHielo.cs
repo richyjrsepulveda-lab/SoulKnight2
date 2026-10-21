@@ -827,7 +827,7 @@ namespace SoulKnight
                     if (dir.sqrMagnitude < 0.001f) dir = Vector2.right;
                     GestorAudio.PlaySFX(TipoSFX.HieloDisparo, 0.95f);
                     NotificarAtaqueLocal(0.45f);
-                    LanzarBolaHieloServerRpc(dir);
+                    LanzarBolaHieloServerRpc(dir, (Vector2)transform.position);
                 }
                 else
                 {
@@ -898,7 +898,8 @@ namespace SoulKnight
             Vector2 origen = ObtenerPosicionBoca(dir);
 
             // Daña y ralentiza a los enemigos hasta el alcance dinámico recortado al cursor sin asignaciones de memoria
-            float alcanceEfectivo = Mathf.Min(AlcanceEfectivoRayoSincronizado.Value, rangoRayo);
+            float multArea = (1f + ObtenerNivelMejora(TipoMejoraTienda.Hielo_AreaVentisca) * 0.15f) * MultiplicadorAreaHabilidades;
+            float alcanceEfectivo = Mathf.Min(AlcanceEfectivoRayoSincronizado.Value, rangoRayo * multArea);
             int hitCount = Physics2D.RaycastNonAlloc(origen, dir, _rayHitsBuffer, alcanceEfectivo);
             for (int i = 0; i < hitCount; i++)
             {
@@ -937,7 +938,7 @@ namespace SoulKnight
         }
 
         [ServerRpc(RequireOwnership = false)]
-        private void LanzarBolaHieloServerRpc(Vector2 dir, ServerRpcParams rpcParams = default)
+        private void LanzarBolaHieloServerRpc(Vector2 dir, Vector2 origenCliente = default, ServerRpcParams rpcParams = default)
         {
             if (rpcParams.Receive.SenderClientId != OwnerClientId) return;
             if (prefabBolaHielo == null) return;
@@ -945,13 +946,19 @@ namespace SoulKnight
 
             NotificarAtaqueClientRpc(0.45f);
 
-            Vector2 posBoca = ObtenerPosicionBoca(dir);
+            Vector2 basePos = (origenCliente != Vector2.zero && Vector2.Distance(origenCliente, transform.position) < 4.0f)
+                ? origenCliente
+                : (Vector2)transform.position;
+            Vector2 posBoca = ObtenerPosicionBoca(dir) - (Vector2)transform.position + basePos;
+
             GameObject bola = Instantiate(prefabBolaHielo, new Vector3(posBoca.x, posBoca.y, -0.4f), Quaternion.identity);
             var proj = bola.GetComponent<Proyectil>();
             if (proj != null)
             {
                 int danoEscalado = Mathf.RoundToInt(danoBolaHielo * MultiplicadorDanoTotal);
-                proj.Configurar(dir, danoEscalado, OwnerClientId, congelacion: true, probCong: 1.0f);
+                float durCong = 2.5f + (ObtenerNivelMejora(TipoMejoraTienda.Hielo_DuracionCongelacion) * 0.8f);
+                float multAreaBola = (1f + ObtenerNivelMejora(TipoMejoraTienda.Hielo_AreaVentisca) * 0.15f) * MultiplicadorAreaHabilidades;
+                proj.Configurar(dir, danoEscalado, OwnerClientId, congelacion: true, probCong: 1.0f, multArea: multAreaBola, durCongelacion: durCong);
             }
             bola.GetComponent<NetworkObject>().Spawn();
             if (proj != null)

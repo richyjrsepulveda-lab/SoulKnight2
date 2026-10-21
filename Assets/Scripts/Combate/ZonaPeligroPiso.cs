@@ -229,10 +229,10 @@ namespace SoulKnight
                     switch (tipoZona)
                     {
                         case TipoZonaPeligro.Esporas:
-                            pj.AplicarEsporasVeneno(3.5f, Mathf.Max(3, danoPorTick));
+                            pj.AplicarEsporasVeneno(3.5f, 2);
                             break;
                         case TipoZonaPeligro.Fuego:
-                            pj.AplicarQuemadura(3.5f, Mathf.Max(3, danoPorTick));
+                            pj.AplicarQuemadura(3.5f, 2);
                             break;
                         case TipoZonaPeligro.Hielo:
                             pj.AplicarRalentizacion(3.0f);
