@@ -180,6 +180,8 @@ namespace SoulKnight
             if (_recogida) return;
             _recogida = true;
 
+            EfectoRecogerVisual();
+
             if (pj.EsControlLocal)
             {
                 pj.ReclamarMonedaLocalmente(idMoneda, valor);
@@ -187,21 +189,24 @@ namespace SoulKnight
             else if (Unity.Netcode.NetworkManager.Singleton == null || !Unity.Netcode.NetworkManager.Singleton.IsListening)
             {
                 pj.AgregarOro(valor);
-                EfectoRecogerVisual();
-                Destroy(gameObject);
             }
+
+            Destroy(gameObject);
         }
 
         public void DesaparecerPorRecoleccion()
         {
-            if (_recogida) return;
+            if (gameObject == null) return;
             _recogida = true;
             EfectoRecogerVisual();
             Destroy(gameObject);
         }
 
+        private bool _efectoMostrado = false;
         public void EfectoRecogerVisual()
         {
+            if (_efectoMostrado) return;
+            _efectoMostrado = true;
             GestorAudio.PlaySFX(TipoSFX.RecogerOro, Random.Range(0.98f, 1.15f));
             CrearBrilloMoneda(_posBase + Vector2.up * _altura);
         }

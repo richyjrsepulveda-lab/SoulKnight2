@@ -36,6 +36,7 @@ namespace SoulKnight
         private readonly List<Vector2> _fuentesJugadores = new List<Vector2>(8);
         private readonly List<FuenteAntorcha> _fuentesAntorchas = new List<FuenteAntorcha>(24);
         private readonly List<Rect> _salasDescubiertasEnCamara = new List<Rect>(16);
+        private readonly List<Rect> _pasillosEnCamara = new List<Rect>(32);
 
         private byte[,] _gridReferencia;
         private bool[,] _celdasExploradas;
@@ -87,6 +88,29 @@ namespace SoulKnight
                         if (gx >= 0 && gx < gridW && gy >= 0 && gy < gridH)
                         {
                             _celdasExploradas[gx, gy] = true;
+                        }
+                    }
+                }
+            }
+
+            // Marcar celdas de pasillos como exploradas para visibilidad sin sombras
+            if (gen != null && gen.rectPasillos != null)
+            {
+                for (int p = 0; p < gen.rectPasillos.Count; p++)
+                {
+                    Rect r = gen.rectPasillos[p];
+                    int pxMin = Mathf.Max(0, Mathf.FloorToInt(r.xMin) - 1 - gen.gridMinX);
+                    int pxMax = Mathf.Min(gridW - 1, Mathf.CeilToInt(r.xMax) + 1 - gen.gridMinX);
+                    int pyMin = Mathf.Max(0, Mathf.FloorToInt(r.yMin) - 1 - gen.gridMinY);
+                    int pyMax = Mathf.Min(gridH - 1, Mathf.CeilToInt(r.yMax) + 1 - gen.gridMinY);
+                    for (int gx = pxMin; gx <= pxMax; gx++)
+                    {
+                        for (int gy = pyMin; gy <= pyMax; gy++)
+                        {
+                            if (gx >= 0 && gx < gridW && gy >= 0 && gy < gridH)
+                            {
+                                _celdasExploradas[gx, gy] = true;
+                            }
                         }
                     }
                 }
@@ -258,6 +282,18 @@ namespace SoulKnight
                 }
             }
 
+            // 1.5. Visión total en pasillos (sin sombras en pasillos)
+            if (gen != null && gen.rectPasillos != null)
+            {
+                for (int p = 0; p < gen.rectPasillos.Count; p++)
+                {
+                    if (gen.rectPasillos[p].Contains(pos))
+                    {
+                        return true;
+                    }
+                }
+            }
+
             // 2. En pasillos: visión circular del jugador (no atraviesa paredes)
             float rJugSq = radioLuzJugador * radioLuzJugador;
             for (int i = 0; i < Personaje.Todos.Count; i++)
@@ -341,6 +377,7 @@ namespace SoulKnight
 
             // 3. Recolectar salas descubiertas y antorchas encendidas cercanas a la cámara
             _salasDescubiertasEnCamara.Clear();
+            _pasillosEnCamara.Clear();
             _fuentesAntorchas.Clear();
             ControladorSala salaCerrada = ObtenerSalaBloqueadaActiva();
             float xMinCam = posCam.x - anchoCam * 0.5f;
@@ -393,6 +430,20 @@ namespace SoulKnight
                 }
             }
 
+            // Recolectar pasillos en cámara para iluminar sin sombras
+            if (gen != null && gen.rectPasillos != null)
+            {
+                for (int p = 0; p < gen.rectPasillos.Count; p++)
+                {
+                    Rect r = gen.rectPasillos[p];
+                    Rect rExp = new Rect(r.xMin - 0.45f, r.yMin - 0.45f, r.width + 0.90f, r.height + 0.90f);
+                    if (rExp.Overlaps(rectCam))
+                    {
+                        _pasillosEnCamara.Add(rExp);
+                    }
+                }
+            }
+
             // 4. Pintar la máscara de niebla/oscuridad
             float rJug = radioLuzJugador;
             float rJugInterno = rJug * 0.82f;
@@ -417,6 +468,19 @@ namespace SoulKnight
                         {
                             luzMax = 1f;
                             break;
+                        }
+                    }
+
+                    // 1.5. Si el punto pertenece a un pasillo: ILUMINAR AL 100% (sin sombras en pasillos)
+                    if (luzMax < 1f && salaCerrada == null)
+                    {
+                        for (int p = 0; p < _pasillosEnCamara.Count; p++)
+                        {
+                            if (_pasillosEnCamara[p].Contains(pt))
+                            {
+                                luzMax = 1f;
+                                break;
+                            }
                         }
                     }
 

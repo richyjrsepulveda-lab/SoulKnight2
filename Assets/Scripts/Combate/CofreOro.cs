@@ -106,20 +106,20 @@ namespace SoulKnight
             if (EstaAbiertoLocal) return;
             EstaAbiertoLocal = true;
 
-            // Dropear monedas de oro físicas saltando del cofre
+            // Dropear monedas de oro físicas saltando del cofre en erupción vistosa (25 monedas de valor 2)
             if (SalaRed.Instancia != null)
             {
-                SalaRed.Instancia.SpawnearMonedasEnServidor(transform.position, 6, valorPorMoneda: 8); // ~48 de oro
+                SalaRed.Instancia.SpawnearMonedasEnServidor(transform.position, 25, valorPorMoneda: 2); // 50 de oro
             }
             else
             {
-                for (int i = 0; i < 6; i++)
+                for (int i = 0; i < 25; i++)
                 {
                     var go = new GameObject("MonedaOro_Cofre");
                     go.transform.position = transform.position;
                     var mon = go.AddComponent<MonedaOro>();
                     Vector2 dir = Random.insideUnitCircle.normalized;
-                    mon.IniciarSalto(Random.Range(1000, 99999), 8, dir, Random.Range(2f, 3.5f), Random.Range(4.5f, 6.5f));
+                    mon.IniciarSalto(Random.Range(1000, 99999), 2, dir, Random.Range(2.5f, 5.0f), Random.Range(5.5f, 9.0f));
                 }
             }
 
@@ -132,13 +132,13 @@ namespace SoulKnight
             if (EstaAbiertoLocal) return;
             EstaAbiertoLocal = true;
 
-            for (int i = 0; i < 6; i++)
+            for (int i = 0; i < 25; i++)
             {
                 var go = new GameObject("MonedaOro_Cofre");
                 go.transform.position = transform.position;
                 var mon = go.AddComponent<MonedaOro>();
                 Vector2 dir = Random.insideUnitCircle.normalized;
-                mon.IniciarSalto(Random.Range(1000, 99999), 8, dir, Random.Range(2f, 3.5f), Random.Range(4.5f, 6.5f));
+                mon.IniciarSalto(Random.Range(1000, 99999), 2, dir, Random.Range(2.5f, 5.0f), Random.Range(5.5f, 9.0f));
             }
 
             AplicarVisualAbierto();

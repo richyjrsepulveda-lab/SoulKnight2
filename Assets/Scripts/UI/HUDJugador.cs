@@ -634,7 +634,11 @@ namespace SoulKnight
             // Atajo ESC: siempre responde para cerrar modales o alternar pausa
             if (Input.GetKeyDown(KeyCode.Escape) || Input.GetKeyDown(Controles.Pausa))
             {
-                if (_modalMaestriaHUD != null && _modalMaestriaHUD.activeSelf)
+                if (_modalMapaGrandeHUD != null && _modalMapaGrandeHUD.activeSelf)
+                {
+                    AlternarMapaGrande();
+                }
+                else if (_modalMaestriaHUD != null && _modalMaestriaHUD.activeSelf)
                 {
                     _modalMaestriaHUD.SetActive(false);
                 }
@@ -650,6 +654,20 @@ namespace SoulKnight
                 {
                     AlternarPausa();
                 }
+            }
+
+            // Atajo M: alternar mapa grande de la mazmorra
+            if (Input.GetKeyDown(KeyCode.M))
+            {
+                if (!TiendaAbierta && (panelPausa == null || !panelPausa.activeSelf))
+                {
+                    AlternarMapaGrande();
+                }
+            }
+
+            if (_modalMapaGrandeHUD != null && _modalMapaGrandeHUD.activeSelf)
+            {
+                ActualizarContenidoMapaGrande();
             }
 
             // Asegurar que el minimapa permanezca visible durante el gameplay normal (estrictamente oculto en cargas)
@@ -1747,6 +1765,197 @@ namespace SoulKnight
         }
 
         // =========================================================================
+        // MAPA GRANDE DE LA MAZMORRA (TECLA M)
+        // =========================================================================
+
+        private GameObject _modalMapaGrandeHUD;
+        private RawImage _rawMapaGrande;
+        private Text _txtTituloMapaGrande;
+        private Text _txtSubtituloMapaGrande;
+
+        public bool MapaGrandeAbierto => _modalMapaGrandeHUD != null && _modalMapaGrandeHUD.activeSelf;
+
+        private void CrearModalMapaGrandeSiNoExiste()
+        {
+            if (_modalMapaGrandeHUD != null) return;
+
+            var modalObj = new GameObject("PanelMapaGrandeModal");
+            modalObj.transform.SetParent(transform, false);
+            modalObj.transform.SetAsLastSibling();
+
+            var rtFull = modalObj.AddComponent<RectTransform>();
+            rtFull.anchorMin = Vector2.zero;
+            rtFull.anchorMax = Vector2.one;
+            rtFull.sizeDelta = Vector2.zero;
+
+            // Fondo translúcido oscuro
+            var imgFondo = modalObj.AddComponent<Image>();
+            imgFondo.color = new Color(0.02f, 0.03f, 0.05f, 0.88f);
+
+            // Ventana modal centrada
+            var ventanaObj = new GameObject("VentanaMapaGrande");
+            ventanaObj.transform.SetParent(modalObj.transform, false);
+            var rtVentana = ventanaObj.AddComponent<RectTransform>();
+            rtVentana.anchorMin = new Vector2(0.5f, 0.5f);
+            rtVentana.anchorMax = new Vector2(0.5f, 0.5f);
+            rtVentana.pivot = new Vector2(0.5f, 0.5f);
+            rtVentana.anchoredPosition = Vector2.zero;
+            rtVentana.sizeDelta = new Vector2(880f, 620f);
+
+            var imgVentana = ventanaObj.AddComponent<Image>();
+            imgVentana.color = new Color(0.06f, 0.08f, 0.12f, 0.98f);
+
+            var outlineVentana = ventanaObj.AddComponent<Outline>();
+            outlineVentana.effectColor = new Color(0.35f, 0.45f, 0.65f, 0.8f);
+            outlineVentana.effectDistance = new Vector2(2f, -2f);
+
+            // Título
+            var titObj = new GameObject("TituloMapaGrande");
+            titObj.transform.SetParent(ventanaObj.transform, false);
+            _txtTituloMapaGrande = titObj.AddComponent<Text>();
+            _txtTituloMapaGrande.font = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            _txtTituloMapaGrande.fontSize = 24;
+            _txtTituloMapaGrande.fontStyle = FontStyle.Bold;
+            _txtTituloMapaGrande.alignment = TextAnchor.MiddleCenter;
+            _txtTituloMapaGrande.color = new Color(1f, 0.88f, 0.25f);
+            _txtTituloMapaGrande.text = "🗺️ MAPA DE LA MAZMORRA";
+            var outTit = titObj.AddComponent<Outline>();
+            outTit.effectColor = Color.black;
+            outTit.effectDistance = new Vector2(1.5f, -1.5f);
+
+            var rtTit = titObj.GetComponent<RectTransform>();
+            rtTit.anchorMin = new Vector2(0.5f, 1f);
+            rtTit.anchorMax = new Vector2(0.5f, 1f);
+            rtTit.pivot = new Vector2(0.5f, 1f);
+            rtTit.anchoredPosition = new Vector2(0f, -16f);
+            rtTit.sizeDelta = new Vector2(800f, 32f);
+
+            // Subtítulo
+            var subObj = new GameObject("SubtituloMapaGrande");
+            subObj.transform.SetParent(ventanaObj.transform, false);
+            _txtSubtituloMapaGrande = subObj.AddComponent<Text>();
+            _txtSubtituloMapaGrande.font = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            _txtSubtituloMapaGrande.fontSize = 13;
+            _txtSubtituloMapaGrande.alignment = TextAnchor.MiddleCenter;
+            _txtSubtituloMapaGrande.color = new Color(0.7f, 0.82f, 0.95f);
+            _txtSubtituloMapaGrande.text = "Pulsa [M] o [ESC] para cerrar";
+
+            var rtSub = subObj.GetComponent<RectTransform>();
+            rtSub.anchorMin = new Vector2(0.5f, 1f);
+            rtSub.anchorMax = new Vector2(0.5f, 1f);
+            rtSub.pivot = new Vector2(0.5f, 1f);
+            rtSub.anchoredPosition = new Vector2(0f, -48f);
+            rtSub.sizeDelta = new Vector2(800f, 22f);
+
+            // Marco del mapa grande (RawImage)
+            var marcoMapa = new GameObject("MarcoMapa");
+            marcoMapa.transform.SetParent(ventanaObj.transform, false);
+            var rtMarco = marcoMapa.AddComponent<RectTransform>();
+            rtMarco.anchorMin = new Vector2(0.5f, 0.5f);
+            rtMarco.anchorMax = new Vector2(0.5f, 0.5f);
+            rtMarco.pivot = new Vector2(0.5f, 0.5f);
+            rtMarco.anchoredPosition = new Vector2(0f, -12f);
+            rtMarco.sizeDelta = new Vector2(820f, 480f);
+
+            var imgMarco = marcoMapa.AddComponent<Image>();
+            imgMarco.color = new Color(0.02f, 0.03f, 0.06f, 1f);
+
+            var outMarco = marcoMapa.AddComponent<Outline>();
+            outMarco.effectColor = new Color(0.25f, 0.35f, 0.55f, 0.9f);
+            outMarco.effectDistance = new Vector2(2f, -2f);
+
+            // RawImage mapa
+            var rawObj = new GameObject("RawMapaGrande");
+            rawObj.transform.SetParent(marcoMapa.transform, false);
+            var rtRaw = rawObj.AddComponent<RectTransform>();
+            rtRaw.anchorMin = Vector2.zero;
+            rtRaw.anchorMax = Vector2.one;
+            rtRaw.sizeDelta = new Vector2(-12f, -12f);
+            rtRaw.anchoredPosition = Vector2.zero;
+
+            _rawMapaGrande = rawObj.AddComponent<RawImage>();
+            _rawMapaGrande.raycastTarget = false;
+
+            // Botón Cerrar [X] en la esquina superior derecha
+            var btnCerrarObj = new GameObject("BotonCerrarMapa");
+            btnCerrarObj.transform.SetParent(ventanaObj.transform, false);
+            var rtBtnCerrar = btnCerrarObj.AddComponent<RectTransform>();
+            rtBtnCerrar.anchorMin = new Vector2(1f, 1f);
+            rtBtnCerrar.anchorMax = new Vector2(1f, 1f);
+            rtBtnCerrar.pivot = new Vector2(1f, 1f);
+            rtBtnCerrar.anchoredPosition = new Vector2(-12f, -12f);
+            rtBtnCerrar.sizeDelta = new Vector2(36f, 36f);
+
+            var imgBtnC = btnCerrarObj.AddComponent<Image>();
+            imgBtnC.color = new Color(0.6f, 0.15f, 0.15f, 0.9f);
+
+            var btnC = btnCerrarObj.AddComponent<Button>();
+            btnC.targetGraphic = imgBtnC;
+            btnC.onClick.AddListener(() => AlternarMapaGrande());
+
+            var txtXObj = new GameObject("TextoX");
+            txtXObj.transform.SetParent(btnCerrarObj.transform, false);
+            var txtX = txtXObj.AddComponent<Text>();
+            txtX.font = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            txtX.fontSize = 20;
+            txtX.fontStyle = FontStyle.Bold;
+            txtX.alignment = TextAnchor.MiddleCenter;
+            txtX.color = Color.white;
+            txtX.text = "X";
+            var rtX = txtXObj.GetComponent<RectTransform>();
+            rtX.anchorMin = Vector2.zero;
+            rtX.anchorMax = Vector2.one;
+            rtX.sizeDelta = Vector2.zero;
+
+            _modalMapaGrandeHUD = modalObj;
+            _modalMapaGrandeHUD.SetActive(false);
+        }
+
+        public void AlternarMapaGrande()
+        {
+            if (_modalMapaGrandeHUD == null)
+            {
+                CrearModalMapaGrandeSiNoExiste();
+            }
+
+            bool nuevoEstado = !_modalMapaGrandeHUD.activeSelf;
+            _modalMapaGrandeHUD.SetActive(nuevoEstado);
+
+            if (nuevoEstado)
+            {
+                ActualizarContenidoMapaGrande();
+            }
+        }
+
+        public void ActualizarContenidoMapaGrande()
+        {
+            if (_modalMapaGrandeHUD == null || !_modalMapaGrandeHUD.activeSelf) return;
+
+            int nivel = (GestorPartida.Instancia != null) ? GestorPartida.Instancia.NivelActual : 1;
+            string bioma = (GeneradorMazmorra.Instancia != null) ? GeneradorMazmorra.Instancia.biomaActual.ToString().ToUpper() : "MAZMORRA";
+            if (_txtTituloMapaGrande != null)
+            {
+                _txtTituloMapaGrande.text = $"🗺️ MAPA - NIVEL {nivel} ({bioma})";
+            }
+
+            if (SistemaVision.Instancia != null)
+            {
+                SistemaVision.Instancia.ForzarActualizacionExploracion();
+            }
+
+            if (MinimapaHUD.Instancia != null)
+            {
+                MinimapaHUD.Instancia.RenderizarMinimapa();
+                if (_rawMapaGrande != null)
+                {
+                    _rawMapaGrande.texture = MinimapaHUD.Instancia.TextureMapa;
+                    _rawMapaGrande.color = Color.white;
+                    _rawMapaGrande.enabled = true;
+                }
+            }
+        }
+
+        // =========================================================================
         // TIENDA SECRETA MODAL (PUESTITO)
         // =========================================================================
 
@@ -1987,6 +2196,7 @@ namespace SoulKnight
         public void AbrirTienda(PuestitoTienda puestito)
         {
             if (puestito == null) return;
+            if (_modalMapaGrandeHUD != null) _modalMapaGrandeHUD.SetActive(false);
             if (panelPausa != null && panelPausa.activeSelf) return;
             if (panelFinPartida != null && panelFinPartida.activeSelf) return;
 
@@ -2062,17 +2272,17 @@ namespace SoulKnight
                         }
                         else if (claseReq == TipoPersonaje.Fuego)
                         {
-                            txtBadge.text = "[Solo Gato de Fuego]";
+                            txtBadge.text = "[Gato de Fuego]";
                             txtBadge.color = new Color(1f, 0.55f, 0.15f);
                         }
                         else if (claseReq == TipoPersonaje.Hielo)
                         {
-                            txtBadge.text = "[Solo Gato de Hielo]";
+                            txtBadge.text = "[Gato de Hielo]";
                             txtBadge.color = new Color(0.45f, 0.85f, 1f);
                         }
                         else if (claseReq == TipoPersonaje.Electrico)
                         {
-                            txtBadge.text = "[Solo Gato Eléctrico]";
+                            txtBadge.text = "[Gato Eléctrico]";
                             txtBadge.color = new Color(1f, 0.95f, 0.25f);
                         }
                     }
@@ -2089,7 +2299,7 @@ namespace SoulKnight
                     if (!esCompatible)
                     {
                         btn.interactable = false;
-                        txtBtn.text = $"❌ Incompatible (Solo {claseReq})";
+                        txtBtn.text = $"❌ Incompatible ({claseReq})";
                         txtBtn.color = new Color(0.85f, 0.45f, 0.45f);
                         if (imgBtn != null) imgBtn.color = new Color(0.25f, 0.14f, 0.14f, 1f);
                     }
@@ -2988,6 +3198,7 @@ namespace SoulKnight
         {
             if (panelPausa == null) return;
             if (panelFinPartida != null && panelFinPartida.activeSelf) return;
+            if (_modalMapaGrandeHUD != null) _modalMapaGrandeHUD.SetActive(false);
 
             bool estado = !panelPausa.activeSelf;
             panelPausa.SetActive(estado);
@@ -3346,6 +3557,7 @@ namespace SoulKnight
         public void IniciarFadeOscurecer(float duracion = 0.8f, Action alTerminar = null)
         {
             EnTransicionCarga = true;
+            if (_modalMapaGrandeHUD != null) _modalMapaGrandeHUD.SetActive(false);
             if (minimapaHUD != null) minimapaHUD.gameObject.SetActive(false);
             if (_rutinaFade != null) StopCoroutine(_rutinaFade);
             _rutinaFade = StartCoroutine(RutinaFade(1f, duracion, alTerminar));

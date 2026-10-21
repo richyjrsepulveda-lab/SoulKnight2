@@ -41,11 +41,25 @@ namespace SoulKnight
         void Awake()
         {
             ConstruirVisualYPuestito();
+            LimpiarMonedasCercanas();
         }
 
         void Start()
         {
             AsegurarArticulos();
+            LimpiarMonedasCercanas();
+        }
+
+        private void LimpiarMonedasCercanas()
+        {
+            var monedas = Object.FindObjectsOfType<MonedaOro>();
+            for (int i = 0; i < monedas.Length; i++)
+            {
+                if (monedas[i] != null && Vector2.Distance(monedas[i].transform.position, transform.position) < 14f)
+                {
+                    Destroy(monedas[i].gameObject);
+                }
+            }
         }
 
         public void AsegurarArticulos()
@@ -332,18 +346,6 @@ namespace SoulKnight
                     else
                     {
                         cols[y * W + x] = (y >= 14) ? cMadera : cMaderaOscura;
-                    }
-                }
-            }
-
-            // Adorno de moneda dorada en el mostrador central
-            for (int dy = -2; dy <= 2; dy++)
-            {
-                for (int dx = -2; dx <= 2; dx++)
-                {
-                    if (dx * dx + dy * dy <= 4)
-                    {
-                        cols[(11 + dy) * W + (24 + dx)] = cDorado;
                     }
                 }
             }

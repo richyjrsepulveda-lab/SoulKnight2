@@ -618,8 +618,8 @@ namespace SoulKnight
             {
                 ids[i] = _siguienteIdMoneda++;
                 dirs[i] = UnityEngine.Random.insideUnitCircle.normalized;
-                fuerzasH[i] = UnityEngine.Random.Range(1.8f, 3.4f);
-                fuerzasV[i] = UnityEngine.Random.Range(4.0f, 6.0f);
+                fuerzasH[i] = UnityEngine.Random.Range(2.2f, 4.6f);
+                fuerzasV[i] = UnityEngine.Random.Range(4.8f, 8.2f);
             }
 
             if (NetworkManager != null && NetworkManager.IsListening)

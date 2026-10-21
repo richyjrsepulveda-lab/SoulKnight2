@@ -610,9 +610,6 @@ namespace SoulKnight
                 }
             }
 
-            // Regeneración pasiva de vida poco a poco durante la run en el servidor
-            ActualizarRegeneracionPasivaServidor(dt);
-
             // Actualizar estados alterados de biomas en el servidor
             if (_tiempoCongeladoPj > 0f)
             {
@@ -704,10 +701,10 @@ namespace SoulKnight
             if (VidaActual.Value < VidaMaxSincronizada.Value)
             {
                 _timerRegenPasiva += dt;
-                if (_timerRegenPasiva >= 3.0f)
+                if (_timerRegenPasiva >= 4.0f)
                 {
                     _timerRegenPasiva = 0f;
-                    Curar(2);
+                    Curar(1);
                 }
             }
             else

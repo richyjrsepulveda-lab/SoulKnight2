@@ -157,10 +157,10 @@ namespace SoulKnight
                         : $"+0.6s Duración de congelación y ralentización.\nNivel actual: {nivelActual}/5";
                     break;
                 case TipoMejoraTienda.Hielo_AreaVentisca:
-                    nombre = "VENTISCA AMPLIFICADA";
+                    nombre = "ESFERA Y RAYO GLACIAL";
                     desc = (nivelActual >= 5)
-                        ? "Ventisca al nivel máximo (5/5)."
-                        : $"+15% Área y radio de cono helado y ventisca.\nNivel actual: {nivelActual}/5";
+                        ? "Esfera y Rayo al nivel máximo (5/5)."
+                        : $"+15% Tamaño de Bola de Hielo y Alcance de Rayo Glacial.\nNivel actual: {nivelActual}/5";
                     break;
                 case TipoMejoraTienda.Hielo_PotenciaGlacial:
                     nombre = "FRAGMENTACIÓN GLACIAL";

@@ -146,6 +146,7 @@ namespace SoulKnight
             _partidaIniciada = true;
 
             GestorAudio.DetenerTodosLosSFX();
+            MonedaOro.DestruirTodas();
             NivelActual = 1;
             LoopActual = 0;
             EnNivelDecisionLoop = false;
@@ -586,10 +587,10 @@ namespace SoulKnight
         public void VerificarDropPescadoEnemigo(Vector2 pos)
         {
             if (NetworkManager.Singleton == null || !NetworkManager.Singleton.IsServer) return;
-            if (prefabItemMejoraRun == null || _pescadosSoltadosEnSalaActual >= 3) return;
+            if (prefabItemMejoraRun == null || _pescadosSoltadosEnSalaActual >= 2) return;
 
-            // Probabilidad calibrada para que salgan en promedio 3 pescados por sala recorrida (~22%)
-            if (UnityEngine.Random.value < 0.22f)
+            // Probabilidad calibrada más baja para dropear pescados (máximo 1-2 por sala)
+            if (UnityEngine.Random.value < 0.10f)
             {
                 _pescadosSoltadosEnSalaActual++;
                 TipoMejoraRun tipoPescado = CatalogoMejorasRun.ObtenerAleatoria();
@@ -804,6 +805,7 @@ namespace SoulKnight
             }
 
             GestorAudio.DetenerTodosLosSFX();
+            MonedaOro.DestruirTodas();
 
             for (int i = Proyectil.Todos.Count - 1; i >= 0; i--)
             {

@@ -155,6 +155,7 @@ namespace SoulKnight
         {
             PuestitoTienda.DestruirTodos();
             CofreOro.DestruirTodos();
+            MonedaOro.DestruirTodas();
             puntosSpawnJugadores.Clear();
             puntosSpawnEnemigos.Clear();
             salasGeneradas.Clear();
