@@ -23,6 +23,9 @@ namespace SoulKnight
     /// </summary>
     public static class EstiloUIUX
     {
+        // Constante de Pixels Per Unit para que las cajas sliced se dibujen a escala exacta 1:1 en el canvas
+        public const float PPU = 100f;
+
         // =========================================================================
         // PALETA OFICIAL
         // =========================================================================
@@ -293,7 +296,7 @@ namespace SoulKnight
             tex.Apply(false);
 
             Vector4 sliceBorder = new Vector4(12, 12, 12, 12);
-            var sprite = Sprite.Create(tex, new Rect(0, 0, S, S), new Vector2(0.5f, 0.5f), 1f, 0, SpriteMeshType.FullRect, sliceBorder);
+            var sprite = Sprite.Create(tex, new Rect(0, 0, S, S), new Vector2(0.5f, 0.5f), PPU, 0, SpriteMeshType.FullRect, sliceBorder);
             _cacheSprites[clave] = sprite;
             return sprite;
         }
@@ -331,7 +334,7 @@ namespace SoulKnight
             tex.SetPixels32(pixeles);
             tex.Apply(false);
 
-            var sprite = Sprite.Create(tex, new Rect(0, 0, S, S), new Vector2(0.5f, 0.5f), 1f, 0, SpriteMeshType.FullRect, new Vector4(6, 6, 6, 6));
+            var sprite = Sprite.Create(tex, new Rect(0, 0, S, S), new Vector2(0.5f, 0.5f), PPU, 0, SpriteMeshType.FullRect, new Vector4(6, 6, 6, 6));
             _cacheSprites["TarjetaBase"] = sprite;
             return sprite;
         }
@@ -406,7 +409,7 @@ namespace SoulKnight
             tex.SetPixels32(pixeles);
             tex.Apply(false);
 
-            var sprite = Sprite.Create(tex, new Rect(0, 0, S, S), new Vector2(0.5f, 0.5f), 1f, 0, SpriteMeshType.FullRect, Vector4.zero);
+            var sprite = Sprite.Create(tex, new Rect(0, 0, S, S), new Vector2(0.5f, 0.5f), PPU, 0, SpriteMeshType.FullRect, Vector4.zero);
             _cacheSprites["KnobSwitch"] = sprite;
             return sprite;
         }
@@ -440,7 +443,7 @@ namespace SoulKnight
             tex.SetPixels32(pixeles);
             tex.Apply(false);
 
-            var sprite = Sprite.Create(tex, new Rect(0, 0, S, S), new Vector2(0.5f, 0.5f), 1f, 0, SpriteMeshType.FullRect, Vector4.zero);
+            var sprite = Sprite.Create(tex, new Rect(0, 0, S, S), new Vector2(0.5f, 0.5f), PPU, 0, SpriteMeshType.FullRect, Vector4.zero);
             _cacheSprites["Remache"] = sprite;
             return sprite;
         }
@@ -470,7 +473,7 @@ namespace SoulKnight
             tex.SetPixels32(px);
             tex.Apply(false);
 
-            var sprite = Sprite.Create(tex, new Rect(0, 0, W, H), new Vector2(0.5f, 0.5f), 1f, 0, SpriteMeshType.FullRect, new Vector4(6, 6, 6, 6));
+            var sprite = Sprite.Create(tex, new Rect(0, 0, W, H), new Vector2(0.5f, 0.5f), PPU, 0, SpriteMeshType.FullRect, new Vector4(6, 6, 6, 6));
             _cacheSprites["PistaSlider"] = sprite;
             return sprite;
         }
@@ -518,7 +521,7 @@ namespace SoulKnight
             tex.SetPixels32(px);
             tex.Apply(false);
 
-            var sprite = Sprite.Create(tex, new Rect(0, 0, W, H), new Vector2(0.5f, 0.5f), 1f, 0, SpriteMeshType.FullRect, new Vector4(6, 6, 6, 6));
+            var sprite = Sprite.Create(tex, new Rect(0, 0, W, H), new Vector2(0.5f, 0.5f), PPU, 0, SpriteMeshType.FullRect, new Vector4(6, 6, 6, 6));
             _cacheSprites[clave] = sprite;
             return sprite;
         }
@@ -556,7 +559,7 @@ namespace SoulKnight
             tex.SetPixels32(px);
             tex.Apply(false);
 
-            var sprite = Sprite.Create(tex, new Rect(0, 0, W, H), new Vector2(0.5f, 0.5f), 1f, 0, SpriteMeshType.FullRect, new Vector4(6, 6, 6, 6));
+            var sprite = Sprite.Create(tex, new Rect(0, 0, W, H), new Vector2(0.5f, 0.5f), PPU, 0, SpriteMeshType.FullRect, new Vector4(6, 6, 6, 6));
             _cacheSprites["ThumbSlider"] = sprite;
             return sprite;
         }
@@ -772,7 +775,7 @@ namespace SoulKnight
 
             if (tex == null) return null;
 
-            var sprite = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), new Vector2(0.5f, 0.5f), 1f, 0, SpriteMeshType.FullRect, Vector4.zero);
+            var sprite = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), new Vector2(0.5f, 0.5f), PPU, 0, SpriteMeshType.FullRect, Vector4.zero);
             _cacheSprites[clave] = sprite;
             return sprite;
         }

@@ -218,7 +218,7 @@ namespace SoulKnight
             txtTitModal.text = "CAMBIAR NOMBRE";
             txtTitModal.raycastTarget = false;
             txtTitModal.rectTransform.sizeDelta = new Vector2(500f, 60f);
-            PanelOpcionesControles.AgregarOutline(txtTitModal, EstiloUIUX.ColContornoUniversal, new Vector2(4f, -4f));
+            BordeTextoPixelArt.Aplicar(txtTitModal, 8, new Vector2(0f, -6f));
 
             CrearIconoHuella(contCab.transform, new Vector2(45f, 40f));
 

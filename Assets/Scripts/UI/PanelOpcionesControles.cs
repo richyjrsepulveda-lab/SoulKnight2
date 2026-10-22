@@ -279,10 +279,7 @@ namespace SoulKnight
             txtTit.text = "OPCIONES";
             txtTit.raycastTarget = false;
             txtTit.GetComponent<RectTransform>().sizeDelta = new Vector2(600f, 64f);
-            AgregarOutline(txtTit, EstiloUIUX.ColContornoUniversal, new Vector2(4f, -4f));
-            var shadowTit = txtTit.gameObject.AddComponent<Shadow>();
-            shadowTit.effectColor = EstiloUIUX.ColContornoUniversal;
-            shadowTit.effectDistance = new Vector2(0f, -6f);
+            BordeTextoPixelArt.Aplicar(txtTit, 8, new Vector2(0f, -6f));
 
             var txtSub = new GameObject("SubtituloOpciones").AddComponent<Text>();
             txtSub.transform.SetParent(bloqueTxtCab.transform, false);

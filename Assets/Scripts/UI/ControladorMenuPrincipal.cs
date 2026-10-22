@@ -185,13 +185,13 @@ namespace SoulKnight
             rtTitCont.anchorMin = new Vector2(0.5f, 1f);
             rtTitCont.anchorMax = new Vector2(0.5f, 1f);
             rtTitCont.pivot = new Vector2(0.5f, 1f);
-            rtTitCont.anchoredPosition = new Vector2(0f, -140f);
-            rtTitCont.sizeDelta = new Vector2(1800f, 260f);
+            rtTitCont.anchoredPosition = new Vector2(0f, -240f);
+            rtTitCont.sizeDelta = new Vector2(1800f, 240f);
 
             var vlgTit = titCont.AddComponent<VerticalLayoutGroup>();
             vlgTit.childAlignment = TextAnchor.UpperCenter;
-            vlgTit.spacing = 2f;
-            vlgTit.childControlWidth = true;
+            vlgTit.spacing = 12f;
+            vlgTit.childControlWidth = false;
             vlgTit.childControlHeight = false;
 
             // "JUST A"
@@ -203,10 +203,10 @@ namespace SoulKnight
             txtJustA.fontStyle = FontStyle.Bold;
             txtJustA.alignment = TextAnchor.MiddleCenter;
             txtJustA.color = EstiloUIUX.ColTextoCrema;
-            txtJustA.text = "J U S T   A";
+            txtJustA.text = "J  U  S  T   A";
             txtJustA.raycastTarget = false;
-            txtJustAObj.GetComponent<RectTransform>().sizeDelta = new Vector2(1800f, 54f);
-            AgregarOutline(txtJustA, EstiloUIUX.ColContornoUniversal, new Vector2(6f, -6f));
+            txtJustAObj.GetComponent<RectTransform>().sizeDelta = new Vector2(1400f, 54f);
+            BordeTextoPixelArt.Aplicar(txtJustA, 8, new Vector2(0f, -4f));
 
             // "CAT ADVENTURE"
             var txtCatObj = new GameObject("TxtCatAdventure");
@@ -217,13 +217,10 @@ namespace SoulKnight
             txtCat.fontStyle = FontStyle.Bold;
             txtCat.alignment = TextAnchor.MiddleCenter;
             txtCat.supportRichText = true;
-            txtCat.text = "<color=#ff7a2f>CAT</color> <color=#ffcf4a>ADVENTURE</color>";
+            txtCat.text = "<color=#ff7a2f>CAT</color>  <color=#ffcf4a>ADVENTURE</color>";
             txtCat.raycastTarget = false;
-            txtCatObj.GetComponent<RectTransform>().sizeDelta = new Vector2(1800f, 150f);
-            AgregarOutline(txtCat, EstiloUIUX.ColContornoUniversal, new Vector2(10f, -10f));
-            var shadowCat = txtCatObj.AddComponent<Shadow>();
-            shadowCat.effectColor = EstiloUIUX.ColContornoUniversal;
-            shadowCat.effectDistance = new Vector2(0f, -12f);
+            txtCatObj.GetComponent<RectTransform>().sizeDelta = new Vector2(1600f, 150f);
+            BordeTextoPixelArt.Aplicar(txtCat, 12, new Vector2(0f, -8f));
 
             // ==================== 4. BOTONES PRINCIPALES (560 x 84 px, Gap 28 px) ====================
             var contBotones = new GameObject("ContenedorBotones");
@@ -232,7 +229,7 @@ namespace SoulKnight
             rtBtns.anchorMin = new Vector2(0.5f, 1f);
             rtBtns.anchorMax = new Vector2(0.5f, 1f);
             rtBtns.pivot = new Vector2(0.5f, 1f);
-            rtBtns.anchoredPosition = new Vector2(0f, -480f);
+            rtBtns.anchoredPosition = new Vector2(0f, -510f);
             rtBtns.sizeDelta = new Vector2(560f, 320f);
 
             var vlgBtns = contBotones.AddComponent<VerticalLayoutGroup>();
@@ -398,7 +395,7 @@ namespace SoulKnight
 
             var hlg = btnObj.AddComponent<HorizontalLayoutGroup>();
             hlg.childAlignment = TextAnchor.MiddleCenter;
-            hlg.spacing = 20f;
+            hlg.spacing = 16f;
             hlg.childControlWidth = false;
             hlg.childControlHeight = false;
 
@@ -417,6 +414,7 @@ namespace SoulKnight
             var imgIco = icoObj.AddComponent<Image>();
             imgIco.sprite = EstiloUIUX.ObtenerSpriteIcono(nombreIcono, colorContenido);
             imgIco.raycastTarget = false;
+            imgIco.preserveAspect = true;
             icoObj.GetComponent<RectTransform>().sizeDelta = iconoSize;
 
             // Texto
@@ -430,7 +428,11 @@ namespace SoulKnight
             txt.color = colorContenido;
             txt.text = texto;
             txt.raycastTarget = false;
-            txtObj.GetComponent<RectTransform>().sizeDelta = new Vector2(300f, 50f);
+            txt.horizontalOverflow = HorizontalWrapMode.Overflow;
+            txt.verticalOverflow = VerticalWrapMode.Overflow;
+            var csf = txtObj.AddComponent<ContentSizeFitter>();
+            csf.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
+            csf.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
             // Pointer feedback 4px down
             var trigger = btnObj.AddComponent<EventTrigger>();
@@ -462,12 +464,12 @@ namespace SoulKnight
             rt.anchorMin = new Vector2(0f, 0f);
             rt.anchorMax = new Vector2(0f, 0f);
             rt.pivot = new Vector2(0f, 0f);
-            rt.anchoredPosition = new Vector2(54f, 36f);
-            rt.sizeDelta = new Vector2(380f, 72f);
+            rt.anchoredPosition = new Vector2(54f, 54f);
+            rt.sizeDelta = new Vector2(340f, 72f);
 
             var img = btnObj.AddComponent<Image>();
             img.type = Image.Type.Sliced;
-            img.sprite = EstiloUIUX.ObtenerSpriteBoton(TipoBotonUI.Piedra);
+            img.sprite = EstiloUIUX.ObtenerSpriteCajaEscalonada("ChipCambiarNombre", EstiloUIUX.ColTarjeta, EstiloUIUX.ColTarjetaLuz, EstiloUIUX.ColTarjetaSombra, 4, 4, 4);
 
             botonCambiarNombre = btnObj.AddComponent<Button>();
             var cb = botonCambiarNombre.colors;
@@ -479,8 +481,8 @@ namespace SoulKnight
 
             var hlg = btnObj.AddComponent<HorizontalLayoutGroup>();
             hlg.childAlignment = TextAnchor.MiddleLeft;
-            hlg.spacing = 20f;
-            hlg.padding = new RectOffset(24, 20, 8, 8);
+            hlg.spacing = 16f;
+            hlg.padding = new RectOffset(16, 24, 6, 6);
             hlg.childControlWidth = false;
             hlg.childControlHeight = false;
 
@@ -488,15 +490,16 @@ namespace SoulKnight
             var icoObj = new GameObject("IconoLápiz");
             icoObj.transform.SetParent(btnObj.transform, false);
             var imgIco = icoObj.AddComponent<Image>();
-            imgIco.sprite = EstiloUIUX.ObtenerSpriteIcono("lapiz", EstiloUIUX.ColBtnPiedraTexto);
+            imgIco.sprite = EstiloUIUX.ObtenerSpriteIcono("lapiz", EstiloUIUX.ColTextoMuyTenue);
             imgIco.raycastTarget = false;
-            icoObj.GetComponent<RectTransform>().sizeDelta = new Vector2(32f, 32f);
+            imgIco.preserveAspect = true;
+            icoObj.GetComponent<RectTransform>().sizeDelta = new Vector2(28f, 28f);
 
             // Bloque de textos
             var bloqueObj = new GameObject("BloqueTextos");
             bloqueObj.transform.SetParent(btnObj.transform, false);
             var rtBloque = bloqueObj.AddComponent<RectTransform>();
-            rtBloque.sizeDelta = new Vector2(280f, 56f);
+            rtBloque.sizeDelta = new Vector2(240f, 56f);
 
             var vlg = bloqueObj.AddComponent<VerticalLayoutGroup>();
             vlg.childAlignment = TextAnchor.MiddleLeft;
@@ -509,26 +512,26 @@ namespace SoulKnight
             lblObj.transform.SetParent(bloqueObj.transform, false);
             var txtLbl = lblObj.AddComponent<Text>();
             txtLbl.font = FuenteUtil.ObtenerFuentePixelify();
-            txtLbl.fontSize = 18;
+            txtLbl.fontSize = 16;
             txtLbl.fontStyle = FontStyle.Bold;
             txtLbl.alignment = TextAnchor.MiddleLeft;
-            txtLbl.color = EstiloUIUX.ColTextoTenue;
+            txtLbl.color = EstiloUIUX.ColTextoMuyTenue;
             txtLbl.text = "CAMBIAR NOMBRE";
             txtLbl.raycastTarget = false;
-            lblObj.GetComponent<RectTransform>().sizeDelta = new Vector2(280f, 22f);
+            lblObj.GetComponent<RectTransform>().sizeDelta = new Vector2(240f, 20f);
 
             // Nombre actual
             var nomObj = new GameObject("NombreJugador");
             nomObj.transform.SetParent(bloqueObj.transform, false);
             _txtNombreBotonMenu = nomObj.AddComponent<Text>();
             _txtNombreBotonMenu.font = FuenteUtil.ObtenerFuentePixelify();
-            _txtNombreBotonMenu.fontSize = 30;
+            _txtNombreBotonMenu.fontSize = 26;
             _txtNombreBotonMenu.fontStyle = FontStyle.Bold;
             _txtNombreBotonMenu.alignment = TextAnchor.MiddleLeft;
             _txtNombreBotonMenu.color = EstiloUIUX.ColTextoCrema;
             _txtNombreBotonMenu.text = ObtenerNombreActual();
             _txtNombreBotonMenu.raycastTarget = false;
-            nomObj.GetComponent<RectTransform>().sizeDelta = new Vector2(280f, 32f);
+            nomObj.GetComponent<RectTransform>().sizeDelta = new Vector2(240f, 28f);
 
             // Pointer feedback 4px down
             var trigger = btnObj.AddComponent<EventTrigger>();
@@ -637,7 +640,7 @@ namespace SoulKnight
             txtTitModal.text = "CAMBIAR NOMBRE";
             txtTitModal.raycastTarget = false;
             txtTitModal.GetComponent<RectTransform>().sizeDelta = new Vector2(500f, 70f);
-            AgregarOutline(txtTitModal, EstiloUIUX.ColContornoUniversal, new Vector2(4f, -4f));
+            BordeTextoPixelArt.Aplicar(txtTitModal, 8, new Vector2(0f, -6f));
 
             CrearIconoCabeceraModal(cabObj.transform, "HuellaDer");
 
