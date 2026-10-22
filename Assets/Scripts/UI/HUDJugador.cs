@@ -667,7 +667,12 @@ namespace SoulKnight
 
             if (_modalMapaGrandeHUD != null && _modalMapaGrandeHUD.activeSelf)
             {
-                ActualizarContenidoMapaGrande();
+                _timerRefrescoMapaGrande += Time.unscaledDeltaTime;
+                if (_timerRefrescoMapaGrande >= 0.1f)
+                {
+                    _timerRefrescoMapaGrande = 0f;
+                    ActualizarContenidoMapaGrande();
+                }
             }
 
             // Asegurar que el minimapa permanezca visible durante el gameplay normal (estrictamente oculto en cargas)
@@ -1772,6 +1777,7 @@ namespace SoulKnight
         private RawImage _rawMapaGrande;
         private Text _txtTituloMapaGrande;
         private Text _txtSubtituloMapaGrande;
+        private float _timerRefrescoMapaGrande = 0f;
 
         public bool MapaGrandeAbierto => _modalMapaGrandeHUD != null && _modalMapaGrandeHUD.activeSelf;
 
@@ -1923,6 +1929,7 @@ namespace SoulKnight
 
             if (nuevoEstado)
             {
+                _timerRefrescoMapaGrande = 0f;
                 ActualizarContenidoMapaGrande();
             }
         }
@@ -1945,10 +1952,10 @@ namespace SoulKnight
 
             if (MinimapaHUD.Instancia != null)
             {
-                MinimapaHUD.Instancia.RenderizarMinimapa();
+                MinimapaHUD.Instancia.RenderizarMapaCompleto();
                 if (_rawMapaGrande != null)
                 {
-                    _rawMapaGrande.texture = MinimapaHUD.Instancia.TextureMapa;
+                    _rawMapaGrande.texture = MinimapaHUD.Instancia.TextureMapaCompleto;
                     _rawMapaGrande.color = Color.white;
                     _rawMapaGrande.enabled = true;
                 }

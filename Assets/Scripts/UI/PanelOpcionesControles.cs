@@ -1494,9 +1494,7 @@ namespace SoulKnight
                 "",
                 () =>
                 {
-                    bool actual = PlayerPrefs.GetInt("DanoAcumulativo", 0) == 1;
-                    PlayerPrefs.SetInt("DanoAcumulativo", actual ? 0 : 1);
-                    PlayerPrefs.Save();
+                    AjustesVideo.DanoAcumulativo = !AjustesVideo.DanoAcumulativo;
                     ActualizarVisualDanoAcumulativo();
                 },
                 out _txtDanoAcumulativo);
@@ -1691,7 +1689,7 @@ namespace SoulKnight
 
         private void ActualizarVisualDanoAcumulativo()
         {
-            bool activo = PlayerPrefs.GetInt("DanoAcumulativo", 0) == 1;
+            bool activo = AjustesVideo.DanoAcumulativo;
             if (_txtDanoAcumulativo != null)
             {
                 _txtDanoAcumulativo.text = activo ? "✔ ACTIVADO (ACUMULATIVO)" : "✖ DESACTIVADO (POR TICK)";

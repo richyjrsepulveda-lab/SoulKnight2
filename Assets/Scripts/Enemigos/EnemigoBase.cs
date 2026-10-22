@@ -489,7 +489,7 @@ namespace SoulKnight
         protected virtual void Update()
         {
             if (!IsServer) return;
-            if (GestorPartida.Instancia != null && (GestorPartida.Instancia.PartidaTerminada || GestorPartida.Instancia.ObtenerJugadoresVivos().Count == 0))
+            if (GestorPartida.Instancia != null && GestorPartida.Instancia.CombateDetenido)
             {
                 if (EstaQuemado.Value) EstaQuemado.Value = false;
                 if (_rb != null) _rb.velocity = Vector2.zero;
@@ -799,25 +799,45 @@ namespace SoulKnight
         public virtual void RecibirDano(int cantidad, Color colorDano)
         {
             if (!IsServer || VidaActual.Value <= 0 || enAnimacionEntrada) return;
-            if (GestorPartida.Instancia != null && (GestorPartida.Instancia.PartidaTerminada || GestorPartida.Instancia.ObtenerJugadoresVivos().Count == 0))
+            if (GestorPartida.Instancia != null && GestorPartida.Instancia.CombateDetenido)
             {
                 return;
             }
 
             VidaActual.Value = Mathf.Max(0, VidaActual.Value - cantidad);
-            MostrarDanoClientRpc(cantidad, colorDano);
 
             if (VidaActual.Value <= 0)
             {
+                // El golpe final va por canal confiable para que llegue ANTES del Despawn (mismo canal = orden garantizado)
+                MostrarDanoLetalClientRpc(cantidad, (Color32)colorDano);
                 Morir();
+            }
+            else
+            {
+                MostrarDanoClientRpc(cantidad, (Color32)colorDano);
             }
         }
 
         [ClientRpc]
-        private void MostrarDanoClientRpc(int cantidad, Color color)
+        private void MostrarDanoLetalClientRpc(int cantidad, Color32 color32)
         {
+            MostrarDanoLocal(cantidad, color32);
+        }
+
+        // Puramente cosmético (número flotante + sonido de impacto): se envía por canal NO confiable
+        // para que una ráfaga de impactos (rayo de hielo, quemaduras) nunca retrase paquetes importantes
+        // como movimiento, vida o spawns. Color32 = 4 bytes en lugar de 16.
+        [ClientRpc(Delivery = RpcDelivery.Unreliable)]
+        private void MostrarDanoClientRpc(int cantidad, Color32 color32)
+        {
+            MostrarDanoLocal(cantidad, color32);
+        }
+
+        private void MostrarDanoLocal(int cantidad, Color32 color32)
+        {
+            Color color = color32;
             Vector3 posImpacto = transform.position + new Vector3(0, 1.25f, 0);
-            bool danoAcumulativo = PlayerPrefs.GetInt("DanoAcumulativo", 0) == 1;
+            bool danoAcumulativo = AjustesVideo.DanoAcumulativo;
 
             if (danoAcumulativo)
             {

@@ -5,11 +5,10 @@ using UnityEngine.UI;
 namespace SoulKnight
 {
     /// <summary>
-    /// Minimapa dinámico en tiempo real ubicado arriba a la derecha del HUD (0 lag):
-    /// - Muestra TODO el mapa completo por defecto con un filtro oscuro (suelos y muros oscuros).
-    /// - Ilumina con claridad el radio donde tenemos visión activa (jugadores + antorchas encendidas).
-    /// - Si una puerta se cierra (combate en sala), oculta por completo el exterior en el minimapa.
-    /// - Muestra a los enemigos (rojo) SOLO si están dentro de nuestro rango de visión.
+    /// Minimapa dinámico en tiempo real ubicado arriba a la derecha del HUD:
+    /// - Cuadro amplio y claro en pantalla sin zoom (mantiene la escala de tiles natural).
+    /// - Las salas y pasillos se descubren conforme se exploran.
+    /// - Ofrece vista completa de toda la mazmorra sin cortes para el mapa grande desplegable [M].
     /// </summary>
     public class MinimapaHUD : MonoBehaviour
     {
@@ -20,9 +19,17 @@ namespace SoulKnight
         public Texture2D TextureMapa => _texMapa;
         private Color32[] _pixeles;
 
-        private const int MAP_W = 160;
-        private const int MAP_H = 112;
+        // Minimapa HUD: cuadro más grande pero SIN ZOOM (misma escala de píxeles por tile)
+        private const int MAP_W = 240;
+        private const int MAP_H = 170;
         private const float ESCALA_PIXELS_POR_TILE = 1.35f;
+
+        // Mapa Completo para modal de tecla M (toda la mazmorra ajustada en pantalla)
+        private Texture2D _texMapaCompleto;
+        public Texture2D TextureMapaCompleto => _texMapaCompleto;
+        private Color32[] _pixelesMapaCompleto;
+        private const int COMPLETO_W = 480;
+        private const int COMPLETO_H = 320;
 
         private float _timerActualizacion = 0f;
 
@@ -32,7 +39,12 @@ namespace SoulKnight
             if (existente != null)
             {
                 var compExist = existente.GetComponent<MinimapaHUD>();
-                if (compExist != null) return compExist;
+                if (compExist != null)
+                {
+                    var rt = existente.GetComponent<RectTransform>();
+                    if (rt != null) rt.sizeDelta = new Vector2(360f, 260f);
+                    return compExist;
+                }
                 Destroy(existente.gameObject);
             }
 
@@ -47,19 +59,18 @@ namespace SoulKnight
             rtMarco.anchorMax = new Vector2(1f, 1f);
             rtMarco.pivot = new Vector2(1f, 1f);
             rtMarco.anchoredPosition = new Vector2(-16f, -54f);
-            rtMarco.sizeDelta = new Vector2(285f, 214f); // Más grande y amplio para navegación clara
+            rtMarco.sizeDelta = new Vector2(360f, 260f); // Cuadrito más grande sin zoom
 
             // Borde exterior definido y nítido de estilo pixel-art
             var bordeObj = new GameObject("BordeMinimapa");
             bordeObj.transform.SetParent(marcoObj.transform, false);
             var imgBorde = bordeObj.AddComponent<Image>();
-            imgBorde.color = new Color(0.32f, 0.65f, 0.95f, 0.95f); // Borde azul cian bien definido
+            imgBorde.color = new Color(0.32f, 0.65f, 0.95f, 0.95f);
             var rtBorde = bordeObj.GetComponent<RectTransform>();
             rtBorde.anchorMin = Vector2.zero;
             rtBorde.anchorMax = Vector2.one;
             rtBorde.sizeDelta = Vector2.zero;
 
-            // Capa interna que deja 3px de borde marcado
             var fondoInterno = new GameObject("FondoInternoMinimapa");
             fondoInterno.transform.SetParent(bordeObj.transform, false);
             var imgFondoInt = fondoInterno.AddComponent<Image>();
@@ -83,7 +94,7 @@ namespace SoulKnight
             lblObj.transform.SetParent(fondoInterno.transform, false);
             var txt = lblObj.AddComponent<Text>();
             txt.font = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            txt.fontSize = 10;
+            txt.fontSize = 11;
             txt.fontStyle = FontStyle.Bold;
             txt.alignment = TextAnchor.MiddleCenter;
             txt.color = new Color(0.85f, 0.95f, 1f, 0.95f);
@@ -113,7 +124,7 @@ namespace SoulKnight
             for (int i = 0; i < _pixeles.Length; i++) _pixeles[i] = initColor;
             _texMapa.SetPixels32(_pixeles);
             _texMapa.Apply(false);
-            _rawImage.texture = _texMapa;
+            if (_rawImage != null) _rawImage.texture = _texMapa;
         }
 
         void Awake()
@@ -133,6 +144,7 @@ namespace SoulKnight
         {
             if (Instancia == this) Instancia = null;
             if (_texMapa != null) Destroy(_texMapa);
+            if (_texMapaCompleto != null) Destroy(_texMapaCompleto);
         }
 
         void Update()
@@ -140,7 +152,7 @@ namespace SoulKnight
             _timerActualizacion -= Time.deltaTime;
             if (_timerActualizacion <= 0f)
             {
-                _timerActualizacion = 0.1f; // 10 actualizaciones por segundo: súper ligero
+                _timerActualizacion = 0.1f;
                 RenderizarMinimapa();
             }
         }
@@ -169,7 +181,6 @@ namespace SoulKnight
                 return;
             }
 
-            // Centro dinámico centrado en el jugador local (navegación fluida según avanza por el mapa)
             Vector2 centroMundo = Vector2.zero;
             Personaje pjLocal = null;
             for (int i = 0; i < Personaje.Todos.Count; i++)
@@ -195,7 +206,6 @@ namespace SoulKnight
             int gridW = gen.gridActual.GetLength(0);
             int gridH = gen.gridActual.GetLength(1);
 
-            // Colores limpios y estéticos
             Color32 colSueloNormal = new Color32(78, 104, 136, 255);
             Color32 colSueloCombate = new Color32(115, 52, 52, 255);
             Color32 colMuroNormal = new Color32(180, 200, 225, 255);
@@ -210,7 +220,6 @@ namespace SoulKnight
             int[] dx8 = { -1, 0, 1, -1, 1, -1, 0, 1 };
             int[] dy8 = { -1, -1, -1, 0, 0, 1, 1, 1 };
 
-            // Renderizado centrado 1:1 sin distorsión por relación de aspecto
             for (int py = 0; py < MAP_H; py++)
             {
                 float wy = centroMundo.y + (py - centroPY) / ESCALA_PIXELS_POR_TILE;
@@ -228,7 +237,6 @@ namespace SoulKnight
                     byte celda = gen.gridActual[gx, gy];
                     if (celda == 0) continue;
 
-                    // El mapa NO se desbloquea de golpe: se revela estrictamente conforme el jugador avanza
                     if (celda == 1) // Suelo
                     {
                         bool explorada = (vision == null) || vision.EstaCeldaExplorada(gx, gy);
@@ -239,7 +247,7 @@ namespace SoulKnight
                             _pixeles[rowOffset + px] = enSalaCombate ? colSueloCombate : colSueloNormal;
                         }
                     }
-                    else if (celda == 2) // Muro: Solo visible si el muro o suelo colindante fue explorado
+                    else if (celda == 2) // Muro
                     {
                         bool muroRevelado = false;
                         if (vision == null)
@@ -275,7 +283,7 @@ namespace SoulKnight
                 }
             }
 
-            // Pasadizo / Hoyo final (aparece al haber explorado su posición)
+            // Pasadizo / Hoyo final
             if (PasajeSiguienteNivel.Instancia != null)
             {
                 Vector2 posHoyo = PasajeSiguienteNivel.Instancia.transform.position;
@@ -285,7 +293,7 @@ namespace SoulKnight
                 }
             }
 
-            // Puestos de Tienda (aparecen en color dorado tras explorar la sala)
+            // Puestos de Tienda
             for (int i = 0; i < PuestitoTienda.Todos.Count; i++)
             {
                 var tienda = PuestitoTienda.Todos[i];
@@ -297,7 +305,19 @@ namespace SoulKnight
                 }
             }
 
-            // Pociones / Mejoras en el suelo (visibles si el punto ha sido explorado)
+            // Cofres de oro
+            for (int i = 0; i < CofreOro.Todos.Count; i++)
+            {
+                var cofre = CofreOro.Todos[i];
+                if (cofre == null || !cofre.gameObject.activeInHierarchy || cofre.EstaAbiertoLocal) continue;
+                Vector2 posC = cofre.transform.position;
+                if (vision == null || vision.EstaPuntoExplorado(posC))
+                {
+                    DibujarPuntoMundo(posC, centroMundo, new Color32(255, 175, 40, 255), 3);
+                }
+            }
+
+            // Pociones / Mejoras en el suelo
             for (int i = 0; i < ItemMejoraRun.Todos.Count; i++)
             {
                 var item = ItemMejoraRun.Todos[i];
@@ -306,29 +326,26 @@ namespace SoulKnight
                 if (vision == null || vision.EstaPuntoExplorado(posItem))
                 {
                     Color32 col = (item.CostoOro != null && item.CostoOro.Value > 0)
-                        ? new Color32(255, 215, 0, 255)   // Dorado para tienda
-                        : new Color32(80, 255, 220, 255);  // Cian para mejora libre
+                        ? new Color32(255, 215, 0, 255)
+                        : new Color32(80, 255, 220, 255);
                     DibujarPuntoMundo(posItem, centroMundo, col, 2);
                 }
             }
 
-            // Enemigos (SOLO visibles si están dentro de nuestro radio de visión activa en el momento)
+            // Enemigos
             for (int i = 0; i < EnemigoBase.Todos.Count; i++)
             {
                 var e = EnemigoBase.Todos[i];
                 if (e == null || !e.gameObject.activeInHierarchy) continue;
                 Vector2 posE = e.transform.position;
 
-                if (vision == null || vision.TieneVisionEnPunto(posE))
-                {
-                    bool esJefe = (e is JefeBase);
-                    Color32 colEnem = esJefe ? new Color32(255, 50, 220, 255) : new Color32(255, 55, 55, 255);
-                    int radio = esJefe ? 3 : 2;
-                    DibujarPuntoMundo(posE, centroMundo, colEnem, radio);
-                }
+                bool esJefe = (e is JefeBase);
+                Color32 colEnem = esJefe ? new Color32(255, 50, 220, 255) : new Color32(255, 55, 55, 255);
+                int radio = esJefe ? 3 : 2;
+                DibujarPuntoMundo(posE, centroMundo, colEnem, radio);
             }
 
-            // Jugadores Aliados (si hay otros jugadores en red)
+            // Jugadores Aliados
             for (int i = 0; i < Personaje.Todos.Count; i++)
             {
                 var pj = Personaje.Todos[i];
@@ -336,7 +353,7 @@ namespace SoulKnight
                 DibujarPuntoMundo(pj.transform.position, centroMundo, new Color32(70, 200, 255, 255), 2);
             }
 
-            // Jugador Local: Punto verde brillante en el centro del minimapa
+            // Jugador Local
             if (pjLocal != null)
             {
                 DibujarPuntoMundo(pjLocal.transform.position, centroMundo, new Color32(60, 255, 100, 255), 2);
@@ -344,6 +361,183 @@ namespace SoulKnight
 
             _texMapa.SetPixels32(_pixeles);
             _texMapa.Apply(false);
+        }
+
+        /// <summary>
+        /// Renderiza TODA la mazmorra completa y ajustada para ver el mapa entero al abrirlo con [M].
+        /// Muestra las salas y pasillos descubiertos sin recortar el escenario.
+        /// </summary>
+        public void RenderizarMapaCompleto()
+        {
+            var gen = GeneradorMazmorra.Instancia;
+            var vision = SistemaVision.Instancia;
+            if (_texMapaCompleto == null || _pixelesMapaCompleto == null || _texMapaCompleto.width != COMPLETO_W || _texMapaCompleto.height != COMPLETO_H)
+            {
+                if (_texMapaCompleto != null) Destroy(_texMapaCompleto);
+                _texMapaCompleto = new Texture2D(COMPLETO_W, COMPLETO_H, TextureFormat.RGBA32, false);
+                _texMapaCompleto.filterMode = FilterMode.Point;
+                _texMapaCompleto.wrapMode = TextureWrapMode.Clamp;
+                _pixelesMapaCompleto = new Color32[COMPLETO_W * COMPLETO_H];
+            }
+
+            Color32 colFondo = new Color32(8, 10, 16, 245);
+            for (int i = 0; i < _pixelesMapaCompleto.Length; i++)
+            {
+                _pixelesMapaCompleto[i] = colFondo;
+            }
+
+            if (gen == null || gen.gridActual == null)
+            {
+                _texMapaCompleto.SetPixels32(_pixelesMapaCompleto);
+                _texMapaCompleto.Apply(false);
+                return;
+            }
+
+            int minX = gen.gridMinX;
+            int maxX = gen.gridMaxX;
+            int minY = gen.gridMinY;
+            int maxY = gen.gridMaxY;
+            int gridW = gen.gridActual.GetLength(0);
+            int gridH = gen.gridActual.GetLength(1);
+
+            float spanX = Mathf.Max(12f, (maxX - minX + 6));
+            float spanY = Mathf.Max(12f, (maxY - minY + 6));
+            Vector2 centroDungeon = new Vector2((minX + maxX) * 0.5f, (minY + maxY) * 0.5f);
+
+            // Escala uniforme para que TODO el piso de la mazmorra entre completo sin recortes
+            float escalaCompleta = Mathf.Min((COMPLETO_W - 20) / spanX, (COMPLETO_H - 20) / spanY);
+            float cPX = COMPLETO_W * 0.5f;
+            float cPY = COMPLETO_H * 0.5f;
+
+            Color32 colSueloNormal = new Color32(84, 114, 150, 255);
+            Color32 colSueloCombate = new Color32(145, 55, 55, 255);
+            Color32 colMuroNormal = new Color32(195, 215, 240, 255);
+
+            ControladorSala salaCerrada = (vision != null) ? vision.ObtenerSalaBloqueadaActiva() : null;
+            bool haySalaCerrada = (salaCerrada != null);
+            Rect rectSalaCerrada = haySalaCerrada ? salaCerrada.limitesSala : default;
+
+            int[] dx8 = { -1, 0, 1, -1, 1, -1, 0, 1 };
+            int[] dy8 = { -1, -1, -1, 0, 0, 1, 1, 1 };
+
+            for (int py = 0; py < COMPLETO_H; py++)
+            {
+                float wy = centroDungeon.y + (py - cPY) / escalaCompleta;
+                int gy = Mathf.RoundToInt(wy) - minY;
+                if (gy < 0 || gy >= gridH) continue;
+
+                int rowOffset = py * COMPLETO_W;
+
+                for (int px = 0; px < COMPLETO_W; px++)
+                {
+                    float wx = centroDungeon.x + (px - cPX) / escalaCompleta;
+                    int gx = Mathf.RoundToInt(wx) - minX;
+                    if (gx < 0 || gx >= gridW) continue;
+
+                    byte celda = gen.gridActual[gx, gy];
+                    if (celda == 0) continue;
+
+                    if (celda == 1) // Suelo
+                    {
+                        bool explorada = (vision == null) || vision.EstaCeldaExplorada(gx, gy);
+                        if (explorada)
+                        {
+                            Vector2 posMundo = new Vector2(wx, wy);
+                            bool enSalaCombate = haySalaCerrada && rectSalaCerrada.Contains(posMundo);
+                            _pixelesMapaCompleto[rowOffset + px] = enSalaCombate ? colSueloCombate : colSueloNormal;
+                        }
+                    }
+                    else if (celda == 2) // Muro
+                    {
+                        bool muroRevelado = false;
+                        if (vision == null)
+                        {
+                            muroRevelado = true;
+                        }
+                        else if (vision.EstaCeldaExplorada(gx, gy))
+                        {
+                            muroRevelado = true;
+                        }
+                        else
+                        {
+                            for (int k = 0; k < 8; k++)
+                            {
+                                int nx = gx + dx8[k];
+                                int ny = gy + dy8[k];
+                                if (nx >= 0 && nx < gridW && ny >= 0 && ny < gridH)
+                                {
+                                    if (gen.gridActual[nx, ny] == 1 && vision.EstaCeldaExplorada(nx, ny))
+                                    {
+                                        muroRevelado = true;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+
+                        if (muroRevelado)
+                        {
+                            _pixelesMapaCompleto[rowOffset + px] = colMuroNormal;
+                        }
+                    }
+                }
+            }
+
+            // Puestos de Tienda en el mapa completo
+            for (int i = 0; i < PuestitoTienda.Todos.Count; i++)
+            {
+                var tienda = PuestitoTienda.Todos[i];
+                if (tienda == null || !tienda.gameObject.activeInHierarchy) continue;
+                Vector2 posT = tienda.transform.position;
+                if (vision == null || vision.EstaPuntoExplorado(posT))
+                {
+                    DibujarPuntoMapaCompleto(posT, centroDungeon, escalaCompleta, new Color32(255, 215, 0, 255), 4);
+                }
+            }
+
+            // Cofres de Oro
+            for (int i = 0; i < CofreOro.Todos.Count; i++)
+            {
+                var cofre = CofreOro.Todos[i];
+                if (cofre == null || !cofre.gameObject.activeInHierarchy || cofre.EstaAbiertoLocal) continue;
+                Vector2 posC = cofre.transform.position;
+                if (vision == null || vision.EstaPuntoExplorado(posC))
+                {
+                    DibujarPuntoMapaCompleto(posC, centroDungeon, escalaCompleta, new Color32(255, 175, 40, 255), 4);
+                }
+            }
+
+            // Pasaje Siguiente Nivel / Hoyo
+            if (PasajeSiguienteNivel.Instancia != null)
+            {
+                Vector2 posHoyo = PasajeSiguienteNivel.Instancia.transform.position;
+                if (vision == null || vision.EstaPuntoExplorado(posHoyo))
+                {
+                    DibujarPuntoMapaCompleto(posHoyo, centroDungeon, escalaCompleta, new Color32(255, 220, 80, 255), 4);
+                }
+            }
+
+            // Jugadores Aliados en el mapa completo
+            for (int i = 0; i < Personaje.Todos.Count; i++)
+            {
+                var pj = Personaje.Todos[i];
+                if (pj == null || !pj.gameObject.activeInHierarchy || pj.EstaMuerto.Value || pj.EsControlLocal) continue;
+                DibujarPuntoMapaCompleto(pj.transform.position, centroDungeon, escalaCompleta, new Color32(70, 200, 255, 255), 3);
+            }
+
+            // Jugador Local en el mapa completo
+            for (int i = 0; i < Personaje.Todos.Count; i++)
+            {
+                var pj = Personaje.Todos[i];
+                if (pj != null && pj.gameObject.activeInHierarchy && pj.EsControlLocal && !pj.EstaMuerto.Value)
+                {
+                    DibujarPuntoMapaCompleto(pj.transform.position, centroDungeon, escalaCompleta, new Color32(60, 255, 100, 255), 4);
+                    break;
+                }
+            }
+
+            _texMapaCompleto.SetPixels32(_pixelesMapaCompleto);
+            _texMapaCompleto.Apply(false);
         }
 
         private void DibujarPuntoMundo(Vector2 posMundo, Vector2 centroMundo, Color32 color, int radio)
@@ -361,9 +555,33 @@ namespace SoulKnight
                 int rowOffset = py * MAP_W;
                 for (int dx = -radio; dx <= radio; dx++)
                 {
+                    if (dx * dx + dy * dy > radio * radio) continue;
                     int px = cx + dx;
                     if (px < 0 || px >= MAP_W) continue;
                     _pixeles[rowOffset + px] = color;
+                }
+            }
+        }
+
+        private void DibujarPuntoMapaCompleto(Vector2 posMundo, Vector2 centroMundo, float escala, Color32 color, int radio)
+        {
+            float cPX = COMPLETO_W * 0.5f;
+            float cPY = COMPLETO_H * 0.5f;
+
+            int cx = Mathf.RoundToInt(cPX + (posMundo.x - centroMundo.x) * escala);
+            int cy = Mathf.RoundToInt(cPY + (posMundo.y - centroMundo.y) * escala);
+
+            for (int dy = -radio; dy <= radio; dy++)
+            {
+                int py = cy + dy;
+                if (py < 0 || py >= COMPLETO_H) continue;
+                int rowOffset = py * COMPLETO_W;
+                for (int dx = -radio; dx <= radio; dx++)
+                {
+                    if (dx * dx + dy * dy > radio * radio) continue;
+                    int px = cx + dx;
+                    if (px < 0 || px >= COMPLETO_W) continue;
+                    _pixelesMapaCompleto[rowOffset + px] = color;
                 }
             }
         }

@@ -4,42 +4,23 @@ using UnityEngine;
 namespace SoulKnight
 {
     /// <summary>
-    /// Sistema de Oscuridad Absoluta con Círculo de Visión del Personaje:
-    /// - Se asegura en Start/LateUpdate de estar siempre activo.
-    /// - SOLO puedes ver lo que está dentro del círculo de visión de tu personaje (y tus aliados)
-    ///   y un pequeño radio alrededor de las antorchas encendidas.
-    /// - Todo lo que esté fuera de ese círculo o detrás de una pared/puerta cerrada es 100% NEGRO.
+    /// Gestor de visibilidad y descubrimiento del mapa:
+    /// - Sistema de sombras dinámicas completamente desactivado (sin oscurecimiento de cámara ni niebla pesada).
+    /// - Mantiene el registro de celdas exploradas por el jugador para el Minimapa y Mapa Grande.
+    /// - Las salas y pasillos se descubren estrictamente cuando el jugador accede o camina por ellos.
     /// </summary>
     public class SistemaVision : MonoBehaviour
     {
         public static SistemaVision Instancia { get; private set; }
 
-        [Header("Configuración de Luz")]
-        public float radioLuzJugador = 7.4f;      // Círculo de visión más amplio alrededor del personaje
-        public float radioLuzAntorcha = 10.8f;    // Radio amplio y potente de cada antorcha (sin atravesar paredes)
-
-        private SpriteRenderer _overlayNiebla;
-        private Texture2D _texNiebla;
-        private Color32[] _pixelesNiebla;
-
-        private const int TEX_W = 120;
-        private const int TEX_H = 75;
-        private float _timerNiebla = 0f;
-        private const float INTERVALO_NIEBLA = 0.04f; // 25 Hz para máxima fluidez y mínimo uso de CPU
-
-        private struct FuenteAntorcha
-        {
-            public Vector2 pos;
-            public float radioEfectivo;
-        }
-
-        private readonly List<Vector2> _fuentesJugadores = new List<Vector2>(8);
-        private readonly List<FuenteAntorcha> _fuentesAntorchas = new List<FuenteAntorcha>(24);
-        private readonly List<Rect> _salasDescubiertasEnCamara = new List<Rect>(16);
-        private readonly List<Rect> _pasillosEnCamara = new List<Rect>(32);
+        [Header("Configuración de Visión y Exploración")]
+        public float radioLuzJugador = 7.4f;
+        public float radioLuzAntorcha = 10.8f;
 
         private byte[,] _gridReferencia;
         private bool[,] _celdasExploradas;
+        private float _timerExploracion = 0f;
+        private const float INTERVALO_EXPLORACION = 0.05f;
 
         public bool EstaCeldaExplorada(int gx, int gy)
         {
@@ -72,6 +53,7 @@ namespace SoulKnight
                 _celdasExploradas = new bool[gridW, gridH];
             }
 
+            // 1. Revelar celdas de las salas que han sido descubiertas por el jugador
             for (int i = 0; i < gen.salasGeneradas.Count; i++)
             {
                 var s = gen.salasGeneradas[i];
@@ -93,38 +75,14 @@ namespace SoulKnight
                 }
             }
 
-            // Marcar celdas de pasillos como exploradas para visibilidad sin sombras
-            if (gen != null && gen.rectPasillos != null)
-            {
-                for (int p = 0; p < gen.rectPasillos.Count; p++)
-                {
-                    Rect r = gen.rectPasillos[p];
-                    int pxMin = Mathf.Max(0, Mathf.FloorToInt(r.xMin) - 1 - gen.gridMinX);
-                    int pxMax = Mathf.Min(gridW - 1, Mathf.CeilToInt(r.xMax) + 1 - gen.gridMinX);
-                    int pyMin = Mathf.Max(0, Mathf.FloorToInt(r.yMin) - 1 - gen.gridMinY);
-                    int pyMax = Mathf.Min(gridH - 1, Mathf.CeilToInt(r.yMax) + 1 - gen.gridMinY);
-                    for (int gx = pxMin; gx <= pxMax; gx++)
-                    {
-                        for (int gy = pyMin; gy <= pyMax; gy++)
-                        {
-                            if (gx >= 0 && gx < gridW && gy >= 0 && gy < gridH)
-                            {
-                                _celdasExploradas[gx, gy] = true;
-                            }
-                        }
-                    }
-                }
-            }
-
-            // Marcar celdas del entorno inmediato de los personajes presentes
+            // 2. Revelar celdas por donde caminan los personajes vivos (revelando pasillos paso a paso)
             int rInt = Mathf.CeilToInt(radioLuzJugador) + 1;
             float rExpSq = (radioLuzJugador + 0.8f) * (radioLuzJugador + 0.8f);
-            ControladorSala salaCerrada = ObtenerSalaBloqueadaActiva();
 
             for (int j = 0; j < Personaje.Todos.Count; j++)
             {
                 var pj = Personaje.Todos[j];
-                if (pj == null || !pj.gameObject.activeInHierarchy) continue;
+                if (pj == null || !pj.gameObject.activeInHierarchy || pj.EstaMuerto.Value) continue;
                 Vector2 orig = pj.transform.position;
                 int cx = Mathf.RoundToInt(orig.x) - gen.gridMinX;
                 int cy = Mathf.RoundToInt(orig.y) - gen.gridMinY;
@@ -144,10 +102,7 @@ namespace SoulKnight
                         Vector2 posCelda = new Vector2(gx + gen.gridMinX, gy + gen.gridMinY);
                         if ((orig - posCelda).sqrMagnitude <= rExpSq)
                         {
-                            if (HayLineaDeVisionSinAtravesarPared(orig, posCelda, gen, salaCerrada))
-                            {
-                                _celdasExploradas[gx, gy] = true;
-                            }
+                            _celdasExploradas[gx, gy] = true;
                         }
                     }
                 }
@@ -170,42 +125,26 @@ namespace SoulKnight
         void Awake()
         {
             Instancia = this;
-            InicializarOverlayNiebla();
+            DestruirOverlayOscuridadSiExiste();
         }
 
         void OnDestroy()
         {
             if (Instancia == this) Instancia = null;
-            if (_texNiebla != null) Destroy(_texNiebla);
         }
 
-        private void InicializarOverlayNiebla()
+        private void DestruirOverlayOscuridadSiExiste()
         {
-            if (_overlayNiebla != null) return;
-
-            _texNiebla = new Texture2D(TEX_W, TEX_H, TextureFormat.RGBA32, false);
-            _texNiebla.filterMode = FilterMode.Bilinear;
-            _texNiebla.wrapMode = TextureWrapMode.Clamp;
-            _pixelesNiebla = new Color32[TEX_W * TEX_H];
-
-            // Inicializar completamente en negro absoluto
-            for (int i = 0; i < _pixelesNiebla.Length; i++)
+            var huerfanos = GameObject.FindObjectsOfType<Transform>();
+            for (int i = 0; i < huerfanos.Length; i++)
             {
-                _pixelesNiebla[i] = new Color32(0, 0, 0, 255);
+                if (huerfanos[i] != null && huerfanos[i].name == "OverlayOscuridadAbsoluta")
+                {
+                    Destroy(huerfanos[i].gameObject);
+                }
             }
-            _texNiebla.SetPixels32(_pixelesNiebla);
-            _texNiebla.Apply(false);
-
-            var go = new GameObject("OverlayOscuridadAbsoluta");
-            go.transform.SetParent(transform);
-            _overlayNiebla = go.AddComponent<SpriteRenderer>();
-            _overlayNiebla.sprite = Sprite.Create(_texNiebla, new Rect(0, 0, TEX_W, TEX_H), new Vector2(0.5f, 0.5f), 10f);
-            _overlayNiebla.sortingOrder = 1; // Cubre el suelo (0), dejando visibles los bloques de borde (2..4) y pociones (6)
         }
 
-        /// <summary>
-        /// Verifica que no haya paredes ni puertas cerradas entre el foco de luz y el punto.
-        /// </summary>
         public bool HayLineaDeVisionSinAtravesarPared(Vector2 origen, Vector2 destino, GeneradorMazmorra gen, ControladorSala salaCerrada)
         {
             if (gen == null || gen.gridActual == null) return true;
@@ -229,7 +168,6 @@ namespace SoulKnight
             int pasos = Mathf.CeilToInt(dist / 0.5f);
             Vector2 pasoVec = diff / pasos;
 
-            // Recorremos hasta pasos - 1 para iluminar la cara interior de la pared, pero bloquear todo detrás de ella
             for (int i = 1; i < pasos; i++)
             {
                 Vector2 p = origen + pasoVec * i;
@@ -260,287 +198,29 @@ namespace SoulKnight
         }
 
         /// <summary>
-        /// Devuelve true si el punto es visible (dentro de una sala descubierta o en el círculo de luz del jugador/antorchas en pasillos).
+        /// Siempre true: las sombras dinámicas han sido completamente removidas.
         /// </summary>
         public bool TieneVisionEnPunto(Vector2 pos)
         {
-            var gen = GeneradorMazmorra.Instancia;
-            ControladorSala salaCerrada = ObtenerSalaBloqueadaActiva();
-
-            // 1. Visión total del 100% en cualquier sala que haya sido descubierta/ingresada
-            if (gen != null && gen.salasGeneradas != null)
-            {
-                for (int i = 0; i < gen.salasGeneradas.Count; i++)
-                {
-                    var s = gen.salasGeneradas[i];
-                    if (s == null || !s.descubierta) continue;
-                    if (salaCerrada != null && salaCerrada != s) continue;
-                    if (s.limitesSala.Contains(pos))
-                    {
-                        return true;
-                    }
-                }
-            }
-
-            // 1.5. Visión total en pasillos (sin sombras en pasillos)
-            if (gen != null && gen.rectPasillos != null)
-            {
-                for (int p = 0; p < gen.rectPasillos.Count; p++)
-                {
-                    if (gen.rectPasillos[p].Contains(pos))
-                    {
-                        return true;
-                    }
-                }
-            }
-
-            // 2. En pasillos: visión circular del jugador (no atraviesa paredes)
-            float rJugSq = radioLuzJugador * radioLuzJugador;
-            for (int i = 0; i < Personaje.Todos.Count; i++)
-            {
-                var pj = Personaje.Todos[i];
-                if (pj == null || !pj.gameObject.activeInHierarchy) continue;
-                Vector2 posPj = pj.transform.position;
-                if ((posPj - pos).sqrMagnitude <= rJugSq)
-                {
-                    if (HayLineaDeVisionSinAtravesarPared(posPj, pos, gen, salaCerrada))
-                    {
-                        return true;
-                    }
-                }
-            }
-
-            // 3. Antorchas
-            if (gen != null && gen.salasGeneradas != null)
-            {
-                float rAntSq = radioLuzAntorcha * radioLuzAntorcha;
-                for (int i = 0; i < gen.salasGeneradas.Count; i++)
-                {
-                    var s = gen.salasGeneradas[i];
-                    if (s == null || !s.descubierta) continue;
-                    if (salaCerrada != null && salaCerrada != s) continue;
-
-                    for (int a = 0; a < s.posicionesAntorchas.Count; a++)
-                    {
-                        Vector2 posAnt = s.posicionesAntorchas[a];
-                        if ((posAnt - pos).sqrMagnitude <= rAntSq)
-                        {
-                            if (HayLineaDeVisionSinAtravesarPared(posAnt, pos, gen, salaCerrada))
-                            {
-                                return true;
-                            }
-                        }
-                    }
-                }
-            }
-
-            return false;
+            return true;
         }
 
         void LateUpdate()
         {
-            InicializarOverlayNiebla();
-
-            var cam = CamaraUtil.Principal;
-            if (cam == null || _overlayNiebla == null) return;
-
-            var gen = GeneradorMazmorra.Instancia;
-
-            // 1. Cubrir el 100% de la cámara con margen de sobra (ajuste de transform suave cada frame)
-            float altoCam = cam.orthographicSize * 2f + 2f;
-            float anchoCam = altoCam * cam.aspect + 2f;
-            Vector3 posCam = cam.transform.position;
-            _overlayNiebla.transform.position = new Vector3(posCam.x, posCam.y, 0f);
-
-            float spriteW = TEX_W / 10f;
-            float spriteH = TEX_H / 10f;
-            _overlayNiebla.transform.localScale = new Vector3(anchoCam / spriteW, altoCam / spriteH, 1f);
-
-            // Optimización de rendimiento: refresco de textura a 25 Hz para evitar recalcular 9000 píxeles cada frame
-            _timerNiebla += Time.deltaTime;
-            if (_timerNiebla < INTERVALO_NIEBLA)
+            _timerExploracion += Time.deltaTime;
+            if (_timerExploracion >= INTERVALO_EXPLORACION)
             {
-                return;
-            }
-            _timerNiebla = 0f;
+                _timerExploracion = 0f;
+                ForzarActualizacionExploracion();
 
-            // 2. Recolectar posición de los jugadores
-            _fuentesJugadores.Clear();
-            for (int i = 0; i < Personaje.Todos.Count; i++)
-            {
-                var pj = Personaje.Todos[i];
-                if (pj != null && pj.gameObject.activeInHierarchy)
+                // Asegurar que todos los enemigos permanezcan siempre visibles sin niebla artificial
+                for (int i = 0; i < EnemigoBase.Todos.Count; i++)
                 {
-                    _fuentesJugadores.Add(pj.transform.position);
-                }
-            }
-
-            // 3. Recolectar salas descubiertas y antorchas encendidas cercanas a la cámara
-            _salasDescubiertasEnCamara.Clear();
-            _pasillosEnCamara.Clear();
-            _fuentesAntorchas.Clear();
-            ControladorSala salaCerrada = ObtenerSalaBloqueadaActiva();
-            float xMinCam = posCam.x - anchoCam * 0.5f;
-            float yMinCam = posCam.y - altoCam * 0.5f;
-            Rect rectCam = new Rect(xMinCam, yMinCam, anchoCam, altoCam);
-            Rect rectCamLuz = new Rect(
-                xMinCam - radioLuzAntorcha - 1f,
-                yMinCam - radioLuzAntorcha - 1f,
-                anchoCam + (radioLuzAntorcha + 1f) * 2f,
-                altoCam + (radioLuzAntorcha + 1f) * 2f
-            );
-
-            ForzarActualizacionExploracion();
-
-            if (gen != null && gen.gridActual != null)
-            {
-                for (int i = 0; i < gen.salasGeneradas.Count; i++)
-                {
-                    var s = gen.salasGeneradas[i];
-                    if (s == null || !s.descubierta) continue;
-
-                    // Si hay una sala en combate bloqueada, solo iluminar la sala del encuentro
-                    if (salaCerrada != null && salaCerrada != s) continue;
-
-                    // Iluminar toda la sala por completo (con margen para cubrir la cara de las paredes internas)
-                    Rect rSala = new Rect(
-                        s.limitesSala.xMin - 0.45f,
-                        s.limitesSala.yMin - 0.45f,
-                        s.limitesSala.width + 0.90f,
-                        s.limitesSala.height + 0.90f
-                    );
-                    if (rSala.Overlaps(rectCamLuz))
+                    var e = EnemigoBase.Todos[i];
+                    if (e != null)
                     {
-                        _salasDescubiertasEnCamara.Add(rSala);
+                        e.EstablecerVisibilidad(true);
                     }
-
-                    for (int a = 0; a < s.posicionesAntorchas.Count; a++)
-                    {
-                        Vector2 posAnt = s.posicionesAntorchas[a];
-                        if (rectCamLuz.Contains(posAnt))
-                        {
-                            float pulso = 0.97f + 0.03f * Mathf.Sin(Time.time * 9f + a * 1.7f + i);
-                            _fuentesAntorchas.Add(new FuenteAntorcha
-                            {
-                                pos = posAnt,
-                                radioEfectivo = radioLuzAntorcha * pulso
-                            });
-                        }
-                    }
-                }
-            }
-
-            // Recolectar pasillos en cámara para iluminar sin sombras
-            if (gen != null && gen.rectPasillos != null)
-            {
-                for (int p = 0; p < gen.rectPasillos.Count; p++)
-                {
-                    Rect r = gen.rectPasillos[p];
-                    Rect rExp = new Rect(r.xMin - 0.45f, r.yMin - 0.45f, r.width + 0.90f, r.height + 0.90f);
-                    if (rExp.Overlaps(rectCam))
-                    {
-                        _pasillosEnCamara.Add(rExp);
-                    }
-                }
-            }
-
-            // 4. Pintar la máscara de niebla/oscuridad
-            float rJug = radioLuzJugador;
-            float rJugInterno = rJug * 0.82f;
-            float rJugSq = rJug * rJug;
-
-            for (int py = 0; py < TEX_H; py++)
-            {
-                float wy = yMinCam + ((py + 0.5f) / TEX_H) * altoCam;
-                int rowOffset = py * TEX_W;
-
-                for (int px = 0; px < TEX_W; px++)
-                {
-                    float wx = xMinCam + ((px + 0.5f) / TEX_W) * anchoCam;
-                    Vector2 pt = new Vector2(wx, wy);
-
-                    float luzMax = 0f;
-
-                    // 1. Si el punto pertenece a una sala descubierta: ILUMINAR EL 100% DE LA SALA COMPLETA
-                    for (int s = 0; s < _salasDescubiertasEnCamara.Count; s++)
-                    {
-                        if (_salasDescubiertasEnCamara[s].Contains(pt))
-                        {
-                            luzMax = 1f;
-                            break;
-                        }
-                    }
-
-                    // 1.5. Si el punto pertenece a un pasillo: ILUMINAR AL 100% (sin sombras en pasillos)
-                    if (luzMax < 1f && salaCerrada == null)
-                    {
-                        for (int p = 0; p < _pasillosEnCamara.Count; p++)
-                        {
-                            if (_pasillosEnCamara[p].Contains(pt))
-                            {
-                                luzMax = 1f;
-                                break;
-                            }
-                        }
-                    }
-
-                    // 2. Si no está en una sala descubierta (pasillos de conexión): visión circular del jugador
-                    if (luzMax < 1f)
-                    {
-                        for (int j = 0; j < _fuentesJugadores.Count; j++)
-                        {
-                            Vector2 orig = _fuentesJugadores[j];
-                            float dSq = (orig - pt).sqrMagnitude;
-                            if (dSq <= rJugSq)
-                            {
-                                if (HayLineaDeVisionSinAtravesarPared(orig, pt, gen, salaCerrada))
-                                {
-                                    float d = Mathf.Sqrt(dSq);
-                                    float l = (d <= rJugInterno) ? 1f : 1f - ((d - rJugInterno) / (rJug - rJugInterno));
-                                    if (l > luzMax) luzMax = l;
-                                }
-                            }
-                        }
-                    }
-
-                    // 3. Antorchas en pasillos o entradas
-                    if (luzMax < 1f)
-                    {
-                        for (int a = 0; a < _fuentesAntorchas.Count; a++)
-                        {
-                            FuenteAntorcha ant = _fuentesAntorchas[a];
-                            float rAnt = ant.radioEfectivo;
-                            float rAntSq = rAnt * rAnt;
-                            float dSq = (ant.pos - pt).sqrMagnitude;
-                            if (dSq <= rAntSq)
-                            {
-                                if (HayLineaDeVisionSinAtravesarPared(ant.pos, pt, gen, salaCerrada))
-                                {
-                                    float rAntInterno = rAnt * 0.78f;
-                                    float d = Mathf.Sqrt(dSq);
-                                    float l = (d <= rAntInterno) ? 1f : 1f - ((d - rAntInterno) / (rAnt - rAntInterno));
-                                    if (l > luzMax) luzMax = l;
-                                }
-                            }
-                        }
-                    }
-
-                    // Fuera del área iluminada: 100% NEGRO ABSOLUTO (alpha = 255)
-                    byte alpha = (byte)Mathf.RoundToInt(Mathf.Lerp(255f, 0f, Mathf.Clamp01(luzMax)));
-                    _pixelesNiebla[rowOffset + px] = new Color32(0, 0, 0, alpha);
-                }
-            }
-
-            _texNiebla.SetPixels32(_pixelesNiebla);
-            _texNiebla.Apply(false);
-
-            // 5. Ocultar enemigos que estén fuera del área iluminada
-            for (int i = 0; i < EnemigoBase.Todos.Count; i++)
-            {
-                var e = EnemigoBase.Todos[i];
-                if (e != null)
-                {
-                    e.EstablecerVisibilidad(TieneVisionEnPunto(e.transform.position));
                 }
             }
         }

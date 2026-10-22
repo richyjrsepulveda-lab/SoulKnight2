@@ -37,31 +37,31 @@ namespace SoulKnight
                 case TipoBioma.Piedra:
                     tipoJefe = TipoJefe.ColosoPiedra;
                     nombreJefe = "El Coloso de Piedra";
-                    vidaMax = Mathf.RoundToInt(650 * multDificultad);
+                    vidaMax = Mathf.RoundToInt(1400 * multDificultad);
                     dano = Mathf.RoundToInt(18 * multDificultad);
                     break;
                 case TipoBioma.Hielo:
                     tipoJefe = TipoJefe.YetiVentiscas;
                     nombreJefe = "Yeti de las Ventiscas";
-                    vidaMax = Mathf.RoundToInt(600 * multDificultad);
+                    vidaMax = Mathf.RoundToInt(1300 * multDificultad);
                     dano = Mathf.RoundToInt(16 * multDificultad);
                     break;
                 case TipoBioma.Fuego:
                     tipoJefe = TipoJefe.SenorMagma;
                     nombreJefe = "Señor del Magma";
-                    vidaMax = Mathf.RoundToInt(620 * multDificultad);
+                    vidaMax = Mathf.RoundToInt(1350 * multDificultad);
                     dano = Mathf.RoundToInt(19 * multDificultad);
                     break;
                 case TipoBioma.Planta:
                     tipoJefe = TipoJefe.ReinaEspora;
                     nombreJefe = "La Reina Espora";
-                    vidaMax = Mathf.RoundToInt(580 * multDificultad);
+                    vidaMax = Mathf.RoundToInt(1250 * multDificultad);
                     dano = Mathf.RoundToInt(15 * multDificultad);
                     break;
                 case TipoBioma.Arena:
                     tipoJefe = TipoJefe.FaraonEterno;
                     nombreJefe = "Faraón Eterno";
-                    vidaMax = Mathf.RoundToInt(640 * multDificultad);
+                    vidaMax = Mathf.RoundToInt(1380 * multDificultad);
                     dano = Mathf.RoundToInt(17 * multDificultad);
                     break;
             }
@@ -96,6 +96,16 @@ namespace SoulKnight
         [Header("Escalado por Jugadores")]
         public float multiplicadorVidaPorJugador = 0.75f; // +75% de vida por cada jugador adicional
         public float multiplicadorDanoPorJugador = 0.20f; // +20% de daño por cada jugador adicional
+
+        [Header("Resistencia del Jefe")]
+        [Range(0f, 0.9f)]
+        public float reduccionDano = 0.35f; // Mitigación del 35% de todo daño recibido
+
+        public override void RecibirDano(int cantidad, Color colorDano)
+        {
+            int danoMitigado = Mathf.Max(1, Mathf.RoundToInt(cantidad * (1.0f - reduccionDano)));
+            base.RecibirDano(danoMitigado, colorDano);
+        }
 
         [Header("Habilidades Especiales del Jefe")]
         public float tiempoEntreHabilidadesEspeciales = 5.0f;
@@ -257,56 +267,56 @@ namespace SoulKnight
             switch (tipoJefe)
             {
                 case TipoJefe.ColosoPiedra:
-                    if (vidaMax <= 0) vidaMax = 700;
+                    if (vidaMax <= 0) vidaMax = 1400;
                     velocidadBase = 3.0f;
                     if (dano <= 0) dano = 18;
                     tiempoEntreHabilidadesEspeciales = 3.3f;
                     tiempoEntreAtaques = 1.6f;
                     break;
                 case TipoJefe.YetiVentiscas:
-                    if (vidaMax <= 0) vidaMax = 640;
+                    if (vidaMax <= 0) vidaMax = 1300;
                     velocidadBase = 3.3f;
                     if (dano <= 0) dano = 16;
                     tiempoEntreHabilidadesEspeciales = 2.9f;
                     tiempoEntreAtaques = 1.4f;
                     break;
                 case TipoJefe.SenorMagma:
-                    if (vidaMax <= 0) vidaMax = 660;
+                    if (vidaMax <= 0) vidaMax = 1350;
                     velocidadBase = 3.2f;
                     if (dano <= 0) dano = 19;
                     tiempoEntreHabilidadesEspeciales = 2.8f;
                     tiempoEntreAtaques = 1.3f;
                     break;
                 case TipoJefe.ReinaEspora:
-                    if (vidaMax <= 0) vidaMax = 620;
+                    if (vidaMax <= 0) vidaMax = 1250;
                     velocidadBase = 3.4f;
                     if (dano <= 0) dano = 15;
                     tiempoEntreHabilidadesEspeciales = 2.9f;
                     tiempoEntreAtaques = 1.4f;
                     break;
                 case TipoJefe.FaraonEterno:
-                    if (vidaMax <= 0) vidaMax = 680;
+                    if (vidaMax <= 0) vidaMax = 1380;
                     velocidadBase = 3.2f;
                     if (dano <= 0) dano = 17;
                     tiempoEntreHabilidadesEspeciales = 3.0f;
                     tiempoEntreAtaques = 1.5f;
                     break;
                 case TipoJefe.SlimeRey:
-                    vidaMax = 850;
+                    vidaMax = 1650;
                     velocidadBase = 3.6f;
                     dano = 14;
                     tiempoEntreHabilidadesEspeciales = 3.0f;
                     tiempoEntreAtaques = 1.4f;
                     break;
                 case TipoJefe.GranBrujo:
-                    vidaMax = 950;
+                    vidaMax = 1800;
                     velocidadBase = 3.3f;
                     dano = 15;
                     tiempoEntreHabilidadesEspeciales = 2.7f;
                     tiempoEntreAtaques = 1.5f;
                     break;
                 case TipoJefe.GolemColosal:
-                    vidaMax = 1150;
+                    vidaMax = 2200;
                     velocidadBase = 3.0f;
                     dano = 18;
                     tiempoEntreHabilidadesEspeciales = 3.1f;
@@ -335,7 +345,7 @@ namespace SoulKnight
 
             base.Update();
             if (!IsServer || enAnimacionEntrada || EstaCongelado.Value) return;
-            if (GestorPartida.Instancia != null && (GestorPartida.Instancia.PartidaTerminada || GestorPartida.Instancia.ObtenerJugadoresVivos().Count == 0)) return;
+            if (GestorPartida.Instancia != null && GestorPartida.Instancia.CombateDetenido) return;
 
             Personaje objetivo = ObtenerJugadorMasCercano();
             if (objetivo == null) return;
@@ -399,7 +409,7 @@ namespace SoulKnight
 
             yield return new WaitForSeconds(0.42f);
             if (EstaCongelado.Value || VidaActual.Value <= 0) yield break;
-            if (GestorPartida.Instancia != null && (GestorPartida.Instancia.PartidaTerminada || GestorPartida.Instancia.ObtenerJugadoresVivos().Count == 0)) yield break;
+            if (GestorPartida.Instancia != null && GestorPartida.Instancia.CombateDetenido) yield break;
 
             // Salto moderado y segunda nova desfasada
             Personaje obj = ObtenerJugadorMasCercano();
@@ -433,7 +443,7 @@ namespace SoulKnight
             for (int r = 0; r < rafagas; r++)
             {
                 if (EstaCongelado.Value || VidaActual.Value <= 0) yield break;
-                if (GestorPartida.Instancia != null && (GestorPartida.Instancia.PartidaTerminada || GestorPartida.Instancia.ObtenerJugadoresVivos().Count == 0)) yield break;
+                if (GestorPartida.Instancia != null && GestorPartida.Instancia.CombateDetenido) yield break;
 
                 Personaje obj = ObtenerJugadorMasCercano();
                 if (obj != null)
@@ -464,7 +474,7 @@ namespace SoulKnight
 
             yield return new WaitForSeconds(0.32f);
             if (EstaCongelado.Value || VidaActual.Value <= 0) yield break;
-            if (GestorPartida.Instancia != null && (GestorPartida.Instancia.PartidaTerminada || GestorPartida.Instancia.ObtenerJugadoresVivos().Count == 0)) yield break;
+            if (GestorPartida.Instancia != null && GestorPartida.Instancia.CombateDetenido) yield break;
 
             float radioTerremoto = 5.4f + (_numJugadoresAlSpawn * 0.5f);
             int danoSismo = Mathf.Clamp(Mathf.RoundToInt(dano * 1.1f), 14, 24);
@@ -676,7 +686,7 @@ namespace SoulKnight
         protected void DispararProyectilJefe(Vector2 dir, int danoProj, bool quemadura = false, bool congelacion = false, bool ralentizacion = false, bool esporas = false)
         {
             if (prefabProyectilJefe == null) return;
-            if (GestorPartida.Instancia != null && (GestorPartida.Instancia.PartidaTerminada || GestorPartida.Instancia.ObtenerJugadoresVivos().Count == 0)) return;
+            if (GestorPartida.Instancia != null && GestorPartida.Instancia.CombateDetenido) return;
 
             Vector3 posOrigen = transform.position + (Vector3)(dir.normalized * 0.85f);
             GameObject p = Instantiate(prefabProyectilJefe, posOrigen, Quaternion.identity);

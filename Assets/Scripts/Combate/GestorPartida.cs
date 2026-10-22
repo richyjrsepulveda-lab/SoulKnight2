@@ -750,6 +750,25 @@ namespace SoulKnight
             }
         }
 
+        /// <summary>
+        /// Comprobación sin asignaciones de memoria (se llama cada frame por cada enemigo).
+        /// Usar en lugar de ObtenerJugadoresVivos().Count para evitar basura del GC.
+        /// </summary>
+        public bool HayJugadoresVivos()
+        {
+            for (int i = 0; i < _personajesActivos.Count; i++)
+            {
+                var p = _personajesActivos[i];
+                if (p != null && !p.EstaMuerto.Value && p.gameObject.activeInHierarchy) return true;
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// True si la partida terminó o ya no queda nadie vivo (la IA y el daño deben detenerse).
+        /// </summary>
+        public bool CombateDetenido => PartidaTerminada || !HayJugadoresVivos();
+
         public List<Personaje> ObtenerJugadoresVivos()
         {
             List<Personaje> vivos = new List<Personaje>();

@@ -91,7 +91,45 @@ namespace SoulKnight
                 const float gravedad = 18.0f;
                 _velVertical -= gravedad * Time.deltaTime;
                 _altura += _velVertical * Time.deltaTime;
-                _posBase += _velHorizontal * Time.deltaTime;
+
+                // Desplazamiento horizontal con detección de colisión contra muros para que NUNCA salgan del mapa
+                Vector2 pasoH = _velHorizontal * Time.deltaTime;
+                Vector2 nuevaPos = _posBase + pasoH;
+                bool chocoPared = false;
+
+                var gen = GeneradorMazmorra.Instancia;
+                if (gen != null && gen.gridActual != null)
+                {
+                    int gx = Mathf.RoundToInt(nuevaPos.x) - gen.gridMinX;
+                    int gy = Mathf.RoundToInt(nuevaPos.y) - gen.gridMinY;
+                    int gw = gen.gridActual.GetLength(0);
+                    int gh = gen.gridActual.GetLength(1);
+
+                    if (gx < 0 || gx >= gw || gy < 0 || gy >= gh || gen.gridActual[gx, gy] != 1)
+                    {
+                        chocoPared = true;
+                    }
+                }
+
+                if (!chocoPared && pasoH.sqrMagnitude > 0.0001f)
+                {
+                    RaycastHit2D hit = Physics2D.Raycast(_posBase, pasoH.normalized, pasoH.magnitude + 0.25f);
+                    if (hit.collider != null && !hit.collider.isTrigger &&
+                        (hit.collider.CompareTag("Pared") || hit.collider.name.IndexOf("muro", System.StringComparison.OrdinalIgnoreCase) >= 0 || hit.collider.name.IndexOf("columna", System.StringComparison.OrdinalIgnoreCase) >= 0))
+                    {
+                        chocoPared = true;
+                    }
+                }
+
+                if (chocoPared)
+                {
+                    // Rebotar en el muro invirtiendo el impulso con amortiguación
+                    _velHorizontal = -_velHorizontal * 0.40f;
+                }
+                else
+                {
+                    _posBase = nuevaPos;
+                }
 
                 if (_altura <= 0f)
                 {
@@ -162,6 +200,12 @@ namespace SoulKnight
             }
 
             // Actualizar transformaciones visuales desacopladas (moneda arriba, sombra en piso)
+            var genMaz = GeneradorMazmorra.Instancia;
+            if (genMaz != null && genMaz.gridActual != null)
+            {
+                _posBase.x = Mathf.Clamp(_posBase.x, genMaz.gridMinX + 0.5f, genMaz.gridMaxX - 0.5f);
+                _posBase.y = Mathf.Clamp(_posBase.y, genMaz.gridMinY + 0.5f, genMaz.gridMaxY - 0.5f);
+            }
             transform.position = (Vector3)_posBase;
             if (_visualMoneda != null)
             {
