@@ -129,12 +129,108 @@ namespace SoulKnight
             ActualizarPersonajesLobbyServer();
             GestorAudio.PlayBGM(TipoMusica.Lobby);
             AsegurarBotonOpcionesLobby();
+            AplicarEstiloLobbyUI();
 
             // Si este jugador aún no ha pulsado "Volver al Lobby" tras caer todo el equipo,
             // mantener su pantalla de fin de partida activa hasta que lo pulse individualmente
             if (SalaRed.MostrarFinPartidaPendiente)
             {
                 MostrarOverlayFinPartidaIndividual(SalaRed.UltimoResultadoVictoria);
+            }
+        }
+
+        private void AplicarEstiloLobbyUI()
+        {
+            if (botonIniciar != null)
+            {
+                EstiloUIUX.AplicarEstiloBoton(botonIniciar, TipoBotonUI.Verde, 20, "play", new Vector2(24f, 24f));
+            }
+            if (botonSalir != null)
+            {
+                EstiloUIUX.AplicarEstiloBoton(botonSalir, TipoBotonUI.Piedra, 18, "puerta", new Vector2(24f, 24f));
+            }
+            if (botonCopiarIP != null)
+            {
+                EstiloUIUX.AplicarEstiloBoton(botonCopiarIP, TipoBotonUI.Hielo, 15);
+            }
+            if (textoNombreSala != null)
+            {
+                textoNombreSala.font = FuenteUtil.ObtenerFuentePixelify();
+                textoNombreSala.fontStyle = FontStyle.Bold;
+                textoNombreSala.horizontalOverflow = HorizontalWrapMode.Overflow;
+                textoNombreSala.verticalOverflow = VerticalWrapMode.Overflow;
+                BordeTextoPixelArt.Aplicar(textoNombreSala, 6, new Vector2(0f, -3f));
+            }
+            if (textoInfoConexion != null)
+            {
+                textoInfoConexion.font = FuenteUtil.ObtenerFuentePixelify();
+                textoInfoConexion.horizontalOverflow = HorizontalWrapMode.Overflow;
+                textoInfoConexion.verticalOverflow = VerticalWrapMode.Overflow;
+                var p = textoInfoConexion.transform.parent;
+                if (p != null)
+                {
+                    var imgP = p.GetComponent<Image>();
+                    if (imgP != null)
+                    {
+                        imgP.sprite = EstiloUIUX.ObtenerSpriteTarjeta();
+                        imgP.type = Image.Type.Sliced;
+                        imgP.color = Color.white;
+                    }
+                }
+            }
+            if (textoEstado != null)
+            {
+                textoEstado.font = FuenteUtil.ObtenerFuentePixelify();
+                textoEstado.horizontalOverflow = HorizontalWrapMode.Overflow;
+                textoEstado.verticalOverflow = VerticalWrapMode.Overflow;
+            }
+
+            if (panelVistaCuarto != null)
+            {
+                var imgCuarto = panelVistaCuarto.GetComponent<Image>();
+                if (imgCuarto != null)
+                {
+                    imgCuarto.sprite = EstiloUIUX.ObtenerSpritePanel();
+                    imgCuarto.type = Image.Type.Sliced;
+                    imgCuarto.color = Color.white;
+                }
+                EstiloUIUX.CrearRemaches(panelVistaCuarto.transform, 18f);
+
+                if (textoTituloCuarto != null)
+                {
+                    textoTituloCuarto.font = FuenteUtil.ObtenerFuentePixelify();
+                    textoTituloCuarto.fontSize = 28;
+                    textoTituloCuarto.fontStyle = FontStyle.Bold;
+                    textoTituloCuarto.color = EstiloUIUX.ColDorado;
+                    textoTituloCuarto.horizontalOverflow = HorizontalWrapMode.Overflow;
+                    textoTituloCuarto.verticalOverflow = VerticalWrapMode.Overflow;
+                    BordeTextoPixelArt.Aplicar(textoTituloCuarto, 8, new Vector2(0f, -4f));
+                }
+                if (textoMaestriaCuarto != null)
+                {
+                    textoMaestriaCuarto.font = FuenteUtil.ObtenerFuentePixelify();
+                    textoMaestriaCuarto.horizontalOverflow = HorizontalWrapMode.Overflow;
+                    textoMaestriaCuarto.verticalOverflow = VerticalWrapMode.Overflow;
+                }
+                if (textoEstadoCuarto != null)
+                {
+                    textoEstadoCuarto.font = FuenteUtil.ObtenerFuentePixelify();
+                    textoEstadoCuarto.horizontalOverflow = HorizontalWrapMode.Overflow;
+                    textoEstadoCuarto.verticalOverflow = VerticalWrapMode.Overflow;
+                }
+
+                if (botonSeleccionarCuarto != null)
+                {
+                    EstiloUIUX.AplicarEstiloBoton(botonSeleccionarCuarto, TipoBotonUI.Verde, 16);
+                }
+                if (botonLiberarCuarto != null)
+                {
+                    EstiloUIUX.AplicarEstiloBoton(botonLiberarCuarto, TipoBotonUI.Rojo, 16);
+                }
+                if (botonVolverCuarto != null)
+                {
+                    EstiloUIUX.AplicarEstiloBoton(botonVolverCuarto, TipoBotonUI.Piedra, 16);
+                }
             }
         }
 
@@ -158,49 +254,47 @@ namespace SoulKnight
                 rt.sizeDelta = Vector2.zero;
 
                 var imgFondo = _panelFinPartidaIndividual.AddComponent<Image>();
-                imgFondo.color = new Color(0.04f, 0.04f, 0.06f, 0.96f);
+                imgFondo.color = new Color(0.04f, 0.04f, 0.06f, 0.94f);
+
+                // Ventana modal pixel art
+                var modalObj = new GameObject("VentanaFinPartida");
+                modalObj.transform.SetParent(_panelFinPartidaIndividual.transform, false);
+                var rtModal = modalObj.AddComponent<RectTransform>();
+                rtModal.anchorMin = new Vector2(0.5f, 0.5f);
+                rtModal.anchorMax = new Vector2(0.5f, 0.5f);
+                rtModal.pivot = new Vector2(0.5f, 0.5f);
+                rtModal.anchoredPosition = Vector2.zero;
+                rtModal.sizeDelta = new Vector2(760f, 380f);
+
+                var imgModal = modalObj.AddComponent<Image>();
+                imgModal.sprite = EstiloUIUX.ObtenerSpritePanel();
+                imgModal.type = Image.Type.Sliced;
+                imgModal.color = Color.white;
+
+                EstiloUIUX.CrearRemaches(modalObj.transform, 16f);
+                EstiloUIUX.CrearCabeceraModal(modalObj.transform, victoria ? "¡VICTORIA!" : "EXPEDICIÓN FALLIDA", 80f, "huella");
 
                 var txtObj = new GameObject("TextoResultado");
-                txtObj.transform.SetParent(_panelFinPartidaIndividual.transform, false);
+                txtObj.transform.SetParent(modalObj.transform, false);
                 var txt = txtObj.AddComponent<Text>();
-                txt.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-                txt.fontSize = 36;
+                txt.font = FuenteUtil.ObtenerFuentePixelify();
+                txt.fontSize = 26;
                 txt.fontStyle = FontStyle.Bold;
                 txt.alignment = TextAnchor.MiddleCenter;
-                txt.color = victoria ? new Color(1f, 0.85f, 0.25f) : new Color(0.95f, 0.25f, 0.25f);
-                txt.text = victoria ? "¡VICTORIA!" : "TODO EL EQUIPO HA CAÍDO";
+                txt.color = victoria ? EstiloUIUX.ColDorado : EstiloUIUX.ColRojo;
+                txt.text = victoria ? "¡HAS COMPLETADO LA MAZMORRA!" : "TODO EL EQUIPO HA CAÍDO EN COMBATE";
+                txt.horizontalOverflow = HorizontalWrapMode.Overflow;
+                txt.verticalOverflow = VerticalWrapMode.Overflow;
+                BordeTextoPixelArt.Aplicar(txt, 6, new Vector2(0f, -3f));
+
                 var rtTxt = txtObj.GetComponent<RectTransform>();
                 rtTxt.anchorMin = new Vector2(0.5f, 0.5f);
                 rtTxt.anchorMax = new Vector2(0.5f, 0.5f);
-                rtTxt.anchoredPosition = new Vector2(0f, 55f);
-                rtTxt.sizeDelta = new Vector2(700f, 80f);
+                rtTxt.pivot = new Vector2(0.5f, 0.5f);
+                rtTxt.anchoredPosition = new Vector2(0f, 15f);
+                rtTxt.sizeDelta = new Vector2(700f, 50f);
 
-                var btnObj = new GameObject("BotonVolverLobbyIndividual");
-                btnObj.transform.SetParent(_panelFinPartidaIndividual.transform, false);
-                var imgBtn = btnObj.AddComponent<Image>();
-                imgBtn.color = new Color(0.20f, 0.28f, 0.42f, 1f);
-                var btn = btnObj.AddComponent<Button>();
-                var rtBtn = btnObj.GetComponent<RectTransform>();
-                rtBtn.anchorMin = new Vector2(0.5f, 0.5f);
-                rtBtn.anchorMax = new Vector2(0.5f, 0.5f);
-                rtBtn.anchoredPosition = new Vector2(0f, -35f);
-                rtBtn.sizeDelta = new Vector2(280f, 48f);
-
-                var lblBtnObj = new GameObject("Texto");
-                lblBtnObj.transform.SetParent(btnObj.transform, false);
-                var lblBtn = lblBtnObj.AddComponent<Text>();
-                lblBtn.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-                lblBtn.fontSize = 18;
-                lblBtn.fontStyle = FontStyle.Bold;
-                lblBtn.alignment = TextAnchor.MiddleCenter;
-                lblBtn.color = Color.white;
-                lblBtn.text = "Volver al Lobby";
-                var rtLbl = lblBtnObj.GetComponent<RectTransform>();
-                rtLbl.anchorMin = Vector2.zero;
-                rtLbl.anchorMax = Vector2.one;
-                rtLbl.sizeDelta = Vector2.zero;
-
-                btn.onClick.AddListener(() =>
+                var btn = EstiloUIUX.CrearBoton(modalObj.transform, "BotonVolverLobbyIndividual", "VOLVER AL LOBBY", TipoBotonUI.Verde, new Vector2(300f, 60f), () =>
                 {
                     SalaRed.MostrarFinPartidaPendiente = false;
                     Controles.Bloqueado = false;
@@ -208,7 +302,13 @@ namespace SoulKnight
                     {
                         _panelFinPartidaIndividual.SetActive(false);
                     }
-                });
+                }, "puerta", new Vector2(24f, 24f));
+
+                var rtBtn = btn.GetComponent<RectTransform>();
+                rtBtn.anchorMin = new Vector2(0.5f, 0f);
+                rtBtn.anchorMax = new Vector2(0.5f, 0f);
+                rtBtn.pivot = new Vector2(0.5f, 0f);
+                rtBtn.anchoredPosition = new Vector2(0f, 35f);
             }
 
             _panelFinPartidaIndividual.SetActive(true);
@@ -260,45 +360,17 @@ namespace SoulKnight
                 return;
             }
 
-            var go = new GameObject("BotonOpcionesLobby");
-            go.transform.SetParent(cont, false);
-            go.transform.SetAsLastSibling();
+            var btn = EstiloUIUX.CrearBoton(cont, "BotonOpcionesLobby", "OPCIONES", TipoBotonUI.Piedra, new Vector2(175f, 44f), () =>
+            {
+                PanelOpcionesControles.ObtenerOCrear(canvas.transform).Abrir();
+            }, "controles", new Vector2(24f, 20f));
 
-            var rt = go.AddComponent<RectTransform>();
+            var rt = btn.GetComponent<RectTransform>();
             rt.anchorMin = new Vector2(1f, 1f);
             rt.anchorMax = new Vector2(1f, 1f);
             rt.pivot = new Vector2(1f, 1f);
             rt.anchoredPosition = new Vector2(-25f, -25f);
-            rt.sizeDelta = new Vector2(175f, 42f);
-
-            var img = go.AddComponent<Image>();
-            img.color = new Color(0.18f, 0.24f, 0.36f, 0.98f);
-
-            var btn = go.AddComponent<Button>();
-            var colors = btn.colors;
-            colors.highlightedColor = new Color(0.28f, 0.38f, 0.58f, 1f);
-            colors.pressedColor = new Color(0.12f, 0.16f, 0.25f, 1f);
-            btn.colors = colors;
-
-            var txtObj = new GameObject("Texto");
-            txtObj.transform.SetParent(go.transform, false);
-            var txt = txtObj.AddComponent<Text>();
-            txt.font = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            txt.fontSize = 13;
-            txt.fontStyle = FontStyle.Bold;
-            txt.alignment = TextAnchor.MiddleCenter;
-            txt.color = Color.white;
-            txt.text = "⚙️ OPCIONES";
-
-            var rtTxt = txtObj.GetComponent<RectTransform>();
-            rtTxt.anchorMin = Vector2.zero;
-            rtTxt.anchorMax = Vector2.one;
-            rtTxt.sizeDelta = Vector2.zero;
-
-            btn.onClick.AddListener(() =>
-            {
-                PanelOpcionesControles.ObtenerOCrear(canvas.transform).Abrir();
-            });
+            btn.transform.SetAsLastSibling();
         }
 
         void OnDestroy()
@@ -596,17 +668,20 @@ namespace SoulKnight
                 var txtBtnSel = botonSeleccionarCuarto.GetComponentInChildren<Text>();
                 if (txtBtnSel != null)
                 {
-                    txtBtnSel.font = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-                    txtBtnSel.fontSize = 12;
+                    txtBtnSel.font = FuenteUtil.ObtenerFuentePixelify();
+                    txtBtnSel.fontSize = 15;
+                    txtBtnSel.fontStyle = FontStyle.Bold;
+                    txtBtnSel.horizontalOverflow = HorizontalWrapMode.Overflow;
+                    txtBtnSel.verticalOverflow = VerticalWrapMode.Overflow;
                 }
                 if (ocupadoPorMi)
                 {
-                    if (txtBtnSel) txtBtnSel.text = "✅ CONFIRMAR ELECCIÓN";
+                    if (txtBtnSel) txtBtnSel.text = "CONFIRMAR ELECCIÓN";
                     botonSeleccionarCuarto.interactable = true;
                 }
                 else if (ocupadoPorOtro)
                 {
-                    if (txtBtnSel) txtBtnSel.text = "🔒 OCUPADO";
+                    if (txtBtnSel) txtBtnSel.text = "OCUPADO";
                     botonSeleccionarCuarto.interactable = false;
                 }
                 else
@@ -623,8 +698,12 @@ namespace SoulKnight
                 var txtBtnLib = botonLiberarCuarto.GetComponentInChildren<Text>();
                 if (txtBtnLib != null)
                 {
-                    txtBtnLib.font = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-                    txtBtnLib.fontSize = 12;
+                    txtBtnLib.font = FuenteUtil.ObtenerFuentePixelify();
+                    txtBtnLib.fontSize = 15;
+                    txtBtnLib.fontStyle = FontStyle.Bold;
+                    txtBtnLib.horizontalOverflow = HorizontalWrapMode.Overflow;
+                    txtBtnLib.verticalOverflow = VerticalWrapMode.Overflow;
+                    txtBtnLib.text = "LIBERAR";
                 }
             }
 
@@ -633,8 +712,12 @@ namespace SoulKnight
                 var txtBtnVol = botonVolverCuarto.GetComponentInChildren<Text>();
                 if (txtBtnVol != null)
                 {
-                    txtBtnVol.font = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-                    txtBtnVol.fontSize = 12;
+                    txtBtnVol.font = FuenteUtil.ObtenerFuentePixelify();
+                    txtBtnVol.fontSize = 15;
+                    txtBtnVol.fontStyle = FontStyle.Bold;
+                    txtBtnVol.horizontalOverflow = HorizontalWrapMode.Overflow;
+                    txtBtnVol.verticalOverflow = VerticalWrapMode.Overflow;
+                    txtBtnVol.text = "VOLVER";
                 }
             }
 
@@ -674,7 +757,7 @@ namespace SoulKnight
             }
 
             // Obtener fuente pixel art del juego
-            Font fuentePixel = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            Font fuentePixel = FuenteUtil.ObtenerFuentePixelify();
 
             // Obtener habilidades del personaje
             var todasHabilidades = CatalogoHabilidades.ObtenerHabilidadesPersonaje(pj);
@@ -697,7 +780,7 @@ namespace SoulKnight
                 slotObj.transform.SetParent(contenedorSlotsHabilidades, false);
 
                 var rtSlot = slotObj.AddComponent<RectTransform>();
-                float altoSlot = seleccionada ? 124f : 52f;
+                float altoSlot = seleccionada ? 124f : 54f;
                 rtSlot.sizeDelta = new Vector2(620f, altoSlot);
 
                 var le = slotObj.AddComponent<LayoutElement>();
@@ -707,9 +790,9 @@ namespace SoulKnight
 
                 // Borde exterior resaltado al seleccionar
                 var imgBorde = slotObj.AddComponent<Image>();
-                imgBorde.color = seleccionada
-                    ? new Color(0.28f, 0.78f, 1.0f, 0.95f) // Borde cyan brillante si está seleccionada
-                    : new Color(0.18f, 0.22f, 0.30f, 0.70f); // Borde neutro si no
+                imgBorde.sprite = EstiloUIUX.ObtenerSpriteTarjeta();
+                imgBorde.type = Image.Type.Sliced;
+                imgBorde.color = seleccionada ? new Color(0.35f, 0.85f, 1f, 1f) : new Color(0.7f, 0.7f, 0.7f, 0.9f);
 
                 // Fondo interior con marco pixel-art
                 var fondoInt = new GameObject("FondoInterno");
@@ -717,12 +800,12 @@ namespace SoulKnight
                 var rtFi = fondoInt.AddComponent<RectTransform>();
                 rtFi.anchorMin = Vector2.zero;
                 rtFi.anchorMax = Vector2.one;
-                rtFi.offsetMin = new Vector2(2f, 2f);
-                rtFi.offsetMax = new Vector2(-2f, -2f);
+                rtFi.offsetMin = new Vector2(3f, 3f);
+                rtFi.offsetMax = new Vector2(-3f, -3f);
                 var imgFi = fondoInt.AddComponent<Image>();
                 imgFi.color = seleccionada
-                    ? new Color(0.10f, 0.16f, 0.25f, 0.98f)
-                    : new Color(0.07f, 0.09f, 0.13f, 0.95f);
+                    ? new Color(0.12f, 0.18f, 0.32f, 0.98f)
+                    : new Color(0.08f, 0.10f, 0.16f, 0.95f);
                 imgFi.raycastTarget = false;
 
                 // 1. Icono grande a la izquierda (48x48) con marco propio
@@ -755,58 +838,58 @@ namespace SoulKnight
                 imgIco.color = Color.white;
                 imgIco.raycastTarget = false;
 
-                // 2. Textos (inician a X=68 para dejar espacio holgado y no solapar jamás con el icono)
+                // 2. Textos
                 var txtNombreObj = new GameObject("TextoNombre");
                 txtNombreObj.transform.SetParent(fondoInt.transform, false);
                 var rtTxtNom = txtNombreObj.AddComponent<RectTransform>();
 
                 var txtNom = txtNombreObj.AddComponent<Text>();
                 txtNom.font = fuentePixel;
-                txtNom.fontSize = 11;
-                txtNom.horizontalOverflow = HorizontalWrapMode.Wrap;
+                txtNom.fontSize = 15;
+                txtNom.fontStyle = FontStyle.Bold;
+                txtNom.horizontalOverflow = HorizontalWrapMode.Overflow;
                 txtNom.verticalOverflow = VerticalWrapMode.Overflow;
                 txtNom.raycastTarget = false;
 
                 if (!seleccionada)
                 {
-                    // Fila no seleccionada: Nombre centrado verticalmente
                     rtTxtNom.anchorMin = new Vector2(0f, 0f);
                     rtTxtNom.anchorMax = new Vector2(1f, 1f);
-                    rtTxtNom.offsetMin = new Vector2(68f, 0f);
+                    rtTxtNom.offsetMin = new Vector2(70f, 0f);
                     rtTxtNom.offsetMax = new Vector2(-12f, 0f);
                     txtNom.alignment = TextAnchor.MiddleLeft;
-                    txtNom.text = $"<b>{hab.nombre.ToUpper()}</b>  <color=#ffd700>({teclaStr})</color>";
+                    txtNom.color = EstiloUIUX.ColTextoCrema;
+                    txtNom.text = $"{hab.nombre.ToUpper()}  <color=#ffcf4a>({teclaStr})</color>";
                 }
                 else
                 {
-                    // Fila seleccionada: Nombre anclado en la parte superior (zona 1)
                     rtTxtNom.anchorMin = new Vector2(0f, 1f);
                     rtTxtNom.anchorMax = new Vector2(1f, 1f);
                     rtTxtNom.pivot = new Vector2(0f, 1f);
-                    rtTxtNom.anchoredPosition = new Vector2(68f, -12f);
-                    rtTxtNom.sizeDelta = new Vector2(-80f, 22f);
+                    rtTxtNom.anchoredPosition = new Vector2(70f, -10f);
+                    rtTxtNom.sizeDelta = new Vector2(-80f, 24f);
                     txtNom.alignment = TextAnchor.MiddleLeft;
-                    txtNom.fontSize = 12;
-                    txtNom.text = $"<b><color=#5ce1e6>{hab.nombre.ToUpper()}</color></b>  <color=#ffd700>({teclaStr})</color>";
+                    txtNom.color = EstiloUIUX.ColCyan;
+                    txtNom.text = $"{hab.nombre.ToUpper()}  <color=#ffcf4a>({teclaStr})</color>";
 
-                    // 3. Descripción técnica desplegada en zona inferior con interlineado amplio
+                    // Descripción técnica
                     var txtDescObj = new GameObject("TextoDescripcion");
                     txtDescObj.transform.SetParent(fondoInt.transform, false);
                     var rtTxtDesc = txtDescObj.AddComponent<RectTransform>();
                     rtTxtDesc.anchorMin = new Vector2(0f, 0f);
                     rtTxtDesc.anchorMax = new Vector2(1f, 1f);
                     rtTxtDesc.pivot = new Vector2(0f, 0f);
-                    rtTxtDesc.offsetMin = new Vector2(68f, 10f);
-                    rtTxtDesc.offsetMax = new Vector2(-14f, -40f);
+                    rtTxtDesc.offsetMin = new Vector2(70f, 8f);
+                    rtTxtDesc.offsetMax = new Vector2(-14f, -38f);
 
                     var txtDesc = txtDescObj.AddComponent<Text>();
                     txtDesc.font = fuentePixel;
-                    txtDesc.fontSize = 11;
-                    txtDesc.lineSpacing = 1.5f;
+                    txtDesc.fontSize = 13;
+                    txtDesc.lineSpacing = 1.35f;
                     txtDesc.alignment = TextAnchor.UpperLeft;
                     txtDesc.horizontalOverflow = HorizontalWrapMode.Wrap;
                     txtDesc.verticalOverflow = VerticalWrapMode.Overflow;
-                    txtDesc.color = new Color(0.90f, 0.94f, 1.0f);
+                    txtDesc.color = EstiloUIUX.ColTextoTenue;
                     txtDesc.raycastTarget = false;
                     txtDesc.text = desc;
                 }
@@ -837,7 +920,7 @@ namespace SoulKnight
                 rt.sizeDelta = Vector2.zero;
 
                 var imgFondo = _modalMaestriaLobby.AddComponent<Image>();
-                imgFondo.color = new Color(0f, 0f, 0f, 0.85f);
+                imgFondo.color = new Color(0f, 0f, 0f, 0.88f);
 
                 var cardObj = new GameObject("Tarjeta");
                 cardObj.transform.SetParent(_modalMaestriaLobby.transform, false);
@@ -846,92 +929,54 @@ namespace SoulKnight
                 rtCard.anchorMax = new Vector2(0.5f, 0.5f);
                 rtCard.pivot = new Vector2(0.5f, 0.5f);
                 rtCard.anchoredPosition = Vector2.zero;
-                rtCard.sizeDelta = new Vector2(580f, 360f);
+                rtCard.sizeDelta = new Vector2(640f, 440f);
 
-                var imgCardBorde = cardObj.AddComponent<Image>();
-                imgCardBorde.color = new Color(0.32f, 0.65f, 0.95f, 1f);
+                var imgCard = cardObj.AddComponent<Image>();
+                imgCard.sprite = EstiloUIUX.ObtenerSpritePanel();
+                imgCard.type = Image.Type.Sliced;
+                imgCard.color = Color.white;
 
-                var cardFondo = new GameObject("Fondo");
-                cardFondo.transform.SetParent(cardObj.transform, false);
-                var rtCf = cardFondo.AddComponent<RectTransform>();
-                rtCf.anchorMin = Vector2.zero;
-                rtCf.anchorMax = Vector2.one;
-                rtCf.offsetMin = new Vector2(3f, 3f);
-                rtCf.offsetMax = new Vector2(-3f, -3f);
-                var imgCf = cardFondo.AddComponent<Image>();
-                imgCf.color = new Color(0.06f, 0.08f, 0.14f, 0.98f);
-
-                // Título
-                var titObj = new GameObject("Titulo");
-                titObj.transform.SetParent(cardFondo.transform, false);
-                var rtTit = titObj.AddComponent<RectTransform>();
-                rtTit.anchorMin = new Vector2(0f, 1f);
-                rtTit.anchorMax = new Vector2(1f, 1f);
-                rtTit.pivot = new Vector2(0.5f, 1f);
-                rtTit.anchoredPosition = new Vector2(0f, -14f);
-                rtTit.sizeDelta = new Vector2(-30f, 32f);
-                var txtTit = titObj.AddComponent<Text>();
-                txtTit.font = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-                txtTit.fontSize = 14;
-                txtTit.fontStyle = FontStyle.Bold;
-                txtTit.alignment = TextAnchor.MiddleCenter;
-                txtTit.color = new Color(1f, 0.88f, 0.35f);
-                txtTit.text = "✦ GUÍA DE MAESTRÍA PERMANENTE ✦";
+                EstiloUIUX.CrearRemaches(cardObj.transform, 16f);
+                EstiloUIUX.CrearCabeceraModal(cardObj.transform, "GUÍA DE MAESTRÍA", 70f, "huella");
 
                 // Cuerpo
                 var cuerpoObj = new GameObject("TextoCuerpo");
-                cuerpoObj.transform.SetParent(cardFondo.transform, false);
+                cuerpoObj.transform.SetParent(cardObj.transform, false);
                 var rtCuerpo = cuerpoObj.AddComponent<RectTransform>();
                 rtCuerpo.anchorMin = new Vector2(0f, 0f);
                 rtCuerpo.anchorMax = new Vector2(1f, 1f);
-                rtCuerpo.offsetMin = new Vector2(24f, 55f);
-                rtCuerpo.offsetMax = new Vector2(-24f, -50f);
+                rtCuerpo.offsetMin = new Vector2(30f, 75f);
+                rtCuerpo.offsetMax = new Vector2(-30f, -80f);
                 var txtCuerpo = cuerpoObj.AddComponent<Text>();
-                txtCuerpo.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-                txtCuerpo.fontSize = 13;
-                txtCuerpo.lineSpacing = 1.3f;
+                txtCuerpo.font = FuenteUtil.ObtenerFuentePixelify();
+                txtCuerpo.fontSize = 15;
+                txtCuerpo.lineSpacing = 1.35f;
                 txtCuerpo.alignment = TextAnchor.UpperLeft;
-                txtCuerpo.color = new Color(0.9f, 0.95f, 1f);
+                txtCuerpo.color = EstiloUIUX.ColTextoCrema;
+                txtCuerpo.horizontalOverflow = HorizontalWrapMode.Wrap;
+                txtCuerpo.verticalOverflow = VerticalWrapMode.Overflow;
                 txtCuerpo.text =
                     "• La Maestría es PERMANENTE en tu cuenta y se conserva para siempre.\n\n" +
                     "• Ganas XP de maestría eliminando monstruos y jefes en mazmorras (~35% de la XP de combate).\n\n" +
                     "• Desbloqueo progresivo de habilidades por personaje:\n" +
-                    "   <color=#a0e0ff>Nv. 1:</color> Habilidad Básica (Click Izquierdo)\n" +
-                    "   <color=#a0e0ff>Nv. 2:</color> Habilidad Activa 1 (Tecla E)\n" +
-                    "   <color=#a0e0ff>Nv. 3:</color> Habilidad Activa 2 (Tecla Q)\n" +
-                    "   <color=#a0e0ff>Nv. 4:</color> Habilidad Definitiva (Tecla R / Ultimate)\n" +
-                    "   <color=#ffd700>Nv. 5 a 20:</color> Bonificaciones de maestría de cuenta.\n\n" +
+                    "   <color=#8fe0ff>Nv. 1:</color> Habilidad Básica (Click Izquierdo)\n" +
+                    "   <color=#8fe0ff>Nv. 2:</color> Habilidad Activa 1 (Tecla E)\n" +
+                    "   <color=#8fe0ff>Nv. 3:</color> Habilidad Activa 2 (Tecla Q)\n" +
+                    "   <color=#8fe0ff>Nv. 4:</color> Habilidad Definitiva (Tecla R / Ultimate)\n" +
+                    "   <color=#ffcf4a>Nv. 5 a 20:</color> Bonificaciones de maestría de cuenta.\n\n" +
                     "¡Completa partidas para alcanzar el nivel máximo y dominar a todos los gatos!";
 
                 // Botón Cerrar
-                var btnCerrarObj = new GameObject("BotonCerrar");
-                btnCerrarObj.transform.SetParent(cardFondo.transform, false);
-                var rtBtn = btnCerrarObj.AddComponent<RectTransform>();
+                var btn = EstiloUIUX.CrearBoton(cardObj.transform, "BotonCerrar", "ENTENDIDO", TipoBotonUI.Piedra, new Vector2(220f, 48f), () =>
+                {
+                    if (_modalMaestriaLobby != null) _modalMaestriaLobby.SetActive(false);
+                }, "palomita", new Vector2(22f, 16f));
+
+                var rtBtn = btn.GetComponent<RectTransform>();
                 rtBtn.anchorMin = new Vector2(0.5f, 0f);
                 rtBtn.anchorMax = new Vector2(0.5f, 0f);
                 rtBtn.pivot = new Vector2(0.5f, 0f);
-                rtBtn.anchoredPosition = new Vector2(0f, 14f);
-                rtBtn.sizeDelta = new Vector2(180f, 32f);
-
-                var imgBtn = btnCerrarObj.AddComponent<Image>();
-                imgBtn.color = new Color(0.24f, 0.32f, 0.48f, 1f);
-
-                var txtBtnObj = new GameObject("Texto");
-                txtBtnObj.transform.SetParent(btnCerrarObj.transform, false);
-                var rtTxtBtn = txtBtnObj.AddComponent<RectTransform>();
-                rtTxtBtn.anchorMin = Vector2.zero;
-                rtTxtBtn.anchorMax = Vector2.one;
-                rtTxtBtn.sizeDelta = Vector2.zero;
-                var txtBtn = txtBtnObj.AddComponent<Text>();
-                txtBtn.font = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-                txtBtn.fontSize = 11;
-                txtBtn.fontStyle = FontStyle.Bold;
-                txtBtn.alignment = TextAnchor.MiddleCenter;
-                txtBtn.color = Color.white;
-                txtBtn.text = "CERRAR (ESC)";
-
-                var btn = btnCerrarObj.AddComponent<Button>();
-                btn.onClick.AddListener(() => _modalMaestriaLobby.SetActive(false));
+                rtBtn.anchoredPosition = new Vector2(0f, 18f);
             }
 
             _modalMaestriaLobby.SetActive(true);

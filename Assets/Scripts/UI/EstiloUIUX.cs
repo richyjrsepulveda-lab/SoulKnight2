@@ -1,5 +1,7 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 namespace SoulKnight
@@ -886,6 +888,296 @@ namespace SoulKnight
             tex.SetPixels32(pixeles);
             tex.Apply(false);
             return tex;
+        }
+
+        // =========================================================================
+        // MÉTODOS DE CONSTRUCCIÓN Y ESTILIZADO DE COMPONENTES UI
+        // =========================================================================
+
+        public static Color32 ObtenerColorTextoBoton(TipoBotonUI tipo)
+        {
+            switch (tipo)
+            {
+                case TipoBotonUI.Dorado: return ColBtnDoradoTexto;
+                case TipoBotonUI.Verde: return ColBtnVerdeTexto;
+                case TipoBotonUI.Hielo: return ColBtnHieloTexto;
+                case TipoBotonUI.Rojo: return ColBtnRojoTexto;
+                default: return ColBtnPiedraTexto;
+            }
+        }
+
+        /// <summary>
+        /// Aplica la apariencia oficial pixel art a un botón uGUI ya existente en jerarquía.
+        /// Configura el sprite sliced escalonado, color de texto, tipografía Pixelify Sans con overflow
+        /// y la animación de retroalimentación táctil de 4px al presionar.
+        /// </summary>
+        public static void AplicarEstiloBoton(Button btn, TipoBotonUI tipo, int tamanoFuente = 20, string icono = null, Vector2? iconoSize = null)
+        {
+            if (btn == null) return;
+
+            var img = btn.GetComponent<Image>();
+            if (img != null)
+            {
+                img.sprite = ObtenerSpriteBoton(tipo, false);
+                img.type = Image.Type.Sliced;
+                img.color = Color.white;
+            }
+
+            btn.transition = Selectable.Transition.ColorTint;
+            var cb = btn.colors;
+            cb.normalColor = Color.white;
+            cb.highlightedColor = new Color(1.12f, 1.12f, 1.12f, 1f);
+            cb.pressedColor = new Color(0.9f, 0.9f, 0.9f, 1f);
+            cb.selectedColor = Color.white;
+            cb.disabledColor = new Color(0.6f, 0.6f, 0.6f, 0.7f);
+            btn.colors = cb;
+
+            Color32 cTexto = ObtenerColorTextoBoton(tipo);
+
+            // Agregar icono si se solicita y no existe
+            if (!string.IsNullOrEmpty(icono))
+            {
+                var icoTrans = btn.transform.Find("IconoBoton");
+                if (icoTrans == null)
+                {
+                    var icoObj = new GameObject("IconoBoton");
+                    icoObj.transform.SetParent(btn.transform, false);
+                    var imgIco = icoObj.AddComponent<Image>();
+                    imgIco.sprite = ObtenerSpriteIcono(icono, cTexto);
+                    imgIco.raycastTarget = false;
+                    var rtIco = icoObj.GetComponent<RectTransform>();
+                    rtIco.sizeDelta = iconoSize ?? new Vector2(24f, 24f);
+                    rtIco.anchorMin = new Vector2(0f, 0.5f);
+                    rtIco.anchorMax = new Vector2(0f, 0.5f);
+                    rtIco.pivot = new Vector2(0f, 0.5f);
+                    rtIco.anchoredPosition = new Vector2(16f, 0f);
+                }
+            }
+
+            var txt = btn.GetComponentInChildren<Text>();
+            if (txt != null)
+            {
+                txt.font = FuenteUtil.ObtenerFuentePixelify();
+                txt.fontSize = tamanoFuente;
+                txt.fontStyle = FontStyle.Bold;
+                txt.alignment = TextAnchor.MiddleCenter;
+                txt.color = cTexto;
+                txt.horizontalOverflow = HorizontalWrapMode.Overflow;
+                txt.verticalOverflow = VerticalWrapMode.Overflow;
+                txt.raycastTarget = false;
+            }
+
+            // Animación de pulsación física: desplazar 4px hacia abajo en PointerDown
+            var trigger = btn.GetComponent<EventTrigger>();
+            if (trigger == null)
+            {
+                trigger = btn.gameObject.AddComponent<EventTrigger>();
+                var rt = btn.GetComponent<RectTransform>();
+
+                var entryDown = new EventTrigger.Entry { eventID = EventTriggerType.PointerDown };
+                entryDown.callback.AddListener((data) => { if (btn.interactable && rt != null) rt.anchoredPosition += new Vector2(0f, -4f); });
+                trigger.triggers.Add(entryDown);
+
+                var entryUp = new EventTrigger.Entry { eventID = EventTriggerType.PointerUp };
+                entryUp.callback.AddListener((data) => { if (btn.interactable && rt != null) rt.anchoredPosition -= new Vector2(0f, -4f); });
+                trigger.triggers.Add(entryUp);
+            }
+        }
+
+        /// <summary>
+        /// Crea un nuevo botón pixel-art completo con esquinas mordidas, sliced 9-slice,
+        /// texto con Pixelify Sans y evento de clic con SFX.
+        /// </summary>
+        public static Button CrearBoton(Transform parent, string nombre, string texto, TipoBotonUI tipo, Vector2 size, Action onClick = null, string icono = null, Vector2? iconoSize = null)
+        {
+            var btnObj = new GameObject(nombre);
+            btnObj.transform.SetParent(parent, false);
+
+            var rt = btnObj.AddComponent<RectTransform>();
+            rt.sizeDelta = size;
+
+            var img = btnObj.AddComponent<Image>();
+            img.sprite = ObtenerSpriteBoton(tipo, false);
+            img.type = Image.Type.Sliced;
+            img.color = Color.white;
+
+            var btn = btnObj.AddComponent<Button>();
+            btn.transition = Selectable.Transition.ColorTint;
+
+            Color32 cTexto = ObtenerColorTextoBoton(tipo);
+
+            if (!string.IsNullOrEmpty(icono))
+            {
+                var hlg = btnObj.AddComponent<HorizontalLayoutGroup>();
+                hlg.childAlignment = TextAnchor.MiddleCenter;
+                hlg.spacing = 12f;
+                hlg.childControlWidth = false;
+                hlg.childControlHeight = false;
+
+                var icoObj = new GameObject("Icono");
+                icoObj.transform.SetParent(btnObj.transform, false);
+                var imgIco = icoObj.AddComponent<Image>();
+                imgIco.sprite = ObtenerSpriteIcono(icono, cTexto);
+                imgIco.raycastTarget = false;
+                icoObj.GetComponent<RectTransform>().sizeDelta = iconoSize ?? new Vector2(24f, 24f);
+            }
+
+            var txtObj = new GameObject("Texto");
+            txtObj.transform.SetParent(btnObj.transform, false);
+            var rtTxt = txtObj.AddComponent<RectTransform>();
+            if (string.IsNullOrEmpty(icono))
+            {
+                rtTxt.anchorMin = Vector2.zero;
+                rtTxt.anchorMax = Vector2.one;
+                rtTxt.sizeDelta = Vector2.zero;
+            }
+            else
+            {
+                rtTxt.sizeDelta = new Vector2(size.x - 60f, size.y);
+            }
+
+            var txt = txtObj.AddComponent<Text>();
+            txt.font = FuenteUtil.ObtenerFuentePixelify();
+            txt.fontSize = Mathf.Clamp(Mathf.RoundToInt(size.y * 0.40f), 14, 28);
+            txt.fontStyle = FontStyle.Bold;
+            txt.alignment = TextAnchor.MiddleCenter;
+            txt.color = cTexto;
+            txt.text = texto;
+            txt.horizontalOverflow = HorizontalWrapMode.Overflow;
+            txt.verticalOverflow = VerticalWrapMode.Overflow;
+            txt.raycastTarget = false;
+
+            var trigger = btnObj.AddComponent<EventTrigger>();
+            var entryDown = new EventTrigger.Entry { eventID = EventTriggerType.PointerDown };
+            entryDown.callback.AddListener((data) => { if (btn.interactable) rt.anchoredPosition += new Vector2(0f, -4f); });
+            trigger.triggers.Add(entryDown);
+
+            var entryUp = new EventTrigger.Entry { eventID = EventTriggerType.PointerUp };
+            entryUp.callback.AddListener((data) => { if (btn.interactable) rt.anchoredPosition -= new Vector2(0f, -4f); });
+            trigger.triggers.Add(entryUp);
+
+            if (onClick != null)
+            {
+                btn.onClick.AddListener(() =>
+                {
+                    GestorAudio.PlaySFX(TipoSFX.ClickUI);
+                    onClick.Invoke();
+                });
+            }
+
+            return btn;
+        }
+
+        /// <summary>
+        /// Instancia 4 remaches dorados procedurales en las 4 esquinas de un panel/tarjeta.
+        /// </summary>
+        public static void CrearRemaches(Transform parent, float inset = 18f)
+        {
+            if (parent == null) return;
+            var spRemache = ObtenerSpriteRemache();
+            if (spRemache == null) return;
+
+            Vector2[] anclas = new Vector2[]
+            {
+                new Vector2(0f, 1f), // TL
+                new Vector2(1f, 1f), // TR
+                new Vector2(0f, 0f), // BL
+                new Vector2(1f, 0f)  // BR
+            };
+
+            Vector2[] offsets = new Vector2[]
+            {
+                new Vector2(inset, -inset),
+                new Vector2(-inset, -inset),
+                new Vector2(inset, inset),
+                new Vector2(-inset, inset)
+            };
+
+            for (int i = 0; i < 4; i++)
+            {
+                var rObj = new GameObject($"Remache_{i}");
+                rObj.transform.SetParent(parent, false);
+                var imgR = rObj.AddComponent<Image>();
+                imgR.sprite = spRemache;
+                imgR.raycastTarget = false;
+                var rtR = rObj.GetComponent<RectTransform>();
+                rtR.anchorMin = anclas[i];
+                rtR.anchorMax = anclas[i];
+                rtR.pivot = new Vector2(0.5f, 0.5f);
+                rtR.anchoredPosition = offsets[i];
+                rtR.sizeDelta = new Vector2(16f, 16f);
+            }
+        }
+
+        /// <summary>
+        /// Crea una cabecera temática estándar con fondo #1b1438, título dorado con BordeTextoPixelArt y huellas.
+        /// </summary>
+        public static void CrearCabeceraModal(Transform parent, string titulo, float altoCabecera = 80f, string icono = "huella")
+        {
+            if (parent == null) return;
+
+            var cabObj = new GameObject("CabeceraModal");
+            cabObj.transform.SetParent(parent, false);
+            var rtCab = cabObj.AddComponent<RectTransform>();
+            rtCab.anchorMin = new Vector2(0f, 1f);
+            rtCab.anchorMax = new Vector2(1f, 1f);
+            rtCab.pivot = new Vector2(0.5f, 1f);
+            rtCab.anchoredPosition = Vector2.zero;
+            rtCab.sizeDelta = new Vector2(0f, altoCabecera);
+
+            var imgCab = cabObj.AddComponent<Image>();
+            imgCab.color = ColCabecera;
+
+            // Fila centrada con huellas y título
+            var filaObj = new GameObject("FilaCabecera");
+            filaObj.transform.SetParent(cabObj.transform, false);
+            var rtFila = filaObj.AddComponent<RectTransform>();
+            rtFila.anchorMin = Vector2.zero;
+            rtFila.anchorMax = Vector2.one;
+            rtFila.sizeDelta = Vector2.zero;
+
+            var hlg = filaObj.AddComponent<HorizontalLayoutGroup>();
+            hlg.childAlignment = TextAnchor.MiddleCenter;
+            hlg.spacing = 16f;
+            hlg.childControlWidth = false;
+            hlg.childControlHeight = false;
+
+            // Huella izquierda
+            if (!string.IsNullOrEmpty(icono))
+            {
+                var icoIzq = new GameObject("IconoIzq");
+                icoIzq.transform.SetParent(filaObj.transform, false);
+                var imgIzq = icoIzq.AddComponent<Image>();
+                imgIzq.sprite = ObtenerSpriteIcono(icono, ColDorado);
+                imgIzq.raycastTarget = false;
+                icoIzq.GetComponent<RectTransform>().sizeDelta = new Vector2(28f, 26f);
+            }
+
+            // Título
+            var txtObj = new GameObject("Titulo");
+            txtObj.transform.SetParent(filaObj.transform, false);
+            var txt = txtObj.AddComponent<Text>();
+            txt.font = FuenteUtil.ObtenerFuentePixelify();
+            txt.fontSize = Mathf.Clamp(Mathf.RoundToInt(altoCabecera * 0.42f), 20, 36);
+            txt.fontStyle = FontStyle.Bold;
+            txt.alignment = TextAnchor.MiddleCenter;
+            txt.color = ColDorado;
+            txt.text = titulo;
+            txt.raycastTarget = false;
+            txt.horizontalOverflow = HorizontalWrapMode.Overflow;
+            txt.verticalOverflow = VerticalWrapMode.Overflow;
+            BordeTextoPixelArt.Aplicar(txt, 8, new Vector2(0f, -4f));
+
+            // Huella derecha
+            if (!string.IsNullOrEmpty(icono))
+            {
+                var icoDer = new GameObject("IconoDer");
+                icoDer.transform.SetParent(filaObj.transform, false);
+                var imgDer = icoDer.AddComponent<Image>();
+                imgDer.sprite = ObtenerSpriteIcono(icono, ColDorado);
+                imgDer.raycastTarget = false;
+                icoDer.GetComponent<RectTransform>().sizeDelta = new Vector2(28f, 26f);
+            }
         }
     }
 }

@@ -52,7 +52,9 @@ namespace SoulKnight
             marcoObj.transform.SetParent(canvasParent, false);
 
             var imgMarco = marcoObj.AddComponent<Image>();
-            imgMarco.color = new Color(0.04f, 0.06f, 0.09f, 0.96f);
+            imgMarco.sprite = EstiloUIUX.ObtenerSpritePanel();
+            imgMarco.type = Image.Type.Sliced;
+            imgMarco.color = Color.white;
 
             var rtMarco = marcoObj.GetComponent<RectTransform>();
             rtMarco.anchorMin = new Vector2(1f, 1f);
@@ -61,25 +63,19 @@ namespace SoulKnight
             rtMarco.anchoredPosition = new Vector2(-16f, -54f);
             rtMarco.sizeDelta = new Vector2(360f, 260f); // Cuadrito más grande sin zoom
 
-            // Borde exterior definido y nítido de estilo pixel-art
-            var bordeObj = new GameObject("BordeMinimapa");
-            bordeObj.transform.SetParent(marcoObj.transform, false);
-            var imgBorde = bordeObj.AddComponent<Image>();
-            imgBorde.color = new Color(0.32f, 0.65f, 0.95f, 0.95f);
-            var rtBorde = bordeObj.GetComponent<RectTransform>();
-            rtBorde.anchorMin = Vector2.zero;
-            rtBorde.anchorMax = Vector2.one;
-            rtBorde.sizeDelta = Vector2.zero;
+            EstiloUIUX.CrearRemaches(marcoObj.transform, 14f);
 
             var fondoInterno = new GameObject("FondoInternoMinimapa");
-            fondoInterno.transform.SetParent(bordeObj.transform, false);
+            fondoInterno.transform.SetParent(marcoObj.transform, false);
             var imgFondoInt = fondoInterno.AddComponent<Image>();
-            imgFondoInt.color = new Color(0.05f, 0.07f, 0.11f, 0.98f);
+            imgFondoInt.sprite = EstiloUIUX.ObtenerSpriteTarjeta();
+            imgFondoInt.type = Image.Type.Sliced;
+            imgFondoInt.color = Color.white;
             var rtFondoInt = fondoInterno.GetComponent<RectTransform>();
             rtFondoInt.anchorMin = Vector2.zero;
             rtFondoInt.anchorMax = Vector2.one;
-            rtFondoInt.offsetMin = new Vector2(3f, 3f);
-            rtFondoInt.offsetMax = new Vector2(-3f, -3f);
+            rtFondoInt.offsetMin = new Vector2(8f, 8f);
+            rtFondoInt.offsetMax = new Vector2(-8f, -8f);
 
             var rawObj = new GameObject("LienzoMinimapa");
             rawObj.transform.SetParent(fondoInterno.transform, false);
@@ -88,23 +84,25 @@ namespace SoulKnight
             rtRaw.anchorMin = Vector2.zero;
             rtRaw.anchorMax = Vector2.one;
             rtRaw.offsetMin = new Vector2(4f, 4f);
-            rtRaw.offsetMax = new Vector2(-4f, -22f);
+            rtRaw.offsetMax = new Vector2(-4f, -24f);
 
             var lblObj = new GameObject("TituloMinimapa");
             lblObj.transform.SetParent(fondoInterno.transform, false);
             var txt = lblObj.AddComponent<Text>();
-            txt.font = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            txt.fontSize = 11;
+            txt.font = FuenteUtil.ObtenerFuentePixelify();
+            txt.fontSize = 14;
             txt.fontStyle = FontStyle.Bold;
             txt.alignment = TextAnchor.MiddleCenter;
-            txt.color = new Color(0.85f, 0.95f, 1f, 0.95f);
+            txt.color = EstiloUIUX.ColDorado;
             txt.text = "✦ MINIMAPA ✦";
+            txt.horizontalOverflow = HorizontalWrapMode.Overflow;
+            txt.verticalOverflow = VerticalWrapMode.Overflow;
             var rtLbl = lblObj.GetComponent<RectTransform>();
             rtLbl.anchorMin = new Vector2(0f, 1f);
             rtLbl.anchorMax = new Vector2(1f, 1f);
             rtLbl.pivot = new Vector2(0.5f, 1f);
-            rtLbl.anchoredPosition = new Vector2(0f, -2f);
-            rtLbl.sizeDelta = new Vector2(0f, 18f);
+            rtLbl.anchoredPosition = new Vector2(0f, -3f);
+            rtLbl.sizeDelta = new Vector2(0f, 20f);
 
             var comp = marcoObj.AddComponent<MinimapaHUD>();
             comp.Inicializar(raw);

@@ -42,6 +42,10 @@ namespace SoulKnight
             if (textoVida != null)
             {
                 textoVida.transform.SetAsLastSibling();
+                textoVida.font = FuenteUtil.ObtenerFuentePixelify();
+                textoVida.fontStyle = FontStyle.Bold;
+                textoVida.horizontalOverflow = HorizontalWrapMode.Overflow;
+                textoVida.verticalOverflow = VerticalWrapMode.Overflow;
                 if (textoVida.GetComponent<Shadow>() == null)
                 {
                     var sombra = textoVida.gameObject.AddComponent<Shadow>();
