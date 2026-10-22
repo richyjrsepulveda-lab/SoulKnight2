@@ -771,6 +771,29 @@ namespace SoulKnight
                         new RectInt(6, 5, 1, 1)
                     });
                     break;
+
+                case "lupa": // Lupa Buscar 8x8
+                    tex = CrearTexturaIcono(8, 8, color, new RectInt[]
+                    {
+                        new RectInt(1, 0, 4, 1),
+                        new RectInt(0, 1, 1, 4),
+                        new RectInt(5, 1, 1, 4),
+                        new RectInt(1, 4, 4, 1),
+                        new RectInt(4, 4, 2, 2),
+                        new RectInt(6, 6, 2, 2)
+                    });
+                    break;
+
+                case "candado": // Candado 8x8
+                    tex = CrearTexturaIcono(8, 8, color, new RectInt[]
+                    {
+                        new RectInt(2, 0, 4, 1),
+                        new RectInt(1, 1, 2, 3),
+                        new RectInt(5, 1, 2, 3),
+                        new RectInt(0, 3, 8, 5),
+                        new RectInt(3, 4, 2, 2)
+                    });
+                    break;
             }
 
             if (tex == null) return null;
