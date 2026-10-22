@@ -93,6 +93,85 @@ namespace SoulKnight
         // =========================================================================
         private static readonly Dictionary<string, Sprite> _cacheSprites = new Dictionary<string, Sprite>();
         private static Texture2D _texLadrillos;
+        private static Texture2D _texVineta;
+        private static Texture2D _texGlowAntorcha;
+
+        public static Texture2D ObtenerTexturaVineta()
+        {
+            if (_texVineta != null) return _texVineta;
+
+            const int S = 128;
+            _texVineta = new Texture2D(S, S, TextureFormat.RGBA32, false);
+            _texVineta.filterMode = FilterMode.Bilinear;
+            _texVineta.wrapMode = TextureWrapMode.Clamp;
+
+            Color32 cOscuro = new Color32(8, 4, 20, 200); // 0.78 alpha
+            Color32 cTrans = new Color32(8, 4, 20, 0);
+
+            Color32[] px = new Color32[S * S];
+            float centro = (S - 1) * 0.5f;
+
+            for (int y = 0; y < S; y++)
+            {
+                for (int x = 0; x < S; x++)
+                {
+                    float dx = (x - centro) / centro;
+                    float dy = (y - centro) / centro;
+                    float dist = Mathf.Sqrt(dx * dx + dy * dy); // 0 en centro, 1 en bordes, 1.41 en esquinas
+
+                    if (dist <= 0.40f)
+                    {
+                        px[y * S + x] = cTrans;
+                    }
+                    else
+                    {
+                        float t = Mathf.Clamp01((dist - 0.40f) / 0.60f);
+                        byte a = (byte)(t * 200);
+                        px[y * S + x] = new Color32(8, 4, 20, a);
+                    }
+                }
+            }
+            _texVineta.SetPixels32(px);
+            _texVineta.Apply(false);
+            return _texVineta;
+        }
+
+        public static Texture2D ObtenerTexturaGlowAntorcha()
+        {
+            if (_texGlowAntorcha != null) return _texGlowAntorcha;
+
+            const int S = 64;
+            _texGlowAntorcha = new Texture2D(S, S, TextureFormat.RGBA32, false);
+            _texGlowAntorcha.filterMode = FilterMode.Bilinear;
+            _texGlowAntorcha.wrapMode = TextureWrapMode.Clamp;
+
+            Color32[] px = new Color32[S * S];
+            float centro = (S - 1) * 0.5f;
+
+            for (int y = 0; y < S; y++)
+            {
+                for (int x = 0; x < S; x++)
+                {
+                    float dx = (x - centro) / centro;
+                    float dy = (y - centro) / centro;
+                    float dist = Mathf.Sqrt(dx * dx + dy * dy);
+
+                    if (dist >= 1.0f)
+                    {
+                        px[y * S + x] = new Color32(255, 138, 60, 0);
+                    }
+                    else
+                    {
+                        float t = 1.0f - dist;
+                        byte a = (byte)(t * t * 76); // ~0.30 alpha máx en centro
+                        px[y * S + x] = new Color32(255, 138, 60, a);
+                    }
+                }
+            }
+            _texGlowAntorcha.SetPixels32(px);
+            _texGlowAntorcha.Apply(false);
+            return _texGlowAntorcha;
+        }
 
         public static Texture2D ObtenerTexturaLadrillos()
         {
@@ -367,6 +446,135 @@ namespace SoulKnight
         }
 
         // =========================================================================
+        // SLIDERS Y KEYCAPS
+        // =========================================================================
+        public static Sprite ObtenerSpritePistaSlider()
+        {
+            if (_cacheSprites.TryGetValue("PistaSlider", out var sp) && sp != null) return sp;
+
+            const int W = 24, H = 24;
+            var tex = new Texture2D(W, H, TextureFormat.RGBA32, false);
+            tex.filterMode = FilterMode.Point;
+            tex.wrapMode = TextureWrapMode.Clamp;
+
+            Color32 cFondo = new Color32(0x0C, 0x08, 0x18, 0xFF);
+            Color32 cSombra = new Color32(0x05, 0x03, 0x0D, 0xFF);
+            Color32[] px = new Color32[W * H];
+            for (int y = 0; y < H; y++)
+            {
+                for (int x = 0; x < W; x++)
+                {
+                    px[y * W + x] = (y >= H - 6) ? cSombra : cFondo;
+                }
+            }
+            tex.SetPixels32(px);
+            tex.Apply(false);
+
+            var sprite = Sprite.Create(tex, new Rect(0, 0, W, H), new Vector2(0.5f, 0.5f), 1f, 0, SpriteMeshType.FullRect, new Vector4(6, 6, 6, 6));
+            _cacheSprites["PistaSlider"] = sprite;
+            return sprite;
+        }
+
+        public static Sprite ObtenerSpriteFillSlider(string tipo)
+        {
+            string clave = "FillSlider_" + tipo;
+            if (_cacheSprites.TryGetValue(clave, out var sp) && sp != null) return sp;
+
+            Color32 cara, luz, sombra;
+            switch (tipo.ToLowerInvariant())
+            {
+                case "pink":
+                    cara = new Color32(0xFF, 0x8F, 0xB1, 0xFF);
+                    luz = new Color32(0xFF, 0xC7, 0xD9, 0xFF);
+                    sombra = new Color32(0xC2, 0x45, 0x6F, 0xFF);
+                    break;
+                case "fire":
+                    cara = new Color32(0xFF, 0x9A, 0x3D, 0xFF);
+                    luz = new Color32(0xFF, 0xD0, 0x8A, 0xFF);
+                    sombra = new Color32(0xC9, 0x56, 0x0F, 0xFF);
+                    break;
+                default: // ice
+                    cara = new Color32(0x58, 0xC4, 0xFF, 0xFF);
+                    luz = new Color32(0xB4, 0xE6, 0xFF, 0xFF);
+                    sombra = new Color32(0x2A, 0x87, 0xC9, 0xFF);
+                    break;
+            }
+
+            const int W = 24, H = 24;
+            var tex = new Texture2D(W, H, TextureFormat.RGBA32, false);
+            tex.filterMode = FilterMode.Point;
+            tex.wrapMode = TextureWrapMode.Clamp;
+
+            Color32[] px = new Color32[W * H];
+            for (int y = 0; y < H; y++)
+            {
+                for (int x = 0; x < W; x++)
+                {
+                    if (y >= H - 6) px[y * W + x] = luz;
+                    else if (y < 6) px[y * W + x] = sombra;
+                    else px[y * W + x] = cara;
+                }
+            }
+            tex.SetPixels32(px);
+            tex.Apply(false);
+
+            var sprite = Sprite.Create(tex, new Rect(0, 0, W, H), new Vector2(0.5f, 0.5f), 1f, 0, SpriteMeshType.FullRect, new Vector4(6, 6, 6, 6));
+            _cacheSprites[clave] = sprite;
+            return sprite;
+        }
+
+        public static Sprite ObtenerSpriteThumbSlider()
+        {
+            if (_cacheSprites.TryGetValue("ThumbSlider", out var sp) && sp != null) return sp;
+
+            const int W = 24, H = 48;
+            var tex = new Texture2D(W, H, TextureFormat.RGBA32, false);
+            tex.filterMode = FilterMode.Point;
+            tex.wrapMode = TextureWrapMode.Clamp;
+
+            Color32 cBorde = ColContornoUniversal;
+            Color32 cCara = ColDorado;
+            Color32 cLuz = new Color32(0xFF, 0xF0, 0xB0, 0xFF);
+            Color32 cSombra = new Color32(0xD9, 0x8A, 0x1A, 0xFF);
+
+            Color32[] px = new Color32[W * H];
+            for (int y = 0; y < H; y++)
+            {
+                for (int x = 0; x < W; x++)
+                {
+                    int idx = y * W + x;
+                    if (x < 4 || x >= W - 4 || y < 4 || y >= H - 4)
+                        px[idx] = cBorde;
+                    else if (y >= H - 4 - 4)
+                        px[idx] = cLuz;
+                    else if (y < 4 + 6)
+                        px[idx] = cSombra;
+                    else
+                        px[idx] = cCara;
+                }
+            }
+            tex.SetPixels32(px);
+            tex.Apply(false);
+
+            var sprite = Sprite.Create(tex, new Rect(0, 0, W, H), new Vector2(0.5f, 0.5f), 1f, 0, SpriteMeshType.FullRect, new Vector4(6, 6, 6, 6));
+            _cacheSprites["ThumbSlider"] = sprite;
+            return sprite;
+        }
+
+        public static Sprite ObtenerSpriteKeycap(bool esperando = false)
+        {
+            string clave = esperando ? "KeycapEsperando" : "KeycapNormal";
+            if (_cacheSprites.TryGetValue(clave, out var sp) && sp != null) return sp;
+
+            Color32 cBorde = esperando ? ColDorado : ColContornoUniversal;
+            Color32 cCara = esperando ? ColBtnDoradoCara : ColTextoCrema;
+            Color32 cLuz = esperando ? ColBtnDoradoLuz : new Color32(0xFF, 0xFD, 0xF2, 0xFF);
+            Color32 cSombra = esperando ? ColBtnDoradoSombra : new Color32(0xCD, 0xBF, 0x9C, 0xFF);
+
+            return ObtenerSpriteCajaEscalonada(clave, cCara, cLuz, cSombra, 4, 4, 6);
+        }
+
+        // =========================================================================
         // ÍCONOS PROCEDURALES EXACTOS (DESDE COORDENADAS SVG DE DISEÑO)
         // =========================================================================
         public static Sprite ObtenerSpriteIcono(string nombreIcono, Color32? colorTinte = null)
@@ -471,6 +679,93 @@ namespace SoulKnight
                         new RectInt(4, 3, 2, 1),
                         new RectInt(1, 4, 4, 1),
                         new RectInt(2, 5, 2, 1)
+                    });
+                    break;
+
+                case "play": // Play triángulo 8x8
+                    tex = CrearTexturaIcono(8, 8, color, new RectInt[]
+                    {
+                        new RectInt(1, 0, 2, 8),
+                        new RectInt(3, 1, 2, 6),
+                        new RectInt(5, 2, 2, 4),
+                        new RectInt(7, 3, 1, 2)
+                    });
+                    break;
+
+                case "engrane": // Engrane / Opciones 9x9
+                    tex = CrearTexturaHollow(9, 9, color,
+                        new RectInt(2, 2, 5, 5), new RectInt(3, 3, 3, 3),
+                        new RectInt[]
+                        {
+                            new RectInt(4, 0, 1, 2),
+                            new RectInt(4, 7, 1, 2),
+                            new RectInt(0, 4, 2, 1),
+                            new RectInt(7, 4, 2, 1),
+                            new RectInt(1, 1, 1, 1),
+                            new RectInt(7, 1, 1, 1),
+                            new RectInt(1, 7, 1, 1),
+                            new RectInt(7, 7, 1, 1)
+                        });
+                    break;
+
+                case "puerta": // Salir 8x8
+                    tex = CrearTexturaIcono(8, 8, color, new RectInt[]
+                    {
+                        new RectInt(0, 0, 4, 1),
+                        new RectInt(0, 1, 1, 6),
+                        new RectInt(0, 7, 4, 1),
+                        new RectInt(3, 3, 4, 2),
+                        new RectInt(5, 2, 1, 4),
+                        new RectInt(6, 1, 1, 6)
+                    });
+                    break;
+
+                case "lapiz": // Editar nombre 8x8
+                    tex = CrearTexturaIcono(8, 8, color, new RectInt[]
+                    {
+                        new RectInt(6, 0, 2, 2),
+                        new RectInt(5, 1, 1, 2),
+                        new RectInt(4, 2, 1, 2),
+                        new RectInt(3, 3, 1, 2),
+                        new RectInt(2, 4, 1, 2),
+                        new RectInt(1, 5, 1, 2),
+                        new RectInt(0, 6, 2, 2)
+                    });
+                    break;
+
+                case "musica": // BGM Nota musical 8x7
+                    tex = CrearTexturaIcono(8, 7, color, new RectInt[]
+                    {
+                        new RectInt(3, 0, 4, 1),
+                        new RectInt(3, 1, 1, 4),
+                        new RectInt(6, 1, 1, 3),
+                        new RectInt(1, 4, 3, 2),
+                        new RectInt(4, 3, 3, 2)
+                    });
+                    break;
+
+                case "destello": // SFX Chispa 8x8
+                    tex = CrearTexturaIcono(8, 8, color, new RectInt[]
+                    {
+                        new RectInt(3, 0, 1, 7),
+                        new RectInt(0, 3, 7, 1),
+                        new RectInt(2, 2, 3, 3)
+                    });
+                    break;
+
+                case "restaurar": // Flecha circular 8x8
+                    tex = CrearTexturaIcono(8, 8, color, new RectInt[]
+                    {
+                        new RectInt(2, 0, 4, 1),
+                        new RectInt(1, 1, 1, 1),
+                        new RectInt(6, 1, 1, 1),
+                        new RectInt(0, 2, 1, 3),
+                        new RectInt(7, 2, 1, 3),
+                        new RectInt(1, 5, 1, 1),
+                        new RectInt(3, 2, 1, 2),
+                        new RectInt(4, 3, 1, 2),
+                        new RectInt(2, 6, 4, 1),
+                        new RectInt(6, 5, 1, 1)
                     });
                     break;
             }
