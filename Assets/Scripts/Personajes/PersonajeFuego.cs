@@ -432,14 +432,14 @@ namespace SoulKnight
                             // MODO ESCOPETA TRIPLE DE FUEGO (Cadencia rápida 0.28s)
                             _cdBolaFuegoRestante = 0.28f;
                             GestorAudio.PlaySFX(TipoSFX.FuegoDisparo, 1.15f);
-                            LanzarEscopetaFuegoServerRpc(dir, (Vector2)transform.position);
+                            DispararEscopetaFuegoPiloto(dir, (Vector2)transform.position);
                         }
                         else
                         {
-                            // Disparo estándar
+                            // Disparo estándar con predicción local 0ms de delay
                             _cdBolaFuegoRestante = cooldownBolaFuego * FactorReduccionCooldown;
                             GestorAudio.PlaySFX(TipoSFX.FuegoDisparo, 0.95f);
-                            LanzarBolaFuegoServerRpc(dir, (Vector2)transform.position);
+                            DispararBolaFuegoPiloto(dir, (Vector2)transform.position);
                         }
                     }
                     else if (!string.IsNullOrEmpty(motivo))
@@ -547,35 +547,108 @@ namespace SoulKnight
             }
         }
 
-        [ServerRpc(RequireOwnership = false)]
-        private void LanzarBolaFuegoServerRpc(Vector2 dir, Vector2 origenCliente = default, ServerRpcParams rpcParams = default)
+        private void DispararBolaFuegoPiloto(Vector2 dir, Vector2 spawnPos)
         {
-            if (rpcParams.Receive.SenderClientId != OwnerClientId) return;
-            Vector2 spawnPos = (origenCliente != Vector2.zero && Vector2.Distance(origenCliente, transform.position) < 4.0f)
-                ? origenCliente
-                : (Vector2)transform.position;
             int danoEscalado = Mathf.RoundToInt(danoBolaFuego * MultiplicadorDanoTotal);
-            InstanciarBolaFuego(dir, danoEscalado, spawnPos);
+            int bonoQuem = ObtenerNivelMejora(TipoMejoraTienda.Fuego_DanoQuemadura) * 8;
+            float multArea = (1.0f + ObtenerNivelMejora(TipoMejoraTienda.Fuego_Area) * 0.20f) * MultiplicadorAreaHabilidades;
+            float vel = 18f;
+
+            // 1. Simulación y visual local inmediata en el dueño (0 ms delay en pantalla)
+            PoolProyectiles.ObtenerOCrear().DispararBolaFuego(
+                this, spawnPos, dir, vel, danoEscalado, esPropietarioLocal: true, quemadura: true, bonoQuem: bonoQuem, multArea: multArea);
+
+            // 2. Notificación confiable al host con timestamp de red
+            float timestamp = (NetworkManager != null && NetworkManager.IsListening) ? (float)NetworkManager.ServerTime.TimeAsFloat : Time.time;
+            if (IsServer)
+            {
+                SpawnBolaFuegoClientRpc(spawnPos, dir, vel, danoEscalado, bonoQuem, multArea, timestamp);
+            }
+            else
+            {
+                NotificarDisparoFuegoServerRpc(dir, spawnPos, vel, danoEscalado, bonoQuem, multArea, timestamp);
+            }
         }
 
-        [ServerRpc(RequireOwnership = false)]
-        private void LanzarEscopetaFuegoServerRpc(Vector2 dirPrincipal, Vector2 origenCliente = default, ServerRpcParams rpcParams = default)
+        private void DispararEscopetaFuegoPiloto(Vector2 dirPrincipal, Vector2 spawnPos)
         {
-            if (rpcParams.Receive.SenderClientId != OwnerClientId) return;
-            if (prefabBolaFuego == null) return;
-            if (dirPrincipal.sqrMagnitude < 0.001f) dirPrincipal = Vector2.right;
-
-            Vector2 spawnPos = (origenCliente != Vector2.zero && Vector2.Distance(origenCliente, transform.position) < 4.0f)
-                ? origenCliente
-                : (Vector2)transform.position;
-
             int danoEscalado = Mathf.RoundToInt(danoBolaFuego * MultiplicadorDanoTotal);
+            int bonoQuem = ObtenerNivelMejora(TipoMejoraTienda.Fuego_DanoQuemadura) * 8;
+            float multArea = (1.0f + ObtenerNivelMejora(TipoMejoraTienda.Fuego_Area) * 0.20f) * MultiplicadorAreaHabilidades;
+            float vel = 18f;
+
             Vector2 dirIzq = Quaternion.Euler(0f, 0f, 16f) * dirPrincipal;
             Vector2 dirDer = Quaternion.Euler(0f, 0f, -16f) * dirPrincipal;
 
-            InstanciarBolaFuego(dirPrincipal, danoEscalado, spawnPos);
-            InstanciarBolaFuego(dirIzq, danoEscalado, spawnPos);
-            InstanciarBolaFuego(dirDer, danoEscalado, spawnPos);
+            var pool = PoolProyectiles.ObtenerOCrear();
+            pool.DispararBolaFuego(this, spawnPos, dirPrincipal, vel, danoEscalado, esPropietarioLocal: true, quemadura: true, bonoQuem: bonoQuem, multArea: multArea);
+            pool.DispararBolaFuego(this, spawnPos, dirIzq, vel, danoEscalado, esPropietarioLocal: true, quemadura: true, bonoQuem: bonoQuem, multArea: multArea);
+            pool.DispararBolaFuego(this, spawnPos, dirDer, vel, danoEscalado, esPropietarioLocal: true, quemadura: true, bonoQuem: bonoQuem, multArea: multArea);
+
+            float timestamp = (NetworkManager != null && NetworkManager.IsListening) ? (float)NetworkManager.ServerTime.TimeAsFloat : Time.time;
+            if (IsServer)
+            {
+                SpawnEscopetaFuegoClientRpc(spawnPos, dirPrincipal, vel, danoEscalado, bonoQuem, multArea, timestamp);
+            }
+            else
+            {
+                NotificarDisparoEscopetaFuegoServerRpc(dirPrincipal, spawnPos, vel, danoEscalado, bonoQuem, multArea, timestamp);
+            }
+        }
+
+        [ServerRpc]
+        private void NotificarDisparoFuegoServerRpc(Vector2 dir, Vector2 origenCliente, float vel, int dano, int bonoQuem, float multArea, float timestamp, ServerRpcParams rpcParams = default)
+        {
+            if (rpcParams.Receive.SenderClientId != OwnerClientId) return;
+
+            Vector2 spawnPos = (origenCliente != Vector2.zero && Vector2.Distance(origenCliente, transform.position) < 4.0f)
+                ? origenCliente
+                : (Vector2)transform.position;
+
+            SpawnBolaFuegoClientRpc(spawnPos, dir, vel, dano, bonoQuem, multArea, timestamp);
+        }
+
+        [ClientRpc]
+        private void SpawnBolaFuegoClientRpc(Vector2 origen, Vector2 dir, float vel, int dano, int bonoQuem, float multArea, float timestamp)
+        {
+            // El cliente dueño ya simuló el disparo en el frame 0 (0ms) -> excluir al dueño
+            if (IsOwner) return;
+
+            // Compensar el retraso de red (RTT / 2) adelantando la simulación
+            float tiempoActual = (NetworkManager != null && NetworkManager.IsListening) ? (float)NetworkManager.ServerTime.TimeAsFloat : Time.time;
+            float dt = Mathf.Clamp(tiempoActual - timestamp, 0f, 0.5f);
+            Vector2 posAlineada = origen + dir * (vel * dt);
+
+            PoolProyectiles.ObtenerOCrear().DispararBolaFuego(this, posAlineada, dir, vel, dano, esPropietarioLocal: false, quemadura: true, bonoQuem: bonoQuem, multArea: multArea);
+        }
+
+        [ServerRpc]
+        private void NotificarDisparoEscopetaFuegoServerRpc(Vector2 dirPrincipal, Vector2 origenCliente, float vel, int dano, int bonoQuem, float multArea, float timestamp, ServerRpcParams rpcParams = default)
+        {
+            if (rpcParams.Receive.SenderClientId != OwnerClientId) return;
+
+            Vector2 spawnPos = (origenCliente != Vector2.zero && Vector2.Distance(origenCliente, transform.position) < 4.0f)
+                ? origenCliente
+                : (Vector2)transform.position;
+
+            SpawnEscopetaFuegoClientRpc(spawnPos, dirPrincipal, vel, dano, bonoQuem, multArea, timestamp);
+        }
+
+        [ClientRpc]
+        private void SpawnEscopetaFuegoClientRpc(Vector2 origen, Vector2 dirPrincipal, float vel, int dano, int bonoQuem, float multArea, float timestamp)
+        {
+            if (IsOwner) return;
+
+            float tiempoActual = (NetworkManager != null && NetworkManager.IsListening) ? (float)NetworkManager.ServerTime.TimeAsFloat : Time.time;
+            float dt = Mathf.Clamp(tiempoActual - timestamp, 0f, 0.5f);
+
+            Vector2 dirIzq = Quaternion.Euler(0f, 0f, 16f) * dirPrincipal;
+            Vector2 dirDer = Quaternion.Euler(0f, 0f, -16f) * dirPrincipal;
+
+            var pool = PoolProyectiles.ObtenerOCrear();
+            pool.DispararBolaFuego(this, origen + dirPrincipal * (vel * dt), dirPrincipal, vel, dano, esPropietarioLocal: false, quemadura: true, bonoQuem: bonoQuem, multArea: multArea);
+            pool.DispararBolaFuego(this, origen + dirIzq * (vel * dt), dirIzq, vel, dano, esPropietarioLocal: false, quemadura: true, bonoQuem: bonoQuem, multArea: multArea);
+            pool.DispararBolaFuego(this, origen + dirDer * (vel * dt), dirDer, vel, dano, esPropietarioLocal: false, quemadura: true, bonoQuem: bonoQuem, multArea: multArea);
         }
 
         [ServerRpc(RequireOwnership = false)]

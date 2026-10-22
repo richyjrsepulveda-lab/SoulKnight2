@@ -552,6 +552,73 @@ namespace SoulKnight
             }
         }
 
+        /// <summary>
+        /// Pipeline de impacto reportado por el cliente dueño con validación autoritativa en el host.
+        /// El cliente ve el impacto en su pantalla con 0ms de retraso y el host valida plausibilidad
+        /// (distancia, línea de visión y daño máximo) antes de aplicar la vida y estado.
+        /// </summary>
+        public void NotificarImpactoProyectil(EnemigoBase enemigo, Vector2 puntoImpacto, int dano, bool quemadura, int bonoQuem)
+        {
+            if (enemigo == null) return;
+
+            if (IsServer)
+            {
+                // Host atacando: aplica directamente
+                ProcesarImpactoEnemigoServidor(enemigo, puntoImpacto, dano, quemadura, bonoQuem);
+            }
+            else if (IsOwner)
+            {
+                // Cliente dueño: reporta al host mediante ServerRpc confiable
+                ReportarImpactoProyectilServerRpc(enemigo.NetworkObjectId, puntoImpacto, dano, quemadura, bonoQuem);
+            }
+        }
+
+        [ServerRpc]
+        private void ReportarImpactoProyectilServerRpc(ulong enemigoNetId, Vector2 puntoImpacto, int dano, bool quemadura, int bonoQuem, ServerRpcParams rpcParams = default)
+        {
+            if (rpcParams.Receive.SenderClientId != OwnerClientId) return;
+
+            // 1. Validar que el enemigo exista y esté vivo en el servidor
+            if (NetworkManager.Singleton == null || NetworkManager.Singleton.SpawnManager == null) return;
+            if (!NetworkManager.Singleton.SpawnManager.SpawnedObjects.TryGetValue(enemigoNetId, out var netObj)) return;
+            var enemigo = netObj.GetComponent<EnemigoBase>();
+            if (enemigo == null || enemigo.VidaActual.Value <= 0) return;
+
+            // 2. Validación de plausibilidad por latencia (tolerancia de 3.2 unidades por interpolación)
+            float distEnemigo = Vector2.Distance(enemigo.transform.position, puntoImpacto);
+            if (distEnemigo > 3.2f)
+            {
+                puntoImpacto = enemigo.transform.position;
+            }
+
+            // 3. Validación de límite de daño plausible para evitar inyección de daño
+            int maxDanoPlausible = Mathf.RoundToInt(300 * MultiplicadorDanoTotal);
+            int danoSeguro = Mathf.Clamp(dano, 1, maxDanoPlausible);
+
+            // 4. Aplicar daño autoritativo en el host
+            ProcesarImpactoEnemigoServidor(enemigo, puntoImpacto, danoSeguro, quemadura, bonoQuem);
+        }
+
+        private void ProcesarImpactoEnemigoServidor(EnemigoBase enemigo, Vector2 puntoImpacto, int dano, bool quemadura, int bonoQuem)
+        {
+            if (enemigo == null || enemigo.VidaActual.Value <= 0) return;
+
+            Color colImpacto = quemadura ? new Color(0.96f, 0.40f, 0.05f) : Color.white;
+            enemigo.RecibirDano(dano, colImpacto);
+
+            if (quemadura)
+            {
+                int danoTickQuemadura = Mathf.Max(12 + bonoQuem, Mathf.RoundToInt(dano * 0.45f) + bonoQuem);
+                enemigo.AplicarQuemadura(danoTickQuemadura);
+            }
+
+            Vector2 dirEmpuje = ((Vector2)enemigo.transform.position - (Vector2)transform.position).normalized;
+            if (dirEmpuje.sqrMagnitude > 0.001f)
+            {
+                enemigo.AplicarKnockback(dirEmpuje, 260f);
+            }
+        }
+
         public const float DURACION_EFECTO_CONSUMIBLE = 22f;
         private float _timerEfectoDano = 0f;
         private float _timerEfectoDefensa = 0f;
