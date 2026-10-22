@@ -137,8 +137,10 @@ namespace SoulKnight
             _txtValor.alignment = TextAnchor.MiddleCenter;
             _txtValor.raycastTarget = false;
             _txtValor.color = EstiloUIUX.ColTextoCrema;
+            _txtValor.horizontalOverflow = HorizontalWrapMode.Overflow;
+            _txtValor.verticalOverflow = VerticalWrapMode.Overflow;
             var rtTxt = txtValObj.GetComponent<RectTransform>();
-            rtTxt.sizeDelta = new Vector2(240f, 50f);
+            rtTxt.sizeDelta = new Vector2(280f, 56f);
         }
 
         private static void ConfigurarBotonPixel(Button btn, Action onClick)

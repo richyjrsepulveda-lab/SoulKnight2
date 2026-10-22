@@ -41,6 +41,9 @@ namespace SoulKnight
             var comp = txt.GetComponent<BordeTextoPixelArt>();
             if (comp == null) comp = txt.gameObject.AddComponent<BordeTextoPixelArt>();
 
+            txt.horizontalOverflow = HorizontalWrapMode.Overflow;
+            txt.verticalOverflow = VerticalWrapMode.Overflow;
+
             comp.grosor = grosorTrazo;
             comp.offsetSombra = sombra ?? new Vector2(0f, -8f);
             comp.colorContorno = color ?? new Color32(0x0C, 0x08, 0x18, 0xFF);

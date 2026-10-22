@@ -171,12 +171,24 @@ namespace SoulKnight
             imgFondo.color = new Color(0.03f, 0.04f, 0.07f, 0.95f);
 
             // ==================== FONDO Y CANVAS RESPONSIVO ====================
-            var scaler = GetComponent<CanvasScaler>();
-            if (scaler == null) scaler = gameObject.AddComponent<CanvasScaler>();
-            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-            scaler.referenceResolution = new Vector2(1920f, 1080f);
-            scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
-            scaler.matchWidthOrHeight = 0.5f;
+            if (canvas.isRootCanvas)
+            {
+                var scaler = GetComponent<CanvasScaler>();
+                if (scaler == null) scaler = gameObject.AddComponent<CanvasScaler>();
+                scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+                scaler.referenceResolution = new Vector2(1920f, 1080f);
+                scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
+                scaler.matchWidthOrHeight = 0.5f;
+            }
+            else
+            {
+                var scaler = GetComponent<CanvasScaler>();
+                if (scaler != null)
+                {
+                    if (Application.isPlaying) Destroy(scaler);
+                    else DestroyImmediate(scaler);
+                }
+            }
 
             // Fondo con patrón de ladrillos pixel art
             var bgObj = new GameObject("FondoLadrillosMosaico");
@@ -377,6 +389,8 @@ namespace SoulKnight
             txtRest.color = EstiloUIUX.ColBtnRojoTexto;
             txtRest.text = "RESTAURAR CONTROLES";
             txtRest.raycastTarget = false;
+            txtRest.horizontalOverflow = HorizontalWrapMode.Overflow;
+            txtRest.verticalOverflow = VerticalWrapMode.Overflow;
             txtRestObj.GetComponent<RectTransform>().sizeDelta = new Vector2(340f, 40f);
 
             // Botón Cerrar y Guardar (Verde 460x72 en Audio/Video, 440x72 en Controles)
@@ -419,6 +433,8 @@ namespace SoulKnight
             txtCerrar.color = EstiloUIUX.ColBtnVerdeTexto;
             txtCerrar.text = "CERRAR Y GUARDAR";
             txtCerrar.raycastTarget = false;
+            txtCerrar.horizontalOverflow = HorizontalWrapMode.Overflow;
+            txtCerrar.verticalOverflow = VerticalWrapMode.Overflow;
             txtCerrarObj.GetComponent<RectTransform>().sizeDelta = new Vector2(350f, 40f);
 
             // Listeners pestañas
@@ -484,7 +500,9 @@ namespace SoulKnight
             txtTitH.color = EstiloUIUX.ColDorado;
             txtTitH.text = "NIVELES DE VOLUMEN";
             txtTitH.raycastTarget = false;
-            txtTitH.rectTransform.sizeDelta = new Vector2(300f, 32f);
+            txtTitH.horizontalOverflow = HorizontalWrapMode.Overflow;
+            txtTitH.verticalOverflow = VerticalWrapMode.Overflow;
+            txtTitH.rectTransform.sizeDelta = new Vector2(350f, 36f);
 
             var txtSubH = new GameObject("Subtitulo").AddComponent<Text>();
             txtSubH.transform.SetParent(izqVol.transform, false);
@@ -493,7 +511,9 @@ namespace SoulKnight
             txtSubH.color = EstiloUIUX.ColTextoTenue;
             txtSubH.text = "Se guardan automáticamente";
             txtSubH.raycastTarget = false;
-            txtSubH.rectTransform.sizeDelta = new Vector2(320f, 26f);
+            txtSubH.horizontalOverflow = HorizontalWrapMode.Overflow;
+            txtSubH.verticalOverflow = VerticalWrapMode.Overflow;
+            txtSubH.rectTransform.sizeDelta = new Vector2(350f, 30f);
 
             // Botón Probar Efecto (Hielo 240x52px)
             var btnProbarObj = new GameObject("BotonProbarEfecto");
@@ -531,7 +551,9 @@ namespace SoulKnight
             txtProbar.color = EstiloUIUX.ColBtnHieloTexto;
             txtProbar.text = "PROBAR EFECTO";
             txtProbar.raycastTarget = false;
-            txtProbar.rectTransform.sizeDelta = new Vector2(160f, 28f);
+            txtProbar.horizontalOverflow = HorizontalWrapMode.Overflow;
+            txtProbar.verticalOverflow = VerticalWrapMode.Overflow;
+            txtProbar.rectTransform.sizeDelta = new Vector2(170f, 32f);
 
             // Contenedor de Sliders (Alto 3 x 56 + 2 x 6 = 180px)
             var contSliders = new GameObject("ContenedorSliders");
@@ -613,7 +635,9 @@ namespace SoulKnight
             txtTitC.color = EstiloUIUX.ColDorado;
             txtTitC.text = "CANJEAR CÓDIGO";
             txtTitC.raycastTarget = false;
-            txtTitC.rectTransform.sizeDelta = new Vector2(250f, 32f);
+            txtTitC.horizontalOverflow = HorizontalWrapMode.Overflow;
+            txtTitC.verticalOverflow = VerticalWrapMode.Overflow;
+            txtTitC.rectTransform.sizeDelta = new Vector2(260f, 36f);
 
             // Badge EVENTOS / COMUNIDAD
             var badgeObj = new GameObject("BadgeComunidad");
@@ -631,6 +655,8 @@ namespace SoulKnight
             txtBadge.color = EstiloUIUX.ColBtnDoradoTexto;
             txtBadge.text = "EVENTOS / COMUNIDAD";
             txtBadge.raycastTarget = false;
+            txtBadge.horizontalOverflow = HorizontalWrapMode.Overflow;
+            txtBadge.verticalOverflow = VerticalWrapMode.Overflow;
             var rtTxtBadge = txtBadge.GetComponent<RectTransform>();
             rtTxtBadge.anchorMin = Vector2.zero;
             rtTxtBadge.anchorMax = Vector2.one;
@@ -645,12 +671,14 @@ namespace SoulKnight
             txtDescC.color = EstiloUIUX.ColTextoTenue;
             txtDescC.text = "Introduce un código promocional de evento o una clave para canjear recompensas.";
             txtDescC.raycastTarget = false;
+            txtDescC.horizontalOverflow = HorizontalWrapMode.Overflow;
+            txtDescC.verticalOverflow = VerticalWrapMode.Overflow;
             var rtDescC = descC.GetComponent<RectTransform>();
             rtDescC.anchorMin = new Vector2(0f, 1f);
             rtDescC.anchorMax = new Vector2(1f, 1f);
             rtDescC.pivot = new Vector2(0f, 1f);
             rtDescC.anchoredPosition = new Vector2(0f, -40f);
-            rtDescC.sizeDelta = new Vector2(0f, 24f);
+            rtDescC.sizeDelta = new Vector2(0f, 28f);
 
             // Fila Input + Botón (Alto 64px, gap 36px)
             var filaInput = new GameObject("FilaInput");
@@ -687,6 +715,8 @@ namespace SoulKnight
             txtPl.color = EstiloUIUX.ColTextoMuyTenue;
             txtPl.text = "Escribe tu código aquí…";
             txtPl.alignment = TextAnchor.MiddleLeft;
+            txtPl.horizontalOverflow = HorizontalWrapMode.Overflow;
+            txtPl.verticalOverflow = VerticalWrapMode.Overflow;
             var rtPl = plObj.GetComponent<RectTransform>();
             rtPl.anchorMin = Vector2.zero;
             rtPl.anchorMax = Vector2.one;
@@ -701,6 +731,8 @@ namespace SoulKnight
             txtInpVal.color = EstiloUIUX.ColTextoCrema;
             txtInpVal.alignment = TextAnchor.MiddleLeft;
             txtInpVal.supportRichText = false;
+            txtInpVal.horizontalOverflow = HorizontalWrapMode.Overflow;
+            txtInpVal.verticalOverflow = VerticalWrapMode.Overflow;
             var rtTxtInp = txtInpVal.GetComponent<RectTransform>();
             rtTxtInp.anchorMin = Vector2.zero;
             rtTxtInp.anchorMax = Vector2.one;
@@ -746,6 +778,8 @@ namespace SoulKnight
             txtBtnC.color = EstiloUIUX.ColBtnVerdeTexto;
             txtBtnC.text = "CANJEAR CÓDIGO";
             txtBtnC.raycastTarget = false;
+            txtBtnC.horizontalOverflow = HorizontalWrapMode.Overflow;
+            txtBtnC.verticalOverflow = VerticalWrapMode.Overflow;
             var rtTxtBC = txtBtnC.GetComponent<RectTransform>();
             rtTxtBC.anchorMin = Vector2.zero;
             rtTxtBC.anchorMax = Vector2.one;
@@ -759,12 +793,14 @@ namespace SoulKnight
             _txtFeedbackComando.fontSize = 18;
             _txtFeedbackComando.color = EstiloUIUX.ColTextoTenue;
             _txtFeedbackComando.text = "Escribe tu código y pulsa «Canjear» para activar recompensas o modos especiales.";
+            _txtFeedbackComando.horizontalOverflow = HorizontalWrapMode.Overflow;
+            _txtFeedbackComando.verticalOverflow = VerticalWrapMode.Overflow;
             var rtNotaC = notaC.GetComponent<RectTransform>();
             rtNotaC.anchorMin = new Vector2(0f, 1f);
             rtNotaC.anchorMax = new Vector2(1f, 1f);
             rtNotaC.pivot = new Vector2(0f, 1f);
             rtNotaC.anchoredPosition = new Vector2(0f, -140f);
-            rtNotaC.sizeDelta = new Vector2(0f, 22f);
+            rtNotaC.sizeDelta = new Vector2(0f, 26f);
 
             // Botón rápido de Acceso Admin si ya fue desbloqueado
             _seccionAccesoAdmin = new GameObject("BotonAccesoAdminRapido");
@@ -843,7 +879,9 @@ namespace SoulKnight
             txtTit.text = titulo;
             txtTit.lineSpacing = 1.1f;
             txtTit.raycastTarget = false;
-            txtTit.rectTransform.sizeDelta = new Vector2(300f, 28f);
+            txtTit.horizontalOverflow = HorizontalWrapMode.Overflow;
+            txtTit.verticalOverflow = VerticalWrapMode.Overflow;
+            txtTit.rectTransform.sizeDelta = new Vector2(300f, 34f);
 
             var txtSub = new GameObject("Subtitulo").AddComponent<Text>();
             txtSub.transform.SetParent(txtCont.transform, false);
@@ -852,7 +890,9 @@ namespace SoulKnight
             txtSub.color = EstiloUIUX.ColTextoTenue;
             txtSub.text = subtitulo;
             txtSub.raycastTarget = false;
-            txtSub.rectTransform.sizeDelta = new Vector2(300f, 20f);
+            txtSub.horizontalOverflow = HorizontalWrapMode.Overflow;
+            txtSub.verticalOverflow = VerticalWrapMode.Overflow;
+            txtSub.rectTransform.sizeDelta = new Vector2(300f, 24f);
 
             // Track Slider (flex entre 370px y el porcentaje derecho)
             var trackObj = new GameObject("Track");
@@ -924,12 +964,14 @@ namespace SoulKnight
             pctObj.alignment = TextAnchor.MiddleRight;
             pctObj.color = EstiloUIUX.ColDorado;
             pctObj.raycastTarget = false;
+            pctObj.horizontalOverflow = HorizontalWrapMode.Overflow;
+            pctObj.verticalOverflow = VerticalWrapMode.Overflow;
             var rtPct = pctObj.rectTransform;
             rtPct.anchorMin = new Vector2(1f, 0.5f);
             rtPct.anchorMax = new Vector2(1f, 0.5f);
             rtPct.pivot = new Vector2(1f, 0.5f);
             rtPct.anchoredPosition = Vector2.zero;
-            rtPct.sizeDelta = new Vector2(110f, 44f);
+            rtPct.sizeDelta = new Vector2(120f, 48f);
             outTxtPct = pctObj;
 
             var pctRef = pctObj;
@@ -991,8 +1033,10 @@ namespace SoulKnight
             txtTitSec.color = EstiloUIUX.ColDorado;
             txtTitSec.text = "AJUSTES DE VIDEO Y PANTALLA";
             txtTitSec.raycastTarget = false;
+            txtTitSec.horizontalOverflow = HorizontalWrapMode.Overflow;
+            txtTitSec.verticalOverflow = VerticalWrapMode.Overflow;
             var rtTxtSec = txtTitSec.GetComponent<RectTransform>();
-            rtTxtSec.sizeDelta = new Vector2(700f, 32f);
+            rtTxtSec.sizeDelta = new Vector2(700f, 36f);
 
             // Contenedor de las 5 Cards
             var contCards = new GameObject("ContenedorCards");
@@ -1092,12 +1136,14 @@ namespace SoulKnight
             txtSub.color = EstiloUIUX.ColTextoTenue;
             txtSub.supportRichText = true;
             txtSub.text = "Haz clic en una tecla para cambiarla. Pulsa <color=#ffcf4a>ESC</color> para cancelar la espera.";
+            txtSub.horizontalOverflow = HorizontalWrapMode.Overflow;
+            txtSub.verticalOverflow = VerticalWrapMode.Overflow;
             var rtSub = subObj.GetComponent<RectTransform>();
             rtSub.anchorMin = new Vector2(0.5f, 1f);
             rtSub.anchorMax = new Vector2(0.5f, 1f);
             rtSub.pivot = new Vector2(0.5f, 1f);
             rtSub.anchoredPosition = new Vector2(0f, 0f);
-            rtSub.sizeDelta = new Vector2(1000f, 28f);
+            rtSub.sizeDelta = new Vector2(1000f, 32f);
             textoEstado = txtSub;
 
             // Grid 2 Columnas (Ancho interior 1052px, cada columna 500px, gap 44px)
@@ -1195,7 +1241,9 @@ namespace SoulKnight
             txtObj.color = EstiloUIUX.ColDorado;
             txtObj.text = titulo;
             txtObj.raycastTarget = false;
-            txtObj.rectTransform.sizeDelta = new Vector2(300f, 28f);
+            txtObj.horizontalOverflow = HorizontalWrapMode.Overflow;
+            txtObj.verticalOverflow = VerticalWrapMode.Overflow;
+            txtObj.rectTransform.sizeDelta = new Vector2(300f, 34f);
         }
 
         private GameObject CrearCardControl(Transform parent, AccionControl accion, string nombreEtiqueta)
@@ -1219,12 +1267,14 @@ namespace SoulKnight
             txtObj.color = EstiloUIUX.ColTextoCrema;
             txtObj.text = nombreEtiqueta;
             txtObj.raycastTarget = false;
+            txtObj.horizontalOverflow = HorizontalWrapMode.Overflow;
+            txtObj.verticalOverflow = VerticalWrapMode.Overflow;
             var rtTxt = txtObj.rectTransform;
             rtTxt.anchorMin = new Vector2(0f, 0.5f);
             rtTxt.anchorMax = new Vector2(0f, 0.5f);
             rtTxt.pivot = new Vector2(0f, 0.5f);
             rtTxt.anchoredPosition = new Vector2(24f, 0f);
-            rtTxt.sizeDelta = new Vector2(280f, 32f);
+            rtTxt.sizeDelta = new Vector2(320f, 34f);
 
             // Botón Keycap (Derecha)
             var btnKeyObj = new GameObject("BotonKeycap");
@@ -1250,6 +1300,8 @@ namespace SoulKnight
             txtKeyObj.alignment = TextAnchor.MiddleCenter;
             txtKeyObj.color = new Color32(0x1B, 0x14, 0x38, 0xFF);
             txtKeyObj.raycastTarget = false;
+            txtKeyObj.horizontalOverflow = HorizontalWrapMode.Overflow;
+            txtKeyObj.verticalOverflow = VerticalWrapMode.Overflow;
             var rtTxtKey = txtKeyObj.rectTransform;
             rtTxtKey.anchorMin = Vector2.zero;
             rtTxtKey.anchorMax = Vector2.one;
@@ -1988,8 +2040,10 @@ namespace SoulKnight
             txt.color = EstiloUIUX.ColBtnPiedraTexto;
             txt.text = texto;
             txt.raycastTarget = false;
+            txt.horizontalOverflow = HorizontalWrapMode.Overflow;
+            txt.verticalOverflow = VerticalWrapMode.Overflow;
             var rtTxt = txtObj.GetComponent<RectTransform>();
-            rtTxt.sizeDelta = new Vector2(170f, 36f);
+            rtTxt.sizeDelta = new Vector2(220f, 40f);
 
             return btn;
         }
@@ -2169,11 +2223,11 @@ namespace SoulKnight
             rtTxtCont.anchorMax = new Vector2(0f, 0.5f);
             rtTxtCont.pivot = new Vector2(0f, 0.5f);
             rtTxtCont.anchoredPosition = new Vector2(32f, 0f);
-            rtTxtCont.sizeDelta = new Vector2(540f, 64f);
+            rtTxtCont.sizeDelta = new Vector2(560f, 72f);
 
             var vlgTxt = txtCont.AddComponent<VerticalLayoutGroup>();
             vlgTxt.childAlignment = TextAnchor.MiddleLeft;
-            vlgTxt.spacing = 6f;
+            vlgTxt.spacing = 4f;
             vlgTxt.childControlWidth = true;
             vlgTxt.childControlHeight = false;
 
@@ -2188,7 +2242,9 @@ namespace SoulKnight
             txtTit.text = titulo;
             txtTit.lineSpacing = 1.1f;
             txtTit.raycastTarget = false;
-            titObj.GetComponent<RectTransform>().sizeDelta = new Vector2(540f, 32f);
+            txtTit.horizontalOverflow = HorizontalWrapMode.Overflow;
+            txtTit.verticalOverflow = VerticalWrapMode.Overflow;
+            titObj.GetComponent<RectTransform>().sizeDelta = new Vector2(560f, 36f);
 
             // Subtítulo 20px
             var descObj = new GameObject("Descripcion");
@@ -2200,7 +2256,9 @@ namespace SoulKnight
             txtDesc.text = descripcion;
             txtDesc.lineSpacing = 1.35f;
             txtDesc.raycastTarget = false;
-            descObj.GetComponent<RectTransform>().sizeDelta = new Vector2(540f, 26f);
+            txtDesc.horizontalOverflow = HorizontalWrapMode.Wrap;
+            txtDesc.verticalOverflow = VerticalWrapMode.Overflow;
+            descObj.GetComponent<RectTransform>().sizeDelta = new Vector2(560f, 30f);
 
             return cardObj;
         }

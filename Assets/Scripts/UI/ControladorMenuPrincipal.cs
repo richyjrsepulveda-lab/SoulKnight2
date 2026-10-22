@@ -205,7 +205,9 @@ namespace SoulKnight
             txtJustA.color = EstiloUIUX.ColTextoCrema;
             txtJustA.text = "J  U  S  T   A";
             txtJustA.raycastTarget = false;
-            txtJustAObj.GetComponent<RectTransform>().sizeDelta = new Vector2(1400f, 54f);
+            txtJustA.horizontalOverflow = HorizontalWrapMode.Overflow;
+            txtJustA.verticalOverflow = VerticalWrapMode.Overflow;
+            txtJustAObj.GetComponent<RectTransform>().sizeDelta = new Vector2(1400f, 64f);
             BordeTextoPixelArt.Aplicar(txtJustA, 8, new Vector2(0f, -4f));
 
             // "CAT ADVENTURE"
@@ -219,7 +221,9 @@ namespace SoulKnight
             txtCat.supportRichText = true;
             txtCat.text = "<color=#ff7a2f>CAT</color>  <color=#ffcf4a>ADVENTURE</color>";
             txtCat.raycastTarget = false;
-            txtCatObj.GetComponent<RectTransform>().sizeDelta = new Vector2(1600f, 150f);
+            txtCat.horizontalOverflow = HorizontalWrapMode.Overflow;
+            txtCat.verticalOverflow = VerticalWrapMode.Overflow;
+            txtCatObj.GetComponent<RectTransform>().sizeDelta = new Vector2(1600f, 180f);
             BordeTextoPixelArt.Aplicar(txtCat, 12, new Vector2(0f, -8f));
 
             // ==================== 4. BOTONES PRINCIPALES (560 x 84 px, Gap 28 px) ====================
@@ -687,7 +691,9 @@ namespace SoulKnight
             txtE.color = EstiloUIUX.ColDorado;
             txtE.text = "TU NOMBRE DE AVENTURERO";
             txtE.raycastTarget = false;
-            txtE.GetComponent<RectTransform>().sizeDelta = new Vector2(500f, 32f);
+            txtE.horizontalOverflow = HorizontalWrapMode.Overflow;
+            txtE.verticalOverflow = VerticalWrapMode.Overflow;
+            txtE.GetComponent<RectTransform>().sizeDelta = new Vector2(500f, 36f);
 
             // Contenedor InputField de 88px de alto
             var contInputObj = new GameObject("ContenedorInput");
@@ -728,6 +734,8 @@ namespace SoulKnight
             txtValorInp.fontStyle = FontStyle.Bold;
             txtValorInp.alignment = TextAnchor.MiddleLeft;
             txtValorInp.color = EstiloUIUX.ColTextoCrema;
+            txtValorInp.horizontalOverflow = HorizontalWrapMode.Overflow;
+            txtValorInp.verticalOverflow = VerticalWrapMode.Overflow;
 
             _inputNombreModal.textComponent = txtValorInp;
 
@@ -748,6 +756,8 @@ namespace SoulKnight
             _txtContadorModal.alignment = TextAnchor.MiddleRight;
             _txtContadorModal.color = EstiloUIUX.ColTextoMuyTenue;
             _txtContadorModal.raycastTarget = false;
+            _txtContadorModal.horizontalOverflow = HorizontalWrapMode.Overflow;
+            _txtContadorModal.verticalOverflow = VerticalWrapMode.Overflow;
 
             _inputNombreModal.onValueChanged.AddListener((val) =>
             {
@@ -764,6 +774,8 @@ namespace SoulKnight
             txtSubM.color = EstiloUIUX.ColTextoTenue;
             txtSubM.text = "Así te verán los demás gatos en la mazmorra.";
             txtSubM.raycastTarget = false;
+            txtSubM.horizontalOverflow = HorizontalWrapMode.Overflow;
+            txtSubM.verticalOverflow = VerticalWrapMode.Overflow;
             txtSubM.GetComponent<RectTransform>().sizeDelta = new Vector2(772f, 32f);
 
             // Footer con botones CANCELAR y GUARDAR (300 x 76 px, Gap 48 px)
@@ -854,7 +866,9 @@ namespace SoulKnight
             txt.color = cTexto;
             txt.text = texto;
             txt.raycastTarget = false;
-            txt.GetComponent<RectTransform>().sizeDelta = new Vector2(w - 60f, 40f);
+            txt.horizontalOverflow = HorizontalWrapMode.Overflow;
+            txt.verticalOverflow = VerticalWrapMode.Overflow;
+            txt.GetComponent<RectTransform>().sizeDelta = new Vector2(w - 40f, 44f);
 
             var trigger = btnObj.AddComponent<EventTrigger>();
             var entryDown = new EventTrigger.Entry { eventID = EventTriggerType.PointerDown };

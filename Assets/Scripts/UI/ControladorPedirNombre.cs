@@ -259,7 +259,9 @@ namespace SoulKnight
             txtE.color = EstiloUIUX.ColDorado;
             txtE.text = "TU NOMBRE DE AVENTURERO";
             txtE.raycastTarget = false;
-            txtE.rectTransform.sizeDelta = new Vector2(500f, 32f);
+            txtE.horizontalOverflow = HorizontalWrapMode.Overflow;
+            txtE.verticalOverflow = VerticalWrapMode.Overflow;
+            txtE.rectTransform.sizeDelta = new Vector2(500f, 36f);
 
             // Campo de Entrada 88px de alto
             var campoObj = new GameObject("CampoTexto");
@@ -284,6 +286,8 @@ namespace SoulKnight
             txtValorInp.alignment = TextAnchor.MiddleLeft;
             txtValorInp.color = EstiloUIUX.ColTextoCrema;
             txtValorInp.supportRichText = false;
+            txtValorInp.horizontalOverflow = HorizontalWrapMode.Overflow;
+            txtValorInp.verticalOverflow = VerticalWrapMode.Overflow;
             var rtTxtVal = txtValorInp.GetComponent<RectTransform>();
             rtTxtVal.anchorMin = Vector2.zero;
             rtTxtVal.anchorMax = Vector2.one;
@@ -300,6 +304,8 @@ namespace SoulKnight
             _txtContador.alignment = TextAnchor.MiddleRight;
             _txtContador.color = EstiloUIUX.ColTextoMuyTenue;
             _txtContador.raycastTarget = false;
+            _txtContador.horizontalOverflow = HorizontalWrapMode.Overflow;
+            _txtContador.verticalOverflow = VerticalWrapMode.Overflow;
             var rtCont = contObj.GetComponent<RectTransform>();
             rtCont.anchorMin = new Vector2(1f, 0f);
             rtCont.anchorMax = new Vector2(1f, 1f);
@@ -319,7 +325,9 @@ namespace SoulKnight
             txtSubM.color = EstiloUIUX.ColTextoTenue;
             txtSubM.text = "Así te verán los demás gatos en la mazmorra.";
             txtSubM.raycastTarget = false;
-            subM.GetComponent<RectTransform>().sizeDelta = new Vector2(772f, 26f);
+            txtSubM.horizontalOverflow = HorizontalWrapMode.Overflow;
+            txtSubM.verticalOverflow = VerticalWrapMode.Overflow;
+            subM.GetComponent<RectTransform>().sizeDelta = new Vector2(772f, 32f);
 
             // Footer con botones CANCELAR y GUARDAR
             var footerObj = new GameObject("FooterModal");
@@ -393,7 +401,9 @@ namespace SoulKnight
             txt.color = colorTexto;
             txt.text = texto;
             txt.raycastTarget = false;
-            txtObj.GetComponent<RectTransform>().sizeDelta = new Vector2(170f, 40f);
+            txt.horizontalOverflow = HorizontalWrapMode.Overflow;
+            txt.verticalOverflow = VerticalWrapMode.Overflow;
+            txtObj.GetComponent<RectTransform>().sizeDelta = new Vector2(220f, 44f);
 
             return btn;
         }
