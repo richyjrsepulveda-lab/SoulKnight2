@@ -910,8 +910,9 @@ namespace SoulKnight
         /// Aplica la apariencia oficial pixel art a un botón uGUI ya existente en jerarquía.
         /// Configura el sprite sliced escalonado, color de texto, tipografía Pixelify Sans con overflow
         /// y la animación de retroalimentación táctil de 4px al presionar.
+        /// Agrupa el icono y el texto juntos en el centro sin separaciones excesivas.
         /// </summary>
-        public static void AplicarEstiloBoton(Button btn, TipoBotonUI tipo, int tamanoFuente = 20, string icono = null, Vector2? iconoSize = null)
+        public static void AplicarEstiloBoton(Button btn, TipoBotonUI tipo, int tamanoFuente = 24, string icono = null, Vector2? iconoSize = null)
         {
             if (btn == null) return;
 
@@ -934,24 +935,34 @@ namespace SoulKnight
 
             Color32 cTexto = ObtenerColorTextoBoton(tipo);
 
-            // Agregar icono si se solicita y no existe
+            // Si hay icono, usar HorizontalLayoutGroup para que el icono y texto queden juntos en el centro
             if (!string.IsNullOrEmpty(icono))
             {
+                var hlg = btn.GetComponent<HorizontalLayoutGroup>() ?? btn.gameObject.AddComponent<HorizontalLayoutGroup>();
+                hlg.childAlignment = TextAnchor.MiddleCenter;
+                hlg.spacing = 10f;
+                hlg.childControlWidth = false;
+                hlg.childControlHeight = false;
+                hlg.childForceExpandWidth = false;
+                hlg.childForceExpandHeight = false;
+
                 var icoTrans = btn.transform.Find("IconoBoton");
+                GameObject icoObj;
                 if (icoTrans == null)
                 {
-                    var icoObj = new GameObject("IconoBoton");
+                    icoObj = new GameObject("IconoBoton");
                     icoObj.transform.SetParent(btn.transform, false);
-                    var imgIco = icoObj.AddComponent<Image>();
-                    imgIco.sprite = ObtenerSpriteIcono(icono, cTexto);
-                    imgIco.raycastTarget = false;
-                    var rtIco = icoObj.GetComponent<RectTransform>();
-                    rtIco.sizeDelta = iconoSize ?? new Vector2(24f, 24f);
-                    rtIco.anchorMin = new Vector2(0f, 0.5f);
-                    rtIco.anchorMax = new Vector2(0f, 0.5f);
-                    rtIco.pivot = new Vector2(0f, 0.5f);
-                    rtIco.anchoredPosition = new Vector2(16f, 0f);
+                    icoObj.transform.SetAsFirstSibling();
                 }
+                else
+                {
+                    icoObj = icoTrans.gameObject;
+                }
+                var imgIco = icoObj.GetComponent<Image>() ?? icoObj.AddComponent<Image>();
+                imgIco.sprite = ObtenerSpriteIcono(icono, cTexto);
+                imgIco.raycastTarget = false;
+                var rtIco = icoObj.GetComponent<RectTransform>() ?? icoObj.AddComponent<RectTransform>();
+                rtIco.sizeDelta = iconoSize ?? new Vector2(22f, 22f);
             }
 
             var txt = btn.GetComponentInChildren<Text>();
@@ -965,6 +976,13 @@ namespace SoulKnight
                 txt.horizontalOverflow = HorizontalWrapMode.Overflow;
                 txt.verticalOverflow = VerticalWrapMode.Overflow;
                 txt.raycastTarget = false;
+
+                if (!string.IsNullOrEmpty(icono))
+                {
+                    var csf = txt.GetComponent<ContentSizeFitter>() ?? txt.gameObject.AddComponent<ContentSizeFitter>();
+                    csf.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
+                    csf.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+                }
             }
 
             // Animación de pulsación física: desplazar 4px hacia abajo en PointerDown
@@ -1006,39 +1024,31 @@ namespace SoulKnight
 
             Color32 cTexto = ObtenerColorTextoBoton(tipo);
 
+            var hlg = btnObj.AddComponent<HorizontalLayoutGroup>();
+            hlg.childAlignment = TextAnchor.MiddleCenter;
+            hlg.spacing = 10f;
+            hlg.childControlWidth = false;
+            hlg.childControlHeight = false;
+            hlg.childForceExpandWidth = false;
+            hlg.childForceExpandHeight = false;
+
             if (!string.IsNullOrEmpty(icono))
             {
-                var hlg = btnObj.AddComponent<HorizontalLayoutGroup>();
-                hlg.childAlignment = TextAnchor.MiddleCenter;
-                hlg.spacing = 12f;
-                hlg.childControlWidth = false;
-                hlg.childControlHeight = false;
-
                 var icoObj = new GameObject("Icono");
                 icoObj.transform.SetParent(btnObj.transform, false);
                 var imgIco = icoObj.AddComponent<Image>();
                 imgIco.sprite = ObtenerSpriteIcono(icono, cTexto);
                 imgIco.raycastTarget = false;
-                icoObj.GetComponent<RectTransform>().sizeDelta = iconoSize ?? new Vector2(24f, 24f);
+                var rtIco = icoObj.GetComponent<RectTransform>();
+                rtIco.sizeDelta = iconoSize ?? new Vector2(22f, 22f);
             }
 
             var txtObj = new GameObject("Texto");
             txtObj.transform.SetParent(btnObj.transform, false);
-            var rtTxt = txtObj.AddComponent<RectTransform>();
-            if (string.IsNullOrEmpty(icono))
-            {
-                rtTxt.anchorMin = Vector2.zero;
-                rtTxt.anchorMax = Vector2.one;
-                rtTxt.sizeDelta = Vector2.zero;
-            }
-            else
-            {
-                rtTxt.sizeDelta = new Vector2(size.x - 60f, size.y);
-            }
-
             var txt = txtObj.AddComponent<Text>();
             txt.font = FuenteUtil.ObtenerFuentePixelify();
-            txt.fontSize = Mathf.Clamp(Mathf.RoundToInt(size.y * 0.40f), 14, 28);
+            int fs = Mathf.Clamp(Mathf.RoundToInt(size.y * 0.46f), 18, 30);
+            txt.fontSize = fs;
             txt.fontStyle = FontStyle.Bold;
             txt.alignment = TextAnchor.MiddleCenter;
             txt.color = cTexto;
@@ -1046,6 +1056,10 @@ namespace SoulKnight
             txt.horizontalOverflow = HorizontalWrapMode.Overflow;
             txt.verticalOverflow = VerticalWrapMode.Overflow;
             txt.raycastTarget = false;
+
+            var csf = txtObj.AddComponent<ContentSizeFitter>();
+            csf.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
+            csf.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
             var trigger = btnObj.AddComponent<EventTrigger>();
             var entryDown = new EventTrigger.Entry { eventID = EventTriggerType.PointerDown };

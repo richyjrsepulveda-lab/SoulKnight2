@@ -393,7 +393,7 @@ namespace SoulKnight
             txtRest.verticalOverflow = VerticalWrapMode.Overflow;
             txtRestObj.GetComponent<RectTransform>().sizeDelta = new Vector2(340f, 40f);
 
-            // Botón Cerrar y Guardar (Verde 460x72 en Audio/Video, 440x72 en Controles)
+            // Botón Cerrar y Guardar (Verde 360x66)
             var btnCerrarObj = new GameObject("BotonCerrar");
             btnCerrarObj.transform.SetParent(barraInferior.transform, false);
             var rtCerrar = btnCerrarObj.AddComponent<RectTransform>();
@@ -401,7 +401,7 @@ namespace SoulKnight
             rtCerrar.anchorMax = new Vector2(0.5f, 0.5f);
             rtCerrar.pivot = new Vector2(0.5f, 0.5f);
             rtCerrar.anchoredPosition = Vector2.zero;
-            rtCerrar.sizeDelta = new Vector2(460f, 72f);
+            rtCerrar.sizeDelta = new Vector2(360f, 66f);
 
             var imgCerrar = btnCerrarObj.AddComponent<Image>();
             imgCerrar.type = Image.Type.Sliced;
@@ -412,7 +412,7 @@ namespace SoulKnight
 
             var hlgCerrar = btnCerrarObj.AddComponent<HorizontalLayoutGroup>();
             hlgCerrar.childAlignment = TextAnchor.MiddleCenter;
-            hlgCerrar.spacing = 14f;
+            hlgCerrar.spacing = 10f;
             hlgCerrar.childControlWidth = false;
             hlgCerrar.childControlHeight = false;
 
@@ -421,13 +421,13 @@ namespace SoulKnight
             var imgPal = icoPalObj.AddComponent<Image>();
             imgPal.sprite = EstiloUIUX.ObtenerSpriteIcono("palomita", EstiloUIUX.ColBtnVerdeTexto);
             imgPal.raycastTarget = false;
-            icoPalObj.GetComponent<RectTransform>().sizeDelta = new Vector2(30f, 20f);
+            icoPalObj.GetComponent<RectTransform>().sizeDelta = new Vector2(26f, 18f);
 
             var txtCerrarObj = new GameObject("Texto");
             txtCerrarObj.transform.SetParent(btnCerrarObj.transform, false);
             var txtCerrar = txtCerrarObj.AddComponent<Text>();
             txtCerrar.font = FuenteUtil.ObtenerFuentePixelify();
-            txtCerrar.fontSize = 30;
+            txtCerrar.fontSize = 28;
             txtCerrar.fontStyle = FontStyle.Bold;
             txtCerrar.alignment = TextAnchor.MiddleCenter;
             txtCerrar.color = EstiloUIUX.ColBtnVerdeTexto;
@@ -435,7 +435,9 @@ namespace SoulKnight
             txtCerrar.raycastTarget = false;
             txtCerrar.horizontalOverflow = HorizontalWrapMode.Overflow;
             txtCerrar.verticalOverflow = VerticalWrapMode.Overflow;
-            txtCerrarObj.GetComponent<RectTransform>().sizeDelta = new Vector2(350f, 40f);
+            var csfCerrar = txtCerrarObj.AddComponent<ContentSizeFitter>();
+            csfCerrar.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
+            csfCerrar.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
             // Listeners pestañas
             _btnTabAudio.onClick.AddListener(() => CambiarPestana(PestanaOpciones.Audio));
@@ -1923,12 +1925,14 @@ namespace SoulKnight
             var txtObj = new GameObject("Texto");
             txtObj.transform.SetParent(btnObj.transform, false);
             var txt = txtObj.AddComponent<Text>();
-            txt.font = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            txt.fontSize = 11;
+            txt.font = FuenteUtil.ObtenerFuentePixelify();
+            txt.fontSize = 15;
             txt.fontStyle = FontStyle.Bold;
             txt.alignment = TextAnchor.MiddleCenter;
             txt.color = Color.white;
             txt.text = texto;
+            txt.horizontalOverflow = HorizontalWrapMode.Overflow;
+            txt.verticalOverflow = VerticalWrapMode.Overflow;
             AgregarOutline(txt);
 
             var rtTxt = txtObj.GetComponent<RectTransform>();
@@ -2018,7 +2022,7 @@ namespace SoulKnight
 
             var hlg = contH.AddComponent<HorizontalLayoutGroup>();
             hlg.childAlignment = TextAnchor.MiddleCenter;
-            hlg.spacing = 14f;
+            hlg.spacing = 10f;
             hlg.childControlWidth = false;
             hlg.childControlHeight = false;
 
@@ -2042,8 +2046,9 @@ namespace SoulKnight
             txt.raycastTarget = false;
             txt.horizontalOverflow = HorizontalWrapMode.Overflow;
             txt.verticalOverflow = VerticalWrapMode.Overflow;
-            var rtTxt = txtObj.GetComponent<RectTransform>();
-            rtTxt.sizeDelta = new Vector2(220f, 40f);
+            var csf = txtObj.AddComponent<ContentSizeFitter>();
+            csf.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
+            csf.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
             return btn;
         }

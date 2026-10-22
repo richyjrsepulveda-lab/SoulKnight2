@@ -929,32 +929,32 @@ namespace SoulKnight
             contAbajo.anchorMin = new Vector2(0.5f, 0f);
             contAbajo.anchorMax = new Vector2(0.5f, 0f);
             contAbajo.pivot = new Vector2(0.5f, 0f);
-            contAbajo.anchoredPosition = new Vector2(0f, 6f);
-            contAbajo.sizeDelta = new Vector2(400f, 155f);
+            contAbajo.anchoredPosition = new Vector2(0f, 10f);
+            contAbajo.sizeDelta = new Vector2(480f, 195f);
 
-            // 1. Fila de Habilidades en la base
+            // 1. Fila de Habilidades en la base (slots más grandes y claros)
             var filaHab = contAbajo.Find("FilaHabilidades") as RectTransform;
             if (filaHab != null)
             {
                 filaHab.anchorMin = new Vector2(0.5f, 0f);
                 filaHab.anchorMax = new Vector2(0.5f, 0f);
                 filaHab.pivot = new Vector2(0.5f, 0f);
-                filaHab.anchoredPosition = new Vector2(0f, 6f);
-                filaHab.sizeDelta = new Vector2(380f, 84f);
+                filaHab.anchoredPosition = new Vector2(0f, 8f);
+                filaHab.sizeDelta = new Vector2(460f, 102f);
 
-                float[] posX = new float[] { -141f, -47f, 47f, 141f };
+                float[] posX = new float[] { -174f, -58f, 58f, 174f };
                 for (int i = 0; i < filaHab.childCount && i < 4; i++)
                 {
                     var slotChild = filaHab.GetChild(i) as RectTransform;
                     if (slotChild != null)
                     {
                         slotChild.anchoredPosition = new Vector2(posX[i], 0f);
-                        slotChild.sizeDelta = new Vector2(80f, 80f);
+                        slotChild.sizeDelta = new Vector2(98f, 98f);
 
                         var iconoChild = slotChild.Find("Icono") as RectTransform;
                         if (iconoChild != null)
                         {
-                            iconoChild.sizeDelta = new Vector2(-6f, -6f);
+                            iconoChild.sizeDelta = new Vector2(-8f, -8f);
                             var imgIco = iconoChild.GetComponent<Image>();
                             if (imgIco != null) imgIco.preserveAspect = true;
                         }
@@ -962,20 +962,32 @@ namespace SoulKnight
                         var sombraChild = slotChild.Find("SombraCooldown") as RectTransform;
                         if (sombraChild != null)
                         {
-                            sombraChild.sizeDelta = new Vector2(-6f, -6f);
+                            sombraChild.sizeDelta = new Vector2(-8f, -8f);
                         }
 
                         var cdChild = slotChild.Find("TextoCooldown") as RectTransform;
                         if (cdChild != null)
                         {
                             var txtCd = cdChild.GetComponent<Text>();
-                            if (txtCd != null) txtCd.fontSize = 15;
+                            if (txtCd != null)
+                            {
+                                txtCd.fontSize = 22;
+                                txtCd.horizontalOverflow = HorizontalWrapMode.Overflow;
+                                txtCd.verticalOverflow = VerticalWrapMode.Overflow;
+                            }
                         }
 
                         var badgeChild = slotChild.Find("BadgeTecla") as RectTransform;
                         if (badgeChild != null)
                         {
-                            badgeChild.sizeDelta = new Vector2(42f, 18f);
+                            badgeChild.sizeDelta = new Vector2(50f, 22f);
+                            var txtBadge = badgeChild.GetComponentInChildren<Text>();
+                            if (txtBadge != null)
+                            {
+                                txtBadge.fontSize = 13;
+                                txtBadge.horizontalOverflow = HorizontalWrapMode.Overflow;
+                                txtBadge.verticalOverflow = VerticalWrapMode.Overflow;
+                            }
                         }
                     }
                 }
@@ -994,8 +1006,15 @@ namespace SoulKnight
                     rtXp.anchorMin = new Vector2(0.5f, 0f);
                     rtXp.anchorMax = new Vector2(0.5f, 0f);
                     rtXp.pivot = new Vector2(0.5f, 0f);
-                    rtXp.anchoredPosition = new Vector2(0f, 96f);
-                    rtXp.sizeDelta = new Vector2(370f, 20f);
+                    rtXp.anchoredPosition = new Vector2(0f, 118f);
+                    rtXp.sizeDelta = new Vector2(450f, 26f);
+                }
+                if (barraXPRun.textoVida != null)
+                {
+                    barraXPRun.textoVida.font = FuenteUtil.ObtenerFuentePixelify();
+                    barraXPRun.textoVida.fontSize = 15;
+                    barraXPRun.textoVida.horizontalOverflow = HorizontalWrapMode.Overflow;
+                    barraXPRun.textoVida.verticalOverflow = VerticalWrapMode.Overflow;
                 }
             }
 
@@ -1012,8 +1031,15 @@ namespace SoulKnight
                     rtBv.anchorMin = new Vector2(0.5f, 0f);
                     rtBv.anchorMax = new Vector2(0.5f, 0f);
                     rtBv.pivot = new Vector2(0.5f, 0f);
-                    rtBv.anchoredPosition = new Vector2(0f, 122f);
-                    rtBv.sizeDelta = new Vector2(370f, 24f);
+                    rtBv.anchoredPosition = new Vector2(0f, 150f);
+                    rtBv.sizeDelta = new Vector2(450f, 32f);
+                }
+                if (barraVida.textoVida != null)
+                {
+                    barraVida.textoVida.font = FuenteUtil.ObtenerFuentePixelify();
+                    barraVida.textoVida.fontSize = 18;
+                    barraVida.textoVida.horizontalOverflow = HorizontalWrapMode.Overflow;
+                    barraVida.textoVida.verticalOverflow = VerticalWrapMode.Overflow;
                 }
             }
 
@@ -1046,10 +1072,10 @@ namespace SoulKnight
                 rtCont.anchorMin = new Vector2(1f, 1f);
                 rtCont.anchorMax = new Vector2(1f, 1f);
                 rtCont.pivot = new Vector2(1f, 1f);
-                // Minimapa está en X = -16, Ancho = 285 (borde izquierdo en -301)
-                // Colocamos el oro arriba a la derecha, al ladito a la izquierda del minimapa
-                rtCont.anchoredPosition = new Vector2(-310f, -54f);
-                rtCont.sizeDelta = new Vector2(130f, 34f);
+                // Minimapa está en X = -16, Y = -54, Alto = 260 (borde inferior en Y = -314)
+                // Colocamos el oro inmediatamente debajo del minimapa con margen de 10px
+                rtCont.anchoredPosition = new Vector2(-16f, -324f);
+                rtCont.sizeDelta = new Vector2(160f, 44f);
 
                 var imgFondo = contOroObj.AddComponent<Image>();
                 imgFondo.sprite = EstiloUIUX.ObtenerSpriteTarjeta();
@@ -1066,7 +1092,7 @@ namespace SoulKnight
 
                 textoOroRun = txtObj.AddComponent<Text>();
                 textoOroRun.font = FuenteUtil.ObtenerFuentePixelify();
-                textoOroRun.fontSize = 16;
+                textoOroRun.fontSize = 20;
                 textoOroRun.fontStyle = FontStyle.Bold;
                 textoOroRun.alignment = TextAnchor.MiddleCenter;
                 textoOroRun.color = EstiloUIUX.ColDorado;
@@ -1074,6 +1100,20 @@ namespace SoulKnight
                 textoOroRun.horizontalOverflow = HorizontalWrapMode.Overflow;
                 textoOroRun.verticalOverflow = VerticalWrapMode.Overflow;
                 textoOroRun.raycastTarget = false;
+            }
+            else
+            {
+                // Asegurar posición correcta si ya existía
+                var rt = textoOroRun.transform.parent as RectTransform;
+                if (rt != null && rt.name == "ContenedorOroRunHUD")
+                {
+                    rt.anchorMin = new Vector2(1f, 1f);
+                    rt.anchorMax = new Vector2(1f, 1f);
+                    rt.pivot = new Vector2(1f, 1f);
+                    rt.anchoredPosition = new Vector2(-16f, -324f);
+                    rt.sizeDelta = new Vector2(160f, 44f);
+                }
+                textoOroRun.fontSize = 20;
             }
         }
 
@@ -1272,13 +1312,13 @@ namespace SoulKnight
                     var rtTxt = txtObj.GetComponent<RectTransform>();
                     rtTxt.anchorMin = Vector2.zero;
                     rtTxt.anchorMax = Vector2.one;
-                    rtTxt.offsetMin = new Vector2(10f, 6f);
-                    rtTxt.offsetMax = new Vector2(-10f, -6f);
+                    rtTxt.offsetMin = new Vector2(14f, 8f);
+                    rtTxt.offsetMax = new Vector2(-14f, -8f);
 
                     _textoDescHabilidadPausa = txtObj.AddComponent<Text>();
                     _textoDescHabilidadPausa.font = FuenteUtil.ObtenerFuentePixelify();
-                    _textoDescHabilidadPausa.fontSize = 13;
-                    _textoDescHabilidadPausa.lineSpacing = 1.35f;
+                    _textoDescHabilidadPausa.fontSize = 16;
+                    _textoDescHabilidadPausa.lineSpacing = 1.3f;
                     _textoDescHabilidadPausa.alignment = TextAnchor.MiddleLeft;
                     _textoDescHabilidadPausa.color = EstiloUIUX.ColTextoCrema;
                     _textoDescHabilidadPausa.horizontalOverflow = HorizontalWrapMode.Wrap;
@@ -1295,8 +1335,8 @@ namespace SoulKnight
                     rtDesc.anchorMin = new Vector2(0.5f, 0.5f);
                     rtDesc.anchorMax = new Vector2(0.5f, 0.5f);
                     rtDesc.pivot = new Vector2(0.5f, 0.5f);
-                    rtDesc.anchoredPosition = new Vector2(posXDerecha, 70f);
-                    rtDesc.sizeDelta = new Vector2(370f, 72f);
+                    rtDesc.anchoredPosition = new Vector2(posXDerecha, 74f);
+                    rtDesc.sizeDelta = new Vector2(410f, 96f);
                 }
 
                 // --- 3C. Marco del Mapa (abajo de la descripción) ---
@@ -1534,8 +1574,8 @@ namespace SoulKnight
 
             // Tipografía Pixelify Sans nítida con overflow protegido
             _textoDescHabilidadPausa.font = FuenteUtil.ObtenerFuentePixelify();
-            _textoDescHabilidadPausa.fontSize = 13;
-            _textoDescHabilidadPausa.lineSpacing = 1.35f;
+            _textoDescHabilidadPausa.fontSize = 16;
+            _textoDescHabilidadPausa.lineSpacing = 1.3f;
             _textoDescHabilidadPausa.horizontalOverflow = HorizontalWrapMode.Wrap;
             _textoDescHabilidadPausa.verticalOverflow = VerticalWrapMode.Overflow;
 
@@ -1566,7 +1606,7 @@ namespace SoulKnight
                                    $"\n• Vida Máxima: <color=#fb7185>{_personajeLocal.VidaMaxSincronizada.Value} HP</color>";
                 }
 
-                _textoDescHabilidadPausa.text = $"<b><size=13><color=#5ce1e6>{h.nombre.ToUpper()}</color></size></b> <color=#ffd700>({teclas[idx]})</color>\n{desc}{textoStatsRun}";
+                _textoDescHabilidadPausa.text = $"<b><size=17><color=#5ce1e6>{h.nombre.ToUpper()}</color></size></b>  <color=#ffd700>({teclas[idx]})</color>\n{desc}{textoStatsRun}";
             }
             else
             {
@@ -1671,7 +1711,7 @@ namespace SoulKnight
                 rt.anchorMax = new Vector2(0.5f, 0.5f);
                 rt.pivot = new Vector2(0.5f, 0.5f);
                 rt.anchoredPosition = new Vector2(posX, posY);
-                rt.sizeDelta = new Vector2(240f, 50f);
+                rt.sizeDelta = new Vector2(230f, 48f);
             }
 
             var txt = btn.GetComponentInChildren<Text>();
@@ -1680,7 +1720,7 @@ namespace SoulKnight
                 txt.text = textoDefecto;
             }
 
-            EstiloUIUX.AplicarEstiloBoton(btn, tipo, 17, icono, iconoSize);
+            EstiloUIUX.AplicarEstiloBoton(btn, tipo, 23, icono, iconoSize);
         }
 
         // =========================================================================

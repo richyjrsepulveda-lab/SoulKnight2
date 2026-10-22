@@ -207,7 +207,7 @@ namespace SoulKnight
             txtMultiObj.GetComponent<RectTransform>().sizeDelta = new Vector2(1600f, 140f);
             BordeTextoPixelArt.Aplicar(txtMulti, 12, new Vector2(0f, -8f));
 
-            // ==================== 4. BOTONES PRINCIPALES (560 x 84 px, Gap 28 px) ====================
+            // ==================== 4. BOTONES PRINCIPALES (380 x 74 px, Gap 24 px) ====================
             var contBotones = new GameObject("ContenedorBotones");
             contBotones.transform.SetParent(rootObj.transform, false);
             var rtBtns = contBotones.AddComponent<RectTransform>();
@@ -215,11 +215,11 @@ namespace SoulKnight
             rtBtns.anchorMax = new Vector2(0.5f, 1f);
             rtBtns.pivot = new Vector2(0.5f, 1f);
             rtBtns.anchoredPosition = new Vector2(0f, -490f);
-            rtBtns.sizeDelta = new Vector2(560f, 340f);
+            rtBtns.sizeDelta = new Vector2(380f, 320f);
 
             var vlgBtns = contBotones.AddComponent<VerticalLayoutGroup>();
             vlgBtns.childAlignment = TextAnchor.UpperCenter;
-            vlgBtns.spacing = 26f;
+            vlgBtns.spacing = 22f;
             vlgBtns.childControlWidth = true;
             vlgBtns.childControlHeight = false;
 
@@ -246,7 +246,7 @@ namespace SoulKnight
             var btnObj = new GameObject(nombre);
             btnObj.transform.SetParent(parent, false);
             var rt = btnObj.AddComponent<RectTransform>();
-            rt.sizeDelta = new Vector2(560f, 84f);
+            rt.sizeDelta = new Vector2(380f, 74f);
 
             var img = btnObj.AddComponent<Image>();
             img.sprite = EstiloUIUX.ObtenerSpriteBoton(tipo);
@@ -263,7 +263,7 @@ namespace SoulKnight
 
             var hlg = btnObj.AddComponent<HorizontalLayoutGroup>();
             hlg.childAlignment = TextAnchor.MiddleCenter;
-            hlg.spacing = 16f;
+            hlg.spacing = 10f;
             hlg.childControlWidth = false;
             hlg.childControlHeight = false;
 
@@ -277,14 +277,14 @@ namespace SoulKnight
             imgIco.sprite = EstiloUIUX.ObtenerSpriteIcono(nombreIcono, colorContenido);
             imgIco.raycastTarget = false;
             imgIco.preserveAspect = true;
-            icoObj.GetComponent<RectTransform>().sizeDelta = iconoSize;
+            icoObj.GetComponent<RectTransform>().sizeDelta = new Vector2(28f, 28f);
 
             // Texto
             var txtObj = new GameObject("Texto");
             txtObj.transform.SetParent(btnObj.transform, false);
             var txt = txtObj.AddComponent<Text>();
             txt.font = FuenteUtil.ObtenerFuentePixelify();
-            txt.fontSize = 40;
+            txt.fontSize = 30;
             txt.fontStyle = FontStyle.Bold;
             txt.alignment = TextAnchor.MiddleCenter;
             txt.color = colorContenido;

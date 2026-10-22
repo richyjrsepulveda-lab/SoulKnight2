@@ -234,7 +234,7 @@ namespace SoulKnight
             rtBtns.anchorMax = new Vector2(0.5f, 1f);
             rtBtns.pivot = new Vector2(0.5f, 1f);
             rtBtns.anchoredPosition = new Vector2(0f, -510f);
-            rtBtns.sizeDelta = new Vector2(560f, 320f);
+            rtBtns.sizeDelta = new Vector2(380f, 320f);
 
             var vlgBtns = contBotones.AddComponent<VerticalLayoutGroup>();
             vlgBtns.childAlignment = TextAnchor.UpperCenter;
@@ -382,7 +382,7 @@ namespace SoulKnight
             var btnObj = new GameObject(nombre);
             btnObj.transform.SetParent(parent, false);
             var rt = btnObj.AddComponent<RectTransform>();
-            rt.sizeDelta = new Vector2(560f, 84f);
+            rt.sizeDelta = new Vector2(380f, 74f);
 
             var img = btnObj.AddComponent<Image>();
             img.type = Image.Type.Sliced;
@@ -399,7 +399,7 @@ namespace SoulKnight
 
             var hlg = btnObj.AddComponent<HorizontalLayoutGroup>();
             hlg.childAlignment = TextAnchor.MiddleCenter;
-            hlg.spacing = 16f;
+            hlg.spacing = 10f;
             hlg.childControlWidth = false;
             hlg.childControlHeight = false;
 
@@ -419,14 +419,14 @@ namespace SoulKnight
             imgIco.sprite = EstiloUIUX.ObtenerSpriteIcono(nombreIcono, colorContenido);
             imgIco.raycastTarget = false;
             imgIco.preserveAspect = true;
-            icoObj.GetComponent<RectTransform>().sizeDelta = iconoSize;
+            icoObj.GetComponent<RectTransform>().sizeDelta = new Vector2(28f, 28f);
 
             // Texto
             var txtObj = new GameObject("Texto");
             txtObj.transform.SetParent(btnObj.transform, false);
             var txt = txtObj.AddComponent<Text>();
             txt.font = FuenteUtil.ObtenerFuentePixelify();
-            txt.fontSize = 40;
+            txt.fontSize = 32;
             txt.fontStyle = FontStyle.Bold;
             txt.alignment = TextAnchor.MiddleCenter;
             txt.color = colorContenido;

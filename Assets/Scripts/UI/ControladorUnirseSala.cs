@@ -492,10 +492,10 @@ namespace SoulKnight
             hlgFoot.childControlHeight = false;
 
             // Botón Volver
-            botonVolver = CrearBotonModal(footerObj.transform, "BotonVolver", "VOLVER", TipoBotonUI.Piedra, 340f, 76f, "puerta", new Vector2(28f, 28f), Volver);
+            botonVolver = CrearBotonModal(footerObj.transform, "BotonVolver", "VOLVER", TipoBotonUI.Piedra, 250f, 66f, "puerta", new Vector2(24f, 24f), Volver);
 
             // Botón Conectarse
-            botonBuscar = CrearBotonModal(footerObj.transform, "BotonBuscar", "CONECTARSE", TipoBotonUI.Hielo, 380f, 76f, "play", new Vector2(28f, 28f), AlBuscar);
+            botonBuscar = CrearBotonModal(footerObj.transform, "BotonBuscar", "CONECTARSE", TipoBotonUI.Hielo, 290f, 66f, "play", new Vector2(26f, 26f), AlBuscar);
             botonConectarIP = botonBuscar;
 
             _interfazConstruida = true;
@@ -517,7 +517,7 @@ namespace SoulKnight
 
             var hlg = btnObj.AddComponent<HorizontalLayoutGroup>();
             hlg.childAlignment = TextAnchor.MiddleCenter;
-            hlg.spacing = 14f;
+            hlg.spacing = 10f;
             hlg.childControlWidth = false;
             hlg.childControlHeight = false;
 
@@ -537,7 +537,7 @@ namespace SoulKnight
             txtObj.transform.SetParent(btnObj.transform, false);
             var txt = txtObj.AddComponent<Text>();
             txt.font = FuenteUtil.ObtenerFuentePixelify();
-            txt.fontSize = 30;
+            txt.fontSize = 28;
             txt.fontStyle = FontStyle.Bold;
             txt.alignment = TextAnchor.MiddleCenter;
             txt.color = cTexto;
@@ -545,7 +545,9 @@ namespace SoulKnight
             txt.raycastTarget = false;
             txt.horizontalOverflow = HorizontalWrapMode.Overflow;
             txt.verticalOverflow = VerticalWrapMode.Overflow;
-            txtObj.GetComponent<RectTransform>().sizeDelta = new Vector2(ancho - 70f, 44f);
+            var csf = txtObj.AddComponent<ContentSizeFitter>();
+            csf.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
+            csf.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
             var trigger = btnObj.AddComponent<EventTrigger>();
             var entryDown = new EventTrigger.Entry { eventID = EventTriggerType.PointerDown };
