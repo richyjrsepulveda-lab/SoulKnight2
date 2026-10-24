@@ -27,7 +27,7 @@ namespace SoulKnight
 
         public static TextoFlotante Crear(Vector3 posicion, string texto, Color color)
         {
-            if (_fuente == null) _fuente = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            if (_fuente == null) _fuente = FuenteUtil.ObtenerFuentePixelify();
 
             Vector3 offset = new Vector3(Random.Range(-0.35f, 0.35f), Random.Range(-0.1f, 0.2f), 0f);
             Vector3 spawnPos = posicion + offset;

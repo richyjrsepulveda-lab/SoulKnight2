@@ -866,7 +866,7 @@ namespace SoulKnight.Editor
             var txtGo = new GameObject("Texto");
             txtGo.transform.SetParent(go.transform, false);
             var txt = txtGo.AddComponent<Text>();
-            txt.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            txt.font = FuenteUtil.ObtenerFuentePixelify();
             txt.text = texto;
             txt.fontSize = 20;
             txt.alignment = TextAnchor.MiddleCenter;
@@ -894,7 +894,7 @@ namespace SoulKnight.Editor
             var txtGo = new GameObject("Text");
             txtGo.transform.SetParent(go.transform, false);
             var txt = txtGo.AddComponent<Text>();
-            txt.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            txt.font = FuenteUtil.ObtenerFuentePixelify();
             txt.fontSize = 20;
             txt.color = Color.white;
             txt.alignment = TextAnchor.MiddleLeft;
@@ -903,7 +903,7 @@ namespace SoulKnight.Editor
             var phGo = new GameObject("Placeholder");
             phGo.transform.SetParent(go.transform, false);
             var ph = phGo.AddComponent<Text>();
-            ph.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            ph.font = FuenteUtil.ObtenerFuentePixelify();
             ph.fontSize = 20;
             ph.text = placeholder;
             ph.color = Color.gray;
@@ -925,7 +925,7 @@ namespace SoulKnight.Editor
             rt.sizeDelta = new Vector2(600, 60);
 
             var txt = go.AddComponent<Text>();
-            txt.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            txt.font = FuenteUtil.ObtenerFuentePixelify();
             txt.text = contenido;
             txt.fontSize = tamano;
             txt.alignment = TextAnchor.MiddleCenter;
@@ -1594,7 +1594,7 @@ namespace SoulKnight.Editor
             nomLocalRt.sizeDelta = new Vector2(380f, 22f);
 
             var txtMiNombreHUD = nomLocalObj.AddComponent<Text>();
-            txtMiNombreHUD.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            txtMiNombreHUD.font = FuenteUtil.ObtenerFuentePixelify();
             txtMiNombreHUD.text = "👤 Jugador";
             txtMiNombreHUD.fontSize = 15;
             txtMiNombreHUD.fontStyle = FontStyle.Bold;
@@ -1640,7 +1640,7 @@ namespace SoulKnight.Editor
             bvTxtRt.anchorMax = Vector2.one;
             bvTxtRt.sizeDelta = Vector2.zero;
             var bvTxt = bvTxtObj.AddComponent<Text>();
-            bvTxt.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            bvTxt.font = FuenteUtil.ObtenerFuentePixelify();
             bvTxt.text = "100 / 100";
             bvTxt.fontSize = 16;
             bvTxt.fontStyle = FontStyle.Bold;
@@ -1684,7 +1684,7 @@ namespace SoulKnight.Editor
             bmTxtRt.anchorMax = Vector2.one;
             bmTxtRt.sizeDelta = Vector2.zero;
             var bmTxt = bmTxtObj.AddComponent<Text>();
-            bmTxt.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            bmTxt.font = FuenteUtil.ObtenerFuentePixelify();
             bmTxt.text = "Maestría Nv.1 (0/200 XP)";
             bmTxt.fontSize = 12;
             bmTxt.fontStyle = FontStyle.Bold;
@@ -1761,7 +1761,7 @@ namespace SoulKnight.Editor
             bxpTxtRt.anchorMax = Vector2.one;
             bxpTxtRt.sizeDelta = Vector2.zero;
             var bxpTxt = bxpTxtObj.AddComponent<Text>();
-            bxpTxt.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            bxpTxt.font = FuenteUtil.ObtenerFuentePixelify();
             bxpTxt.text = "Nv.1 (0/100 XP)";
             bxpTxt.fontSize = 12;
             bxpTxt.fontStyle = FontStyle.Bold;
@@ -1830,7 +1830,7 @@ namespace SoulKnight.Editor
                 cdTxtRt.anchorMax = Vector2.one;
                 cdTxtRt.sizeDelta = Vector2.zero;
                 var cdTxt = cdTxtObj.AddComponent<Text>();
-                cdTxt.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+                cdTxt.font = FuenteUtil.ObtenerFuentePixelify();
                 cdTxt.text = "";
                 cdTxt.fontSize = 12;
                 cdTxt.fontStyle = FontStyle.Bold;
@@ -1856,7 +1856,7 @@ namespace SoulKnight.Editor
                 kbTxtRt.anchorMax = Vector2.one;
                 kbTxtRt.sizeDelta = Vector2.zero;
                 var kbTxt = kbTxtObj.AddComponent<Text>();
-                kbTxt.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+                kbTxt.font = FuenteUtil.ObtenerFuenteSilkscreen();
                 kbTxt.text = teclas[i];
                 kbTxt.fontSize = 10;
                 kbTxt.fontStyle = FontStyle.Bold;

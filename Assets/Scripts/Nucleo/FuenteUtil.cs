@@ -14,24 +14,16 @@ namespace SoulKnight
         private static Font _fuenteSilkscreen;
 
         /// <summary>
-        /// Fuente pixel art retro para el HUD, barra de vida, minimapa, textos flotantes y elementos de juego.
-        /// Preserva el tamaño y métricas originales de PressStart2P / LegacyRuntime.
+        /// Fuente pixel art retro / principal para el HUD, barra de vida, minimapa, textos flotantes y elementos de juego.
+        /// Unificada a Pixelify Sans en todo el juego.
         /// </summary>
         public static Font ObtenerFuentePixelArt()
         {
-            if (_fuentePixel == null)
-            {
-                _fuentePixel = Resources.Load<Font>("Fuentes/PressStart2P");
-                if (_fuentePixel == null)
-                {
-                    _fuentePixel = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-                }
-            }
-            return _fuentePixel;
+            return ObtenerFuentePixelify();
         }
 
         /// <summary>
-        /// Fuente principal moderna (Pixelify Sans) para los nuevos menús UI/UX (Principal, Opciones, Diálogos).
+        /// Fuente principal moderna (Pixelify Sans) para todos los menús y HUDs del juego.
         /// </summary>
         public static Font ObtenerFuentePixelify()
         {
@@ -40,7 +32,11 @@ namespace SoulKnight
                 _fuentePixelify = Resources.Load<Font>("Fuentes/PixelifySans");
                 if (_fuentePixelify == null)
                 {
-                    _fuentePixelify = ObtenerFuentePixelArt();
+                    _fuentePixelify = Resources.Load<Font>("Fuentes/PressStart2P");
+                }
+                if (_fuentePixelify == null)
+                {
+                    _fuentePixelify = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
                 }
             }
             return _fuentePixelify;

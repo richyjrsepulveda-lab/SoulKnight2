@@ -1641,8 +1641,8 @@ namespace SoulKnight
             var titMObj = new GameObject("TituloAdmin");
             titMObj.transform.SetParent(panelM.transform, false);
             var txtTit = titMObj.AddComponent<Text>();
-            txtTit.font = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            txtTit.fontSize = 16;
+            txtTit.font = FuenteUtil.ObtenerFuentePixelify();
+            txtTit.fontSize = 18;
             txtTit.fontStyle = FontStyle.Bold;
             txtTit.alignment = TextAnchor.MiddleCenter;
             txtTit.color = new Color(1f, 0.85f, 0.2f, 1f);
@@ -1669,7 +1669,7 @@ namespace SoulKnight
             var btnX = btnXObj.AddComponent<Button>();
             var txtX = new GameObject("Txt").AddComponent<Text>();
             txtX.transform.SetParent(btnXObj.transform, false);
-            txtX.font = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            txtX.font = FuenteUtil.ObtenerFuentePixelify();
             txtX.fontSize = 14;
             txtX.fontStyle = FontStyle.Bold;
             txtX.alignment = TextAnchor.MiddleCenter;
@@ -1685,8 +1685,8 @@ namespace SoulKnight
             var subMObj = new GameObject("SubtituloAdmin");
             subMObj.transform.SetParent(panelM.transform, false);
             var txtSub = subMObj.AddComponent<Text>();
-            txtSub.font = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            txtSub.fontSize = 10;
+            txtSub.font = FuenteUtil.ObtenerFuentePixelify();
+            txtSub.fontSize = 12;
             txtSub.alignment = TextAnchor.MiddleCenter;
             txtSub.color = new Color(0.70f, 0.85f, 1f, 0.9f);
             txtSub.text = "Usa estos botones de depuración durante partidas de prueba para acelerar el desarrollo.";
@@ -1728,8 +1728,8 @@ namespace SoulKnight
             var titConsolaObj = new GameObject("TitConsola");
             titConsolaObj.transform.SetParent(panelM.transform, false);
             var txtSubCmd = titConsolaObj.AddComponent<Text>();
-            txtSubCmd.font = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            txtSubCmd.fontSize = 11;
+            txtSubCmd.font = FuenteUtil.ObtenerFuentePixelify();
+            txtSubCmd.fontSize = 12;
             txtSubCmd.fontStyle = FontStyle.Bold;
             txtSubCmd.color = new Color(1f, 0.85f, 0.3f, 1f);
             txtSubCmd.text = "⌨️ CONSOLA DE ENTRADA MANUAL:";
@@ -1743,8 +1743,8 @@ namespace SoulKnight
             var descConsolaObj = new GameObject("DescConsola");
             descConsolaObj.transform.SetParent(panelM.transform, false);
             var txtDescCmd = descConsolaObj.AddComponent<Text>();
-            txtDescCmd.font = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            txtDescCmd.fontSize = 9;
+            txtDescCmd.font = FuenteUtil.ObtenerFuentePixelify();
+            txtDescCmd.fontSize = 10;
             txtDescCmd.color = new Color(0.65f, 0.75f, 0.85f, 0.9f);
             txtDescCmd.text = "Ejemplos: help, oro [cant], exp [cant], nivel [1-20], god, curar, speed [mult], daño [mult], killall, noclip";
             var rtDescC = descConsolaObj.GetComponent<RectTransform>();
@@ -1780,8 +1780,8 @@ namespace SoulKnight
             var phMObj = new GameObject("Placeholder");
             phMObj.transform.SetParent(inpMObj.transform, false);
             var txtPhM = phMObj.AddComponent<Text>();
-            txtPhM.font = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            txtPhM.fontSize = 11;
+            txtPhM.font = FuenteUtil.ObtenerFuentePixelify();
+            txtPhM.fontSize = 12;
             txtPhM.fontStyle = FontStyle.Italic;
             txtPhM.color = new Color(0.40f, 0.48f, 0.60f, 0.75f);
             txtPhM.text = "Escribe un comando aquí (o 'help' para ver lista completa)...";
@@ -1795,8 +1795,8 @@ namespace SoulKnight
             var textMObj = new GameObject("Text");
             textMObj.transform.SetParent(inpMObj.transform, false);
             var txtInpM = textMObj.AddComponent<Text>();
-            txtInpM.font = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            txtInpM.fontSize = 12;
+            txtInpM.font = FuenteUtil.ObtenerFuentePixelify();
+            txtInpM.fontSize = 13;
             txtInpM.color = Color.white;
             txtInpM.alignment = TextAnchor.MiddleLeft;
             txtInpM.supportRichText = false;
@@ -1833,8 +1833,8 @@ namespace SoulKnight
             var txtBtnEjMObj = new GameObject("Texto");
             txtBtnEjMObj.transform.SetParent(btnEjMObj.transform, false);
             var txtBtnEjM = txtBtnEjMObj.AddComponent<Text>();
-            txtBtnEjM.font = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            txtBtnEjM.fontSize = 11;
+            txtBtnEjM.font = FuenteUtil.ObtenerFuentePixelify();
+            txtBtnEjM.fontSize = 12;
             txtBtnEjM.fontStyle = FontStyle.Bold;
             txtBtnEjM.alignment = TextAnchor.MiddleCenter;
             txtBtnEjM.color = Color.white;
@@ -1856,8 +1856,8 @@ namespace SoulKnight
             var fbMObj = new GameObject("FeedbackModalAdmin");
             fbMObj.transform.SetParent(panelM.transform, false);
             _txtFeedbackModalAdmin = fbMObj.AddComponent<Text>();
-            _txtFeedbackModalAdmin.font = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            _txtFeedbackModalAdmin.fontSize = 11;
+            _txtFeedbackModalAdmin.font = FuenteUtil.ObtenerFuentePixelify();
+            _txtFeedbackModalAdmin.fontSize = 12;
             _txtFeedbackModalAdmin.alignment = TextAnchor.MiddleCenter;
             _txtFeedbackModalAdmin.color = new Color(0.45f, 0.85f, 1f, 1f);
             _txtFeedbackModalAdmin.text = "Selecciona una herramienta rápida o ingresa un comando:";
@@ -1884,8 +1884,8 @@ namespace SoulKnight
             var txtCMObj = new GameObject("Texto");
             txtCMObj.transform.SetParent(btnCerrarMObj.transform, false);
             var txtCerrarM = txtCMObj.AddComponent<Text>();
-            txtCerrarM.font = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            txtCerrarM.fontSize = 12;
+            txtCerrarM.font = FuenteUtil.ObtenerFuentePixelify();
+            txtCerrarM.fontSize = 13;
             txtCerrarM.fontStyle = FontStyle.Bold;
             txtCerrarM.alignment = TextAnchor.MiddleCenter;
             txtCerrarM.color = Color.white;

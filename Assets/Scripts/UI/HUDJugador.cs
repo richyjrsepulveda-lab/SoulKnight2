@@ -1317,8 +1317,8 @@ namespace SoulKnight
 
                     _textoDescHabilidadPausa = txtObj.AddComponent<Text>();
                     _textoDescHabilidadPausa.font = FuenteUtil.ObtenerFuentePixelify();
-                    _textoDescHabilidadPausa.fontSize = 16;
-                    _textoDescHabilidadPausa.lineSpacing = 1.3f;
+                    _textoDescHabilidadPausa.fontSize = 19;
+                    _textoDescHabilidadPausa.lineSpacing = 1.35f;
                     _textoDescHabilidadPausa.alignment = TextAnchor.MiddleLeft;
                     _textoDescHabilidadPausa.color = EstiloUIUX.ColTextoCrema;
                     _textoDescHabilidadPausa.horizontalOverflow = HorizontalWrapMode.Wrap;
@@ -1335,8 +1335,8 @@ namespace SoulKnight
                     rtDesc.anchorMin = new Vector2(0.5f, 0.5f);
                     rtDesc.anchorMax = new Vector2(0.5f, 0.5f);
                     rtDesc.pivot = new Vector2(0.5f, 0.5f);
-                    rtDesc.anchoredPosition = new Vector2(posXDerecha, 74f);
-                    rtDesc.sizeDelta = new Vector2(410f, 96f);
+                    rtDesc.anchoredPosition = new Vector2(posXDerecha, 35f);
+                    rtDesc.sizeDelta = new Vector2(430f, 160f);
                 }
 
                 // --- 3C. Marco del Mapa (abajo de la descripción) ---
@@ -1401,8 +1401,8 @@ namespace SoulKnight
                     rtMm.anchorMin = new Vector2(0.5f, 0.5f);
                     rtMm.anchorMax = new Vector2(0.5f, 0.5f);
                     rtMm.pivot = new Vector2(0.5f, 0.5f);
-                    rtMm.anchoredPosition = new Vector2(posXDerecha, -76f);
-                    rtMm.sizeDelta = new Vector2(370f, 196f);
+                    rtMm.anchoredPosition = new Vector2(posXDerecha, -125f);
+                    rtMm.sizeDelta = new Vector2(370f, 130f);
                 }
             }
             catch (System.Exception ex)
@@ -1572,10 +1572,10 @@ namespace SoulKnight
 
             if (_textoDescHabilidadPausa == null) return;
 
-            // Tipografía Pixelify Sans nítida con overflow protegido
+            // Tipografía Pixelify Sans nítida con overflow protegido y tamaño ampliado
             _textoDescHabilidadPausa.font = FuenteUtil.ObtenerFuentePixelify();
-            _textoDescHabilidadPausa.fontSize = 16;
-            _textoDescHabilidadPausa.lineSpacing = 1.3f;
+            _textoDescHabilidadPausa.fontSize = 19;
+            _textoDescHabilidadPausa.lineSpacing = 1.35f;
             _textoDescHabilidadPausa.horizontalOverflow = HorizontalWrapMode.Wrap;
             _textoDescHabilidadPausa.verticalOverflow = VerticalWrapMode.Overflow;
 
@@ -1606,7 +1606,7 @@ namespace SoulKnight
                                    $"\n• Vida Máxima: <color=#fb7185>{_personajeLocal.VidaMaxSincronizada.Value} HP</color>";
                 }
 
-                _textoDescHabilidadPausa.text = $"<b><size=17><color=#5ce1e6>{h.nombre.ToUpper()}</color></size></b>  <color=#ffd700>({teclas[idx]})</color>\n{desc}{textoStatsRun}";
+                _textoDescHabilidadPausa.text = $"<b><size=22><color=#5ce1e6>{h.nombre.ToUpper()}</color></size></b>  <color=#ffd700>({teclas[idx]})</color>\n{desc}{textoStatsRun}";
             }
             else
             {
@@ -2237,7 +2237,7 @@ namespace SoulKnight
 
         private void AplicarTipografiasPixelArt()
         {
-            Font pixelFont = FuenteUtil.ObtenerFuentePixelArt();
+            Font pixelFont = FuenteUtil.ObtenerFuentePixelify();
             if (pixelFont == null) return;
 
             foreach (var txt in GetComponentsInChildren<Text>(true))

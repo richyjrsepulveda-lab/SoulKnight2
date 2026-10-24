@@ -448,9 +448,7 @@ namespace SoulKnight
             tObj.transform.localPosition = new Vector3(0f, 0.72f, 0f);
 
             _textoPrecio = tObj.AddComponent<TextMesh>();
-            _textoPrecio.font = FuenteUtil.ObtenerFuentePixelArt();
-            if (_textoPrecio.font == null)
-                _textoPrecio.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            _textoPrecio.font = FuenteUtil.ObtenerFuentePixelify();
 
             var mr = _textoPrecio.GetComponent<MeshRenderer>();
             if (mr != null)

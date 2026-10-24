@@ -1311,7 +1311,7 @@ namespace SoulKnight
             {
                 var go = new GameObject("IndicadorRevivirAliado");
                 _textoIndicadorRevivir = go.AddComponent<TextMesh>();
-                Font f = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+                Font f = FuenteUtil.ObtenerFuentePixelify();
                 _textoIndicadorRevivir.font = f;
                 _textoIndicadorRevivir.fontSize = 28;
                 _textoIndicadorRevivir.characterSize = 0.085f;

@@ -562,7 +562,7 @@ namespace SoulKnight
                 if (rtTit != null)
                 {
                     rtTit.anchoredPosition = new Vector2(0f, 275f);
-                    rtTit.sizeDelta = new Vector2(620f, 32f);
+                    rtTit.sizeDelta = new Vector2(620f, 36f);
                 }
                 string emojiPj = pj switch
                 {
@@ -572,8 +572,8 @@ namespace SoulKnight
                     _ => "⭐"
                 };
                 textoTituloCuarto.text = $"{emojiPj} PERSONAJE: {pj.ToString().ToUpper()}";
-                textoTituloCuarto.font = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-                textoTituloCuarto.fontSize = 18;
+                textoTituloCuarto.font = FuenteUtil.ObtenerFuentePixelify();
+                textoTituloCuarto.fontSize = 24;
             }
 
             int xpMaestria = GestorMaestria.ObtenerPuntos(pj);
@@ -587,10 +587,10 @@ namespace SoulKnight
                 if (rtM != null)
                 {
                     rtM.anchoredPosition = new Vector2(-75f, 238f);
-                    rtM.sizeDelta = new Vector2(460f, 26f);
+                    rtM.sizeDelta = new Vector2(460f, 28f);
                 }
-                textoMaestriaCuarto.font = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-                textoMaestriaCuarto.fontSize = 11;
+                textoMaestriaCuarto.font = FuenteUtil.ObtenerFuentePixelify();
+                textoMaestriaCuarto.fontSize = 17;
                 textoMaestriaCuarto.alignment = TextAnchor.MiddleLeft;
 
                 string infoSiguiente = esMaxMaestria
@@ -612,7 +612,7 @@ namespace SoulKnight
                         rtBtnA.anchorMax = new Vector2(0.5f, 0.5f);
                         rtBtnA.pivot = new Vector2(0.5f, 0.5f);
                         rtBtnA.anchoredPosition = new Vector2(230f, 238f);
-                        rtBtnA.sizeDelta = new Vector2(145f, 24f);
+                        rtBtnA.sizeDelta = new Vector2(150f, 26f);
 
                         var imgBtnA = btnAyudaObj.AddComponent<Image>();
                         imgBtnA.color = new Color(0.20f, 0.35f, 0.55f, 0.95f);
@@ -624,8 +624,8 @@ namespace SoulKnight
                         rtTa.anchorMax = Vector2.one;
                         rtTa.sizeDelta = Vector2.zero;
                         var txtTa = txtAyudaObj.AddComponent<Text>();
-                        txtTa.font = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-                        txtTa.fontSize = 9;
+                        txtTa.font = FuenteUtil.ObtenerFuentePixelify();
+                        txtTa.fontSize = 13;
                         txtTa.fontStyle = FontStyle.Bold;
                         txtTa.alignment = TextAnchor.MiddleCenter;
                         txtTa.color = Color.white;
@@ -648,10 +648,10 @@ namespace SoulKnight
                 if (rtE != null)
                 {
                     rtE.anchoredPosition = new Vector2(0f, 212f);
-                    rtE.sizeDelta = new Vector2(620f, 22f);
+                    rtE.sizeDelta = new Vector2(620f, 24f);
                 }
-                textoEstadoCuarto.font = FuenteUtil.ObtenerFuentePixelArt() ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-                textoEstadoCuarto.fontSize = 11;
+                textoEstadoCuarto.font = FuenteUtil.ObtenerFuentePixelify();
+                textoEstadoCuarto.fontSize = 17;
                 textoEstadoCuarto.alignment = TextAnchor.MiddleCenter;
 
                 if (ocupadoPorMi)
@@ -756,8 +756,8 @@ namespace SoulKnight
             var rtContHabs = contenedorSlotsHabilidades.GetComponent<RectTransform>();
             if (rtContHabs != null)
             {
-                rtContHabs.anchoredPosition = new Vector2(0f, -20f);
-                rtContHabs.sizeDelta = new Vector2(660f, 360f);
+                rtContHabs.anchoredPosition = new Vector2(0f, -25f);
+                rtContHabs.sizeDelta = new Vector2(680f, 380f);
             }
 
             // Limpiar slots viejos
@@ -790,8 +790,8 @@ namespace SoulKnight
                 slotObj.transform.SetParent(contenedorSlotsHabilidades, false);
 
                 var rtSlot = slotObj.AddComponent<RectTransform>();
-                float altoSlot = seleccionada ? 148f : 56f;
-                rtSlot.sizeDelta = new Vector2(660f, altoSlot);
+                float altoSlot = seleccionada ? 180f : 58f;
+                rtSlot.sizeDelta = new Vector2(680f, altoSlot);
 
                 var le = slotObj.AddComponent<LayoutElement>();
                 le.preferredHeight = altoSlot;
@@ -866,7 +866,7 @@ namespace SoulKnight
                     rtTxtNom.anchorMax = new Vector2(1f, 1f);
                     rtTxtNom.offsetMin = new Vector2(74f, 0f);
                     rtTxtNom.offsetMax = new Vector2(-12f, 0f);
-                    txtNom.fontSize = 17;
+                    txtNom.fontSize = 18;
                     txtNom.alignment = TextAnchor.MiddleLeft;
                     txtNom.color = EstiloUIUX.ColTextoCrema;
                     txtNom.text = $"{hab.nombre.ToUpper()}  <color=#ffcf4a>({teclaStr})</color>";
@@ -877,8 +877,8 @@ namespace SoulKnight
                     rtTxtNom.anchorMax = new Vector2(1f, 1f);
                     rtTxtNom.pivot = new Vector2(0f, 1f);
                     rtTxtNom.anchoredPosition = new Vector2(74f, -8f);
-                    rtTxtNom.sizeDelta = new Vector2(-80f, 26f);
-                    txtNom.fontSize = 18;
+                    rtTxtNom.sizeDelta = new Vector2(-80f, 28f);
+                    txtNom.fontSize = 20;
                     txtNom.alignment = TextAnchor.MiddleLeft;
                     txtNom.color = EstiloUIUX.ColCyan;
                     txtNom.text = $"{hab.nombre.ToUpper()}  <color=#ffcf4a>({teclaStr})</color>";
@@ -891,16 +891,16 @@ namespace SoulKnight
                     rtTxtDesc.anchorMax = new Vector2(1f, 1f);
                     rtTxtDesc.pivot = new Vector2(0f, 0f);
                     rtTxtDesc.offsetMin = new Vector2(74f, 8f);
-                    rtTxtDesc.offsetMax = new Vector2(-16f, -36f);
+                    rtTxtDesc.offsetMax = new Vector2(-16f, -42f);
 
                     var txtDesc = txtDescObj.AddComponent<Text>();
                     txtDesc.font = fuentePixel;
-                    txtDesc.fontSize = 16;
-                    txtDesc.lineSpacing = 1.3f;
+                    txtDesc.fontSize = 20;
+                    txtDesc.lineSpacing = 1.35f;
                     txtDesc.alignment = TextAnchor.UpperLeft;
                     txtDesc.horizontalOverflow = HorizontalWrapMode.Wrap;
                     txtDesc.verticalOverflow = VerticalWrapMode.Overflow;
-                    txtDesc.color = EstiloUIUX.ColTextoTenue;
+                    txtDesc.color = EstiloUIUX.ColTextoCrema;
                     txtDesc.raycastTarget = false;
                     txtDesc.text = desc;
                 }
