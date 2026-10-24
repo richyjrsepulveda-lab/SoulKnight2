@@ -1416,6 +1416,7 @@ namespace SoulKnight
                 imgBorde.sprite = EstiloUIUX.ObtenerSpriteTarjeta();
                 imgBorde.type = Image.Type.Sliced;
                 imgBorde.color = seleccionada ? new Color(0.35f, 0.85f, 1f, 1f) : new Color(0.30f, 0.38f, 0.50f, 0.85f);
+                imgBorde.raycastTarget = true;
 
                 // Fondo interior
                 var fondoInt = new GameObject("FondoInterno", typeof(RectTransform));
@@ -1482,7 +1483,7 @@ namespace SoulKnight
                 {
                     var descObj = new GameObject("TextoDescripcion", typeof(RectTransform));
                     descObj.transform.SetParent(fondoInt.transform, false);
-                    var rtDesc = descObj.AddComponent<RectTransform>();
+                    var rtDesc = descObj.GetComponent<RectTransform>();
                     rtDesc.anchorMin = new Vector2(0f, 0f);
                     rtDesc.anchorMax = new Vector2(1f, 1f);
                     rtDesc.offsetMin = new Vector2(10f, 6f);
@@ -1490,8 +1491,8 @@ namespace SoulKnight
 
                     var txtDesc = descObj.AddComponent<Text>();
                     txtDesc.font = fuente;
-                    txtDesc.fontSize = 15;
-                    txtDesc.lineSpacing = 1.3f;
+                    txtDesc.fontSize = 14;
+                    txtDesc.lineSpacing = 1.25f;
                     txtDesc.alignment = TextAnchor.UpperLeft;
                     txtDesc.color = EstiloUIUX.ColTextoCrema;
                     txtDesc.horizontalOverflow = HorizontalWrapMode.Wrap;
@@ -1500,13 +1501,37 @@ namespace SoulKnight
                     txtDesc.text = $"{desc}{textoStatsRun}";
                 }
 
-                // Botón interactivo para alternar desplegable
+                // Botón interactivo para alternar desplegable (toca en cualquier parte de la tarjeta)
                 var btn = slotObj.AddComponent<Button>();
+                btn.targetGraphic = imgBorde;
                 btn.transition = Selectable.Transition.ColorTint;
+                int idxClickeado = idx;
                 btn.onClick.AddListener(() =>
                 {
-                    SeleccionarHabilidadPausa(idx);
+                    SeleccionarHabilidadPausa(idxClickeado);
                 });
+            }
+
+            // Auto-scroll para centrar la habilidad abierta
+            var sr = scrollHabs.GetComponent<ScrollRect>();
+            if (sr != null)
+            {
+                if (_habilidadSeleccionadaPausa <= 0)
+                {
+                    sr.verticalNormalizedPosition = 1f;
+                }
+                else if (_habilidadSeleccionadaPausa == 1)
+                {
+                    sr.verticalNormalizedPosition = 0.65f;
+                }
+                else if (_habilidadSeleccionadaPausa == 2)
+                {
+                    sr.verticalNormalizedPosition = 0.35f;
+                }
+                else
+                {
+                    sr.verticalNormalizedPosition = 0f;
+                }
             }
         }
 
@@ -1993,6 +2018,7 @@ namespace SoulKnight
                 imgBorde.sprite = EstiloUIUX.ObtenerSpriteTarjeta();
                 imgBorde.type = Image.Type.Sliced;
                 imgBorde.color = seleccionada ? new Color(0.35f, 0.85f, 1f, 1f) : new Color(0.30f, 0.38f, 0.50f, 0.85f);
+                imgBorde.raycastTarget = true;
 
                 // Fondo interior
                 var fondoInt = new GameObject("FondoInterno", typeof(RectTransform));
@@ -2089,7 +2115,7 @@ namespace SoulKnight
                 {
                     var descObj = new GameObject("Desc", typeof(RectTransform));
                     descObj.transform.SetParent(fondoInt.transform, false);
-                    var rtDesc = descObj.AddComponent<RectTransform>();
+                    var rtDesc = descObj.GetComponent<RectTransform>();
                     rtDesc.anchorMin = new Vector2(0f, 0f);
                     rtDesc.anchorMax = new Vector2(1f, 1f);
                     rtDesc.offsetMin = new Vector2(66f, 10f);
@@ -2158,12 +2184,14 @@ namespace SoulKnight
                     if (imgBtn != null) imgBtn.color = new Color(0.18f, 0.60f, 0.35f, 1f);
                 }
 
-                // Botón transparente que cubre la tarjeta para desplegar/plegar al hacer clic
+                // Botón interactivo sobre la tarjeta para desplegar/plegar al hacer clic
                 var btnToggle = cardItem.AddComponent<Button>();
-                btnToggle.transition = Selectable.Transition.None;
+                btnToggle.targetGraphic = imgBorde;
+                btnToggle.transition = Selectable.Transition.ColorTint;
+                int idxCapturado = itemIndex;
                 btnToggle.onClick.AddListener(() =>
                 {
-                    _itemSeleccionadoTienda = (seleccionada ? -1 : itemIndex);
+                    _itemSeleccionadoTienda = (_itemSeleccionadoTienda == idxCapturado ? -1 : idxCapturado);
                     ActualizarItemsTiendaUI();
                 });
             }

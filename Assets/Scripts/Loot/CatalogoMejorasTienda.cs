@@ -224,7 +224,7 @@ namespace SoulKnight
                 case TipoMejoraTienda.Elec_RayoCataclismico:
                     nombre = "RAYO CATACLÍSMICO";
                     desc = (nivelActual >= 5)
-                        ? "Rayo Catacl羅smico al máximo (5/5)."
+                        ? "Rayo Cataclísmico al máximo (5/5)."
                         : $"+30% Ancho del Rayo y carga 20% más rápido.\nNivel actual: {nivelActual}/5";
                     break;
 
