@@ -90,6 +90,7 @@ namespace SoulKnight
         private readonly List<Button> _botonesCompraTienda = new List<Button>();
         private readonly List<Text> _textosBotonTienda = new List<Text>();
         private int _oroVisualLocal = -1;
+        private int _itemSeleccionadoTienda = -1;
 
         [Header("Menú de Pausa Mejorado")]
         private RawImage _rawMapaPausa;
@@ -647,10 +648,10 @@ namespace SoulKnight
                 }
             }
 
-            // Atajo M: alternar mapa grande de la mazmorra
+            // Atajo M: alternar mapa grande de la mazmorra (disponible durante la run y dentro del menú de pausa)
             if (Input.GetKeyDown(KeyCode.M))
             {
-                if (!TiendaAbierta && (panelPausa == null || !panelPausa.activeSelf))
+                if (!TiendaAbierta)
                 {
                     AlternarMapaGrande();
                 }
@@ -1186,160 +1187,59 @@ namespace SoulKnight
 
             try
             {
-                const float posXDerecha = 205f;
+                const float posXDerecha = 215f;
 
-                // --- 3A. Fila de Habilidades (4 casillas en filita, SOLO ICONOS) ---
-                Transform contHabs = panelPausa.transform.Find("FilaHabilidadesPausa");
-                if (contHabs == null)
+                // 1. Limpieza de elementos viejos que puedan colisionar
+                var viejaFila = panelPausa.transform.Find("FilaHabilidadesPausa");
+                if (viejaFila != null) Destroy(viejaFila.gameObject);
+                var viejaCaja = panelPausa.transform.Find("CajaDescHabilidadPausa");
+                if (viejaCaja != null) Destroy(viejaCaja.gameObject);
+
+                // 2. Contenedor Dinámico Desplegable de Habilidades con RectMask2D (garantiza que jamás invada el mapa)
+                Transform scrollHabs = panelPausa.transform.Find("ScrollHabilidadesPausa");
+                if (scrollHabs == null)
                 {
-                    var obj = new GameObject("FilaHabilidadesPausa", typeof(RectTransform));
-                    obj.transform.SetParent(panelPausa.transform, false);
-                    contHabs = obj.transform;
-                }
-                var rtHabs = contHabs.GetComponent<RectTransform>();
-                if (rtHabs != null)
-                {
-                    rtHabs.anchorMin = new Vector2(0.5f, 0.5f);
-                    rtHabs.anchorMax = new Vector2(0.5f, 0.5f);
-                    rtHabs.pivot = new Vector2(0.5f, 0.5f);
-                    rtHabs.anchoredPosition = new Vector2(posXDerecha, 142f);
-                    rtHabs.sizeDelta = new Vector2(370f, 56f);
-                }
+                    var scrollObj = new GameObject("ScrollHabilidadesPausa", typeof(RectTransform));
+                    scrollObj.transform.SetParent(panelPausa.transform, false);
+                    scrollHabs = scrollObj.transform;
 
-                float[] slotsX = new float[] { -105f, -35f, 35f, 105f };
+                    var rtScroll = scrollObj.GetComponent<RectTransform>();
+                    rtScroll.anchorMin = new Vector2(0.5f, 0.5f);
+                    rtScroll.anchorMax = new Vector2(0.5f, 0.5f);
+                    rtScroll.pivot = new Vector2(0.5f, 0.5f);
+                    rtScroll.anchoredPosition = new Vector2(posXDerecha, 55f);
+                    rtScroll.sizeDelta = new Vector2(400f, 235f);
 
-                bool necesitaReconstruir = (_botonesHabilidadesPausa.Count < 4 || _iconosHabilidadesPausa.Count < 4);
-                if (!necesitaReconstruir)
-                {
-                    for (int i = 0; i < 4; i++)
-                    {
-                        if (_botonesHabilidadesPausa[i] == null || _iconosHabilidadesPausa[i] == null || _bordesHabilidadesPausa[i] == null)
-                        {
-                            necesitaReconstruir = true;
-                            break;
-                        }
-                    }
-                }
+                    scrollObj.AddComponent<RectMask2D>();
+                    var sr = scrollObj.AddComponent<ScrollRect>();
+                    sr.horizontal = false;
+                    sr.vertical = true;
+                    sr.movementType = ScrollRect.MovementType.Clamped;
+                    sr.scrollSensitivity = 25f;
 
-                if (necesitaReconstruir)
-                {
-                    for (int c = contHabs.childCount - 1; c >= 0; c--)
-                    {
-                        var ch = contHabs.GetChild(c);
-                        if (ch != null) DestroyImmediate(ch.gameObject);
-                    }
-                    _botonesHabilidadesPausa.Clear();
-                    _iconosHabilidadesPausa.Clear();
-                    _bordesHabilidadesPausa.Clear();
+                    var contentObj = new GameObject("ContenidoHabs", typeof(RectTransform));
+                    contentObj.transform.SetParent(scrollObj.transform, false);
+                    var rtContent = contentObj.GetComponent<RectTransform>();
+                    rtContent.anchorMin = new Vector2(0f, 1f);
+                    rtContent.anchorMax = new Vector2(1f, 1f);
+                    rtContent.pivot = new Vector2(0.5f, 1f);
+                    rtContent.anchoredPosition = Vector2.zero;
+                    rtContent.sizeDelta = new Vector2(0f, 235f);
 
-                    for (int i = 0; i < 4; i++)
-                    {
-                        int idx = i;
-                        var slotBtnObj = new GameObject($"SlotHabPausa_{i}", typeof(RectTransform));
-                        slotBtnObj.transform.SetParent(contHabs, false);
+                    var vlg = contentObj.AddComponent<VerticalLayoutGroup>();
+                    vlg.spacing = 6f;
+                    vlg.childAlignment = TextAnchor.UpperCenter;
+                    vlg.childControlWidth = true;
+                    vlg.childControlHeight = false;
+                    vlg.childForceExpandWidth = true;
+                    vlg.childForceExpandHeight = false;
 
-                        var rtSlot = slotBtnObj.GetComponent<RectTransform>();
-                        rtSlot.anchorMin = new Vector2(0.5f, 0.5f);
-                        rtSlot.anchorMax = new Vector2(0.5f, 0.5f);
-                        rtSlot.pivot = new Vector2(0.5f, 0.5f);
-                        rtSlot.anchoredPosition = new Vector2(slotsX[i], 0f);
-                        rtSlot.sizeDelta = new Vector2(52f, 52f);
-
-                        // Marco exterior (borde de selección)
-                        var imgBorde = slotBtnObj.AddComponent<Image>();
-                        imgBorde.color = (idx == _habilidadSeleccionadaPausa)
-                            ? new Color(0.25f, 0.85f, 1.0f, 1f)
-                            : new Color(0.20f, 0.28f, 0.40f, 0.7f);
-
-                        var btn = slotBtnObj.AddComponent<Button>();
-                        btn.onClick.AddListener(() => SeleccionarHabilidadPausa(idx));
-
-                        // Fondo interior del icono
-                        var fondoIcoObj = new GameObject("FondoInterno", typeof(RectTransform));
-                        fondoIcoObj.transform.SetParent(slotBtnObj.transform, false);
-                        var rtFondoIco = fondoIcoObj.GetComponent<RectTransform>();
-                        rtFondoIco.anchorMin = Vector2.zero;
-                        rtFondoIco.anchorMax = Vector2.one;
-                        rtFondoIco.offsetMin = new Vector2(2f, 2f);
-                        rtFondoIco.offsetMax = new Vector2(-2f, -2f);
-                        var imgFondo = fondoIcoObj.AddComponent<Image>();
-                        imgFondo.color = new Color(0.08f, 0.11f, 0.17f, 0.98f);
-                        imgFondo.raycastTarget = false;
-
-                        // SOLO ICONO de la habilidad (sin badges ni letras)
-                        var icoObj = new GameObject("Icono", typeof(RectTransform));
-                        icoObj.transform.SetParent(fondoIcoObj.transform, false);
-                        var rtIco = icoObj.GetComponent<RectTransform>();
-                        rtIco.anchorMin = new Vector2(0.08f, 0.08f);
-                        rtIco.anchorMax = new Vector2(0.92f, 0.92f);
-                        rtIco.offsetMin = Vector2.zero;
-                        rtIco.offsetMax = Vector2.zero;
-                        var imgIco = icoObj.AddComponent<Image>();
-                        imgIco.preserveAspect = true;
-                        imgIco.raycastTarget = false;
-
-                        _botonesHabilidadesPausa.Add(btn);
-                        _iconosHabilidadesPausa.Add(imgIco);
-                        _bordesHabilidadesPausa.Add(imgBorde);
-                    }
+                    var csf = contentObj.AddComponent<ContentSizeFitter>();
+                    csf.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+                    sr.content = rtContent;
                 }
 
-                // --- 3B. Caja de Descripción de Habilidad (desplegada abajo de los iconos) ---
-                Transform descBox = panelPausa.transform.Find("CajaDescHabilidadPausa");
-                if (descBox == null)
-                {
-                    var obj = new GameObject("CajaDescHabilidadPausa", typeof(RectTransform));
-                    obj.transform.SetParent(panelPausa.transform, false);
-                    descBox = obj.transform;
-
-                    var imgMarcoBox = obj.AddComponent<Image>();
-                    imgMarcoBox.sprite = EstiloUIUX.ObtenerSpriteTarjeta();
-                    imgMarcoBox.type = Image.Type.Sliced;
-                    imgMarcoBox.color = Color.white;
-
-                    var fondoInt = new GameObject("Fondo", typeof(RectTransform));
-                    fondoInt.transform.SetParent(obj.transform, false);
-                    var rtFi = fondoInt.GetComponent<RectTransform>();
-                    rtFi.anchorMin = Vector2.zero;
-                    rtFi.anchorMax = Vector2.one;
-                    rtFi.offsetMin = new Vector2(3f, 3f);
-                    rtFi.offsetMax = new Vector2(-3f, -3f);
-                    var imgFi = fondoInt.AddComponent<Image>();
-                    imgFi.color = EstiloUIUX.ColTarjeta;
-
-                    var txtObj = new GameObject("Texto", typeof(RectTransform));
-                    txtObj.transform.SetParent(fondoInt.transform, false);
-                    var rtTxt = txtObj.GetComponent<RectTransform>();
-                    rtTxt.anchorMin = Vector2.zero;
-                    rtTxt.anchorMax = Vector2.one;
-                    rtTxt.offsetMin = new Vector2(14f, 8f);
-                    rtTxt.offsetMax = new Vector2(-14f, -8f);
-
-                    _textoDescHabilidadPausa = txtObj.AddComponent<Text>();
-                    _textoDescHabilidadPausa.font = FuenteUtil.ObtenerFuentePixelify();
-                    _textoDescHabilidadPausa.fontSize = 19;
-                    _textoDescHabilidadPausa.lineSpacing = 1.35f;
-                    _textoDescHabilidadPausa.alignment = TextAnchor.MiddleLeft;
-                    _textoDescHabilidadPausa.color = EstiloUIUX.ColTextoCrema;
-                    _textoDescHabilidadPausa.horizontalOverflow = HorizontalWrapMode.Wrap;
-                    _textoDescHabilidadPausa.verticalOverflow = VerticalWrapMode.Overflow;
-                    _textoDescHabilidadPausa.raycastTarget = false;
-                }
-                else if (_textoDescHabilidadPausa == null)
-                {
-                    _textoDescHabilidadPausa = descBox.GetComponentInChildren<Text>(true);
-                }
-                var rtDesc = descBox.GetComponent<RectTransform>();
-                if (rtDesc != null)
-                {
-                    rtDesc.anchorMin = new Vector2(0.5f, 0.5f);
-                    rtDesc.anchorMax = new Vector2(0.5f, 0.5f);
-                    rtDesc.pivot = new Vector2(0.5f, 0.5f);
-                    rtDesc.anchoredPosition = new Vector2(posXDerecha, 35f);
-                    rtDesc.sizeDelta = new Vector2(430f, 160f);
-                }
-
-                // --- 3C. Marco del Mapa (abajo de la descripción) ---
+                // 3. Marco del Mapa (abajo, completamente independiente y con soporte de clic interactivo)
                 Transform marcoMapa = panelPausa.transform.Find("MarcoMapaPausa");
                 if (marcoMapa == null)
                 {
@@ -1363,6 +1263,7 @@ namespace SoulKnight
                     imgFi.sprite = EstiloUIUX.ObtenerSpriteTarjeta();
                     imgFi.type = Image.Type.Sliced;
                     imgFi.color = Color.white;
+                    imgFi.raycastTarget = false;
 
                     var rawObj = new GameObject("Lienzo", typeof(RectTransform));
                     rawObj.transform.SetParent(fondoInt.transform, false);
@@ -1372,6 +1273,7 @@ namespace SoulKnight
                     rtRaw.offsetMin = new Vector2(4f, 4f);
                     rtRaw.offsetMax = new Vector2(-4f, -24f);
                     _rawMapaPausa = rawObj.AddComponent<RawImage>();
+                    _rawMapaPausa.raycastTarget = false;
 
                     var titObj = new GameObject("Titulo", typeof(RectTransform));
                     titObj.transform.SetParent(fondoInt.transform, false);
@@ -1387,10 +1289,17 @@ namespace SoulKnight
                     txtTit.fontStyle = FontStyle.Bold;
                     txtTit.alignment = TextAnchor.MiddleCenter;
                     txtTit.color = EstiloUIUX.ColDorado;
-                    txtTit.text = "✦ MAPA DE LA MAZMORRA ✦";
+                    txtTit.text = "✦ MAPA DE LA MAZMORRA [CLIC / M] ✦";
                     txtTit.horizontalOverflow = HorizontalWrapMode.Overflow;
                     txtTit.verticalOverflow = VerticalWrapMode.Overflow;
+                    txtTit.raycastTarget = false;
+
+                    // Botón interactivo para abrir el mapa grande al hacer clic en él
+                    var btnM = obj.AddComponent<Button>();
+                    btnM.transition = Selectable.Transition.ColorTint;
+                    btnM.onClick.AddListener(() => AlternarMapaGrande());
                 }
+
                 if (_rawMapaPausa == null && marcoMapa != null)
                 {
                     _rawMapaPausa = marcoMapa.GetComponentInChildren<RawImage>(true);
@@ -1401,8 +1310,8 @@ namespace SoulKnight
                     rtMm.anchorMin = new Vector2(0.5f, 0.5f);
                     rtMm.anchorMax = new Vector2(0.5f, 0.5f);
                     rtMm.pivot = new Vector2(0.5f, 0.5f);
-                    rtMm.anchoredPosition = new Vector2(posXDerecha, -125f);
-                    rtMm.sizeDelta = new Vector2(370f, 130f);
+                    rtMm.anchoredPosition = new Vector2(posXDerecha, -145f);
+                    rtMm.sizeDelta = new Vector2(400f, 140f);
                 }
             }
             catch (System.Exception ex)
@@ -1413,8 +1322,8 @@ namespace SoulKnight
 
         private void SeleccionarHabilidadPausa(int index)
         {
-            _habilidadSeleccionadaPausa = index;
-            ActualizarDetalleHabilidadPausa();
+            _habilidadSeleccionadaPausa = (_habilidadSeleccionadaPausa == index ? -1 : index);
+            ActualizarHabilidadesPausaUI();
         }
 
         private TipoPersonaje ObtenerTipoPersonajeLocal()
@@ -1446,172 +1355,164 @@ namespace SoulKnight
 
         public void ActualizarHabilidadesPausaUI()
         {
+            if (panelPausa == null) return;
+            var scrollHabs = panelPausa.transform.Find("ScrollHabilidadesPausa");
+            if (scrollHabs == null)
+            {
+                CrearOActualizarSeccionDerechaPausa();
+                scrollHabs = panelPausa.transform.Find("ScrollHabilidadesPausa");
+                if (scrollHabs == null) return;
+            }
+
+            var content = scrollHabs.Find("ContenidoHabs");
+            if (content == null) return;
+
+            // Limpiar slots anteriores
+            for (int c = content.childCount - 1; c >= 0; c--)
+            {
+                var ch = content.GetChild(c);
+                if (ch != null) Destroy(ch.gameObject);
+            }
+
             var tipo = ObtenerTipoPersonajeLocal();
             var habs = CatalogoHabilidades.ObtenerHabilidadesPersonaje(tipo);
+            string[] teclas = new string[] { "CLICK IZQ", "E", "Q", "R" };
 
-            // Re-enlazar si la lista interna está incompleta o con referencias nulas
-            if (_iconosHabilidadesPausa.Count < 4 || _iconosHabilidadesPausa[0] == null)
+            // Stats de la run si están disponibles
+            string textoStatsRun = "";
+            if (_personajeLocal != null)
             {
-                _iconosHabilidadesPausa.Clear();
-                _bordesHabilidadesPausa.Clear();
-                _botonesHabilidadesPausa.Clear();
-                if (panelPausa != null)
-                {
-                    var cont = panelPausa.transform.Find("FilaHabilidadesPausa");
-                    if (cont != null)
-                    {
-                        for (int k = 0; k < 4; k++)
-                        {
-                            var slot = cont.Find($"SlotHabPausa_{k}");
-                            if (slot != null)
-                            {
-                                var btn = slot.GetComponent<Button>();
-                                var borde = slot.GetComponent<Image>();
-                                var ico = slot.Find("FondoInterno/Icono")?.GetComponent<Image>();
-                                if (btn != null) _botonesHabilidadesPausa.Add(btn);
-                                if (borde != null) _bordesHabilidadesPausa.Add(borde);
-                                if (ico != null) _iconosHabilidadesPausa.Add(ico);
-                            }
-                        }
-                    }
-                }
+                float multDano = _personajeLocal.MultiplicadorDanoTotal;
+                float redCd = (1f - _personajeLocal.FactorReduccionCooldown) * 100f;
+                float incArea = (_personajeLocal.MultiplicadorAreaHabilidades - 1f) * 100f;
+                float probCrit = _personajeLocal.ProbabilidadCritico * 100f;
+
+                textoStatsRun = $"\n<color=#4ade80>• Daño: {multDano:F2}x | CD: -{redCd:F0}% | Rango: +{incArea:F0}% | Crítico: {probCrit:F0}%</color>";
             }
 
-            for (int i = 0; i < _iconosHabilidadesPausa.Count && i < 4; i++)
+            Font fuente = FuenteUtil.ObtenerFuentePixelify();
+
+            for (int i = 0; i < habs.Count && i < 4; i++)
             {
-                Sprite sp = null;
-                if (i < habs.Count)
+                int idx = i;
+                var h = habs[i];
+                bool seleccionada = (_habilidadSeleccionadaPausa == idx);
+                string desc = !string.IsNullOrEmpty(h.descripcionTecnica) ? h.descripcionTecnica : h.descripcion;
+
+                var slotObj = new GameObject($"SlotHab_{idx}", typeof(RectTransform));
+                slotObj.transform.SetParent(content, false);
+
+                var rtSlot = slotObj.GetComponent<RectTransform>();
+                float altoSlot = seleccionada ? 165f : 44f;
+                rtSlot.sizeDelta = new Vector2(400f, altoSlot);
+
+                var le = slotObj.AddComponent<LayoutElement>();
+                le.preferredHeight = altoSlot;
+                le.minHeight = altoSlot;
+                le.flexibleWidth = 1f;
+
+                // Marco exterior de la tarjeta
+                var imgBorde = slotObj.AddComponent<Image>();
+                imgBorde.sprite = EstiloUIUX.ObtenerSpriteTarjeta();
+                imgBorde.type = Image.Type.Sliced;
+                imgBorde.color = seleccionada ? new Color(0.35f, 0.85f, 1f, 1f) : new Color(0.30f, 0.38f, 0.50f, 0.85f);
+
+                // Fondo interior
+                var fondoInt = new GameObject("FondoInterno", typeof(RectTransform));
+                fondoInt.transform.SetParent(slotObj.transform, false);
+                var rtFi = fondoInt.GetComponent<RectTransform>();
+                rtFi.anchorMin = Vector2.zero;
+                rtFi.anchorMax = Vector2.one;
+                rtFi.offsetMin = new Vector2(3f, 3f);
+                rtFi.offsetMax = new Vector2(-3f, -3f);
+                var imgFi = fondoInt.AddComponent<Image>();
+                imgFi.color = seleccionada ? new Color(0.12f, 0.18f, 0.32f, 0.98f) : new Color(0.08f, 0.11f, 0.17f, 0.95f);
+                imgFi.raycastTarget = false;
+
+                // Icono
+                var icoMarco = new GameObject("IconoMarco", typeof(RectTransform));
+                icoMarco.transform.SetParent(fondoInt.transform, false);
+                var rtIcoM = icoMarco.GetComponent<RectTransform>();
+                rtIcoM.anchorMin = new Vector2(0f, 1f);
+                rtIcoM.anchorMax = new Vector2(0f, 1f);
+                rtIcoM.pivot = new Vector2(0f, 1f);
+                rtIcoM.anchoredPosition = new Vector2(6f, -4f);
+                rtIcoM.sizeDelta = new Vector2(34f, 34f);
+                var imgIcoM = icoMarco.AddComponent<Image>();
+                imgIcoM.color = seleccionada ? new Color(0.25f, 0.65f, 0.90f, 0.85f) : new Color(0.16f, 0.20f, 0.28f, 0.80f);
+                imgIcoM.raycastTarget = false;
+
+                var icoImgObj = new GameObject("Icono", typeof(RectTransform));
+                icoImgObj.transform.SetParent(icoMarco.transform, false);
+                var rtIco = icoImgObj.GetComponent<RectTransform>();
+                rtIco.anchorMin = Vector2.zero;
+                rtIco.anchorMax = Vector2.one;
+                rtIco.offsetMin = new Vector2(2f, 2f);
+                rtIco.offsetMax = new Vector2(-2f, -2f);
+                var imgIco = icoImgObj.AddComponent<Image>();
+                imgIco.sprite = CatalogoHabilidades.ObtenerSpriteHabilidad(h.id);
+                imgIco.preserveAspect = true;
+                imgIco.color = Color.white;
+                imgIco.raycastTarget = false;
+
+                // Cabecera (Nombre + Tecla + Chevron)
+                var hdrObj = new GameObject("Cabecera", typeof(RectTransform));
+                hdrObj.transform.SetParent(fondoInt.transform, false);
+                var rtHdr = hdrObj.GetComponent<RectTransform>();
+                rtHdr.anchorMin = new Vector2(0f, 1f);
+                rtHdr.anchorMax = new Vector2(1f, 1f);
+                rtHdr.pivot = new Vector2(0f, 1f);
+                rtHdr.anchoredPosition = new Vector2(46f, -6f);
+                rtHdr.sizeDelta = new Vector2(-54f, 28f);
+
+                var txtHdr = hdrObj.AddComponent<Text>();
+                txtHdr.font = fuente;
+                txtHdr.fontSize = seleccionada ? 17 : 15;
+                txtHdr.fontStyle = FontStyle.Bold;
+                txtHdr.alignment = TextAnchor.MiddleLeft;
+                txtHdr.color = seleccionada ? EstiloUIUX.ColCyan : EstiloUIUX.ColTextoCrema;
+                txtHdr.horizontalOverflow = HorizontalWrapMode.Overflow;
+                txtHdr.verticalOverflow = VerticalWrapMode.Overflow;
+                txtHdr.raycastTarget = false;
+                string chevron = seleccionada ? "<color=#38bdf8> ▲</color>" : "<color=#94a3b8> ▼</color>";
+                txtHdr.text = $"{h.nombre.ToUpper()} <color=#ffd700>({teclas[idx]})</color>{chevron}";
+
+                // Si está seleccionada: mostrar cuerpo de la descripción técnica
+                if (seleccionada)
                 {
-                    sp = CatalogoHabilidades.ObtenerSpriteHabilidad(habs[i].id);
+                    var descObj = new GameObject("TextoDescripcion", typeof(RectTransform));
+                    descObj.transform.SetParent(fondoInt.transform, false);
+                    var rtDesc = descObj.AddComponent<RectTransform>();
+                    rtDesc.anchorMin = new Vector2(0f, 0f);
+                    rtDesc.anchorMax = new Vector2(1f, 1f);
+                    rtDesc.offsetMin = new Vector2(10f, 6f);
+                    rtDesc.offsetMax = new Vector2(-10f, -42f);
+
+                    var txtDesc = descObj.AddComponent<Text>();
+                    txtDesc.font = fuente;
+                    txtDesc.fontSize = 15;
+                    txtDesc.lineSpacing = 1.3f;
+                    txtDesc.alignment = TextAnchor.UpperLeft;
+                    txtDesc.color = EstiloUIUX.ColTextoCrema;
+                    txtDesc.horizontalOverflow = HorizontalWrapMode.Wrap;
+                    txtDesc.verticalOverflow = VerticalWrapMode.Overflow;
+                    txtDesc.raycastTarget = false;
+                    txtDesc.text = $"{desc}{textoStatsRun}";
                 }
 
-                // Fallback 1: Si ya está en los slots de habilidades activos del HUD del jugador
-                if (sp == null && slotsHabilidades != null && i < slotsHabilidades.Length && slotsHabilidades[i] != null && slotsHabilidades[i].icono != null)
+                // Botón interactivo para alternar desplegable
+                var btn = slotObj.AddComponent<Button>();
+                btn.transition = Selectable.Transition.ColorTint;
+                btn.onClick.AddListener(() =>
                 {
-                    sp = slotsHabilidades[i].icono.sprite;
-                }
-
-                // Fallback 2: Iconos del HUD
-                if (sp == null)
-                {
-                    if (tipo == TipoPersonaje.Fuego)
-                    {
-                        if (i == 0) sp = iconoFuegoLMB;
-                        else if (i == 1) sp = iconoFuegoE;
-                        else if (i == 2) sp = iconoFuegoQ;
-                        else if (i == 3) sp = iconoFuegoR;
-                    }
-                    else if (tipo == TipoPersonaje.Hielo)
-                    {
-                        if (i == 0) sp = iconoHieloLMB;
-                        else if (i == 1) sp = iconoHieloE;
-                        else if (i == 2) sp = iconoHieloQ;
-                        else if (i == 3) sp = iconoHieloR;
-                    }
-                    else if (tipo == TipoPersonaje.Electrico)
-                    {
-                        if (i == 0) sp = iconoElecLMB;
-                        else if (i == 1) sp = iconoElecE;
-                        else if (i == 2) sp = iconoElecQ;
-                        else if (i == 3) sp = iconoElecR;
-                    }
-                }
-
-                // Fallback 3: Carga directa desde Resources
-                if (sp == null && i < habs.Count)
-                {
-                    sp = Resources.Load<Sprite>($"IconosHabilidades/{habs[i].id}");
-                }
-
-                if (_iconosHabilidadesPausa[i] != null)
-                {
-                    if (sp != null)
-                    {
-                        _iconosHabilidadesPausa[i].sprite = sp;
-                        _iconosHabilidadesPausa[i].color = Color.white;
-                        _iconosHabilidadesPausa[i].enabled = true;
-                        _iconosHabilidadesPausa[i].preserveAspect = true;
-                        _iconosHabilidadesPausa[i].SetAllDirty();
-                    }
-                    else
-                    {
-                        _iconosHabilidadesPausa[i].sprite = null;
-                        _iconosHabilidadesPausa[i].color = new Color(0.2f, 0.25f, 0.35f, 0.8f);
-                        _iconosHabilidadesPausa[i].SetAllDirty();
-                    }
-                }
+                    SeleccionarHabilidadPausa(idx);
+                });
             }
-
-            ActualizarDetalleHabilidadPausa();
         }
 
         private void ActualizarDetalleHabilidadPausa()
         {
-            // Actualizar realce visual en el borde de los iconos de habilidad
-            for (int i = 0; i < _bordesHabilidadesPausa.Count; i++)
-            {
-                if (_bordesHabilidadesPausa[i] != null)
-                {
-                    _bordesHabilidadesPausa[i].color = (i == _habilidadSeleccionadaPausa)
-                        ? new Color(0.25f, 0.85f, 1.0f, 1f)
-                        : new Color(0.20f, 0.28f, 0.40f, 0.7f);
-                }
-            }
-
-            if (_textoDescHabilidadPausa == null)
-            {
-                if (panelPausa != null)
-                {
-                    var descBox = panelPausa.transform.Find("CajaDescHabilidadPausa");
-                    if (descBox != null)
-                    {
-                        _textoDescHabilidadPausa = descBox.GetComponentInChildren<Text>(true);
-                    }
-                }
-            }
-
-            if (_textoDescHabilidadPausa == null) return;
-
-            // Tipografía Pixelify Sans nítida con overflow protegido y tamaño ampliado
-            _textoDescHabilidadPausa.font = FuenteUtil.ObtenerFuentePixelify();
-            _textoDescHabilidadPausa.fontSize = 19;
-            _textoDescHabilidadPausa.lineSpacing = 1.35f;
-            _textoDescHabilidadPausa.horizontalOverflow = HorizontalWrapMode.Wrap;
-            _textoDescHabilidadPausa.verticalOverflow = VerticalWrapMode.Overflow;
-
-            var tipo = ObtenerTipoPersonajeLocal();
-            var habs = CatalogoHabilidades.ObtenerHabilidadesPersonaje(tipo);
-
-            string[] teclas = new string[] { "CLICK IZQ", "E", "Q", "R" };
-            int idx = Mathf.Clamp(_habilidadSeleccionadaPausa, 0, 3);
-
-            if (idx < habs.Count)
-            {
-                var h = habs[idx];
-                string desc = !string.IsNullOrEmpty(h.descripcionTecnica) ? h.descripcionTecnica : h.descripcion;
-
-                string textoStatsRun = "";
-                if (_personajeLocal != null)
-                {
-                    float multDano = _personajeLocal.MultiplicadorDanoTotal;
-                    float redCd = (1f - _personajeLocal.FactorReduccionCooldown) * 100f;
-                    float incArea = (_personajeLocal.MultiplicadorAreaHabilidades - 1f) * 100f;
-                    float probCrit = _personajeLocal.ProbabilidadCritico * 100f;
-
-                    textoStatsRun = $"\n\n<color=#4ade80><b>ESTADÍSTICAS MEJORADAS DE LA RUN:</b></color>" +
-                                   $"\n• Daño Total: <color=#ffd700>{multDano:F2}x</color>" +
-                                   (redCd > 0.5f ? $"\n• Reducción de Enfriamiento: <color=#38bdf8>-{redCd:F0}%</color>" : "") +
-                                   (incArea > 0.5f ? $"\n• Área / Rango de Habilidad: <color=#a7f3d0>+{incArea:F0}%</color>" : "") +
-                                   (probCrit > 0.5f ? $"\n• Probabilidad Crítica: <color=#f87171>{probCrit:F0}% (1.8x)</color>" : "") +
-                                   $"\n• Vida Máxima: <color=#fb7185>{_personajeLocal.VidaMaxSincronizada.Value} HP</color>";
-                }
-
-                _textoDescHabilidadPausa.text = $"<b><size=22><color=#5ce1e6>{h.nombre.ToUpper()}</color></size></b>  <color=#ffd700>({teclas[idx]})</color>\n{desc}{textoStatsRun}";
-            }
-            else
-            {
-                _textoDescHabilidadPausa.text = "<color=#94a3b8><i>Haz clic en una habilidad para ver su descripción detallada.</i></color>";
-            }
+            ActualizarHabilidadesPausaUI();
         }
 
         private void ActualizarMapaPausa()
@@ -1841,6 +1742,7 @@ namespace SoulKnight
 
             if (nuevoEstado)
             {
+                _modalMapaGrandeHUD.transform.SetAsLastSibling();
                 _timerRefrescoMapaGrande = 0f;
                 ActualizarContenidoMapaGrande();
             }
@@ -1882,11 +1784,11 @@ namespace SoulKnight
         {
             if (panelTienda != null) return;
 
-            var tiendaObj = new GameObject("PanelTiendaModal");
+            var tiendaObj = new GameObject("PanelTiendaModal", typeof(RectTransform));
             tiendaObj.transform.SetParent(transform, false);
             tiendaObj.transform.SetAsLastSibling();
 
-            var rtFull = tiendaObj.AddComponent<RectTransform>();
+            var rtFull = tiendaObj.GetComponent<RectTransform>();
             rtFull.anchorMin = Vector2.zero;
             rtFull.anchorMax = Vector2.one;
             rtFull.sizeDelta = Vector2.zero;
@@ -1895,15 +1797,15 @@ namespace SoulKnight
             var imgFondo = tiendaObj.AddComponent<Image>();
             imgFondo.color = new Color(0.02f, 0.02f, 0.04f, 0.88f);
 
-            // Ventana modal centrada (ampliada y con excelente aire/interlineado)
-            var cardObj = new GameObject("VentanaTienda");
+            // Ventana modal centrada
+            var cardObj = new GameObject("VentanaTienda", typeof(RectTransform));
             cardObj.transform.SetParent(tiendaObj.transform, false);
-            var rtCard = cardObj.AddComponent<RectTransform>();
+            var rtCard = cardObj.GetComponent<RectTransform>();
             rtCard.anchorMin = new Vector2(0.5f, 0.5f);
             rtCard.anchorMax = new Vector2(0.5f, 0.5f);
             rtCard.pivot = new Vector2(0.5f, 0.5f);
             rtCard.anchoredPosition = Vector2.zero;
-            rtCard.sizeDelta = new Vector2(960f, 620f);
+            rtCard.sizeDelta = new Vector2(960f, 640f);
 
             var imgCard = cardObj.AddComponent<Image>();
             imgCard.sprite = EstiloUIUX.ObtenerSpritePanel();
@@ -1914,14 +1816,14 @@ namespace SoulKnight
             EstiloUIUX.CrearCabeceraModal(cardObj.transform, "TIENDA MÍSTICA DEL GATO MERCADER", 76f, "huella");
 
             // Subtítulo
-            var subObj = new GameObject("SubtituloTienda");
+            var subObj = new GameObject("SubtituloTienda", typeof(RectTransform));
             subObj.transform.SetParent(cardObj.transform, false);
             var txtSub = subObj.AddComponent<Text>();
             txtSub.font = FuenteUtil.ObtenerFuentePixelify();
             txtSub.fontSize = 14;
             txtSub.alignment = TextAnchor.MiddleCenter;
             txtSub.color = EstiloUIUX.ColTextoTenue;
-            txtSub.text = "Mejoras de características para tu gato en esta run. Hasta 5 niveles por rasgo.";
+            txtSub.text = "Haz clic en una habilidad o mejora para desplegar sus detalles técnicos.";
             txtSub.horizontalOverflow = HorizontalWrapMode.Overflow;
             txtSub.verticalOverflow = VerticalWrapMode.Overflow;
             var rtSub = subObj.GetComponent<RectTransform>();
@@ -1929,10 +1831,10 @@ namespace SoulKnight
             rtSub.anchorMax = new Vector2(0.5f, 1f);
             rtSub.pivot = new Vector2(0.5f, 1f);
             rtSub.anchoredPosition = new Vector2(0f, -80f);
-            rtSub.sizeDelta = new Vector2(880f, 24f);
+            rtSub.sizeDelta = new Vector2(880f, 22f);
 
             // Contador de Oro
-            var oroObj = new GameObject("TextoOroTienda");
+            var oroObj = new GameObject("TextoOroTienda", typeof(RectTransform));
             oroObj.transform.SetParent(cardObj.transform, false);
             _textoOroTienda = oroObj.AddComponent<Text>();
             _textoOroTienda.font = FuenteUtil.ObtenerFuentePixelify();
@@ -1948,98 +1850,46 @@ namespace SoulKnight
             rtOro.anchorMin = new Vector2(0.5f, 1f);
             rtOro.anchorMax = new Vector2(0.5f, 1f);
             rtOro.pivot = new Vector2(0.5f, 1f);
-            rtOro.anchoredPosition = new Vector2(0f, -106f);
-            rtOro.sizeDelta = new Vector2(500f, 26f);
+            rtOro.anchoredPosition = new Vector2(0f, -104f);
+            rtOro.sizeDelta = new Vector2(500f, 24f);
 
-            // Contenedor de 6 Artículos (2 filas de 3 columnas con amplias dimensiones)
-            float[] posX = new float[] { -305f, 0f, 305f, -305f, 0f, 305f };
-            float[] posY = new float[] { 45f, 45f, 45f, -145f, -145f, -145f };
-            _botonesCompraTienda.Clear();
-            _textosBotonTienda.Clear();
+            // Scroll de Artículos Desplegables de la Tienda
+            var scrollObj = new GameObject("ScrollTienda", typeof(RectTransform));
+            scrollObj.transform.SetParent(cardObj.transform, false);
+            var rtScroll = scrollObj.GetComponent<RectTransform>();
+            rtScroll.anchorMin = new Vector2(0.5f, 0.5f);
+            rtScroll.anchorMax = new Vector2(0.5f, 0.5f);
+            rtScroll.pivot = new Vector2(0.5f, 0.5f);
+            rtScroll.anchoredPosition = new Vector2(0f, -18f);
+            rtScroll.sizeDelta = new Vector2(900f, 430f);
 
-            for (int i = 0; i < 6; i++)
-            {
-                int itemIndex = i;
-                var itemCardObj = new GameObject($"CardArticulo_{i}");
-                itemCardObj.transform.SetParent(cardObj.transform, false);
-                var rtIc = itemCardObj.AddComponent<RectTransform>();
-                rtIc.anchorMin = new Vector2(0.5f, 0.5f);
-                rtIc.anchorMax = new Vector2(0.5f, 0.5f);
-                rtIc.pivot = new Vector2(0.5f, 0.5f);
-                rtIc.anchoredPosition = new Vector2(posX[i], posY[i]);
-                rtIc.sizeDelta = new Vector2(290f, 175f);
+            scrollObj.AddComponent<RectMask2D>();
+            var sr = scrollObj.AddComponent<ScrollRect>();
+            sr.horizontal = false;
+            sr.vertical = true;
+            sr.movementType = ScrollRect.MovementType.Clamped;
+            sr.scrollSensitivity = 28f;
 
-                var imgIc = itemCardObj.AddComponent<Image>();
-                imgIc.sprite = EstiloUIUX.ObtenerSpriteTarjeta();
-                imgIc.type = Image.Type.Sliced;
-                imgIc.color = Color.white;
+            var contentObj = new GameObject("ContenidoTienda", typeof(RectTransform));
+            contentObj.transform.SetParent(scrollObj.transform, false);
+            var rtContent = contentObj.GetComponent<RectTransform>();
+            rtContent.anchorMin = new Vector2(0f, 1f);
+            rtContent.anchorMax = new Vector2(1f, 1f);
+            rtContent.pivot = new Vector2(0.5f, 1f);
+            rtContent.anchoredPosition = Vector2.zero;
+            rtContent.sizeDelta = new Vector2(0f, 430f);
 
-                // Nombre
-                var nomObj = new GameObject("Nombre");
-                nomObj.transform.SetParent(itemCardObj.transform, false);
-                var rtNom = nomObj.AddComponent<RectTransform>();
-                rtNom.anchorMin = new Vector2(0.5f, 1f);
-                rtNom.anchorMax = new Vector2(0.5f, 1f);
-                rtNom.pivot = new Vector2(0.5f, 1f);
-                rtNom.anchoredPosition = new Vector2(0f, -10f);
-                rtNom.sizeDelta = new Vector2(276f, 24f);
-                var txtNom = nomObj.AddComponent<Text>();
-                txtNom.font = FuenteUtil.ObtenerFuentePixelify();
-                txtNom.fontSize = 15;
-                txtNom.fontStyle = FontStyle.Bold;
-                txtNom.alignment = TextAnchor.MiddleCenter;
-                txtNom.color = EstiloUIUX.ColTextoCrema;
-                txtNom.horizontalOverflow = HorizontalWrapMode.Overflow;
-                txtNom.verticalOverflow = VerticalWrapMode.Overflow;
+            var vlg = contentObj.AddComponent<VerticalLayoutGroup>();
+            vlg.spacing = 8f;
+            vlg.childAlignment = TextAnchor.UpperCenter;
+            vlg.childControlWidth = true;
+            vlg.childControlHeight = false;
+            vlg.childForceExpandWidth = true;
+            vlg.childForceExpandHeight = false;
 
-                // Badge de Clase Compatible
-                var badgeObj = new GameObject("ClaseBadge");
-                badgeObj.transform.SetParent(itemCardObj.transform, false);
-                var rtBadge = badgeObj.AddComponent<RectTransform>();
-                rtBadge.anchorMin = new Vector2(0.5f, 1f);
-                rtBadge.anchorMax = new Vector2(0.5f, 1f);
-                rtBadge.pivot = new Vector2(0.5f, 1f);
-                rtBadge.anchoredPosition = new Vector2(0f, -34f);
-                rtBadge.sizeDelta = new Vector2(276f, 20f);
-                var txtBadge = badgeObj.AddComponent<Text>();
-                txtBadge.font = FuenteUtil.ObtenerFuentePixelify();
-                txtBadge.fontSize = 12;
-                txtBadge.fontStyle = FontStyle.Bold;
-                txtBadge.alignment = TextAnchor.MiddleCenter;
-                txtBadge.color = EstiloUIUX.ColCyan;
-                txtBadge.horizontalOverflow = HorizontalWrapMode.Overflow;
-                txtBadge.verticalOverflow = VerticalWrapMode.Overflow;
-
-                // Descripción con interlineado generoso
-                var descObj = new GameObject("Desc");
-                descObj.transform.SetParent(itemCardObj.transform, false);
-                var rtDesc = descObj.AddComponent<RectTransform>();
-                rtDesc.anchorMin = new Vector2(0.5f, 1f);
-                rtDesc.anchorMax = new Vector2(0.5f, 1f);
-                rtDesc.pivot = new Vector2(0.5f, 1f);
-                rtDesc.anchoredPosition = new Vector2(0f, -56f);
-                rtDesc.sizeDelta = new Vector2(276f, 52f);
-                var txtDesc = descObj.AddComponent<Text>();
-                txtDesc.font = FuenteUtil.ObtenerFuentePixelify();
-                txtDesc.fontSize = 12;
-                txtDesc.lineSpacing = 1.35f;
-                txtDesc.alignment = TextAnchor.MiddleCenter;
-                txtDesc.color = EstiloUIUX.ColTextoTenue;
-                txtDesc.horizontalOverflow = HorizontalWrapMode.Wrap;
-                txtDesc.verticalOverflow = VerticalWrapMode.Overflow;
-
-                // Botón Comprar
-                var btnBuy = EstiloUIUX.CrearBoton(itemCardObj.transform, "BotonComprar", "COMPRAR", TipoBotonUI.Verde, new Vector2(270f, 38f), () => ComprarArticuloTiendaIndex(itemIndex));
-                var rtBtn = btnBuy.GetComponent<RectTransform>();
-                rtBtn.anchorMin = new Vector2(0.5f, 0f);
-                rtBtn.anchorMax = new Vector2(0.5f, 0f);
-                rtBtn.pivot = new Vector2(0.5f, 0f);
-                rtBtn.anchoredPosition = new Vector2(0f, 8f);
-
-                var txtBtn = btnBuy.GetComponentInChildren<Text>();
-                _botonesCompraTienda.Add(btnBuy);
-                _textosBotonTienda.Add(txtBtn);
-            }
+            var csf = contentObj.AddComponent<ContentSizeFitter>();
+            csf.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+            sr.content = rtContent;
 
             // Botón Salir de la Tienda
             var btnSalir = EstiloUIUX.CrearBoton(cardObj.transform, "BotonSalirTienda", "SALIR DE LA TIENDA (ESC)", TipoBotonUI.Rojo, new Vector2(360f, 46f), CerrarTienda, "puerta", new Vector2(24f, 24f));
@@ -2062,6 +1912,7 @@ namespace SoulKnight
 
             CrearPanelTiendaSiNoExiste();
             _puestitoActivo = puestito;
+            _itemSeleccionadoTienda = -1;
             _oroVisualLocal = (_personajeLocal != null) ? _personajeLocal.OroRun.Value : 0;
             panelTienda.SetActive(true);
             Controles.Bloqueado = true;
@@ -2094,106 +1945,227 @@ namespace SoulKnight
 
             var cardObj = panelTienda.transform.Find("VentanaTienda");
             if (cardObj == null) return;
+            var scrollObj = cardObj.Find("ScrollTienda");
+            if (scrollObj == null) return;
+            var contentObj = scrollObj.Find("ContenidoTienda");
+            if (contentObj == null) return;
 
-            for (int i = 0; i < 6 && i < _botonesCompraTienda.Count; i++)
+            // Limpiar items anteriores
+            for (int c = contentObj.childCount - 1; c >= 0; c--)
             {
-                var card = cardObj.Find($"CardArticulo_{i}");
-                var btn = _botonesCompraTienda[i];
-                var txtBtn = _textosBotonTienda[i];
-                var imgBtn = btn != null ? btn.GetComponent<Image>() : null;
+                var ch = contentObj.GetChild(c);
+                if (ch != null) Destroy(ch.gameObject);
+            }
 
-                if (i >= _puestitoActivo.itemsOfrecidos.Count)
-                {
-                    if (card != null) card.gameObject.SetActive(false);
-                    continue;
-                }
+            _botonesCompraTienda.Clear();
+            _textosBotonTienda.Clear();
 
-                if (card != null) card.gameObject.SetActive(true);
+            Font fuente = FuenteUtil.ObtenerFuentePixelify();
 
+            for (int i = 0; i < _puestitoActivo.itemsOfrecidos.Count; i++)
+            {
+                int itemIndex = i;
                 TipoMejoraTienda tipo = _puestitoActivo.itemsOfrecidos[i];
                 int nvActual = (_personajeLocal != null) ? _personajeLocal.ObtenerNivelMejora(tipo) : 0;
                 CatalogoMejorasTienda.ObtenerInfoMejora(tipo, nvActual, out string nombre, out string desc, out TipoPersonaje claseReq);
                 int costo = CatalogoMejorasTienda.ObtenerCostoNivel(tipo, nvActual);
 
                 bool esCompatible = (claseReq == TipoPersonaje.Ninguno) || (_personajeLocal != null && _personajeLocal.TipoPj == claseReq);
+                IdHabilidad idHab = CatalogoMejorasTienda.ObtenerIdHabilidadDeMejora(tipo);
+                bool esUniversal = (claseReq == TipoPersonaje.Ninguno || idHab == IdHabilidad.Ninguna);
 
-                if (card != null)
+                bool seleccionada = (_itemSeleccionadoTienda == itemIndex);
+                float altoCard = seleccionada ? 165f : 66f;
+
+                var cardItem = new GameObject($"CardArticulo_{itemIndex}", typeof(RectTransform));
+                cardItem.transform.SetParent(contentObj, false);
+
+                var rtCard = cardItem.GetComponent<RectTransform>();
+                rtCard.sizeDelta = new Vector2(880f, altoCard);
+
+                var le = cardItem.AddComponent<LayoutElement>();
+                le.preferredHeight = altoCard;
+                le.minHeight = altoCard;
+                le.flexibleWidth = 1f;
+
+                // Marco exterior
+                var imgBorde = cardItem.AddComponent<Image>();
+                imgBorde.sprite = EstiloUIUX.ObtenerSpriteTarjeta();
+                imgBorde.type = Image.Type.Sliced;
+                imgBorde.color = seleccionada ? new Color(0.35f, 0.85f, 1f, 1f) : new Color(0.30f, 0.38f, 0.50f, 0.85f);
+
+                // Fondo interior
+                var fondoInt = new GameObject("FondoInterno", typeof(RectTransform));
+                fondoInt.transform.SetParent(cardItem.transform, false);
+                var rtFi = fondoInt.GetComponent<RectTransform>();
+                rtFi.anchorMin = Vector2.zero;
+                rtFi.anchorMax = Vector2.one;
+                rtFi.offsetMin = new Vector2(3f, 3f);
+                rtFi.offsetMax = new Vector2(-3f, -3f);
+                var imgFi = fondoInt.AddComponent<Image>();
+                imgFi.color = seleccionada ? new Color(0.12f, 0.18f, 0.30f, 0.98f) : new Color(0.08f, 0.10f, 0.16f, 0.96f);
+                imgFi.raycastTarget = false;
+
+                // 1. Icono a la izquierda: Cuadrado con signo de interrogación si es universal, o Icono de la habilidad si es de personaje
+                var icoMarco = new GameObject("IconoMarco", typeof(RectTransform));
+                icoMarco.transform.SetParent(fondoInt.transform, false);
+                var rtIcoM = icoMarco.GetComponent<RectTransform>();
+                rtIcoM.anchorMin = new Vector2(0f, 1f);
+                rtIcoM.anchorMax = new Vector2(0f, 1f);
+                rtIcoM.pivot = new Vector2(0f, 1f);
+                rtIcoM.anchoredPosition = new Vector2(8f, -8f);
+                rtIcoM.sizeDelta = new Vector2(48f, 48f);
+
+                var imgIcoM = icoMarco.AddComponent<Image>();
+                imgIcoM.sprite = EstiloUIUX.ObtenerSpriteTarjeta();
+                imgIcoM.type = Image.Type.Sliced;
+                imgIcoM.color = esUniversal ? new Color(0.85f, 0.70f, 0.25f, 0.9f) : new Color(0.25f, 0.65f, 0.90f, 0.85f);
+                imgIcoM.raycastTarget = false;
+
+                if (esUniversal)
                 {
-                    var txtNom = card.Find("Nombre")?.GetComponent<Text>();
-                    if (txtNom != null) txtNom.text = nombre;
-
-                    var txtBadge = card.Find("ClaseBadge")?.GetComponent<Text>();
-                    if (txtBadge != null)
-                    {
-                        if (claseReq == TipoPersonaje.Ninguno)
-                        {
-                            txtBadge.text = "[Universal]";
-                            txtBadge.color = new Color(0.4f, 0.9f, 1f);
-                        }
-                        else if (claseReq == TipoPersonaje.Fuego)
-                        {
-                            txtBadge.text = "[Gato de Fuego]";
-                            txtBadge.color = new Color(1f, 0.55f, 0.15f);
-                        }
-                        else if (claseReq == TipoPersonaje.Hielo)
-                        {
-                            txtBadge.text = "[Gato de Hielo]";
-                            txtBadge.color = new Color(0.45f, 0.85f, 1f);
-                        }
-                        else if (claseReq == TipoPersonaje.Electrico)
-                        {
-                            txtBadge.text = "[Gato Eléctrico]";
-                            txtBadge.color = new Color(1f, 0.95f, 0.25f);
-                        }
-                    }
-
-                    var txtDesc = card.Find("Desc")?.GetComponent<Text>();
-                    if (txtDesc != null)
-                    {
-                        txtDesc.text = desc;
-                    }
+                    // Cuadrado donde va el icono con un signo de interrogación
+                    var qObj = new GameObject("SignoInterrogacion", typeof(RectTransform));
+                    qObj.transform.SetParent(icoMarco.transform, false);
+                    var rtQ = qObj.GetComponent<RectTransform>();
+                    rtQ.anchorMin = Vector2.zero;
+                    rtQ.anchorMax = Vector2.one;
+                    rtQ.offsetMin = Vector2.zero;
+                    rtQ.offsetMax = Vector2.zero;
+                    var txtQ = qObj.AddComponent<Text>();
+                    txtQ.font = fuente;
+                    txtQ.fontSize = 32;
+                    txtQ.fontStyle = FontStyle.Bold;
+                    txtQ.alignment = TextAnchor.MiddleCenter;
+                    txtQ.color = EstiloUIUX.ColDorado;
+                    txtQ.text = "?";
+                    txtQ.raycastTarget = false;
+                }
+                else
+                {
+                    // Icono de la habilidad
+                    var icoImgObj = new GameObject("Icono", typeof(RectTransform));
+                    icoImgObj.transform.SetParent(icoMarco.transform, false);
+                    var rtIco = icoImgObj.GetComponent<RectTransform>();
+                    rtIco.anchorMin = Vector2.zero;
+                    rtIco.anchorMax = Vector2.one;
+                    rtIco.offsetMin = new Vector2(2f, 2f);
+                    rtIco.offsetMax = new Vector2(-2f, -2f);
+                    var imgIco = icoImgObj.AddComponent<Image>();
+                    imgIco.sprite = CatalogoHabilidades.ObtenerSpriteHabilidad(idHab);
+                    imgIco.preserveAspect = true;
+                    imgIco.color = Color.white;
+                    imgIco.raycastTarget = false;
                 }
 
-                if (btn != null && txtBtn != null)
+                // 2. Título y Nivel en la parte superior
+                var titObj = new GameObject("Titulo", typeof(RectTransform));
+                titObj.transform.SetParent(fondoInt.transform, false);
+                var rtTit = titObj.GetComponent<RectTransform>();
+                rtTit.anchorMin = new Vector2(0f, 1f);
+                rtTit.anchorMax = new Vector2(1f, 1f);
+                rtTit.pivot = new Vector2(0f, 1f);
+                rtTit.anchoredPosition = new Vector2(66f, -12f);
+                rtTit.sizeDelta = new Vector2(-330f, 28f);
+
+                var txtTit = titObj.AddComponent<Text>();
+                txtTit.font = fuente;
+                txtTit.fontSize = 18;
+                txtTit.fontStyle = FontStyle.Bold;
+                txtTit.alignment = TextAnchor.MiddleLeft;
+                txtTit.color = seleccionada ? EstiloUIUX.ColCyan : EstiloUIUX.ColTextoCrema;
+                txtTit.horizontalOverflow = HorizontalWrapMode.Overflow;
+                txtTit.verticalOverflow = VerticalWrapMode.Overflow;
+                txtTit.raycastTarget = false;
+
+                string nivelBadge = (tipo == TipoMejoraTienda.PescadoAsado)
+                    ? "<color=#4ade80>[Consumible]</color>"
+                    : $"<color=#38bdf8>[Nv. {nvActual}/5]</color>";
+                string chevron = seleccionada ? "<color=#38bdf8> ▲</color>" : "<color=#94a3b8> ▼</color>";
+                txtTit.text = $"{nombre.ToUpper()}  {nivelBadge}{chevron}";
+
+                // 3. Descripción desplegada al clickar (sin poner para quién es la habilidad)
+                if (seleccionada)
                 {
-                    if (!esCompatible)
-                    {
-                        btn.interactable = false;
-                        txtBtn.text = $"❌ Incompatible ({claseReq})";
-                        txtBtn.color = new Color(0.85f, 0.45f, 0.45f);
-                        if (imgBtn != null) imgBtn.color = new Color(0.25f, 0.14f, 0.14f, 1f);
-                    }
-                    else if (tipo != TipoMejoraTienda.PescadoAsado && nvActual >= 5)
-                    {
-                        btn.interactable = false;
-                        txtBtn.text = "✔ NIVEL MÁXIMO (5/5)";
-                        txtBtn.color = new Color(0.7f, 0.7f, 0.7f);
-                        if (imgBtn != null) imgBtn.color = new Color(0.18f, 0.20f, 0.24f, 1f);
-                    }
-                    else if (tipo == TipoMejoraTienda.VidaMaxima && _personajeLocal != null && _personajeLocal.vidaMax >= 300)
-                    {
-                        btn.interactable = false;
-                        txtBtn.text = "✔ MÁXIMO (300 HP)";
-                        txtBtn.color = new Color(0.7f, 0.7f, 0.7f);
-                        if (imgBtn != null) imgBtn.color = new Color(0.18f, 0.20f, 0.24f, 1f);
-                    }
-                    else if (oroLocal < costo)
-                    {
-                        btn.interactable = false;
-                        txtBtn.text = $"{costo} 💰 (Falta oro)";
-                        txtBtn.color = new Color(1f, 0.6f, 0.6f);
-                        if (imgBtn != null) imgBtn.color = new Color(0.35f, 0.18f, 0.18f, 1f);
-                    }
-                    else
-                    {
-                        btn.interactable = true;
-                        txtBtn.text = (tipo == TipoMejoraTienda.PescadoAsado)
-                            ? $"COMPRAR ({costo} 💰)"
-                            : $"COMPRAR NV {nvActual + 1} ({costo} 💰)";
-                        txtBtn.color = Color.white;
-                        if (imgBtn != null) imgBtn.color = new Color(0.18f, 0.60f, 0.35f, 1f);
-                    }
+                    var descObj = new GameObject("Desc", typeof(RectTransform));
+                    descObj.transform.SetParent(fondoInt.transform, false);
+                    var rtDesc = descObj.AddComponent<RectTransform>();
+                    rtDesc.anchorMin = new Vector2(0f, 0f);
+                    rtDesc.anchorMax = new Vector2(1f, 1f);
+                    rtDesc.offsetMin = new Vector2(66f, 10f);
+                    rtDesc.offsetMax = new Vector2(-270f, -46f);
+
+                    var txtDesc = descObj.AddComponent<Text>();
+                    txtDesc.font = fuente;
+                    txtDesc.fontSize = 16;
+                    txtDesc.lineSpacing = 1.35f;
+                    txtDesc.alignment = TextAnchor.UpperLeft;
+                    txtDesc.color = EstiloUIUX.ColTextoCrema;
+                    txtDesc.horizontalOverflow = HorizontalWrapMode.Wrap;
+                    txtDesc.verticalOverflow = VerticalWrapMode.Overflow;
+                    txtDesc.raycastTarget = false;
+                    txtDesc.text = desc;
                 }
+
+                // 4. Botón Comprar en la parte derecha
+                var btnBuy = EstiloUIUX.CrearBoton(fondoInt.transform, "BotonComprar", "COMPRAR", TipoBotonUI.Verde, new Vector2(250f, 44f), () => ComprarArticuloTiendaIndex(itemIndex));
+                var rtBtn = btnBuy.GetComponent<RectTransform>();
+                rtBtn.anchorMin = new Vector2(1f, 0.5f);
+                rtBtn.anchorMax = new Vector2(1f, 0.5f);
+                rtBtn.pivot = new Vector2(1f, 0.5f);
+                rtBtn.anchoredPosition = new Vector2(-12f, 0f);
+
+                var txtBtn = btnBuy.GetComponentInChildren<Text>();
+                var imgBtn = btnBuy.GetComponent<Image>();
+                _botonesCompraTienda.Add(btnBuy);
+                _textosBotonTienda.Add(txtBtn);
+
+                if (!esCompatible)
+                {
+                    btnBuy.interactable = false;
+                    txtBtn.text = $"❌ Incompatible";
+                    txtBtn.color = new Color(0.85f, 0.45f, 0.45f);
+                    if (imgBtn != null) imgBtn.color = new Color(0.25f, 0.14f, 0.14f, 1f);
+                }
+                else if (tipo != TipoMejoraTienda.PescadoAsado && nvActual >= 5)
+                {
+                    btnBuy.interactable = false;
+                    txtBtn.text = "✔ NIVEL MÁXIMO (5/5)";
+                    txtBtn.color = new Color(0.7f, 0.7f, 0.7f);
+                    if (imgBtn != null) imgBtn.color = new Color(0.18f, 0.20f, 0.24f, 1f);
+                }
+                else if (tipo == TipoMejoraTienda.VidaMaxima && _personajeLocal != null && _personajeLocal.vidaMax >= 300)
+                {
+                    btnBuy.interactable = false;
+                    txtBtn.text = "✔ MÁXIMO (300 HP)";
+                    txtBtn.color = new Color(0.7f, 0.7f, 0.7f);
+                    if (imgBtn != null) imgBtn.color = new Color(0.18f, 0.20f, 0.24f, 1f);
+                }
+                else if (oroLocal < costo)
+                {
+                    btnBuy.interactable = false;
+                    txtBtn.text = $"{costo} 💰 (Falta oro)";
+                    txtBtn.color = new Color(1f, 0.6f, 0.6f);
+                    if (imgBtn != null) imgBtn.color = new Color(0.35f, 0.18f, 0.18f, 1f);
+                }
+                else
+                {
+                    btnBuy.interactable = true;
+                    txtBtn.text = (tipo == TipoMejoraTienda.PescadoAsado)
+                        ? $"COMPRAR ({costo} 💰)"
+                        : $"COMPRAR NV {nvActual + 1} ({costo} 💰)";
+                    txtBtn.color = Color.white;
+                    if (imgBtn != null) imgBtn.color = new Color(0.18f, 0.60f, 0.35f, 1f);
+                }
+
+                // Botón transparente que cubre la tarjeta para desplegar/plegar al hacer clic
+                var btnToggle = cardItem.AddComponent<Button>();
+                btnToggle.transition = Selectable.Transition.None;
+                btnToggle.onClick.AddListener(() =>
+                {
+                    _itemSeleccionadoTienda = (seleccionada ? -1 : itemIndex);
+                    ActualizarItemsTiendaUI();
+                });
             }
         }
 

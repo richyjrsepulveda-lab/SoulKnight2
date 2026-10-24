@@ -71,6 +71,7 @@ namespace SoulKnight
             imgFondoInt.sprite = EstiloUIUX.ObtenerSpriteTarjeta();
             imgFondoInt.type = Image.Type.Sliced;
             imgFondoInt.color = Color.white;
+            imgFondoInt.raycastTarget = false;
             var rtFondoInt = fondoInterno.GetComponent<RectTransform>();
             rtFondoInt.anchorMin = Vector2.zero;
             rtFondoInt.anchorMax = Vector2.one;
@@ -80,6 +81,7 @@ namespace SoulKnight
             var rawObj = new GameObject("LienzoMinimapa");
             rawObj.transform.SetParent(fondoInterno.transform, false);
             var raw = rawObj.AddComponent<RawImage>();
+            raw.raycastTarget = false;
             var rtRaw = rawObj.GetComponent<RectTransform>();
             rtRaw.anchorMin = Vector2.zero;
             rtRaw.anchorMax = Vector2.one;
@@ -94,15 +96,27 @@ namespace SoulKnight
             txt.fontStyle = FontStyle.Bold;
             txt.alignment = TextAnchor.MiddleCenter;
             txt.color = EstiloUIUX.ColDorado;
-            txt.text = "✦ MINIMAPA ✦";
+            txt.text = "✦ MINIMAPA [M] ✦";
             txt.horizontalOverflow = HorizontalWrapMode.Overflow;
             txt.verticalOverflow = VerticalWrapMode.Overflow;
+            txt.raycastTarget = false;
             var rtLbl = lblObj.GetComponent<RectTransform>();
             rtLbl.anchorMin = new Vector2(0f, 1f);
             rtLbl.anchorMax = new Vector2(1f, 1f);
             rtLbl.pivot = new Vector2(0.5f, 1f);
             rtLbl.anchoredPosition = new Vector2(0f, -3f);
             rtLbl.sizeDelta = new Vector2(0f, 20f);
+
+            // Botón interactivo para abrir el mapa grande al hacer clic sobre el minimapa
+            var btnMinimapa = marcoObj.AddComponent<Button>();
+            btnMinimapa.transition = Selectable.Transition.ColorTint;
+            btnMinimapa.onClick.AddListener(() =>
+            {
+                if (HUDJugador.Instancia != null)
+                {
+                    HUDJugador.Instancia.AlternarMapaGrande();
+                }
+            });
 
             var comp = marcoObj.AddComponent<MinimapaHUD>();
             comp.Inicializar(raw);

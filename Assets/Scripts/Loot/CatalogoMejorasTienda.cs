@@ -62,6 +62,33 @@ namespace SoulKnight
             }
         }
 
+        public static IdHabilidad ObtenerIdHabilidadDeMejora(TipoMejoraTienda tipo)
+        {
+            switch (tipo)
+            {
+                // Fuego
+                case TipoMejoraTienda.Fuego_DanoQuemadura: return IdHabilidad.Fuego_BolaFuego;
+                case TipoMejoraTienda.Fuego_Area: return IdHabilidad.Fuego_Lanzallamas;
+                case TipoMejoraTienda.Fuego_Duracion: return IdHabilidad.Fuego_Armadura;
+                case TipoMejoraTienda.Fuego_SupernovaGigante: return IdHabilidad.Fuego_Meteorito;
+
+                // Hielo
+                case TipoMejoraTienda.Hielo_DuracionCongelacion: return IdHabilidad.Hielo_RayoHielo;
+                case TipoMejoraTienda.Hielo_AreaVentisca: return IdHabilidad.Hielo_BolaHielo;
+                case TipoMejoraTienda.Hielo_PotenciaGlacial: return IdHabilidad.Hielo_Armadura;
+                case TipoMejoraTienda.Hielo_TormentaEterna: return IdHabilidad.Hielo_EraHielo;
+
+                // Eléctrico
+                case TipoMejoraTienda.Elec_Voltaje: return IdHabilidad.Elec_Espada;
+                case TipoMejoraTienda.Elec_CooldownDash: return IdHabilidad.Elec_Dash;
+                case TipoMejoraTienda.Elec_AreaTeleport: return IdHabilidad.Elec_Teleport;
+                case TipoMejoraTienda.Elec_RayoCataclismico: return IdHabilidad.Elec_Rayo;
+
+                default:
+                    return IdHabilidad.Ninguna;
+            }
+        }
+
         public static int ObtenerCostoNivel(TipoMejoraTienda tipo, int nivelActual)
         {
             if (tipo == TipoMejoraTienda.PescadoAsado) return 20;
