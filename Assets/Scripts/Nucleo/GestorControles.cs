@@ -51,6 +51,13 @@ namespace SoulKnight
         {
             foreach (var kvp in TeclasPorDefecto)
             {
+                if (kvp.Key == AccionControl.Pausa)
+                {
+                    TeclasActuales[kvp.Key] = KeyCode.Escape;
+                    PlayerPrefs.DeleteKey(PrefijoTecla + kvp.Key.ToString());
+                    continue;
+                }
+
                 string guardado = PlayerPrefs.GetString(PrefijoTecla + kvp.Key.ToString(), "");
                 if (!string.IsNullOrEmpty(guardado) && Enum.TryParse(guardado, out KeyCode tecla))
                 {
@@ -70,6 +77,7 @@ namespace SoulKnight
 
         public static void AsignarTecla(AccionControl accion, KeyCode nuevaTecla)
         {
+            if (accion == AccionControl.Pausa) return; // ESC es fijo y no se puede cambiar
             TeclasActuales[accion] = nuevaTecla;
             PlayerPrefs.SetString(PrefijoTecla + accion.ToString(), nuevaTecla.ToString());
             PlayerPrefs.Save();

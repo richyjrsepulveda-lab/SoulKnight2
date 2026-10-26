@@ -1181,8 +1181,8 @@ namespace SoulKnight
             CrearCardControl(col1.transform, AccionControl.MoverDerecha, "Mover derecha");
             CrearCardControl(col1.transform, AccionControl.Correr, "Correr / Sprint");
 
-            // ==================== COLUMNA 2: COMBATE + SISTEMA ====================
-            var col2 = new GameObject("ColumnaCombateSistema");
+            // ==================== COLUMNA 2: COMBATE ====================
+            var col2 = new GameObject("ColumnaCombate");
             col2.transform.SetParent(gridObj.transform, false);
             var rtCol2 = col2.AddComponent<RectTransform>();
             rtCol2.anchorMin = new Vector2(1f, 1f);
@@ -1202,9 +1202,6 @@ namespace SoulKnight
             CrearCardControl(col2.transform, AccionControl.Habilidad1, "Habilidad 1");
             CrearCardControl(col2.transform, AccionControl.Habilidad2, "Habilidad 2");
             CrearCardControl(col2.transform, AccionControl.Ultimate, "Definitiva");
-
-            CrearHeaderSeccionControles(col2.transform, "SISTEMA", 8f);
-            CrearCardControl(col2.transform, AccionControl.Pausa, "Menú / Opciones");
 
             ActualizarTextos();
         }
