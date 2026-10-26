@@ -17,8 +17,11 @@ namespace SoulKnight
     /// - Bocadillo de diálogo reactivo ("Acércate… ¿qué buscas?" y respuestas tras comprar).
     /// - Mostrador con vela encendida, halo circular suave, contador de monedas y botón "CONTINUAR ➔".
     /// - 3 repisas de madera con las 6 tarjetas de mejoras:
+    ///   - Colores temáticos vivos y destacados por elemento (Cian para Hielo, Amarillo para Rayo,
+    ///     Naranja para Fuego, Púrpura para Universales) en barras superiores, marcos de icono de 4 lados,
+    ///     fondos tintados de cabecera y etiquetas de categoría.
     ///   - Iconos reales de habilidades de la run (IconosHabilidades).
-    ///   - Signo de interrogación "?" para habilidades/mejoras universales.
+    ///   - Signo de interrogación "?" estilizado en color de elemento para habilidades/mejoras universales.
     ///   - Precios claramente visibles sin recortes (horizontal y vertical overflow habilitados).
     ///   - Insignias de ranura (E, Q, R, CLIC, ★) y estados interactivos reactivos en 0ms.
     /// </summary>
@@ -89,6 +92,9 @@ namespace SoulKnight
             public GameObject root;
             public CanvasGroup canvasGroup;
             public Image imgBordeAccent;
+            public Image imgHeaderTint;
+            public Image[] icoBorders; // Top, Bottom, Left, Right
+            public Image imgIcoBoxBg;
             public Image imgIcono;
             public Text txtInterrogacion;
             public Text txtSlot;
@@ -273,7 +279,7 @@ namespace SoulKnight
             var letreroObj = CrearRect(rootCanvas.transform, "LetreroTienda", 135f, 222f, 400f, 120f);
             var imgLetrero = letreroObj.gameObject.AddComponent<Image>();
             imgLetrero.color = new Color32(0x8A, 0x5A, 0x3A, 0xFF);
-            CrearBordeCaja(letreroObj.transform, 6, new Color32(0x0C, 0x08, 0x18, 0xFF), new Color32(0xA9, 0x72, 0x48, 0xFF), new Color32(0x5A, 0x3A, 0x22, 0xFF));
+            CrearBordeCajaSimple(letreroObj.transform, 6, new Color32(0x0C, 0x08, 0x18, 0xFF));
 
             var titObj = CrearRectCentrado(letreroObj.transform, "TituloTienda", 0f, 14f, 380f, 60f);
             var txtTit = titObj.gameObject.AddComponent<Text>();
@@ -302,7 +308,7 @@ namespace SoulKnight
             var bocadilloObj = CrearRect(rootCanvas.transform, "BocadilloDialogo", 120f, 430f, 420f, 100f);
             var imgBocadillo = bocadilloObj.gameObject.AddComponent<Image>();
             imgBocadillo.color = new Color32(0x17, 0x11, 0x2E, 0xFF);
-            CrearBordeCaja(bocadilloObj.transform, 4, new Color32(0x0C, 0x08, 0x18, 0xFF), new Color32(0x0A, 0x06, 0x16, 0xFF), new Color32(0x0A, 0x06, 0x16, 0xFF));
+            CrearBordeCajaSimple(bocadilloObj.transform, 4, new Color32(0x0C, 0x08, 0x18, 0xFF));
 
             var txtBocObj = CrearRectCentrado(bocadilloObj.transform, "TextoDialogo", 0f, 0f, 390f, 80f);
             _txtBocadillo = txtBocObj.gameObject.AddComponent<Text>();
@@ -362,22 +368,24 @@ namespace SoulKnight
             var mostradorTop = CrearRect(rootCanvas.transform, "MostradorTop", 90f, 900f, 490f, 24f);
             var imgMosTop = mostradorTop.gameObject.AddComponent<Image>();
             imgMosTop.color = new Color32(0xC5, 0x8F, 0x5C, 0xFF);
-            CrearBordeCaja(mostradorTop.transform, 6, new Color32(0x0C, 0x08, 0x18, 0xFF), new Color32(0xE0, 0xAE, 0x78, 0xFF), new Color32(0x8A, 0x5A, 0x3A, 0xFF));
+            CrearBordeCajaSimple(mostradorTop.transform, 6, new Color32(0x0C, 0x08, 0x18, 0xFF));
 
             var mostradorFrente = CrearRect(rootCanvas.transform, "MostradorFrente", 90f, 924f, 490f, 156f);
             var imgMosFrente = mostradorFrente.gameObject.AddComponent<Image>();
             imgMosFrente.color = new Color32(0x8A, 0x5A, 0x3A, 0xFF);
-            CrearBordeCaja(mostradorFrente.transform, 6, new Color32(0x0C, 0x08, 0x18, 0xFF), new Color32(0xA9, 0x72, 0x48, 0xFF), new Color32(0x5A, 0x3A, 0x22, 0xFF));
+            CrearBordeCajaSimple(mostradorFrente.transform, 6, new Color32(0x0C, 0x08, 0x18, 0xFF));
 
             // 13. Vela encendida sobre el mostrador [left: 508, top: 820, width: 40, height: 80]
-            // Halo circular suave de la vela (180x180 centrado en la llama con Sprite de gradiente Hermite)
-            var haloVela = CrearRectCentrado(rootCanvas.transform, "HaloVelaCircular", 528f, -810f, 180f, 180f);
+            var velaObj = CrearRect(rootCanvas.transform, "VelaMostrador", 508f, 820f, 40f, 80f);
+            _rtVelaLlama = velaObj;
+
+            // Halo circular suave centrado en la llama superior de la vela (220x220 con caída Hermite suave a 0)
+            var haloVela = CrearRectCentrado(velaObj.transform, "HaloVelaCircular", 0f, 25f, 220f, 220f);
+            haloVela.SetAsFirstSibling();
             _imgVelaHalo = haloVela.gameObject.AddComponent<Image>();
             _imgVelaHalo.sprite = ObtenerSpriteGlowCircular();
             _imgVelaHalo.color = new Color(1f, 0.68f, 0.24f, 0.32f);
 
-            var velaObj = CrearRect(rootCanvas.transform, "VelaMostrador", 508f, 820f, 40f, 80f);
-            _rtVelaLlama = velaObj;
             var imgVela = velaObj.gameObject.AddComponent<Image>();
             imgVela.sprite = _spCandle;
             imgVela.color = Color.white;
@@ -386,7 +394,7 @@ namespace SoulKnight
             var monedasObj = CrearRect(rootCanvas.transform, "CajaMonedas", 104f, 834f, 140f, 60f);
             var imgMonedas = monedasObj.gameObject.AddComponent<Image>();
             imgMonedas.color = new Color32(0x17, 0x11, 0x2E, 0xFF);
-            CrearBordeCaja(monedasObj.transform, 4, new Color32(0x0C, 0x08, 0x18, 0xFF), new Color32(0x0A, 0x06, 0x16, 0xFF), new Color32(0x0A, 0x06, 0x16, 0xFF));
+            CrearBordeCajaSimple(monedasObj.transform, 4, new Color32(0x0C, 0x08, 0x18, 0xFF));
 
             var coinIcoObj = CrearRectCentrado(monedasObj.transform, "IconoMoneda", -40f, 0f, 32f, 32f);
             var imgCoinIco = coinIcoObj.gameObject.AddComponent<Image>();
@@ -447,19 +455,35 @@ namespace SoulKnight
             var imgFondo = cardObj.gameObject.AddComponent<Image>();
             imgFondo.color = new Color32(0x22, 0x1A, 0x44, 0xFF);
 
-            // Borde oscuro exterior de 6px
-            CrearBordeCaja(cardObj.transform, 6, new Color32(0x0C, 0x08, 0x18, 0xFF), new Color32(0x18, 0x10, 0x32, 0xFF), new Color32(0x18, 0x10, 0x32, 0xFF));
+            // Borde oscuro exterior de 6px en los 4 lados (#0c0818)
+            CrearBordeCajaSimple(cardObj.transform, 6, new Color32(0x0C, 0x08, 0x18, 0xFF));
 
-            // Barra superior de acento de categoría
-            var accentBar = CrearRect(cardObj.transform, "BarraAcento", 0f, 0f, 580f, 6f);
+            // Barra superior de acento de categoría (8px de grosor)
+            var accentBar = CrearRect(cardObj.transform, "BarraAcento", 6f, 6f, 568f, 8f);
             t.imgBordeAccent = accentBar.gameObject.AddComponent<Image>();
             t.imgBordeAccent.color = new Color32(0x58, 0xC4, 0xFF, 0xFF);
 
-            // Caja de Icono 96x96 [left: 24, top: 20]
+            // Tinte suave de cabecera con el color del elemento
+            var hdrTint = CrearRect(cardObj.transform, "TinteCabecera", 6f, 14f, 568f, 52f);
+            t.imgHeaderTint = hdrTint.gameObject.AddComponent<Image>();
+            t.imgHeaderTint.color = new Color(0.35f, 0.77f, 1f, 0.16f);
+
+            // Marco de 4 lados para la Caja de Icono 96x96 [left: 24, top: 20]
+            var icoBorderTop = CrearRect(cardObj.transform, "IcoBorderTop", 20f, 16f, 104f, 4f);
+            var imgIBT = icoBorderTop.gameObject.AddComponent<Image>();
+            var icoBorderBot = CrearRect(cardObj.transform, "IcoBorderBot", 20f, 116f, 104f, 4f);
+            var imgIBB = icoBorderBot.gameObject.AddComponent<Image>();
+            var icoBorderL = CrearRect(cardObj.transform, "IcoBorderLeft", 20f, 20f, 4f, 96f);
+            var imgIBL = icoBorderL.gameObject.AddComponent<Image>();
+            var icoBorderR = CrearRect(cardObj.transform, "IcoBorderRight", 120f, 20f, 4f, 96f);
+            var imgIBR = icoBorderR.gameObject.AddComponent<Image>();
+
+            t.icoBorders = new Image[] { imgIBT, imgIBB, imgIBL, imgIBR };
+
+            // Interior de la Caja de Icono 96x96
             var icoBox = CrearRect(cardObj.transform, "CajaIcono", 24f, 20f, 96f, 96f);
-            var imgIcoBox = icoBox.gameObject.AddComponent<Image>();
-            imgIcoBox.color = new Color32(0x17, 0x11, 0x2E, 0xFF);
-            CrearBordeCaja(icoBox.transform, 4, new Color32(0x58, 0xC4, 0xFF, 0xFF), new Color32(0x0A, 0x06, 0x16, 0xFF), new Color32(0x0A, 0x06, 0x16, 0xFF));
+            t.imgIcoBoxBg = icoBox.gameObject.AddComponent<Image>();
+            t.imgIcoBoxBg.color = new Color32(0x17, 0x11, 0x2E, 0xFF);
 
             // Icono de la habilidad real (64x64)
             var icoImgObj = CrearRectCentrado(icoBox.transform, "IconoSprite", 0f, 0f, 64f, 64f);
@@ -467,26 +491,27 @@ namespace SoulKnight
             t.imgIcono.sprite = _spIconSnow;
             t.imgIcono.color = Color.white;
 
-            // Signo de interrogación "?" para habilidades universales
+            // Signo de interrogación "?" estilizado para habilidades universales
             var qObj = CrearRectCentrado(icoBox.transform, "InterrogacionUniversal", 0f, 0f, 80f, 80f);
             t.txtInterrogacion = qObj.gameObject.AddComponent<Text>();
             t.txtInterrogacion.font = fuentePixel;
-            t.txtInterrogacion.fontSize = 52;
+            t.txtInterrogacion.fontSize = 54;
             t.txtInterrogacion.fontStyle = FontStyle.Bold;
             t.txtInterrogacion.alignment = TextAnchor.MiddleCenter;
             t.txtInterrogacion.horizontalOverflow = HorizontalWrapMode.Overflow;
             t.txtInterrogacion.verticalOverflow = VerticalWrapMode.Overflow;
             t.txtInterrogacion.color = new Color32(0xFF, 0xCF, 0x4A, 0xFF);
             t.txtInterrogacion.text = "?";
+            BordeTextoPixelArt.Aplicar(t.txtInterrogacion, 6, new Vector2(0f, -4f), new Color32(0x0C, 0x08, 0x18, 0xFF));
             t.txtInterrogacion.gameObject.SetActive(false);
 
             // Insignia de Ranura [slot badge: E, Q, R, CLIC, ★] en esquina inferior derecha del icono
-            var slotObj = CrearRect(icoBox.transform, "BadgeSlot", 68f, 72f, 38f, 30f);
+            var slotObj = CrearRect(icoBox.transform, "BadgeSlot", 66f, 70f, 40f, 30f);
             var imgSlot = slotObj.gameObject.AddComponent<Image>();
             imgSlot.color = new Color32(0xFF, 0xF3, 0xD6, 0xFF);
-            CrearBordeCaja(slotObj.transform, 3, new Color32(0x0C, 0x08, 0x18, 0xFF), new Color32(0xFF, 0xFD, 0xF2, 0xFF), new Color32(0xCD, 0xBF, 0x9C, 0xFF));
+            CrearBordeCajaSimple(slotObj.transform, 3, new Color32(0x0C, 0x08, 0x18, 0xFF));
 
-            var txtSlotObj = CrearRectCentrado(slotObj.transform, "TextoSlot", 0f, 0f, 38f, 28f);
+            var txtSlotObj = CrearRectCentrado(slotObj.transform, "TextoSlot", 0f, 0f, 40f, 28f);
             t.txtSlot = txtSlotObj.gameObject.AddComponent<Text>();
             t.txtSlot.font = fuenteSilkscreen;
             t.txtSlot.fontSize = 15;
@@ -656,26 +681,63 @@ namespace SoulKnight
             bool esMaximo = (tipo != TipoMejoraTienda.PescadoAsado && nvActual >= 5) || (tipo == TipoMejoraTienda.VidaMaxima && _personajeLocal != null && _personajeLocal.vidaMax >= 300);
             bool puedePagar = _oroVisual >= costo;
 
-            // Datos de texto y diseño por tipo
+            // Datos de texto y diseño con colores vivos por elemento
             ObtenerDetallesMejora(tipo, nvActual, out string nombre, out string desc, out string tag, out string slot, out Color32 colAccent, out Color32 colTag, out Sprite spIcono, out bool esUniversal);
 
             t.txtNombre.text = nombre;
             t.txtDesc.text = desc;
             t.txtTag.text = tag;
             t.txtTag.color = colTag;
+
+            // Barra superior de acento con el color del elemento
             t.imgBordeAccent.color = colAccent;
+
+            // Tinte de cabecera con el color del elemento
+            t.imgHeaderTint.color = new Color(colAccent.r / 255f, colAccent.g / 255f, colAccent.b / 255f, 0.16f);
+
+            // Marco de 4 lados de la caja de icono con el color del elemento
+            if (t.icoBorders != null)
+            {
+                for (int b = 0; b < t.icoBorders.Length; b++)
+                {
+                    if (t.icoBorders[b] != null) t.icoBorders[b].color = colAccent;
+                }
+            }
+            if (t.imgIcoBoxBg != null)
+            {
+                t.imgIcoBoxBg.color = Color.Lerp(new Color32(0x17, 0x11, 0x2E, 0xFF), colAccent, 0.18f);
+            }
 
             // Icono de habilidad real o signo de interrogación "?" para habilidades universales
             if (esUniversal)
             {
                 t.imgIcono.gameObject.SetActive(false);
                 t.txtInterrogacion.gameObject.SetActive(true);
+                t.txtInterrogacion.color = colAccent;
             }
             else
             {
                 t.txtInterrogacion.gameObject.SetActive(false);
                 t.imgIcono.gameObject.SetActive(true);
                 t.imgIcono.sprite = spIcono;
+
+                // Si es un icono de silueta vectorial blanca, teñir con el color de la categoría
+                if (spIcono == _spIconSnow)
+                {
+                    t.imgIcono.color = new Color32(0xBF, 0xEA, 0xFF, 0xFF);
+                }
+                else if (spIcono == _spIconBolt)
+                {
+                    t.imgIcono.color = new Color32(0xFF, 0xE1, 0x4A, 0xFF);
+                }
+                else if (spIcono == _spIconPaw)
+                {
+                    t.imgIcono.color = new Color32(0xD6, 0xC2, 0xFF, 0xFF);
+                }
+                else
+                {
+                    t.imgIcono.color = Color.white;
+                }
             }
 
             // Precio y Moneda
@@ -793,7 +855,7 @@ namespace SoulKnight
 
             switch (tipo)
             {
-                // Hielo
+                // Hielo (Cian vivo / Azul glacial)
                 case TipoMejoraTienda.Hielo_DuracionCongelacion:
                     nombre = "Garras de Escarcha";
                     desc = "Tus ataques básicos ralentizan y congelan por más tiempo.";
@@ -827,14 +889,14 @@ namespace SoulKnight
                     colTag = new Color32(0x8F, 0xE0, 0xFF, 0xFF);
                     break;
 
-                // Rayo / Eléctrico
+                // Rayo / Eléctrico (Amarillo eléctrico / Oro relámpago)
                 case TipoMejoraTienda.Elec_Voltaje:
                     nombre = "Filo Relámpago";
                     desc = "Tus ataques con espada eléctrica atraviesan más enemigos.";
                     tag = "ATAQUE BÁSICO • RAYO";
                     slot = "CLIC";
                     colAccent = new Color32(0xFF, 0xE1, 0x4A, 0xFF);
-                    colTag = new Color32(0xFF, 0xE1, 0x4A, 0xFF);
+                    colTag = new Color32(0xFF, 0xF0, 0x50, 0xFF);
                     break;
                 case TipoMejoraTienda.Elec_CooldownDash:
                     nombre = "Chispa Veloz";
@@ -842,7 +904,7 @@ namespace SoulKnight
                     tag = "HABILIDAD 1 • RAYO";
                     slot = "E";
                     colAccent = new Color32(0xFF, 0xE1, 0x4A, 0xFF);
-                    colTag = new Color32(0xFF, 0xE1, 0x4A, 0xFF);
+                    colTag = new Color32(0xFF, 0xF0, 0x50, 0xFF);
                     break;
                 case TipoMejoraTienda.Elec_AreaTeleport:
                     nombre = "Cadena Eléctrica";
@@ -850,7 +912,7 @@ namespace SoulKnight
                     tag = "HABILIDAD 2 • RAYO";
                     slot = "Q";
                     colAccent = new Color32(0xFF, 0xE1, 0x4A, 0xFF);
-                    colTag = new Color32(0xFF, 0xE1, 0x4A, 0xFF);
+                    colTag = new Color32(0xFF, 0xF0, 0x50, 0xFF);
                     break;
                 case TipoMejoraTienda.Elec_RayoCataclismico:
                     nombre = "Rayo Cataclísmico";
@@ -858,17 +920,17 @@ namespace SoulKnight
                     tag = "DEFINITIVA • RAYO";
                     slot = "R";
                     colAccent = new Color32(0xFF, 0xE1, 0x4A, 0xFF);
-                    colTag = new Color32(0xFF, 0xE1, 0x4A, 0xFF);
+                    colTag = new Color32(0xFF, 0xF0, 0x50, 0xFF);
                     break;
 
-                // Fuego
+                // Fuego (Naranja ardiente / Rojo llama)
                 case TipoMejoraTienda.Fuego_DanoQuemadura:
                     nombre = "Garras de Fuego";
                     desc = "Tus bolas de fuego dejan quemaduras más ardientes y duraderas.";
                     tag = "ATAQUE BÁSICO • FUEGO";
                     slot = "CLIC";
                     colAccent = new Color32(0xFF, 0x7A, 0x2F, 0xFF);
-                    colTag = new Color32(0xFF, 0xB3, 0x6B, 0xFF);
+                    colTag = new Color32(0xFF, 0xA0, 0x4A, 0xFF);
                     break;
                 case TipoMejoraTienda.Fuego_Area:
                     nombre = "Llamarada Expansiva";
@@ -876,7 +938,7 @@ namespace SoulKnight
                     tag = "HABILIDAD 1 • FUEGO";
                     slot = "E";
                     colAccent = new Color32(0xFF, 0x7A, 0x2F, 0xFF);
-                    colTag = new Color32(0xFF, 0xB3, 0x6B, 0xFF);
+                    colTag = new Color32(0xFF, 0xA0, 0x4A, 0xFF);
                     break;
                 case TipoMejoraTienda.Fuego_Duracion:
                     nombre = "Ignición Prolongada";
@@ -884,7 +946,7 @@ namespace SoulKnight
                     tag = "HABILIDAD 2 • FUEGO";
                     slot = "Q";
                     colAccent = new Color32(0xFF, 0x7A, 0x2F, 0xFF);
-                    colTag = new Color32(0xFF, 0xB3, 0x6B, 0xFF);
+                    colTag = new Color32(0xFF, 0xA0, 0x4A, 0xFF);
                     break;
                 case TipoMejoraTienda.Fuego_SupernovaGigante:
                     nombre = "Infierno Felino";
@@ -892,17 +954,17 @@ namespace SoulKnight
                     tag = "DEFINITIVA • FUEGO";
                     slot = "R";
                     colAccent = new Color32(0xFF, 0x7A, 0x2F, 0xFF);
-                    colTag = new Color32(0xFF, 0xB3, 0x6B, 0xFF);
+                    colTag = new Color32(0xFF, 0xA0, 0x4A, 0xFF);
                     break;
 
-                // Universales / Globales (Icono de "?" e insignia de "★")
+                // Universales / Globales (Púrpura arcano / Violeta místico)
                 case TipoMejoraTienda.VidaMaxima:
                     nombre = "Siete Vidas";
                     desc = "Aumenta tu vida máxima permanente para aguantar más golpes.";
                     tag = "MEJORA GLOBAL";
                     slot = "★";
                     colAccent = new Color32(0xC9, 0xA8, 0xFF, 0xFF);
-                    colTag = new Color32(0xD6, 0xC2, 0xFF, 0xFF);
+                    colTag = new Color32(0xDE, 0xCB, 0xFF, 0xFF);
                     break;
                 case TipoMejoraTienda.PescadoAsado:
                     nombre = "Pescado Asado";
@@ -910,7 +972,7 @@ namespace SoulKnight
                     tag = "CONSUMIBLE";
                     slot = "★";
                     colAccent = new Color32(0xC9, 0xA8, 0xFF, 0xFF);
-                    colTag = new Color32(0xD6, 0xC2, 0xFF, 0xFF);
+                    colTag = new Color32(0xDE, 0xCB, 0xFF, 0xFF);
                     break;
                 case TipoMejoraTienda.DanoUniversal:
                     nombre = "Poder Arcano";
@@ -918,7 +980,7 @@ namespace SoulKnight
                     tag = "MEJORA GLOBAL";
                     slot = "★";
                     colAccent = new Color32(0xC9, 0xA8, 0xFF, 0xFF);
-                    colTag = new Color32(0xD6, 0xC2, 0xFF, 0xFF);
+                    colTag = new Color32(0xDE, 0xCB, 0xFF, 0xFF);
                     break;
                 case TipoMejoraTienda.CooldownUniversal:
                     nombre = "Reloj Arcano";
@@ -926,7 +988,7 @@ namespace SoulKnight
                     tag = "MEJORA GLOBAL";
                     slot = "★";
                     colAccent = new Color32(0xC9, 0xA8, 0xFF, 0xFF);
-                    colTag = new Color32(0xD6, 0xC2, 0xFF, 0xFF);
+                    colTag = new Color32(0xDE, 0xCB, 0xFF, 0xFF);
                     break;
                 case TipoMejoraTienda.AreaHabilidades:
                     nombre = "Amplitud Mística";
@@ -934,7 +996,7 @@ namespace SoulKnight
                     tag = "MEJORA GLOBAL";
                     slot = "★";
                     colAccent = new Color32(0xC9, 0xA8, 0xFF, 0xFF);
-                    colTag = new Color32(0xD6, 0xC2, 0xFF, 0xFF);
+                    colTag = new Color32(0xDE, 0xCB, 0xFF, 0xFF);
                     break;
                 case TipoMejoraTienda.CooldownDefinitiva:
                     nombre = "Energía Celestial";
@@ -942,7 +1004,7 @@ namespace SoulKnight
                     tag = "MEJORA GLOBAL";
                     slot = "★";
                     colAccent = new Color32(0xC9, 0xA8, 0xFF, 0xFF);
-                    colTag = new Color32(0xD6, 0xC2, 0xFF, 0xFF);
+                    colTag = new Color32(0xDE, 0xCB, 0xFF, 0xFF);
                     break;
                 case TipoMejoraTienda.GolpeCritico:
                 default:
@@ -951,7 +1013,7 @@ namespace SoulKnight
                     tag = "MEJORA GLOBAL";
                     slot = "★";
                     colAccent = new Color32(0xC9, 0xA8, 0xFF, 0xFF);
-                    colTag = new Color32(0xD6, 0xC2, 0xFF, 0xFF);
+                    colTag = new Color32(0xDE, 0xCB, 0xFF, 0xFF);
                     break;
             }
         }
@@ -1118,7 +1180,7 @@ namespace SoulKnight
             var p = CrearRect(parent, nombre, x, y, w, h);
             var img = p.gameObject.AddComponent<Image>();
             img.color = new Color32(0x8A, 0x5A, 0x3A, 0xFF);
-            CrearBordeCaja(p.transform, 6, new Color32(0x0C, 0x08, 0x18, 0xFF), new Color32(0xA9, 0x72, 0x48, 0xFF), new Color32(0x5A, 0x3A, 0x22, 0xFF));
+            CrearBordeCajaSimple(p.transform, 6, new Color32(0x0C, 0x08, 0x18, 0xFF));
         }
 
         private void CrearRepisa(Transform parent, string nombre, float x, float y, float w, float h)
@@ -1126,23 +1188,24 @@ namespace SoulKnight
             var r = CrearRect(parent, nombre, x, y, w, h);
             var img = r.gameObject.AddComponent<Image>();
             img.color = new Color32(0xA9, 0x72, 0x48, 0xFF);
-            CrearBordeCaja(r.transform, 6, new Color32(0x0C, 0x08, 0x18, 0xFF), new Color32(0xC5, 0x8F, 0x5C, 0xFF), new Color32(0x5A, 0x3A, 0x22, 0xFF));
+            CrearBordeCajaSimple(r.transform, 6, new Color32(0x0C, 0x08, 0x18, 0xFF));
         }
 
         private void CrearFarol(Transform parent, string nombre, float xCad, float yCad, float xFarol, float yFarol)
         {
             CrearCadena(parent, $"{nombre}_Cadena", xCad, yCad, 52f);
 
-            // Halo circular suave alrededor del farol
-            var haloFarol = CrearRectCentrado(parent, $"{nombre}_HaloCircular", xFarol + 18f, -(yFarol + 24f), 160f, 160f);
+            var farol = CrearRect(parent, nombre, xFarol, yFarol, 36f, 48f);
+            var imgFarol = farol.gameObject.AddComponent<Image>();
+            imgFarol.sprite = _spLantern;
+            imgFarol.color = Color.white;
+
+            // Halo circular suave centrado en el farol (180x180 con caída Hermite suave a 0)
+            var haloFarol = CrearRectCentrado(farol.transform, $"{nombre}_HaloCircular", 0f, 0f, 180f, 180f);
+            haloFarol.SetAsFirstSibling();
             var imgHalo = haloFarol.gameObject.AddComponent<Image>();
             imgHalo.sprite = ObtenerSpriteGlowCircular();
             imgHalo.color = new Color(1f, 0.72f, 0.30f, 0.25f);
-
-            var farol = CrearRect(parent, nombre, xFarol, yFarol, 36f, 48f);
-            var img = farol.gameObject.AddComponent<Image>();
-            img.sprite = _spLantern;
-            img.color = Color.white;
         }
 
         private void CrearCadena(Transform parent, string nombre, float x, float y, float h)
@@ -1179,7 +1242,7 @@ namespace SoulKnight
             imgOut.color = contorno;
         }
 
-        private void CrearBordeCaja(Transform parent, int grosor, Color32 contorno, Color32 luz, Color32 sombra)
+        private void CrearBordeCajaSimple(Transform parent, int grosor, Color32 contorno)
         {
             var rtParent = parent.GetComponent<RectTransform>();
             float w = rtParent.sizeDelta.x;
@@ -1187,11 +1250,19 @@ namespace SoulKnight
 
             var lTop = CrearRect(parent, "LineTop", 0f, 0f, w, grosor);
             var imgLTop = lTop.gameObject.AddComponent<Image>();
-            imgLTop.color = luz;
+            imgLTop.color = contorno;
 
             var lBot = CrearRect(parent, "LineBot", 0f, h - grosor, w, grosor);
             var imgLBot = lBot.gameObject.AddComponent<Image>();
-            imgLBot.color = sombra;
+            imgLBot.color = contorno;
+
+            var lLeft = CrearRect(parent, "LineLeft", 0f, grosor, grosor, h - (grosor * 2));
+            var imgLLeft = lLeft.gameObject.AddComponent<Image>();
+            imgLLeft.color = contorno;
+
+            var lRight = CrearRect(parent, "LineRight", w - grosor, grosor, grosor, h - (grosor * 2));
+            var imgLRight = lRight.gameObject.AddComponent<Image>();
+            imgLRight.color = contorno;
         }
     }
 }
