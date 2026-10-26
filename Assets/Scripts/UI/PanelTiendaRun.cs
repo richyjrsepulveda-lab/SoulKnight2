@@ -742,36 +742,31 @@ namespace SoulKnight
                 t.imgIcoBoxBg.color = Color.Lerp(new Color32(0x17, 0x11, 0x2E, 0xFF), colAccent, 0.18f);
             }
 
-            // Icono de habilidad real o signo de interrogación "?" para habilidades universales
-            if (esUniversal)
+            // Icono de la tarjeta: habilidad elemental o huellita de gato para mejoras universales
+            if (t.txtInterrogacion != null)
             {
-                t.imgIcono.gameObject.SetActive(false);
-                t.txtInterrogacion.gameObject.SetActive(true);
-                t.txtInterrogacion.color = colAccent;
+                t.txtInterrogacion.gameObject.SetActive(false);
+            }
+
+            t.imgIcono.gameObject.SetActive(true);
+            t.imgIcono.sprite = spIcono;
+
+            // Si es un icono de silueta vectorial blanca/huellita, teñir con el color de acento de la categoría
+            if (spIcono == _spIconSnow)
+            {
+                t.imgIcono.color = new Color32(0xBF, 0xEA, 0xFF, 0xFF);
+            }
+            else if (spIcono == _spIconBolt)
+            {
+                t.imgIcono.color = new Color32(0xFF, 0xE1, 0x4A, 0xFF);
+            }
+            else if (spIcono == _spIconPaw)
+            {
+                t.imgIcono.color = colAccent;
             }
             else
             {
-                t.txtInterrogacion.gameObject.SetActive(false);
-                t.imgIcono.gameObject.SetActive(true);
-                t.imgIcono.sprite = spIcono;
-
-                // Si es un icono de silueta vectorial blanca, teñir con el color de la categoría
-                if (spIcono == _spIconSnow)
-                {
-                    t.imgIcono.color = new Color32(0xBF, 0xEA, 0xFF, 0xFF);
-                }
-                else if (spIcono == _spIconBolt)
-                {
-                    t.imgIcono.color = new Color32(0xFF, 0xE1, 0x4A, 0xFF);
-                }
-                else if (spIcono == _spIconPaw)
-                {
-                    t.imgIcono.color = new Color32(0xD6, 0xC2, 0xFF, 0xFF);
-                }
-                else
-                {
-                    t.imgIcono.color = Color.white;
-                }
+                t.imgIcono.color = Color.white;
             }
 
             // Precio y Moneda
