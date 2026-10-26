@@ -63,6 +63,26 @@ namespace SoulKnight
         private Text _txtBocadillo;
         private Text _txtOro;
         private float _timerDialogoRestaurar = -1f;
+        private string _fraseBienvenidaActual = "Acércate… ¿qué buscas hoy?";
+
+        private static readonly string[] FrasesBienvenida = new string[]
+        {
+            "Acércate… ¿qué buscas hoy, viajero?",
+            "Tengo artefactos de primera… si tienes monedas.",
+            "¿El peligro de la mazmorra te agobia? Aquí tengo poder.",
+            "Poder permanente garantizado… y sin devoluciones, miau.",
+            "El oro no sirve de nada si mueres allá afuera…",
+            "Siente la magia ancestral fluyendo en cada mejora.",
+            "Poco oro, mucho peligro… elige con sabiduría.",
+            "Ronroneo por cada moneda bien invertida.",
+            "¿Buscas dominar el fuego, el hielo o el relámpago?",
+            "Tómate tu tiempo… las sombras esperarán un momento.",
+            "Cada compra permanente te hace más invencible.",
+            "Mercancía mística traída desde lo profundo del abismo.",
+            "¡Miau! Las mejores reliquias del reino están en mi puesto.",
+            "Poder puro y permanente para tus próximas batallas.",
+            "Un buen cazador invierte en sus garras y hechizos."
+        };
 
         // Tarjetas
         private readonly TarjetaUI[] _tarjetas = new TarjetaUI[6];
@@ -97,6 +117,7 @@ namespace SoulKnight
             public Image imgIcoBoxBg;
             public Image imgIcono;
             public Text txtInterrogacion;
+            public RectTransform rtSlot;
             public Text txtSlot;
             public Image imgSlotStar;
             public Text txtTag;
@@ -296,7 +317,7 @@ namespace SoulKnight
             var subTitObj = CrearRectCentrado(letreroObj.transform, "SubtituloTienda", 0f, -32f, 380f, 24f);
             var txtSubTit = subTitObj.gameObject.AddComponent<Text>();
             txtSubTit.font = fuenteSilkscreen;
-            txtSubTit.text = "MEJORAS PARA ESTA RUN";
+            txtSubTit.text = "MEJORAS PERMANENTES";
             txtSubTit.fontSize = 16;
             txtSubTit.fontStyle = FontStyle.Bold;
             txtSubTit.alignment = TextAnchor.MiddleCenter;
@@ -485,17 +506,23 @@ namespace SoulKnight
             t.imgIcoBoxBg = icoBox.gameObject.AddComponent<Image>();
             t.imgIcoBoxBg.color = new Color32(0x17, 0x11, 0x2E, 0xFF);
 
-            // Icono de la habilidad real (64x64)
-            var icoImgObj = CrearRectCentrado(icoBox.transform, "IconoSprite", 0f, 0f, 64f, 64f);
+            // Sombra interior sutil estilo pixel art en el borde superior de la caja
+            var icoInnerShadow = CrearRect(icoBox.transform, "IcoInnerShadow", 0f, 0f, 96f, 4f);
+            var imgIIS = icoInnerShadow.gameObject.AddComponent<Image>();
+            imgIIS.color = new Color32(0x0A, 0x06, 0x16, 0x88);
+
+            // Icono de la habilidad real (76x76 con preserveAspect para encajar perfecto)
+            var icoImgObj = CrearRectCentrado(icoBox.transform, "IconoSprite", 0f, 0f, 76f, 76f);
             t.imgIcono = icoImgObj.gameObject.AddComponent<Image>();
+            t.imgIcono.preserveAspect = true;
             t.imgIcono.sprite = _spIconSnow;
             t.imgIcono.color = Color.white;
 
-            // Signo de interrogación "?" estilizado para habilidades universales
-            var qObj = CrearRectCentrado(icoBox.transform, "InterrogacionUniversal", 0f, 0f, 80f, 80f);
+            // Signo de interrogación "?" estilizado para habilidades universales (encajado y centrado)
+            var qObj = CrearRectCentrado(icoBox.transform, "InterrogacionUniversal", 0f, 2f, 80f, 80f);
             t.txtInterrogacion = qObj.gameObject.AddComponent<Text>();
             t.txtInterrogacion.font = fuentePixel;
-            t.txtInterrogacion.fontSize = 54;
+            t.txtInterrogacion.fontSize = 58;
             t.txtInterrogacion.fontStyle = FontStyle.Bold;
             t.txtInterrogacion.alignment = TextAnchor.MiddleCenter;
             t.txtInterrogacion.horizontalOverflow = HorizontalWrapMode.Overflow;
@@ -505,8 +532,9 @@ namespace SoulKnight
             BordeTextoPixelArt.Aplicar(t.txtInterrogacion, 6, new Vector2(0f, -4f), new Color32(0x0C, 0x08, 0x18, 0xFF));
             t.txtInterrogacion.gameObject.SetActive(false);
 
-            // Insignia de Ranura [slot badge: E, Q, R, CLIC, ★] en esquina inferior derecha del icono
-            var slotObj = CrearRect(icoBox.transform, "BadgeSlot", 66f, 70f, 40f, 30f);
+            // Insignia de Ranura [slot badge: E, Q, R, CLIC, ★] en esquina inferior derecha
+            var slotObj = CrearRect(icoBox.transform, "BadgeSlot", 66f, 70f, 38f, 28f);
+            t.rtSlot = slotObj;
             var imgSlot = slotObj.gameObject.AddComponent<Image>();
             imgSlot.color = new Color32(0xFF, 0xF3, 0xD6, 0xFF);
             CrearBordeCajaSimple(slotObj.transform, 3, new Color32(0x0C, 0x08, 0x18, 0xFF));
@@ -529,7 +557,7 @@ namespace SoulKnight
             t.imgSlotStar.gameObject.SetActive(false);
 
             // Bloque de Texto: Categoría, Nombre y Descripción [left: 136]
-            var tagObj = CrearRect(cardObj.transform, "TextoTag", 136f, 18f, 420f, 24f);
+            var tagObj = CrearRect(cardObj.transform, "TextoTag", 136f, 16f, 424f, 22f);
             t.txtTag = tagObj.gameObject.AddComponent<Text>();
             t.txtTag.font = fuentePixel;
             t.txtTag.fontSize = 17;
@@ -539,7 +567,7 @@ namespace SoulKnight
             t.txtTag.color = new Color32(0x8F, 0xE0, 0xFF, 0xFF);
             t.txtTag.text = "HABILIDAD 1 • HIELO";
 
-            var nmObj = CrearRect(cardObj.transform, "TextoNombre", 136f, 44f, 420f, 36f);
+            var nmObj = CrearRect(cardObj.transform, "TextoNombre", 136f, 38f, 424f, 34f);
             t.txtNombre = nmObj.gameObject.AddComponent<Text>();
             t.txtNombre.font = fuentePixel;
             t.txtNombre.fontSize = 28;
@@ -549,10 +577,10 @@ namespace SoulKnight
             t.txtNombre.color = new Color32(0xFF, 0xF3, 0xD6, 0xFF);
             t.txtNombre.text = "Aliento Helado";
 
-            var dsObj = CrearRect(cardObj.transform, "TextoDescripcion", 136f, 84f, 420f, 72f);
+            var dsObj = CrearRect(cardObj.transform, "TextoDescripcion", 136f, 74f, 424f, 88f);
             t.txtDesc = dsObj.gameObject.AddComponent<Text>();
             t.txtDesc.font = fuentePixel;
-            t.txtDesc.fontSize = 19;
+            t.txtDesc.fontSize = 17;
             t.txtDesc.lineSpacing = 1.15f;
             t.txtDesc.horizontalOverflow = HorizontalWrapMode.Wrap;
             t.txtDesc.verticalOverflow = VerticalWrapMode.Overflow;
@@ -628,7 +656,8 @@ namespace SoulKnight
 
             transform.SetAsLastSibling();
             gameObject.SetActive(true);
-            SetDialogo("Acércate… ¿qué buscas?");
+            _fraseBienvenidaActual = FrasesBienvenida[UnityEngine.Random.Range(0, FrasesBienvenida.Length)];
+            SetDialogo(_fraseBienvenidaActual);
             ActualizarOro(_oroVisual);
             RefrescarUI();
         }
@@ -745,17 +774,29 @@ namespace SoulKnight
             t.imgCoin.gameObject.SetActive(true);
             t.txtPrecio.gameObject.SetActive(true);
 
-            // Configurar badge de ranura
+            // Configurar badge de ranura (encaje perfecto según tamaño de texto)
             if (slot == "★")
             {
                 t.txtSlot.gameObject.SetActive(false);
                 t.imgSlotStar.gameObject.SetActive(true);
+                if (t.rtSlot != null)
+                {
+                    t.rtSlot.sizeDelta = new Vector2(32f, 28f);
+                    t.rtSlot.anchoredPosition = new Vector2(66f, -70f);
+                }
             }
             else
             {
                 t.txtSlot.gameObject.SetActive(true);
                 t.imgSlotStar.gameObject.SetActive(false);
                 t.txtSlot.text = slot;
+                if (t.rtSlot != null)
+                {
+                    float slotW = (slot == "CLIC") ? 48f : 32f;
+                    float slotX = 96f - slotW + 4f;
+                    t.rtSlot.sizeDelta = new Vector2(slotW, 28f);
+                    t.rtSlot.anchoredPosition = new Vector2(slotX, -70f);
+                }
             }
 
             // Estados visuales (Comprado / Incompatible / Falta Oro / Disponible)
@@ -853,37 +894,47 @@ namespace SoulKnight
                 spIcono = _spIconPaw;
             }
 
+            int sigNv = Mathf.Min(nivelActual + 1, 5);
+
             switch (tipo)
             {
                 // Hielo (Cian vivo / Azul glacial)
                 case TipoMejoraTienda.Hielo_DuracionCongelacion:
                     nombre = "Garras de Escarcha";
-                    desc = "Tus ataques básicos ralentizan y congelan por más tiempo.";
-                    tag = "ATAQUE BÁSICO • HIELO";
+                    tag = (nivelActual >= 5) ? "BÁSICO • HIELO  [MÁXIMO]" : $"BÁSICO • HIELO  [NV. {nivelActual}/5]";
+                    desc = (nivelActual >= 5)
+                        ? "Congelación y ralentización al tope absoluto (+3.0s total acumulado)."
+                        : $"+0.6s duración de congelación y ralentización por nivel.\nNv. actual: {nivelActual}/5 ➔ Siguiente nivel: +{(sigNv * 0.6f):0.0}s total.";
                     slot = "CLIC";
                     colAccent = new Color32(0x58, 0xC4, 0xFF, 0xFF);
                     colTag = new Color32(0x8F, 0xE0, 0xFF, 0xFF);
                     break;
                 case TipoMejoraTienda.Hielo_AreaVentisca:
                     nombre = "Aliento Helado";
-                    desc = "Tu ráfaga de hielo y esferas aumentan su área de impacto.";
-                    tag = "HABILIDAD 1 • HIELO";
+                    tag = (nivelActual >= 5) ? "HABILIDAD 1 • HIELO  [MÁXIMO]" : $"HABILIDAD 1 • HIELO  [NV. {nivelActual}/5]";
+                    desc = (nivelActual >= 5)
+                        ? "Bola de Hielo y ráfaga al tamaño colosal (+75% radio total)."
+                        : $"+15% tamaño, alcance y radio de explosión por nivel.\nNv. actual: {nivelActual}/5 ➔ Siguiente nivel: +{sigNv * 15}% área total.";
                     slot = "E";
                     colAccent = new Color32(0x58, 0xC4, 0xFF, 0xFF);
                     colTag = new Color32(0x8F, 0xE0, 0xFF, 0xFF);
                     break;
                 case TipoMejoraTienda.Hielo_PotenciaGlacial:
                     nombre = "Fragmentación Glacial";
-                    desc = "Mayor daño crítico contra enemigos ralentizados o congelados.";
-                    tag = "HABILIDAD 2 • HIELO";
+                    tag = (nivelActual >= 5) ? "HABILIDAD 2 • HIELO  [MÁXIMO]" : $"HABILIDAD 2 • HIELO  [NV. {nivelActual}/5]";
+                    desc = (nivelActual >= 5)
+                        ? "Potencia glacial al tope (+60% daño crítico total acumulado)."
+                        : $"+12% daño crítico contra objetivos congelados/lentos por nivel.\nNv. actual: {nivelActual}/5 ➔ Siguiente nivel: +{sigNv * 12}% crítico.";
                     slot = "Q";
                     colAccent = new Color32(0x58, 0xC4, 0xFF, 0xFF);
                     colTag = new Color32(0x8F, 0xE0, 0xFF, 0xFF);
                     break;
                 case TipoMejoraTienda.Hielo_TormentaEterna:
                     nombre = "Ventisca Eterna";
-                    desc = "Tu definitiva Era de Hielo cubre un radio colosal.";
-                    tag = "DEFINITIVA • HIELO";
+                    tag = (nivelActual >= 5) ? "DEFINITIVA • HIELO  [MÁXIMO]" : $"DEFINITIVA • HIELO  [NV. {nivelActual}/5]";
+                    desc = (nivelActual >= 5)
+                        ? "Era de Hielo cubre el mapa entero (+100% radio y +7.5s duración)."
+                        : $"+20% radio de la tormenta y +1.5s duración por nivel.\nNv. actual: {nivelActual}/5 ➔ Siguiente: +{sigNv * 20}% radio, +{(sigNv * 1.5f):0.0}s.";
                     slot = "R";
                     colAccent = new Color32(0x58, 0xC4, 0xFF, 0xFF);
                     colTag = new Color32(0x8F, 0xE0, 0xFF, 0xFF);
@@ -892,32 +943,40 @@ namespace SoulKnight
                 // Rayo / Eléctrico (Amarillo eléctrico / Oro relámpago)
                 case TipoMejoraTienda.Elec_Voltaje:
                     nombre = "Filo Relámpago";
-                    desc = "Tus ataques con espada eléctrica atraviesan más enemigos.";
-                    tag = "ATAQUE BÁSICO • RAYO";
+                    tag = (nivelActual >= 5) ? "BÁSICO • RAYO  [MÁXIMO]" : $"BÁSICO • RAYO  [NV. {nivelActual}/5]";
+                    desc = (nivelActual >= 5)
+                        ? "Espada eléctrica letal: tajos colosales y +75% daño atravesando."
+                        : $"+15% daño y mayor anchura de corte en tu espada por nivel.\nNv. actual: {nivelActual}/5 ➔ Siguiente nivel: +{sigNv * 15}% daño y corte.";
                     slot = "CLIC";
                     colAccent = new Color32(0xFF, 0xE1, 0x4A, 0xFF);
                     colTag = new Color32(0xFF, 0xF0, 0x50, 0xFF);
                     break;
                 case TipoMejoraTienda.Elec_CooldownDash:
                     nombre = "Chispa Veloz";
-                    desc = "Reduce el enfriamiento del dash eléctrico para mayor movilidad.";
-                    tag = "HABILIDAD 1 • RAYO";
+                    tag = (nivelActual >= 5) ? "HABILIDAD 1 • RAYO  [MÁXIMO]" : $"HABILIDAD 1 • RAYO  [NV. {nivelActual}/5]";
+                    desc = (nivelActual >= 5)
+                        ? "Dash eléctrico al tope: -1.5s enfriamiento y movilidad extrema."
+                        : $"Reduce 0.3s el enfriamiento de tu Dash Eléctrico por nivel.\nNv. actual: {nivelActual}/5 ➔ Siguiente: -{(sigNv * 0.3f):0.0}s recarga.";
                     slot = "E";
                     colAccent = new Color32(0xFF, 0xE1, 0x4A, 0xFF);
                     colTag = new Color32(0xFF, 0xF0, 0x50, 0xFF);
                     break;
                 case TipoMejoraTienda.Elec_AreaTeleport:
                     nombre = "Cadena Eléctrica";
-                    desc = "El rayo salta entre más enemigos cercanos antes de apagarse.";
-                    tag = "HABILIDAD 2 • RAYO";
+                    tag = (nivelActual >= 5) ? "HABILIDAD 2 • RAYO  [MÁXIMO]" : $"HABILIDAD 2 • RAYO  [NV. {nivelActual}/5]";
+                    desc = (nivelActual >= 5)
+                        ? "Teleport colosal: +100% radio de descarga en origen y destino."
+                        : $"+20% radio de explosión eléctrica al transportarte por nivel.\nNv. actual: {nivelActual}/5 ➔ Siguiente nivel: +{sigNv * 20}% radio.";
                     slot = "Q";
                     colAccent = new Color32(0xFF, 0xE1, 0x4A, 0xFF);
                     colTag = new Color32(0xFF, 0xF0, 0x50, 0xFF);
                     break;
                 case TipoMejoraTienda.Elec_RayoCataclismico:
                     nombre = "Rayo Cataclísmico";
-                    desc = "Tu definitiva desata una tormenta de rayos devastadora.";
-                    tag = "DEFINITIVA • RAYO";
+                    tag = (nivelActual >= 5) ? "DEFINITIVA • RAYO  [MÁXIMO]" : $"DEFINITIVA • RAYO  [NV. {nivelActual}/5]";
+                    desc = (nivelActual >= 5)
+                        ? "Tormenta divina al tope: +150% anchura masiva y carga rápida."
+                        : $"+30% ancho del rayo masivo y recarga 20% más rápido por nivel.\nNv. actual: {nivelActual}/5 ➔ Siguiente nivel: +{sigNv * 30}% grosor.";
                     slot = "R";
                     colAccent = new Color32(0xFF, 0xE1, 0x4A, 0xFF);
                     colTag = new Color32(0xFF, 0xF0, 0x50, 0xFF);
@@ -926,32 +985,40 @@ namespace SoulKnight
                 // Fuego (Naranja ardiente / Rojo llama)
                 case TipoMejoraTienda.Fuego_DanoQuemadura:
                     nombre = "Garras de Fuego";
-                    desc = "Tus bolas de fuego dejan quemaduras más ardientes y duraderas.";
-                    tag = "ATAQUE BÁSICO • FUEGO";
+                    tag = (nivelActual >= 5) ? "BÁSICO • FUEGO  [MÁXIMO]" : $"BÁSICO • FUEGO  [NV. {nivelActual}/5]";
+                    desc = (nivelActual >= 5)
+                        ? "Combustión al límite (+30 daño continuo por tick de quemadura)."
+                        : $"+6 daño por tick a las quemaduras de tus bolas de fuego por nivel.\nNv. actual: {nivelActual}/5 ➔ Siguiente nivel: +{sigNv * 6} daño continuo.";
                     slot = "CLIC";
                     colAccent = new Color32(0xFF, 0x7A, 0x2F, 0xFF);
                     colTag = new Color32(0xFF, 0xA0, 0x4A, 0xFF);
                     break;
                 case TipoMejoraTienda.Fuego_Area:
                     nombre = "Llamarada Expansiva";
-                    desc = "El lanzallamas cubre un cono mucho más ancho y letal.";
-                    tag = "HABILIDAD 1 • FUEGO";
+                    tag = (nivelActual >= 5) ? "HABILIDAD 1 • FUEGO  [MÁXIMO]" : $"HABILIDAD 1 • FUEGO  [NV. {nivelActual}/5]";
+                    desc = (nivelActual >= 5)
+                        ? "Lanzallamas al tope: cono gigante abrasador (+75% área total)."
+                        : $"+15% tamaño, cono y alcance de fuego de tu lanzallamas por nivel.\nNv. actual: {nivelActual}/5 ➔ Siguiente nivel: +{sigNv * 15}% área de fuego.";
                     slot = "E";
                     colAccent = new Color32(0xFF, 0x7A, 0x2F, 0xFF);
                     colTag = new Color32(0xFF, 0xA0, 0x4A, 0xFF);
                     break;
                 case TipoMejoraTienda.Fuego_Duracion:
                     nombre = "Ignición Prolongada";
-                    desc = "La armadura de fuego resiste más golpes y quema todo.";
-                    tag = "HABILIDAD 2 • FUEGO";
+                    tag = (nivelActual >= 5) ? "HABILIDAD 2 • FUEGO  [MÁXIMO]" : $"HABILIDAD 2 • FUEGO  [NV. {nivelActual}/5]";
+                    desc = (nivelActual >= 5)
+                        ? "Escudo ígneo al tope (+5.0s duración y magma en el suelo)."
+                        : $"+1.0s duración a tu armadura ígnea y fuego en el suelo por nivel.\nNv. actual: {nivelActual}/5 ➔ Siguiente: +{(sigNv * 1.0f):0.0}s duración.";
                     slot = "Q";
                     colAccent = new Color32(0xFF, 0x7A, 0x2F, 0xFF);
                     colTag = new Color32(0xFF, 0xA0, 0x4A, 0xFF);
                     break;
                 case TipoMejoraTienda.Fuego_SupernovaGigante:
                     nombre = "Infierno Felino";
-                    desc = "Tu definitiva dura más tiempo y quema todo lo que toque.";
-                    tag = "DEFINITIVA • FUEGO";
+                    tag = (nivelActual >= 5) ? "DEFINITIVA • FUEGO  [MÁXIMO]" : $"DEFINITIVA • FUEGO  [NV. {nivelActual}/5]";
+                    desc = (nivelActual >= 5)
+                        ? "Supernova titánica: +125% radio de impacto y destrucción total."
+                        : $"+25% radio de impacto y tamaño de la explosión colosal por nivel.\nNv. actual: {nivelActual}/5 ➔ Siguiente nivel: +{sigNv * 25}% radio supernova.";
                     slot = "R";
                     colAccent = new Color32(0xFF, 0x7A, 0x2F, 0xFF);
                     colTag = new Color32(0xFF, 0xA0, 0x4A, 0xFF);
@@ -960,48 +1027,58 @@ namespace SoulKnight
                 // Universales / Globales (Púrpura arcano / Violeta místico)
                 case TipoMejoraTienda.VidaMaxima:
                     nombre = "Siete Vidas";
-                    desc = "Aumenta tu vida máxima permanente para aguantar más golpes.";
-                    tag = "MEJORA GLOBAL";
+                    tag = (nivelActual >= 5) ? "MEJORA PERMANENTE  [MÁXIMO]" : $"MEJORA PERMANENTE  [NV. {nivelActual}/5]";
+                    desc = (nivelActual >= 5)
+                        ? "Vitalidad permanente al límite (+150 HP total acumulado)."
+                        : $"+30 de Vida Máxima permanente para aguantar más daño por nivel.\nNv. actual: {nivelActual}/5 ➔ Siguiente: +{sigNv * 30} HP permanente.";
                     slot = "★";
                     colAccent = new Color32(0xC9, 0xA8, 0xFF, 0xFF);
                     colTag = new Color32(0xDE, 0xCB, 0xFF, 0xFF);
                     break;
                 case TipoMejoraTienda.PescadoAsado:
                     nombre = "Pescado Asado";
-                    desc = "Restaura 60 Puntos de Vida de inmediato al consumirlo.";
-                    tag = "CONSUMIBLE";
+                    tag = "CONSUMIBLE INSTANTÁNEO";
+                    desc = "Delicioso pescado recién asado. Restaura al instante +60 Puntos de Vida de inmediato.";
                     slot = "★";
                     colAccent = new Color32(0xC9, 0xA8, 0xFF, 0xFF);
                     colTag = new Color32(0xDE, 0xCB, 0xFF, 0xFF);
                     break;
                 case TipoMejoraTienda.DanoUniversal:
                     nombre = "Poder Arcano";
-                    desc = "+8% daño general adicional en todos tus ataques y habilidades.";
-                    tag = "MEJORA GLOBAL";
+                    tag = (nivelActual >= 5) ? "MEJORA PERMANENTE  [MÁXIMO]" : $"MEJORA PERMANENTE  [NV. {nivelActual}/5]";
+                    desc = (nivelActual >= 5)
+                        ? "Poder arcano al tope (+40% daño total en todas las habilidades)."
+                        : $"+8% de daño general en todos tus ataques y habilidades por nivel.\nNv. actual: {nivelActual}/5 ➔ Siguiente nivel: +{sigNv * 8}% daño global.";
                     slot = "★";
                     colAccent = new Color32(0xC9, 0xA8, 0xFF, 0xFF);
                     colTag = new Color32(0xDE, 0xCB, 0xFF, 0xFF);
                     break;
                 case TipoMejoraTienda.CooldownUniversal:
                     nombre = "Reloj Arcano";
-                    desc = "Reduce un 7% el tiempo de recarga de todas tus habilidades.";
-                    tag = "MEJORA GLOBAL";
+                    tag = (nivelActual >= 5) ? "MEJORA PERMANENTE  [MÁXIMO]" : $"MEJORA PERMANENTE  [NV. {nivelActual}/5]";
+                    desc = (nivelActual >= 5)
+                        ? "Recarga arcana al tope (-35% enfriamiento en todo el arsenal)."
+                        : $"Reduce 7% el enfriamiento de todas tus habilidades por nivel.\nNv. actual: {nivelActual}/5 ➔ Siguiente nivel: -{sigNv * 7}% recarga total.";
                     slot = "★";
                     colAccent = new Color32(0xC9, 0xA8, 0xFF, 0xFF);
                     colTag = new Color32(0xDE, 0xCB, 0xFF, 0xFF);
                     break;
                 case TipoMejoraTienda.AreaHabilidades:
                     nombre = "Amplitud Mística";
-                    desc = "+12% tamaño y radio de impacto de tus hechizos y proyectiles.";
-                    tag = "MEJORA GLOBAL";
+                    tag = (nivelActual >= 5) ? "MEJORA PERMANENTE  [MÁXIMO]" : $"MEJORA PERMANENTE  [NV. {nivelActual}/5]";
+                    desc = (nivelActual >= 5)
+                        ? "Amplitud mística al tope (+60% tamaño de todos los hechizos)."
+                        : $"+12% tamaño y radio de impacto de todas tus habilidades por nivel.\nNv. actual: {nivelActual}/5 ➔ Siguiente nivel: +{sigNv * 12}% tamaño y área.";
                     slot = "★";
                     colAccent = new Color32(0xC9, 0xA8, 0xFF, 0xFF);
                     colTag = new Color32(0xDE, 0xCB, 0xFF, 0xFF);
                     break;
                 case TipoMejoraTienda.CooldownDefinitiva:
                     nombre = "Energía Celestial";
-                    desc = "Recarga tu Habilidad Definitiva (R) un 10% más rápido.";
-                    tag = "MEJORA GLOBAL";
+                    tag = (nivelActual >= 5) ? "MEJORA PERMANENTE  [MÁXIMO]" : $"MEJORA PERMANENTE  [NV. {nivelActual}/5]";
+                    desc = (nivelActual >= 5)
+                        ? "Energía celestial al tope (-50% enfriamiento de Definitiva R)."
+                        : $"Reduce 10% el enfriamiento de tu Habilidad Definitiva (R) por nivel.\nNv. actual: {nivelActual}/5 ➔ Siguiente nivel: -{sigNv * 10}% recarga Ulti.";
                     slot = "★";
                     colAccent = new Color32(0xC9, 0xA8, 0xFF, 0xFF);
                     colTag = new Color32(0xDE, 0xCB, 0xFF, 0xFF);
@@ -1009,8 +1086,10 @@ namespace SoulKnight
                 case TipoMejoraTienda.GolpeCritico:
                 default:
                     nombre = "Zarpa Fulminante";
-                    desc = "+8% probabilidad de asestar golpes críticos (1.8x daño).";
-                    tag = "MEJORA GLOBAL";
+                    tag = (nivelActual >= 5) ? "MEJORA PERMANENTE  [MÁXIMO]" : $"MEJORA PERMANENTE  [NV. {nivelActual}/5]";
+                    desc = (nivelActual >= 5)
+                        ? "Zarpa fulminante al tope (+40% probabilidad de crítico 1.8x)."
+                        : $"+8% probabilidad de asestar golpes críticos (1.8x daño) por nivel.\nNv. actual: {nivelActual}/5 ➔ Siguiente: +{sigNv * 8}% prob. crítica.";
                     slot = "★";
                     colAccent = new Color32(0xC9, 0xA8, 0xFF, 0xFF);
                     colTag = new Color32(0xDE, 0xCB, 0xFF, 0xFF);
@@ -1030,9 +1109,14 @@ namespace SoulKnight
         {
             string[] respuestas = {
                 "¡Buena elección, aventurero!",
-                "¡Ese poder te sentará de maravilla!",
-                "¡Excelente compra! La run será épica.",
-                "¡El poder místico fluye en ti!"
+                "¡Ese poder permanente te sentará de maravilla!",
+                "¡Excelente compra! La run será legendaria.",
+                "¡El poder místico fluye en ti!",
+                "¡Sabia inversión! Destroza a esos monstruos.",
+                "¡Ronroneo de satisfacción! Disfruta la mejora.",
+                "¡Esa habilidad ahora golpeará mucho más duro!",
+                "¡Poder permanente adquirido! Tu leyenda crece.",
+                "¡Miau! Con eso harás trizas a cualquier jefe."
             };
             string frase = respuestas[UnityEngine.Random.Range(0, respuestas.Length)];
             SetDialogo(frase, 4f);
@@ -1069,7 +1153,7 @@ namespace SoulKnight
                 _timerDialogoRestaurar -= Time.unscaledDeltaTime;
                 if (_timerDialogoRestaurar <= 0f)
                 {
-                    SetDialogo("Acércate… ¿qué buscas?");
+                    SetDialogo(_fraseBienvenidaActual);
                 }
             }
 
