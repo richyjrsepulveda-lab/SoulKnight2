@@ -83,7 +83,7 @@ namespace SoulKnight
 
         [Header("Tienda Secreta Modal")]
         public GameObject panelTienda;
-        public bool TiendaAbierta => panelTienda != null && panelTienda.activeSelf;
+        public bool TiendaAbierta => (panelTienda != null && panelTienda.activeSelf) || (PanelTiendaRun.Instancia != null && PanelTiendaRun.Instancia.EstaAbierto);
         private PuestitoTienda _puestitoActivo;
         public PuestitoTienda PuestitoActivo => _puestitoActivo;
         private Text _textoOroTienda;
@@ -1807,125 +1807,10 @@ namespace SoulKnight
 
         private void CrearPanelTiendaSiNoExiste()
         {
-            if (panelTienda != null) return;
+            if (panelTienda != null && PanelTiendaRun.Instancia != null) return;
 
-            var tiendaObj = new GameObject("PanelTiendaModal", typeof(RectTransform));
-            tiendaObj.transform.SetParent(transform, false);
-            tiendaObj.transform.SetAsLastSibling();
-
-            var rtFull = tiendaObj.GetComponent<RectTransform>();
-            rtFull.anchorMin = Vector2.zero;
-            rtFull.anchorMax = Vector2.one;
-            rtFull.sizeDelta = Vector2.zero;
-
-            // Fondo translúcido oscuro para oscurecer la pantalla
-            var imgFondo = tiendaObj.AddComponent<Image>();
-            imgFondo.color = new Color(0.02f, 0.02f, 0.04f, 0.88f);
-
-            // Ventana modal centrada
-            var cardObj = new GameObject("VentanaTienda", typeof(RectTransform));
-            cardObj.transform.SetParent(tiendaObj.transform, false);
-            var rtCard = cardObj.GetComponent<RectTransform>();
-            rtCard.anchorMin = new Vector2(0.5f, 0.5f);
-            rtCard.anchorMax = new Vector2(0.5f, 0.5f);
-            rtCard.pivot = new Vector2(0.5f, 0.5f);
-            rtCard.anchoredPosition = Vector2.zero;
-            rtCard.sizeDelta = new Vector2(960f, 640f);
-
-            var imgCard = cardObj.AddComponent<Image>();
-            imgCard.sprite = EstiloUIUX.ObtenerSpritePanel();
-            imgCard.type = Image.Type.Sliced;
-            imgCard.color = Color.white;
-
-            EstiloUIUX.CrearRemaches(cardObj.transform, 18f);
-            EstiloUIUX.CrearCabeceraModal(cardObj.transform, "TIENDA MÍSTICA DEL GATO MERCADER", 76f, "huella");
-
-            // Subtítulo
-            var subObj = new GameObject("SubtituloTienda", typeof(RectTransform));
-            subObj.transform.SetParent(cardObj.transform, false);
-            var txtSub = subObj.AddComponent<Text>();
-            txtSub.font = FuenteUtil.ObtenerFuentePixelify();
-            txtSub.fontSize = 14;
-            txtSub.alignment = TextAnchor.MiddleCenter;
-            txtSub.color = EstiloUIUX.ColTextoTenue;
-            txtSub.text = "Haz clic en una habilidad o mejora para desplegar sus detalles técnicos.";
-            txtSub.horizontalOverflow = HorizontalWrapMode.Overflow;
-            txtSub.verticalOverflow = VerticalWrapMode.Overflow;
-            var rtSub = subObj.GetComponent<RectTransform>();
-            rtSub.anchorMin = new Vector2(0.5f, 1f);
-            rtSub.anchorMax = new Vector2(0.5f, 1f);
-            rtSub.pivot = new Vector2(0.5f, 1f);
-            rtSub.anchoredPosition = new Vector2(0f, -80f);
-            rtSub.sizeDelta = new Vector2(880f, 22f);
-
-            // Contador de Oro
-            var oroObj = new GameObject("TextoOroTienda", typeof(RectTransform));
-            oroObj.transform.SetParent(cardObj.transform, false);
-            _textoOroTienda = oroObj.AddComponent<Text>();
-            _textoOroTienda.font = FuenteUtil.ObtenerFuentePixelify();
-            _textoOroTienda.fontSize = 18;
-            _textoOroTienda.fontStyle = FontStyle.Bold;
-            _textoOroTienda.alignment = TextAnchor.MiddleCenter;
-            _textoOroTienda.color = EstiloUIUX.ColDorado;
-            _textoOroTienda.text = "🪙 Oro Disponible: 0";
-            _textoOroTienda.horizontalOverflow = HorizontalWrapMode.Overflow;
-            _textoOroTienda.verticalOverflow = VerticalWrapMode.Overflow;
-
-            var rtOro = oroObj.GetComponent<RectTransform>();
-            rtOro.anchorMin = new Vector2(0.5f, 1f);
-            rtOro.anchorMax = new Vector2(0.5f, 1f);
-            rtOro.pivot = new Vector2(0.5f, 1f);
-            rtOro.anchoredPosition = new Vector2(0f, -104f);
-            rtOro.sizeDelta = new Vector2(500f, 24f);
-
-            // Scroll de Artículos Desplegables de la Tienda
-            var scrollObj = new GameObject("ScrollTienda", typeof(RectTransform));
-            scrollObj.transform.SetParent(cardObj.transform, false);
-            var rtScroll = scrollObj.GetComponent<RectTransform>();
-            rtScroll.anchorMin = new Vector2(0.5f, 0.5f);
-            rtScroll.anchorMax = new Vector2(0.5f, 0.5f);
-            rtScroll.pivot = new Vector2(0.5f, 0.5f);
-            rtScroll.anchoredPosition = new Vector2(0f, -18f);
-            rtScroll.sizeDelta = new Vector2(900f, 430f);
-
-            scrollObj.AddComponent<RectMask2D>();
-            var sr = scrollObj.AddComponent<ScrollRect>();
-            sr.horizontal = false;
-            sr.vertical = true;
-            sr.movementType = ScrollRect.MovementType.Clamped;
-            sr.scrollSensitivity = 28f;
-
-            var contentObj = new GameObject("ContenidoTienda", typeof(RectTransform));
-            contentObj.transform.SetParent(scrollObj.transform, false);
-            var rtContent = contentObj.GetComponent<RectTransform>();
-            rtContent.anchorMin = new Vector2(0f, 1f);
-            rtContent.anchorMax = new Vector2(1f, 1f);
-            rtContent.pivot = new Vector2(0.5f, 1f);
-            rtContent.anchoredPosition = Vector2.zero;
-            rtContent.sizeDelta = new Vector2(0f, 430f);
-
-            var vlg = contentObj.AddComponent<VerticalLayoutGroup>();
-            vlg.spacing = 8f;
-            vlg.childAlignment = TextAnchor.UpperCenter;
-            vlg.childControlWidth = true;
-            vlg.childControlHeight = false;
-            vlg.childForceExpandWidth = true;
-            vlg.childForceExpandHeight = false;
-
-            var csf = contentObj.AddComponent<ContentSizeFitter>();
-            csf.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
-            sr.content = rtContent;
-
-            // Botón Salir de la Tienda
-            var btnSalir = EstiloUIUX.CrearBoton(cardObj.transform, "BotonSalirTienda", "SALIR DE LA TIENDA (ESC)", TipoBotonUI.Rojo, new Vector2(360f, 46f), CerrarTienda, "puerta", new Vector2(24f, 24f));
-            var rtSalir = btnSalir.GetComponent<RectTransform>();
-            rtSalir.anchorMin = new Vector2(0.5f, 0f);
-            rtSalir.anchorMax = new Vector2(0.5f, 0f);
-            rtSalir.pivot = new Vector2(0.5f, 0f);
-            rtSalir.anchoredPosition = new Vector2(0f, 14f);
-
-            panelTienda = tiendaObj;
-            panelTienda.SetActive(false);
+            var tiendaRun = PanelTiendaRun.ObtenerOCrear(transform);
+            panelTienda = tiendaRun.gameObject;
         }
 
         public void AbrirTienda(PuestitoTienda puestito)
@@ -1941,11 +1826,18 @@ namespace SoulKnight
             _oroVisualLocal = (_personajeLocal != null) ? _personajeLocal.OroRun.Value : 0;
             panelTienda.SetActive(true);
             Controles.Bloqueado = true;
-            ActualizarItemsTiendaUI();
+            if (PanelTiendaRun.Instancia != null)
+            {
+                PanelTiendaRun.Instancia.Abrir(puestito, _personajeLocal, _oroVisualLocal);
+            }
         }
 
         public void CerrarTienda()
         {
+            if (PanelTiendaRun.Instancia != null)
+            {
+                PanelTiendaRun.Instancia.gameObject.SetActive(false);
+            }
             if (panelTienda != null)
             {
                 panelTienda.SetActive(false);
@@ -1963,241 +1855,15 @@ namespace SoulKnight
                 _oroVisualLocal = _personajeLocal.OroRun.Value;
             }
             int oroLocal = (_oroVisualLocal >= 0) ? _oroVisualLocal : ((_personajeLocal != null) ? _personajeLocal.OroRun.Value : 0);
-            if (_textoOroTienda != null)
+
+            if (PanelTiendaRun.Instancia != null)
             {
-                _textoOroTienda.text = $"💰 Oro Disponible en la Run: {oroLocal}";
-            }
-
-            var cardObj = panelTienda.transform.Find("VentanaTienda");
-            if (cardObj == null) return;
-            var scrollObj = cardObj.Find("ScrollTienda");
-            if (scrollObj == null) return;
-            var contentObj = scrollObj.Find("ContenidoTienda");
-            if (contentObj == null) return;
-
-            // Limpiar items anteriores
-            for (int c = contentObj.childCount - 1; c >= 0; c--)
-            {
-                var ch = contentObj.GetChild(c);
-                if (ch != null) Destroy(ch.gameObject);
-            }
-
-            _botonesCompraTienda.Clear();
-            _textosBotonTienda.Clear();
-
-            Font fuente = FuenteUtil.ObtenerFuentePixelify();
-
-            for (int i = 0; i < _puestitoActivo.itemsOfrecidos.Count; i++)
-            {
-                int itemIndex = i;
-                TipoMejoraTienda tipo = _puestitoActivo.itemsOfrecidos[i];
-                int nvActual = (_personajeLocal != null) ? _personajeLocal.ObtenerNivelMejora(tipo) : 0;
-                CatalogoMejorasTienda.ObtenerInfoMejora(tipo, nvActual, out string nombre, out string desc, out TipoPersonaje claseReq);
-                int costo = CatalogoMejorasTienda.ObtenerCostoNivel(tipo, nvActual);
-
-                bool esCompatible = (claseReq == TipoPersonaje.Ninguno) || (_personajeLocal != null && _personajeLocal.TipoPj == claseReq);
-                IdHabilidad idHab = CatalogoMejorasTienda.ObtenerIdHabilidadDeMejora(tipo);
-                bool esUniversal = (claseReq == TipoPersonaje.Ninguno || idHab == IdHabilidad.Ninguna);
-
-                bool seleccionada = (_itemSeleccionadoTienda == itemIndex);
-                float altoCard = seleccionada ? 165f : 66f;
-
-                var cardItem = new GameObject($"CardArticulo_{itemIndex}", typeof(RectTransform));
-                cardItem.transform.SetParent(contentObj, false);
-
-                var rtCard = cardItem.GetComponent<RectTransform>();
-                rtCard.sizeDelta = new Vector2(880f, altoCard);
-
-                var le = cardItem.AddComponent<LayoutElement>();
-                le.preferredHeight = altoCard;
-                le.minHeight = altoCard;
-                le.flexibleWidth = 1f;
-
-                // Marco exterior
-                var imgBorde = cardItem.AddComponent<Image>();
-                imgBorde.sprite = EstiloUIUX.ObtenerSpriteTarjeta();
-                imgBorde.type = Image.Type.Sliced;
-                imgBorde.color = seleccionada ? new Color(0.35f, 0.85f, 1f, 1f) : new Color(0.30f, 0.38f, 0.50f, 0.85f);
-                imgBorde.raycastTarget = true;
-
-                // Fondo interior
-                var fondoInt = new GameObject("FondoInterno", typeof(RectTransform));
-                fondoInt.transform.SetParent(cardItem.transform, false);
-                var rtFi = fondoInt.GetComponent<RectTransform>();
-                rtFi.anchorMin = Vector2.zero;
-                rtFi.anchorMax = Vector2.one;
-                rtFi.offsetMin = new Vector2(3f, 3f);
-                rtFi.offsetMax = new Vector2(-3f, -3f);
-                var imgFi = fondoInt.AddComponent<Image>();
-                imgFi.color = seleccionada ? new Color(0.12f, 0.18f, 0.30f, 0.98f) : new Color(0.08f, 0.10f, 0.16f, 0.96f);
-                imgFi.raycastTarget = false;
-
-                // 1. Icono a la izquierda: Cuadrado con signo de interrogación si es universal, o Icono de la habilidad si es de personaje
-                var icoMarco = new GameObject("IconoMarco", typeof(RectTransform));
-                icoMarco.transform.SetParent(fondoInt.transform, false);
-                var rtIcoM = icoMarco.GetComponent<RectTransform>();
-                rtIcoM.anchorMin = new Vector2(0f, 1f);
-                rtIcoM.anchorMax = new Vector2(0f, 1f);
-                rtIcoM.pivot = new Vector2(0f, 1f);
-                rtIcoM.anchoredPosition = new Vector2(8f, -8f);
-                rtIcoM.sizeDelta = new Vector2(48f, 48f);
-
-                var imgIcoM = icoMarco.AddComponent<Image>();
-                imgIcoM.sprite = EstiloUIUX.ObtenerSpriteTarjeta();
-                imgIcoM.type = Image.Type.Sliced;
-                imgIcoM.color = esUniversal ? new Color(0.85f, 0.70f, 0.25f, 0.9f) : new Color(0.25f, 0.65f, 0.90f, 0.85f);
-                imgIcoM.raycastTarget = false;
-
-                if (esUniversal)
-                {
-                    // Cuadrado donde va el icono con un signo de interrogación
-                    var qObj = new GameObject("SignoInterrogacion", typeof(RectTransform));
-                    qObj.transform.SetParent(icoMarco.transform, false);
-                    var rtQ = qObj.GetComponent<RectTransform>();
-                    rtQ.anchorMin = Vector2.zero;
-                    rtQ.anchorMax = Vector2.one;
-                    rtQ.offsetMin = Vector2.zero;
-                    rtQ.offsetMax = Vector2.zero;
-                    var txtQ = qObj.AddComponent<Text>();
-                    txtQ.font = fuente;
-                    txtQ.fontSize = 32;
-                    txtQ.fontStyle = FontStyle.Bold;
-                    txtQ.alignment = TextAnchor.MiddleCenter;
-                    txtQ.color = EstiloUIUX.ColDorado;
-                    txtQ.text = "?";
-                    txtQ.raycastTarget = false;
-                }
-                else
-                {
-                    // Icono de la habilidad
-                    var icoImgObj = new GameObject("Icono", typeof(RectTransform));
-                    icoImgObj.transform.SetParent(icoMarco.transform, false);
-                    var rtIco = icoImgObj.GetComponent<RectTransform>();
-                    rtIco.anchorMin = Vector2.zero;
-                    rtIco.anchorMax = Vector2.one;
-                    rtIco.offsetMin = new Vector2(2f, 2f);
-                    rtIco.offsetMax = new Vector2(-2f, -2f);
-                    var imgIco = icoImgObj.AddComponent<Image>();
-                    imgIco.sprite = CatalogoHabilidades.ObtenerSpriteHabilidad(idHab);
-                    imgIco.preserveAspect = true;
-                    imgIco.color = Color.white;
-                    imgIco.raycastTarget = false;
-                }
-
-                // 2. Título y Nivel en la parte superior
-                var titObj = new GameObject("Titulo", typeof(RectTransform));
-                titObj.transform.SetParent(fondoInt.transform, false);
-                var rtTit = titObj.GetComponent<RectTransform>();
-                rtTit.anchorMin = new Vector2(0f, 1f);
-                rtTit.anchorMax = new Vector2(1f, 1f);
-                rtTit.pivot = new Vector2(0f, 1f);
-                rtTit.anchoredPosition = new Vector2(66f, -12f);
-                rtTit.sizeDelta = new Vector2(-330f, 28f);
-
-                var txtTit = titObj.AddComponent<Text>();
-                txtTit.font = fuente;
-                txtTit.fontSize = 18;
-                txtTit.fontStyle = FontStyle.Bold;
-                txtTit.alignment = TextAnchor.MiddleLeft;
-                txtTit.color = seleccionada ? EstiloUIUX.ColCyan : EstiloUIUX.ColTextoCrema;
-                txtTit.horizontalOverflow = HorizontalWrapMode.Overflow;
-                txtTit.verticalOverflow = VerticalWrapMode.Overflow;
-                txtTit.raycastTarget = false;
-
-                string nivelBadge = (tipo == TipoMejoraTienda.PescadoAsado)
-                    ? "<color=#4ade80>[Consumible]</color>"
-                    : $"<color=#38bdf8>[Nv. {nvActual}/5]</color>";
-                string chevron = seleccionada ? "<color=#38bdf8> ▲</color>" : "<color=#94a3b8> ▼</color>";
-                txtTit.text = $"{nombre.ToUpper()}  {nivelBadge}{chevron}";
-
-                // 3. Descripción desplegada al clickar (sin poner para quién es la habilidad)
-                if (seleccionada)
-                {
-                    var descObj = new GameObject("Desc", typeof(RectTransform));
-                    descObj.transform.SetParent(fondoInt.transform, false);
-                    var rtDesc = descObj.GetComponent<RectTransform>();
-                    rtDesc.anchorMin = new Vector2(0f, 0f);
-                    rtDesc.anchorMax = new Vector2(1f, 1f);
-                    rtDesc.offsetMin = new Vector2(66f, 10f);
-                    rtDesc.offsetMax = new Vector2(-270f, -46f);
-
-                    var txtDesc = descObj.AddComponent<Text>();
-                    txtDesc.font = fuente;
-                    txtDesc.fontSize = 16;
-                    txtDesc.lineSpacing = 1.35f;
-                    txtDesc.alignment = TextAnchor.UpperLeft;
-                    txtDesc.color = EstiloUIUX.ColTextoCrema;
-                    txtDesc.horizontalOverflow = HorizontalWrapMode.Wrap;
-                    txtDesc.verticalOverflow = VerticalWrapMode.Overflow;
-                    txtDesc.raycastTarget = false;
-                    txtDesc.text = desc;
-                }
-
-                // 4. Botón Comprar en la parte derecha
-                var btnBuy = EstiloUIUX.CrearBoton(fondoInt.transform, "BotonComprar", "COMPRAR", TipoBotonUI.Verde, new Vector2(250f, 44f), () => ComprarArticuloTiendaIndex(itemIndex));
-                var rtBtn = btnBuy.GetComponent<RectTransform>();
-                rtBtn.anchorMin = new Vector2(1f, 0.5f);
-                rtBtn.anchorMax = new Vector2(1f, 0.5f);
-                rtBtn.pivot = new Vector2(1f, 0.5f);
-                rtBtn.anchoredPosition = new Vector2(-12f, 0f);
-
-                var txtBtn = btnBuy.GetComponentInChildren<Text>();
-                var imgBtn = btnBuy.GetComponent<Image>();
-                _botonesCompraTienda.Add(btnBuy);
-                _textosBotonTienda.Add(txtBtn);
-
-                if (!esCompatible)
-                {
-                    btnBuy.interactable = false;
-                    txtBtn.text = $"❌ Incompatible";
-                    txtBtn.color = new Color(0.85f, 0.45f, 0.45f);
-                    if (imgBtn != null) imgBtn.color = new Color(0.25f, 0.14f, 0.14f, 1f);
-                }
-                else if (tipo != TipoMejoraTienda.PescadoAsado && nvActual >= 5)
-                {
-                    btnBuy.interactable = false;
-                    txtBtn.text = "✔ NIVEL MÁXIMO (5/5)";
-                    txtBtn.color = new Color(0.7f, 0.7f, 0.7f);
-                    if (imgBtn != null) imgBtn.color = new Color(0.18f, 0.20f, 0.24f, 1f);
-                }
-                else if (tipo == TipoMejoraTienda.VidaMaxima && _personajeLocal != null && _personajeLocal.vidaMax >= 300)
-                {
-                    btnBuy.interactable = false;
-                    txtBtn.text = "✔ MÁXIMO (300 HP)";
-                    txtBtn.color = new Color(0.7f, 0.7f, 0.7f);
-                    if (imgBtn != null) imgBtn.color = new Color(0.18f, 0.20f, 0.24f, 1f);
-                }
-                else if (oroLocal < costo)
-                {
-                    btnBuy.interactable = false;
-                    txtBtn.text = $"{costo} 💰 (Falta oro)";
-                    txtBtn.color = new Color(1f, 0.6f, 0.6f);
-                    if (imgBtn != null) imgBtn.color = new Color(0.35f, 0.18f, 0.18f, 1f);
-                }
-                else
-                {
-                    btnBuy.interactable = true;
-                    txtBtn.text = (tipo == TipoMejoraTienda.PescadoAsado)
-                        ? $"COMPRAR ({costo} 💰)"
-                        : $"COMPRAR NV {nvActual + 1} ({costo} 💰)";
-                    txtBtn.color = Color.white;
-                    if (imgBtn != null) imgBtn.color = new Color(0.18f, 0.60f, 0.35f, 1f);
-                }
-
-                // Botón interactivo sobre la tarjeta para desplegar/plegar al hacer clic
-                var btnToggle = cardItem.AddComponent<Button>();
-                btnToggle.targetGraphic = imgBorde;
-                btnToggle.transition = Selectable.Transition.ColorTint;
-                int idxCapturado = itemIndex;
-                btnToggle.onClick.AddListener(() =>
-                {
-                    _itemSeleccionadoTienda = (_itemSeleccionadoTienda == idxCapturado ? -1 : idxCapturado);
-                    ActualizarItemsTiendaUI();
-                });
+                PanelTiendaRun.Instancia.ActualizarOro(oroLocal);
+                PanelTiendaRun.Instancia.RefrescarUI();
             }
         }
 
-        private void ComprarArticuloTiendaIndex(int index)
+        public void ComprarArticuloTiendaIndex(int index)
         {
             if (_puestitoActivo == null || _personajeLocal == null) return;
             if (index < 0 || index >= _puestitoActivo.itemsOfrecidos.Count) return;
@@ -2206,20 +1872,20 @@ namespace SoulKnight
             TipoPersonaje req = CatalogoMejorasTienda.ObtenerClaseCompatible(tipo);
             if (req != TipoPersonaje.Ninguno && _personajeLocal.TipoPj != req)
             {
-                TextoFlotante.Crear(_personajeLocal.transform.position + Vector3.up * 1.2f, "¡Incompatible con tu gato!", Color.red);
+                TextoFlotante.Crear(_personajeLocal.transform.position + Vector3.up * 1.2f, "Incompatible con tu gato!", Color.red);
                 return;
             }
 
             int nvActual = _personajeLocal.ObtenerNivelMejora(tipo);
             if (tipo != TipoMejoraTienda.PescadoAsado && nvActual >= 5)
             {
-                TextoFlotante.Crear(_personajeLocal.transform.position + Vector3.up * 1.2f, "¡Ya tienes el nivel máximo!", Color.yellow);
+                TextoFlotante.Crear(_personajeLocal.transform.position + Vector3.up * 1.2f, "¡Ya tienes el nivel maximo!", Color.yellow);
                 return;
             }
 
             if (tipo == TipoMejoraTienda.VidaMaxima && _personajeLocal.vidaMax >= 300)
             {
-                TextoFlotante.Crear(_personajeLocal.transform.position + Vector3.up * 1.2f, "¡Vida al límite máximo (300 HP)!", Color.yellow);
+                TextoFlotante.Crear(_personajeLocal.transform.position + Vector3.up * 1.2f, "¡Vida al limite maximo (300 HP)!", Color.yellow);
                 return;
             }
 
@@ -2227,11 +1893,15 @@ namespace SoulKnight
             int oroDisponible = (_oroVisualLocal >= 0) ? _oroVisualLocal : _personajeLocal.OroRun.Value;
             if (oroDisponible >= costo)
             {
-                // Actualización visual reactiva e instantánea de la tienda en 0ms
+                // Actualizacion visual reactiva e instantanea de la tienda en 0ms
                 _oroVisualLocal = Mathf.Max(0, oroDisponible - costo);
                 ActualizarItemsTiendaUI();
 
                 _personajeLocal.SolicitarCompraTienda(tipo, costo);
+                if (PanelTiendaRun.Instancia != null)
+                {
+                    PanelTiendaRun.Instancia.NotificarCompraExitosa(tipo);
+                }
             }
         }
 
