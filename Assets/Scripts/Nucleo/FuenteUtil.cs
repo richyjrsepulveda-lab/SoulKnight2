@@ -29,7 +29,16 @@ namespace SoulKnight
         {
             if (_fuentePixelify == null)
             {
-                _fuentePixelify = Resources.Load<Font>("Fuentes/PixelifySans");
+                // Jersey 15: Tipografía pixel art nítida y retro con la letra 'C' perfectamente abierta y legible (evitando que parezca 'O')
+                _fuentePixelify = Resources.Load<Font>("Fuentes/Jersey15");
+                if (_fuentePixelify == null)
+                {
+                    _fuentePixelify = Resources.Load<Font>("Fuentes/Silkscreen-Bold");
+                }
+                if (_fuentePixelify == null)
+                {
+                    _fuentePixelify = Resources.Load<Font>("Fuentes/PixelifySans");
+                }
                 if (_fuentePixelify == null)
                 {
                     _fuentePixelify = Resources.Load<Font>("Fuentes/PressStart2P");

@@ -325,22 +325,24 @@ namespace SoulKnight
             txtSubTit.verticalOverflow = VerticalWrapMode.Overflow;
             txtSubTit.color = new Color32(0xFF, 0xF3, 0xD6, 0xFF);
 
-            // 9. Bocadillo de diálogo [left: 120, top: 430, width: 420, height: 100]
-            var bocadilloObj = CrearRect(rootCanvas.transform, "BocadilloDialogo", 120f, 430f, 420f, 100f);
+            // 9. Bocadillo de diálogo [left: 120, top: 420, width: 420, height: 110]
+            var bocadilloObj = CrearRect(rootCanvas.transform, "BocadilloDialogo", 120f, 420f, 420f, 110f);
             var imgBocadillo = bocadilloObj.gameObject.AddComponent<Image>();
             imgBocadillo.color = new Color32(0x17, 0x11, 0x2E, 0xFF);
             CrearBordeCajaSimple(bocadilloObj.transform, 4, new Color32(0x0C, 0x08, 0x18, 0xFF));
 
-            var txtBocObj = CrearRectCentrado(bocadilloObj.transform, "TextoDialogo", 0f, 0f, 390f, 80f);
+            // Margen interior generoso de 30px a cada lado (360px de ancho) con salto de línea automático
+            var txtBocObj = CrearRectCentrado(bocadilloObj.transform, "TextoDialogo", 0f, 0f, 360f, 86f);
             _txtBocadillo = txtBocObj.gameObject.AddComponent<Text>();
             _txtBocadillo.font = fuentePixel;
-            _txtBocadillo.fontSize = 24;
+            _txtBocadillo.fontSize = 20;
             _txtBocadillo.fontStyle = FontStyle.Bold;
+            _txtBocadillo.lineSpacing = 1.15f;
             _txtBocadillo.alignment = TextAnchor.MiddleCenter;
-            _txtBocadillo.horizontalOverflow = HorizontalWrapMode.Overflow;
+            _txtBocadillo.horizontalOverflow = HorizontalWrapMode.Wrap;
             _txtBocadillo.verticalOverflow = VerticalWrapMode.Overflow;
             _txtBocadillo.color = new Color32(0xFF, 0xF3, 0xD6, 0xFF);
-            _txtBocadillo.text = "Acércate… ¿qué buscas?";
+            _txtBocadillo.text = "Acércate… ¿qué buscas hoy?";
 
             // Puntero del bocadillo [left: 306, top: 530, width: 48, height: 24]
             var ptrObj = CrearRect(rootCanvas.transform, "PunteroBocadillo", 306f, 530f, 48f, 24f);
@@ -511,30 +513,31 @@ namespace SoulKnight
             var imgIIS = icoInnerShadow.gameObject.AddComponent<Image>();
             imgIIS.color = new Color32(0x0A, 0x06, 0x16, 0x88);
 
-            // Icono de la habilidad real (76x76 con preserveAspect para encajar perfecto)
-            var icoImgObj = CrearRectCentrado(icoBox.transform, "IconoSprite", 0f, 0f, 76f, 76f);
+            // Icono de la habilidad real (94x94 para encajar de forma perfecta con el marco de color)
+            var icoImgObj = CrearRectCentrado(icoBox.transform, "IconoSprite", 0f, 0f, 94f, 94f);
             t.imgIcono = icoImgObj.gameObject.AddComponent<Image>();
             t.imgIcono.preserveAspect = true;
             t.imgIcono.sprite = _spIconSnow;
             t.imgIcono.color = Color.white;
 
-            // Signo de interrogación "?" estilizado para habilidades universales (encajado y centrado)
-            var qObj = CrearRectCentrado(icoBox.transform, "InterrogacionUniversal", 0f, 2f, 80f, 80f);
+            // Signo de interrogación "?" estilizado para habilidades universales (grande, encajado y centrado)
+            var qObj = CrearRectCentrado(icoBox.transform, "InterrogacionUniversal", 0f, 0f, 94f, 94f);
             t.txtInterrogacion = qObj.gameObject.AddComponent<Text>();
             t.txtInterrogacion.font = fuentePixel;
-            t.txtInterrogacion.fontSize = 58;
+            t.txtInterrogacion.fontSize = 68;
             t.txtInterrogacion.fontStyle = FontStyle.Bold;
             t.txtInterrogacion.alignment = TextAnchor.MiddleCenter;
             t.txtInterrogacion.horizontalOverflow = HorizontalWrapMode.Overflow;
             t.txtInterrogacion.verticalOverflow = VerticalWrapMode.Overflow;
             t.txtInterrogacion.color = new Color32(0xFF, 0xCF, 0x4A, 0xFF);
             t.txtInterrogacion.text = "?";
-            BordeTextoPixelArt.Aplicar(t.txtInterrogacion, 6, new Vector2(0f, -4f), new Color32(0x0C, 0x08, 0x18, 0xFF));
+            BordeTextoPixelArt.Aplicar(t.txtInterrogacion, 8, new Vector2(0f, -5f), new Color32(0x0C, 0x08, 0x18, 0xFF));
             t.txtInterrogacion.gameObject.SetActive(false);
 
             // Insignia de Ranura [slot badge: E, Q, R, CLIC, ★] en esquina inferior derecha
             var slotObj = CrearRect(icoBox.transform, "BadgeSlot", 66f, 70f, 38f, 28f);
             t.rtSlot = slotObj;
+            slotObj.SetAsLastSibling();
             var imgSlot = slotObj.gameObject.AddComponent<Image>();
             imgSlot.color = new Color32(0xFF, 0xF3, 0xD6, 0xFF);
             CrearBordeCajaSimple(slotObj.transform, 3, new Color32(0x0C, 0x08, 0x18, 0xFF));
