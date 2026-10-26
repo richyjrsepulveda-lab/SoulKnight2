@@ -10,14 +10,17 @@ namespace SoulKnight
     /// Diseñada e implementada al 100% siguiendo las especificaciones del diseño de referencia
     /// (Shop.dc.html y Tienda de la run@1x.png), resolución 1920x1080:
     /// - Toldo a rayas teal/crema con festón ondulado repetido a 16 módulos.
-    /// - Faroles colgantes con cadenas de hierro y brillo cálido.
+    /// - Faroles colgantes con cadenas de hierro y halo cálido circular suave.
     /// - Letrero colgante de madera ("TIENDA - MEJORAS PARA ESTA RUN") con cadenas.
     /// - Gato tendero místico con ojos luminosos verdes, gema mágica en el pecho,
-    ///   halo radial cálido, parpadeo animado y motas de polvo mágico flotantes.
-    /// - Bocadillo de diálogo reactivo ("Acércate… ¿qué buscas?" y respuestas de compra).
-    /// - Mostrador con vela encendida animada, contador de monedas y botón dorado "CONTINUAR ➔".
-    /// - 3 repisas de madera con las 6 tarjetas de mejoras (hielo, rayo, fuego, global)
-    ///   con sus etiquetas de ranura (E, Q, R, CLIC, ★), precios, estados interactivos y compra reactiva en 0ms.
+    ///   halo radial circular suave (sin bordes cuadrados), parpadeo animado y motas flotantes.
+    /// - Bocadillo de diálogo reactivo ("Acércate… ¿qué buscas?" y respuestas tras comprar).
+    /// - Mostrador con vela encendida, halo circular suave, contador de monedas y botón "CONTINUAR ➔".
+    /// - 3 repisas de madera con las 6 tarjetas de mejoras:
+    ///   - Iconos reales de habilidades de la run (IconosHabilidades).
+    ///   - Signo de interrogación "?" para habilidades/mejoras universales.
+    ///   - Precios claramente visibles sin recortes (horizontal y vertical overflow habilitados).
+    ///   - Insignias de ranura (E, Q, R, CLIC, ★) y estados interactivos reactivos en 0ms.
     /// </summary>
     public class PanelTiendaRun : MonoBehaviour
     {
@@ -40,6 +43,9 @@ namespace SoulKnight
         private Sprite _spIconCheck;
         private Sprite _spIconStar;
         private Sprite _spPointer;
+
+        // Textura y sprite para halos circulares ultra suaves (sin recortes cuadrados)
+        private static Sprite _spGlowCircular;
 
         // Referencias de elementos animados
         private RectTransform _rtCat;
@@ -84,6 +90,7 @@ namespace SoulKnight
             public CanvasGroup canvasGroup;
             public Image imgBordeAccent;
             public Image imgIcono;
+            public Text txtInterrogacion;
             public Text txtSlot;
             public Image imgSlotStar;
             public Text txtTag;
@@ -149,6 +156,51 @@ namespace SoulKnight
             _spPointer = Resources.Load<Sprite>("UI/Tienda/pointer");
         }
 
+        /// <summary>
+        /// Genera proceduralmente un sprite de gradiente radial circular con decaimiento Hermite
+        /// para que la iluminación sea 100% esférica, suave y se desvanezca por completo a 0 alfa
+        /// mucho antes de alcanzar el borde del RectTransform (evitando cualquier corte cuadrado).
+        /// </summary>
+        public static Sprite ObtenerSpriteGlowCircular()
+        {
+            if (_spGlowCircular != null) return _spGlowCircular;
+
+            const int S = 128;
+            Texture2D tex = new Texture2D(S, S, TextureFormat.RGBA32, false);
+            tex.filterMode = FilterMode.Bilinear;
+            tex.wrapMode = TextureWrapMode.Clamp;
+
+            Color32[] px = new Color32[S * S];
+            float centro = (S - 1) * 0.5f;
+
+            for (int y = 0; y < S; y++)
+            {
+                for (int x = 0; x < S; x++)
+                {
+                    float dx = (x - centro) / centro;
+                    float dy = (y - centro) / centro;
+                    float dist = Mathf.Sqrt(dx * dx + dy * dy);
+
+                    if (dist >= 1.0f)
+                    {
+                        px[y * S + x] = new Color32(255, 255, 255, 0);
+                    }
+                    else
+                    {
+                        float t = 1.0f - dist;
+                        float hermite = t * t * (3f - 2f * t);
+                        byte a = (byte)(Mathf.Clamp01(hermite) * 255f);
+                        px[y * S + x] = new Color32(255, 255, 255, a);
+                    }
+                }
+            }
+
+            tex.SetPixels32(px);
+            tex.Apply(false);
+            _spGlowCircular = Sprite.Create(tex, new Rect(0, 0, S, S), new Vector2(0.5f, 0.5f));
+            return _spGlowCircular;
+        }
+
         // =========================================================================
         // CONSTRUCCIÓN VISUAL EXACTA 1920x1080
         // =========================================================================
@@ -161,7 +213,7 @@ namespace SoulKnight
             var imgFondo = gameObject.AddComponent<Image>();
             imgFondo.color = new Color(0.04f, 0.03f, 0.08f, 0.94f);
 
-            // Contenedor principal 1920x1080 anclado arriba-izquierda para posicionamiento CSS 1:1
+            // Contenedor principal 1920x1080 centrado para visualización nítida
             var rootCanvas = new GameObject("CanvasTienda1920", typeof(RectTransform));
             rootCanvas.transform.SetParent(transform, false);
             var rtRoot = rootCanvas.GetComponent<RectTransform>();
@@ -210,7 +262,7 @@ namespace SoulKnight
             var imgSombraToldo = sombraToldo.gameObject.AddComponent<Image>();
             imgSombraToldo.color = new Color32(0x0C, 0x08, 0x18, 0xFF);
 
-            // 7. Faroles colgantes y cadenas [left: 117 y 561]
+            // 7. Faroles colgantes y cadenas [left: 117 y 561] con halos circulares suaves
             CrearFarol(rootCanvas.transform, "FarolIzquierdo", 117f, 146f, 99f, 196f);
             CrearFarol(rootCanvas.transform, "FarolDerecho", 561f, 146f, 543f, 196f);
 
@@ -230,6 +282,8 @@ namespace SoulKnight
             txtTit.fontSize = 54;
             txtTit.fontStyle = FontStyle.Bold;
             txtTit.alignment = TextAnchor.MiddleCenter;
+            txtTit.horizontalOverflow = HorizontalWrapMode.Overflow;
+            txtTit.verticalOverflow = VerticalWrapMode.Overflow;
             txtTit.color = new Color32(0xFF, 0xCF, 0x4A, 0xFF);
             BordeTextoPixelArt.Aplicar(txtTit, 10, new Vector2(0f, -6f), new Color32(0x0C, 0x08, 0x18, 0xFF));
 
@@ -240,6 +294,8 @@ namespace SoulKnight
             txtSubTit.fontSize = 16;
             txtSubTit.fontStyle = FontStyle.Bold;
             txtSubTit.alignment = TextAnchor.MiddleCenter;
+            txtSubTit.horizontalOverflow = HorizontalWrapMode.Overflow;
+            txtSubTit.verticalOverflow = VerticalWrapMode.Overflow;
             txtSubTit.color = new Color32(0xFF, 0xF3, 0xD6, 0xFF);
 
             // 9. Bocadillo de diálogo [left: 120, top: 430, width: 420, height: 100]
@@ -254,6 +310,8 @@ namespace SoulKnight
             _txtBocadillo.fontSize = 24;
             _txtBocadillo.fontStyle = FontStyle.Bold;
             _txtBocadillo.alignment = TextAnchor.MiddleCenter;
+            _txtBocadillo.horizontalOverflow = HorizontalWrapMode.Overflow;
+            _txtBocadillo.verticalOverflow = VerticalWrapMode.Overflow;
             _txtBocadillo.color = new Color32(0xFF, 0xF3, 0xD6, 0xFF);
             _txtBocadillo.text = "Acércate… ¿qué buscas?";
 
@@ -267,10 +325,11 @@ namespace SoulKnight
             var gatoContenedor = CrearRect(rootCanvas.transform, "GatoTendero", 170f, 612f, 320f, 288f);
             _rtCat = gatoContenedor;
 
-            // Halo cálido de ambiente detrás del gato
-            var glowObj = CrearRectCentrado(gatoContenedor.transform, "HaloGato", 0f, 0f, 340f, 300f);
+            // Halo cálido circular suave detrás del gato (amplio 520x480 con caída Hermite suave a 0)
+            var glowObj = CrearRectCentrado(gatoContenedor.transform, "HaloGatoCircular", 0f, 0f, 520f, 480f);
             _imgCatGlow = glowObj.gameObject.AddComponent<Image>();
-            _imgCatGlow.color = new Color(1f, 0.62f, 0.27f, 0.22f);
+            _imgCatGlow.sprite = ObtenerSpriteGlowCircular();
+            _imgCatGlow.color = new Color(1f, 0.55f, 0.20f, 0.22f);
 
             // Capa 1: Cuerpo base
             var cuerpoObj = CrearRectCentrado(gatoContenedor.transform, "CuerpoBase", 0f, 0f, 320f, 288f);
@@ -311,9 +370,11 @@ namespace SoulKnight
             CrearBordeCaja(mostradorFrente.transform, 6, new Color32(0x0C, 0x08, 0x18, 0xFF), new Color32(0xA9, 0x72, 0x48, 0xFF), new Color32(0x5A, 0x3A, 0x22, 0xFF));
 
             // 13. Vela encendida sobre el mostrador [left: 508, top: 820, width: 40, height: 80]
-            var haloVela = CrearRect(rootCanvas.transform, "HaloVela", 478f, 780f, 100f, 110f);
+            // Halo circular suave de la vela (180x180 centrado en la llama con Sprite de gradiente Hermite)
+            var haloVela = CrearRectCentrado(rootCanvas.transform, "HaloVelaCircular", 528f, -810f, 180f, 180f);
             _imgVelaHalo = haloVela.gameObject.AddComponent<Image>();
-            _imgVelaHalo.color = new Color(1f, 0.62f, 0.27f, 0.35f);
+            _imgVelaHalo.sprite = ObtenerSpriteGlowCircular();
+            _imgVelaHalo.color = new Color(1f, 0.68f, 0.24f, 0.32f);
 
             var velaObj = CrearRect(rootCanvas.transform, "VelaMostrador", 508f, 820f, 40f, 80f);
             _rtVelaLlama = velaObj;
@@ -338,6 +399,8 @@ namespace SoulKnight
             _txtOro.fontSize = 32;
             _txtOro.fontStyle = FontStyle.Bold;
             _txtOro.alignment = TextAnchor.MiddleLeft;
+            _txtOro.horizontalOverflow = HorizontalWrapMode.Overflow;
+            _txtOro.verticalOverflow = VerticalWrapMode.Overflow;
             _txtOro.color = new Color32(0xFF, 0xCF, 0x4A, 0xFF);
             _txtOro.text = "0";
 
@@ -353,13 +416,11 @@ namespace SoulKnight
             {
                 txtBtn.fontSize = 28;
                 txtBtn.fontStyle = FontStyle.Bold;
+                txtBtn.horizontalOverflow = HorizontalWrapMode.Overflow;
+                txtBtn.verticalOverflow = VerticalWrapMode.Overflow;
             }
 
             // 16. Grid de 6 Tarjetas de Mejoras (2 columnas x 3 filas) [left: 610, top: 190, width: 1200]
-            // Fila 0: top 190 (descansa en repisa 1 a 430)
-            // Fila 1: top 474 (descansa en repisa 2 a 714)
-            // Fila 2: top 758 (descansa en repisa 3 a 998)
-            // Columna 0: left 610, Columna 1: left 1220 (ancho: 580, alto: 240)
             float[] posX = { 610f, 1220f };
             float[] posY = { 190f, 474f, 758f };
 
@@ -400,11 +461,24 @@ namespace SoulKnight
             imgIcoBox.color = new Color32(0x17, 0x11, 0x2E, 0xFF);
             CrearBordeCaja(icoBox.transform, 4, new Color32(0x58, 0xC4, 0xFF, 0xFF), new Color32(0x0A, 0x06, 0x16, 0xFF), new Color32(0x0A, 0x06, 0x16, 0xFF));
 
-            // Icono de la habilidad / categoría (54x54)
-            var icoImgObj = CrearRectCentrado(icoBox.transform, "IconoSprite", 0f, 0f, 54f, 54f);
+            // Icono de la habilidad real (64x64)
+            var icoImgObj = CrearRectCentrado(icoBox.transform, "IconoSprite", 0f, 0f, 64f, 64f);
             t.imgIcono = icoImgObj.gameObject.AddComponent<Image>();
             t.imgIcono.sprite = _spIconSnow;
             t.imgIcono.color = Color.white;
+
+            // Signo de interrogación "?" para habilidades universales
+            var qObj = CrearRectCentrado(icoBox.transform, "InterrogacionUniversal", 0f, 0f, 80f, 80f);
+            t.txtInterrogacion = qObj.gameObject.AddComponent<Text>();
+            t.txtInterrogacion.font = fuentePixel;
+            t.txtInterrogacion.fontSize = 52;
+            t.txtInterrogacion.fontStyle = FontStyle.Bold;
+            t.txtInterrogacion.alignment = TextAnchor.MiddleCenter;
+            t.txtInterrogacion.horizontalOverflow = HorizontalWrapMode.Overflow;
+            t.txtInterrogacion.verticalOverflow = VerticalWrapMode.Overflow;
+            t.txtInterrogacion.color = new Color32(0xFF, 0xCF, 0x4A, 0xFF);
+            t.txtInterrogacion.text = "?";
+            t.txtInterrogacion.gameObject.SetActive(false);
 
             // Insignia de Ranura [slot badge: E, Q, R, CLIC, ★] en esquina inferior derecha del icono
             var slotObj = CrearRect(icoBox.transform, "BadgeSlot", 68f, 72f, 38f, 30f);
@@ -418,6 +492,8 @@ namespace SoulKnight
             t.txtSlot.fontSize = 15;
             t.txtSlot.fontStyle = FontStyle.Bold;
             t.txtSlot.alignment = TextAnchor.MiddleCenter;
+            t.txtSlot.horizontalOverflow = HorizontalWrapMode.Overflow;
+            t.txtSlot.verticalOverflow = VerticalWrapMode.Overflow;
             t.txtSlot.color = new Color32(0x1B, 0x14, 0x38, 0xFF);
             t.txtSlot.text = "E";
 
@@ -428,11 +504,13 @@ namespace SoulKnight
             t.imgSlotStar.gameObject.SetActive(false);
 
             // Bloque de Texto: Categoría, Nombre y Descripción [left: 136]
-            var tagObj = CrearRect(cardObj.transform, "TextoTag", 136f, 20f, 420f, 22f);
+            var tagObj = CrearRect(cardObj.transform, "TextoTag", 136f, 18f, 420f, 24f);
             t.txtTag = tagObj.gameObject.AddComponent<Text>();
             t.txtTag.font = fuentePixel;
             t.txtTag.fontSize = 17;
             t.txtTag.fontStyle = FontStyle.Bold;
+            t.txtTag.horizontalOverflow = HorizontalWrapMode.Overflow;
+            t.txtTag.verticalOverflow = VerticalWrapMode.Overflow;
             t.txtTag.color = new Color32(0x8F, 0xE0, 0xFF, 0xFF);
             t.txtTag.text = "HABILIDAD 1 • HIELO";
 
@@ -441,30 +519,35 @@ namespace SoulKnight
             t.txtNombre.font = fuentePixel;
             t.txtNombre.fontSize = 28;
             t.txtNombre.fontStyle = FontStyle.Bold;
+            t.txtNombre.horizontalOverflow = HorizontalWrapMode.Overflow;
+            t.txtNombre.verticalOverflow = VerticalWrapMode.Overflow;
             t.txtNombre.color = new Color32(0xFF, 0xF3, 0xD6, 0xFF);
             t.txtNombre.text = "Aliento Helado";
 
-            var dsObj = CrearRect(cardObj.transform, "TextoDescripcion", 136f, 84f, 420f, 68f);
+            var dsObj = CrearRect(cardObj.transform, "TextoDescripcion", 136f, 84f, 420f, 72f);
             t.txtDesc = dsObj.gameObject.AddComponent<Text>();
             t.txtDesc.font = fuentePixel;
             t.txtDesc.fontSize = 19;
-            t.txtDesc.lineSpacing = 1.2f;
+            t.txtDesc.lineSpacing = 1.15f;
+            t.txtDesc.horizontalOverflow = HorizontalWrapMode.Wrap;
+            t.txtDesc.verticalOverflow = VerticalWrapMode.Overflow;
             t.txtDesc.color = new Color32(0xC9, 0xC1, 0xEE, 0xFF);
             t.txtDesc.text = "Tu ráfaga de hielo ralentiza a los enemigos durante más tiempo.";
 
-            // Fila inferior de Precio y Botón de Acción [top: 168, height: 56]
-            var priceBox = CrearRect(cardObj.transform, "PrecioBox", 24f, 172f, 240f, 52f);
-            var coinObj = CrearRectCentrado(priceBox.transform, "MonedaPrecio", -80f, 0f, 32f, 32f);
+            // Fila inferior directa de Precio: Icono de Moneda + Número de Precio
+            var coinObj = CrearRect(cardObj.transform, "MonedaPrecio", 24f, 174f, 32f, 32f);
             t.imgCoin = coinObj.gameObject.AddComponent<Image>();
             t.imgCoin.sprite = _spIconCoin;
             t.imgCoin.color = Color.white;
 
-            var txtPrObj = CrearRectCentrado(priceBox.transform, "TextoPrecio", 0f, 0f, 120f, 40f);
+            var txtPrObj = CrearRect(cardObj.transform, "TextoPrecio", 64f, 170f, 180f, 44f);
             t.txtPrecio = txtPrObj.gameObject.AddComponent<Text>();
             t.txtPrecio.font = fuentePixel;
             t.txtPrecio.fontSize = 34;
             t.txtPrecio.fontStyle = FontStyle.Bold;
             t.txtPrecio.alignment = TextAnchor.MiddleLeft;
+            t.txtPrecio.horizontalOverflow = HorizontalWrapMode.Overflow;
+            t.txtPrecio.verticalOverflow = VerticalWrapMode.Overflow;
             t.txtPrecio.color = new Color32(0xFF, 0xCF, 0x4A, 0xFF);
             t.txtPrecio.text = "120";
 
@@ -482,6 +565,8 @@ namespace SoulKnight
             {
                 t.txtBtnComprar.fontSize = 22;
                 t.txtBtnComprar.fontStyle = FontStyle.Bold;
+                t.txtBtnComprar.horizontalOverflow = HorizontalWrapMode.Overflow;
+                t.txtBtnComprar.verticalOverflow = VerticalWrapMode.Overflow;
             }
 
             // Etiqueta ✔ COMPRADO cuando ya se adquirió el máximo
@@ -498,6 +583,8 @@ namespace SoulKnight
             txtComp.fontSize = 26;
             txtComp.fontStyle = FontStyle.Bold;
             txtComp.alignment = TextAnchor.MiddleLeft;
+            txtComp.horizontalOverflow = HorizontalWrapMode.Overflow;
+            txtComp.verticalOverflow = VerticalWrapMode.Overflow;
             txtComp.color = new Color32(0x4E, 0xD1, 0x7E, 0xFF);
             txtComp.text = "COMPRADO";
             t.objComprado.SetActive(false);
@@ -514,6 +601,7 @@ namespace SoulKnight
             _personajeLocal = personajeLocal;
             _oroVisual = oroInicial;
 
+            transform.SetAsLastSibling();
             gameObject.SetActive(true);
             SetDialogo("Acércate… ¿qué buscas?");
             ActualizarOro(_oroVisual);
@@ -569,15 +657,31 @@ namespace SoulKnight
             bool puedePagar = _oroVisual >= costo;
 
             // Datos de texto y diseño por tipo
-            ObtenerDetallesMejora(tipo, nvActual, out string nombre, out string desc, out string tag, out string slot, out Color32 colAccent, out Color32 colTag, out Sprite spIcono);
+            ObtenerDetallesMejora(tipo, nvActual, out string nombre, out string desc, out string tag, out string slot, out Color32 colAccent, out Color32 colTag, out Sprite spIcono, out bool esUniversal);
 
             t.txtNombre.text = nombre;
             t.txtDesc.text = desc;
             t.txtTag.text = tag;
             t.txtTag.color = colTag;
             t.imgBordeAccent.color = colAccent;
-            t.imgIcono.sprite = spIcono;
+
+            // Icono de habilidad real o signo de interrogación "?" para habilidades universales
+            if (esUniversal)
+            {
+                t.imgIcono.gameObject.SetActive(false);
+                t.txtInterrogacion.gameObject.SetActive(true);
+            }
+            else
+            {
+                t.txtInterrogacion.gameObject.SetActive(false);
+                t.imgIcono.gameObject.SetActive(true);
+                t.imgIcono.sprite = spIcono;
+            }
+
+            // Precio y Moneda
             t.txtPrecio.text = costo.ToString();
+            t.imgCoin.gameObject.SetActive(true);
+            t.txtPrecio.gameObject.SetActive(true);
 
             // Configurar badge de ranura
             if (slot == "★")
@@ -635,8 +739,58 @@ namespace SoulKnight
             }
         }
 
-        private void ObtenerDetallesMejora(TipoMejoraTienda tipo, int nivelActual, out string nombre, out string desc, out string tag, out string slot, out Color32 colAccent, out Color32 colTag, out Sprite spIcono)
+        private Sprite ObtenerSpriteHabilidadReal(IdHabilidad id)
         {
+            if (id == IdHabilidad.Ninguna) return _spIconPaw;
+
+            // 1. Cargar desde HUDJugador si ya están instanciados
+            if (HUDJugador.Instancia != null)
+            {
+                switch (id)
+                {
+                    case IdHabilidad.Fuego_BolaFuego: if (HUDJugador.Instancia.iconoFuegoLMB != null) return HUDJugador.Instancia.iconoFuegoLMB; break;
+                    case IdHabilidad.Fuego_Lanzallamas: if (HUDJugador.Instancia.iconoFuegoE != null) return HUDJugador.Instancia.iconoFuegoE; break;
+                    case IdHabilidad.Fuego_Armadura: if (HUDJugador.Instancia.iconoFuegoQ != null) return HUDJugador.Instancia.iconoFuegoQ; break;
+                    case IdHabilidad.Fuego_Meteorito: if (HUDJugador.Instancia.iconoFuegoR != null) return HUDJugador.Instancia.iconoFuegoR; break;
+
+                    case IdHabilidad.Hielo_RayoHielo: if (HUDJugador.Instancia.iconoHieloLMB != null) return HUDJugador.Instancia.iconoHieloLMB; break;
+                    case IdHabilidad.Hielo_BolaHielo: if (HUDJugador.Instancia.iconoHieloE != null) return HUDJugador.Instancia.iconoHieloE; break;
+                    case IdHabilidad.Hielo_Armadura: if (HUDJugador.Instancia.iconoHieloQ != null) return HUDJugador.Instancia.iconoHieloQ; break;
+                    case IdHabilidad.Hielo_EraHielo: if (HUDJugador.Instancia.iconoHieloR != null) return HUDJugador.Instancia.iconoHieloR; break;
+
+                    case IdHabilidad.Elec_Espada: if (HUDJugador.Instancia.iconoElecLMB != null) return HUDJugador.Instancia.iconoElecLMB; break;
+                    case IdHabilidad.Elec_Dash: if (HUDJugador.Instancia.iconoElecE != null) return HUDJugador.Instancia.iconoElecE; break;
+                    case IdHabilidad.Elec_Teleport: if (HUDJugador.Instancia.iconoElecQ != null) return HUDJugador.Instancia.iconoElecQ; break;
+                    case IdHabilidad.Elec_Rayo: if (HUDJugador.Instancia.iconoElecR != null) return HUDJugador.Instancia.iconoElecR; break;
+                }
+            }
+
+            // 2. Cargar directamente desde Resources/IconosHabilidades/
+            var sp = Resources.Load<Sprite>("IconosHabilidades/" + id.ToString());
+            if (sp != null) return sp;
+
+            // 3. Fallbacks elementales temáticos
+            string idStr = id.ToString();
+            if (idStr.StartsWith("Fuego")) return _spIconFlame;
+            if (idStr.StartsWith("Hielo")) return _spIconSnow;
+            if (idStr.StartsWith("Elec")) return _spIconBolt;
+            return _spIconPaw;
+        }
+
+        private void ObtenerDetallesMejora(TipoMejoraTienda tipo, int nivelActual, out string nombre, out string desc, out string tag, out string slot, out Color32 colAccent, out Color32 colTag, out Sprite spIcono, out bool esUniversal)
+        {
+            IdHabilidad idHab = CatalogoMejorasTienda.ObtenerIdHabilidadDeMejora(tipo);
+            esUniversal = (idHab == IdHabilidad.Ninguna);
+
+            if (!esUniversal)
+            {
+                spIcono = ObtenerSpriteHabilidadReal(idHab);
+            }
+            else
+            {
+                spIcono = _spIconPaw;
+            }
+
             switch (tipo)
             {
                 // Hielo
@@ -647,7 +801,6 @@ namespace SoulKnight
                     slot = "CLIC";
                     colAccent = new Color32(0x58, 0xC4, 0xFF, 0xFF);
                     colTag = new Color32(0x8F, 0xE0, 0xFF, 0xFF);
-                    spIcono = _spIconSnow;
                     break;
                 case TipoMejoraTienda.Hielo_AreaVentisca:
                     nombre = "Aliento Helado";
@@ -656,7 +809,6 @@ namespace SoulKnight
                     slot = "E";
                     colAccent = new Color32(0x58, 0xC4, 0xFF, 0xFF);
                     colTag = new Color32(0x8F, 0xE0, 0xFF, 0xFF);
-                    spIcono = _spIconSnow;
                     break;
                 case TipoMejoraTienda.Hielo_PotenciaGlacial:
                     nombre = "Fragmentación Glacial";
@@ -665,7 +817,6 @@ namespace SoulKnight
                     slot = "Q";
                     colAccent = new Color32(0x58, 0xC4, 0xFF, 0xFF);
                     colTag = new Color32(0x8F, 0xE0, 0xFF, 0xFF);
-                    spIcono = _spIconSnow;
                     break;
                 case TipoMejoraTienda.Hielo_TormentaEterna:
                     nombre = "Ventisca Eterna";
@@ -674,7 +825,6 @@ namespace SoulKnight
                     slot = "R";
                     colAccent = new Color32(0x58, 0xC4, 0xFF, 0xFF);
                     colTag = new Color32(0x8F, 0xE0, 0xFF, 0xFF);
-                    spIcono = _spIconSnow;
                     break;
 
                 // Rayo / Eléctrico
@@ -685,7 +835,6 @@ namespace SoulKnight
                     slot = "CLIC";
                     colAccent = new Color32(0xFF, 0xE1, 0x4A, 0xFF);
                     colTag = new Color32(0xFF, 0xE1, 0x4A, 0xFF);
-                    spIcono = _spIconBolt;
                     break;
                 case TipoMejoraTienda.Elec_CooldownDash:
                     nombre = "Chispa Veloz";
@@ -694,7 +843,6 @@ namespace SoulKnight
                     slot = "E";
                     colAccent = new Color32(0xFF, 0xE1, 0x4A, 0xFF);
                     colTag = new Color32(0xFF, 0xE1, 0x4A, 0xFF);
-                    spIcono = _spIconBolt;
                     break;
                 case TipoMejoraTienda.Elec_AreaTeleport:
                     nombre = "Cadena Eléctrica";
@@ -703,7 +851,6 @@ namespace SoulKnight
                     slot = "Q";
                     colAccent = new Color32(0xFF, 0xE1, 0x4A, 0xFF);
                     colTag = new Color32(0xFF, 0xE1, 0x4A, 0xFF);
-                    spIcono = _spIconBolt;
                     break;
                 case TipoMejoraTienda.Elec_RayoCataclismico:
                     nombre = "Rayo Cataclísmico";
@@ -712,7 +859,6 @@ namespace SoulKnight
                     slot = "R";
                     colAccent = new Color32(0xFF, 0xE1, 0x4A, 0xFF);
                     colTag = new Color32(0xFF, 0xE1, 0x4A, 0xFF);
-                    spIcono = _spIconBolt;
                     break;
 
                 // Fuego
@@ -723,7 +869,6 @@ namespace SoulKnight
                     slot = "CLIC";
                     colAccent = new Color32(0xFF, 0x7A, 0x2F, 0xFF);
                     colTag = new Color32(0xFF, 0xB3, 0x6B, 0xFF);
-                    spIcono = _spIconFlame;
                     break;
                 case TipoMejoraTienda.Fuego_Area:
                     nombre = "Llamarada Expansiva";
@@ -732,7 +877,6 @@ namespace SoulKnight
                     slot = "E";
                     colAccent = new Color32(0xFF, 0x7A, 0x2F, 0xFF);
                     colTag = new Color32(0xFF, 0xB3, 0x6B, 0xFF);
-                    spIcono = _spIconFlame;
                     break;
                 case TipoMejoraTienda.Fuego_Duracion:
                     nombre = "Ignición Prolongada";
@@ -741,7 +885,6 @@ namespace SoulKnight
                     slot = "Q";
                     colAccent = new Color32(0xFF, 0x7A, 0x2F, 0xFF);
                     colTag = new Color32(0xFF, 0xB3, 0x6B, 0xFF);
-                    spIcono = _spIconFlame;
                     break;
                 case TipoMejoraTienda.Fuego_SupernovaGigante:
                     nombre = "Infierno Felino";
@@ -750,10 +893,9 @@ namespace SoulKnight
                     slot = "R";
                     colAccent = new Color32(0xFF, 0x7A, 0x2F, 0xFF);
                     colTag = new Color32(0xFF, 0xB3, 0x6B, 0xFF);
-                    spIcono = _spIconFlame;
                     break;
 
-                // Universales / Globales
+                // Universales / Globales (Icono de "?" e insignia de "★")
                 case TipoMejoraTienda.VidaMaxima:
                     nombre = "Siete Vidas";
                     desc = "Aumenta tu vida máxima permanente para aguantar más golpes.";
@@ -761,7 +903,6 @@ namespace SoulKnight
                     slot = "★";
                     colAccent = new Color32(0xC9, 0xA8, 0xFF, 0xFF);
                     colTag = new Color32(0xD6, 0xC2, 0xFF, 0xFF);
-                    spIcono = _spIconPaw;
                     break;
                 case TipoMejoraTienda.PescadoAsado:
                     nombre = "Pescado Asado";
@@ -770,7 +911,6 @@ namespace SoulKnight
                     slot = "★";
                     colAccent = new Color32(0xC9, 0xA8, 0xFF, 0xFF);
                     colTag = new Color32(0xD6, 0xC2, 0xFF, 0xFF);
-                    spIcono = _spIconPaw;
                     break;
                 case TipoMejoraTienda.DanoUniversal:
                     nombre = "Poder Arcano";
@@ -779,7 +919,6 @@ namespace SoulKnight
                     slot = "★";
                     colAccent = new Color32(0xC9, 0xA8, 0xFF, 0xFF);
                     colTag = new Color32(0xD6, 0xC2, 0xFF, 0xFF);
-                    spIcono = _spIconPaw;
                     break;
                 case TipoMejoraTienda.CooldownUniversal:
                     nombre = "Reloj Arcano";
@@ -788,7 +927,6 @@ namespace SoulKnight
                     slot = "★";
                     colAccent = new Color32(0xC9, 0xA8, 0xFF, 0xFF);
                     colTag = new Color32(0xD6, 0xC2, 0xFF, 0xFF);
-                    spIcono = _spIconPaw;
                     break;
                 case TipoMejoraTienda.AreaHabilidades:
                     nombre = "Amplitud Mística";
@@ -797,7 +935,6 @@ namespace SoulKnight
                     slot = "★";
                     colAccent = new Color32(0xC9, 0xA8, 0xFF, 0xFF);
                     colTag = new Color32(0xD6, 0xC2, 0xFF, 0xFF);
-                    spIcono = _spIconPaw;
                     break;
                 case TipoMejoraTienda.CooldownDefinitiva:
                     nombre = "Energía Celestial";
@@ -806,7 +943,6 @@ namespace SoulKnight
                     slot = "★";
                     colAccent = new Color32(0xC9, 0xA8, 0xFF, 0xFF);
                     colTag = new Color32(0xD6, 0xC2, 0xFF, 0xFF);
-                    spIcono = _spIconPaw;
                     break;
                 case TipoMejoraTienda.GolpeCritico:
                 default:
@@ -816,7 +952,6 @@ namespace SoulKnight
                     slot = "★";
                     colAccent = new Color32(0xC9, 0xA8, 0xFF, 0xFF);
                     colTag = new Color32(0xD6, 0xC2, 0xFF, 0xFF);
-                    spIcono = _spIconPaw;
                     break;
             }
         }
@@ -915,14 +1050,14 @@ namespace SoulKnight
                 _imgCatGem.color = new Color(1f, 1f, 1f, pulso);
             }
 
-            // 5. Brillo ambiente del gato
+            // 5. Brillo ambiente circular del gato (sin cortes)
             if (_imgCatGlow != null)
             {
-                float halo = 0.18f + 0.08f * Mathf.Sin(t * 2.2f);
-                _imgCatGlow.color = new Color(1f, 0.62f, 0.27f, halo);
+                float halo = 0.20f + 0.08f * Mathf.Sin(t * 2.2f);
+                _imgCatGlow.color = new Color(1f, 0.55f, 0.20f, halo);
             }
 
-            // 6. Parpadeo de la llama de la vela
+            // 6. Parpadeo de la llama de la vela y su halo circular suave
             if (_rtVelaLlama != null)
             {
                 float flick = Mathf.Sin(t * 16f) * 1.5f;
@@ -930,8 +1065,8 @@ namespace SoulKnight
             }
             if (_imgVelaHalo != null)
             {
-                float haloVela = 0.28f + 0.10f * Mathf.Sin(t * 14f);
-                _imgVelaHalo.color = new Color(1f, 0.62f, 0.27f, haloVela);
+                float haloVela = 0.30f + 0.10f * Mathf.Sin(t * 14f);
+                _imgVelaHalo.color = new Color(1f, 0.68f, 0.24f, haloVela);
             }
 
             // 7. Ascenso y desvanecimiento de motas mágicas
@@ -950,7 +1085,7 @@ namespace SoulKnight
         }
 
         // =========================================================================
-        // MÉTODOS DE CREACIÓN DE ELEMENTOS UI CON EXACTITUD RETRO
+        // MÉTODOS DE CREACIÓN DE ELEMENTOS UI
         // =========================================================================
         private RectTransform CrearRect(Transform parent, string nombre, float x, float y, float w, float h)
         {
@@ -997,6 +1132,13 @@ namespace SoulKnight
         private void CrearFarol(Transform parent, string nombre, float xCad, float yCad, float xFarol, float yFarol)
         {
             CrearCadena(parent, $"{nombre}_Cadena", xCad, yCad, 52f);
+
+            // Halo circular suave alrededor del farol
+            var haloFarol = CrearRectCentrado(parent, $"{nombre}_HaloCircular", xFarol + 18f, -(yFarol + 24f), 160f, 160f);
+            var imgHalo = haloFarol.gameObject.AddComponent<Image>();
+            imgHalo.sprite = ObtenerSpriteGlowCircular();
+            imgHalo.color = new Color(1f, 0.72f, 0.30f, 0.25f);
+
             var farol = CrearRect(parent, nombre, xFarol, yFarol, 36f, 48f);
             var img = farol.gameObject.AddComponent<Image>();
             img.sprite = _spLantern;
@@ -1028,12 +1170,10 @@ namespace SoulKnight
 
         private void CrearBordeInterior(Transform parent, Color32 contorno, Color32 luz)
         {
-            // Borde superior de 6px
             var bTop = CrearRect(parent, "BordeLuz", 0f, 0f, 1776f, 6f);
             var imgTop = bTop.gameObject.AddComponent<Image>();
             imgTop.color = luz;
 
-            // Contorno de 6px
             var bOut = CrearRect(parent, "BordeContorno", 0f, -6f, 1776f, 6f);
             var imgOut = bOut.gameObject.AddComponent<Image>();
             imgOut.color = contorno;
@@ -1041,17 +1181,14 @@ namespace SoulKnight
 
         private void CrearBordeCaja(Transform parent, int grosor, Color32 contorno, Color32 luz, Color32 sombra)
         {
-            // Borde exterior / sombreado simulado con líneas puras
             var rtParent = parent.GetComponent<RectTransform>();
             float w = rtParent.sizeDelta.x;
             float h = rtParent.sizeDelta.y;
 
-            // Línea superior de luz
             var lTop = CrearRect(parent, "LineTop", 0f, 0f, w, grosor);
             var imgLTop = lTop.gameObject.AddComponent<Image>();
             imgLTop.color = luz;
 
-            // Línea inferior de sombra
             var lBot = CrearRect(parent, "LineBot", 0f, h - grosor, w, grosor);
             var imgLBot = lBot.gameObject.AddComponent<Image>();
             imgLBot.color = sombra;
