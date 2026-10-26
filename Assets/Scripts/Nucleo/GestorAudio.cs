@@ -61,7 +61,11 @@ namespace SoulKnight
         UltiExplosionFuego,
         UltiMaullidoFuego,
         UltiSiceoFuego,
-        Lanzallamas
+        Lanzallamas,
+        CachinCompra,
+        GatoRonroneo,
+        GatoMaullido1,
+        GatoMaullido2
     }
 
     public class MarcadorAudioBoton : MonoBehaviour { }
@@ -248,6 +252,10 @@ namespace SoulKnight
             RegistrarSFX(TipoSFX.UltiExplosionFuego, "Audio/SFX/UltiExplosionFuego", "Audio/SFX/UltiExplosionFuegoFinal");
             RegistrarSFX(TipoSFX.UltiMaullidoFuego, "Audio/SFX/UltiMaullidoFuego", "Audio/SFX/UltiMaullidoFinal");
             RegistrarSFX(TipoSFX.UltiSiceoFuego, "Audio/SFX/UltiSiceoFuego", "Audio/SFX/UltiSiceoFuegoFinal");
+            RegistrarSFX(TipoSFX.CachinCompra, "Audio/SFX/CachinCompra");
+            RegistrarSFX(TipoSFX.GatoRonroneo, "Audio/SFX/GatoRonroneo");
+            RegistrarSFX(TipoSFX.GatoMaullido1, "Audio/SFX/GatoMaullido1");
+            RegistrarSFX(TipoSFX.GatoMaullido2, "Audio/SFX/GatoMaullido2");
         }
 
         private void RegistrarMusica(TipoMusica tipo, string rutaResources)
@@ -353,6 +361,33 @@ namespace SoulKnight
             PlaySFX(TipoSFX.UltiExplosionFuego, volumenMultiplicador * 1.15f, 0.02f);
             PlaySFX(TipoSFX.UltiMaullidoFuego, volumenMultiplicador * 1.05f, 0.02f);
             PlaySFX(TipoSFX.UltiSiceoFuego, volumenMultiplicador * 1.0f, 0.02f);
+        }
+
+        public static void PlayCachinCompra(float volumenMultiplicador = 1.0f)
+        {
+            PlaySFX(TipoSFX.CachinCompra, volumenMultiplicador, 0.03f);
+        }
+
+        public static void PlayRonroneoGato(float volumenMultiplicador = 0.5f)
+        {
+            PlaySFX(TipoSFX.GatoRonroneo, volumenMultiplicador, 0.02f);
+        }
+
+        public static void PlaySonidoGatoTienda(float volumenMultiplicador = 0.85f)
+        {
+            float r = UnityEngine.Random.value;
+            if (r < 0.40f)
+            {
+                PlaySFX(TipoSFX.GatoRonroneo, volumenMultiplicador * 0.90f, 0.02f);
+            }
+            else if (r < 0.70f)
+            {
+                PlaySFX(TipoSFX.GatoMaullido1, volumenMultiplicador, 0.04f);
+            }
+            else
+            {
+                PlaySFX(TipoSFX.GatoMaullido2, volumenMultiplicador, 0.04f);
+            }
         }
 
         public static void PlaySFX(TipoSFX tipo, float volumenMultiplicador = 1.0f, float pitchRandom = 0.06f)

@@ -64,6 +64,7 @@ namespace SoulKnight
         private Text _txtOro;
         private float _timerDialogoRestaurar = -1f;
         private string _fraseBienvenidaActual = "Acércate… ¿qué buscas hoy?";
+        private float _timerVocalGatoTienda = 5.0f;
 
         private static readonly string[] FrasesBienvenida = new string[]
         {
@@ -659,6 +660,7 @@ namespace SoulKnight
 
             transform.SetAsLastSibling();
             gameObject.SetActive(true);
+            _timerVocalGatoTienda = UnityEngine.Random.Range(3.5f, 7.0f);
             _fraseBienvenidaActual = FrasesBienvenida[UnityEngine.Random.Range(0, FrasesBienvenida.Length)];
             SetDialogo(_fraseBienvenidaActual);
             ActualizarOro(_oroVisual);
@@ -1110,6 +1112,7 @@ namespace SoulKnight
 
         public void NotificarCompraExitosa(TipoMejoraTienda tipo)
         {
+            GestorAudio.PlayCachinCompra(1.0f);
             string[] respuestas = {
                 "¡Buena elección, aventurero!",
                 "¡Ese poder permanente te sentará de maravilla!",
@@ -1158,6 +1161,14 @@ namespace SoulKnight
                 {
                     SetDialogo(_fraseBienvenidaActual);
                 }
+            }
+
+            // 1b. Sonidos periódicos del gato tendero (ronroneos y maullidos cada X tiempo)
+            _timerVocalGatoTienda -= Time.unscaledDeltaTime;
+            if (_timerVocalGatoTienda <= 0f)
+            {
+                _timerVocalGatoTienda = UnityEngine.Random.Range(8f, 15f);
+                GestorAudio.PlaySonidoGatoTienda();
             }
 
             // 2. Parpadeo de ojos del gato tendero

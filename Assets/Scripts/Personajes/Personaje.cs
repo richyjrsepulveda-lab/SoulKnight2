@@ -74,6 +74,8 @@ namespace SoulKnight
 
         private Vector3 _ultimaPosRemota;
         protected Vector2 _velocidadRemotaEstimada = Vector2.zero;
+        private float _tiempoInmovilGato = 0f;
+        private float _timerProximoRonroneo = 6.0f;
 
         public Vector2 ObtenerMovimientoEfectivo()
         {
@@ -444,6 +446,27 @@ namespace SoulKnight
                     ProcesarInputsHabilidadesLocales();
                 }
                 ProcesarRevivirAliadosLocales();
+
+                // Ronroneo periódico del gato del jugador mientras esté quieto
+                bool estaInmovil = mov.sqrMagnitude < 0.001f && (_rb == null || _rb.velocity.sqrMagnitude < 0.05f);
+                if (estaInmovil)
+                {
+                    _tiempoInmovilGato += Time.deltaTime;
+                    if (_tiempoInmovilGato >= 2.0f) // Tras 2 segundos quieto
+                    {
+                        _timerProximoRonroneo -= Time.deltaTime;
+                        if (_timerProximoRonroneo <= 0f)
+                        {
+                            _timerProximoRonroneo = UnityEngine.Random.Range(7f, 13f);
+                            GestorAudio.PlayRonroneoGato(0.40f);
+                        }
+                    }
+                }
+                else
+                {
+                    _tiempoInmovilGato = 0f;
+                    _timerProximoRonroneo = UnityEngine.Random.Range(5f, 9f);
+                }
             }
             else
             {
@@ -926,7 +949,14 @@ namespace SoulKnight
             EstablecerNivelMejora(tipo, nuevoNv);
             if (IsOwner)
             {
-                GestorAudio.PlaySFX(tipo == TipoMejoraTienda.PescadoAsado ? TipoSFX.ComerPescado : TipoSFX.Mejora);
+                if (tipo == TipoMejoraTienda.PescadoAsado)
+                {
+                    GestorAudio.PlaySFX(TipoSFX.ComerPescado);
+                }
+                else if (HUDJugador.Instancia == null || !HUDJugador.Instancia.TiendaAbierta)
+                {
+                    GestorAudio.PlayCachinCompra();
+                }
             }
             if (HUDJugador.Instancia != null && HUDJugador.Instancia.TiendaAbierta)
             {
