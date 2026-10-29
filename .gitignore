@@ -45,3 +45,7 @@ build_log.txt
 *.aab
 *.unitypackage
 *.app
+
+CapturasBiomas/
+*.log
+

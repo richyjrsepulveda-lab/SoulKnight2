@@ -49,7 +49,7 @@ namespace SoulKnight.Editor
 
         private static void ConfigurarTexturas()
         {
-            string[] guids = AssetDatabase.FindAssets("t:Texture2D", new[] { "Assets/Arte" });
+            string[] guids = AssetDatabase.FindAssets("t:Texture2D", new[] { "Assets/Arte", "Assets/Resources" });
             foreach (var guid in guids)
             {
                 string path = AssetDatabase.GUIDToAssetPath(guid);
@@ -57,7 +57,16 @@ namespace SoulKnight.Editor
                 if (importer != null)
                 {
                     bool modificado = false;
-                    float ppuDeseado = path.IndexOf("Gato", System.StringComparison.OrdinalIgnoreCase) >= 0 ? 18f : 32f;
+                    float ppuDeseado = 32f;
+                    if (path.IndexOf("dungeon_tiles", System.StringComparison.OrdinalIgnoreCase) >= 0 ||
+                        path.IndexOf("Mapas", System.StringComparison.OrdinalIgnoreCase) >= 0)
+                    {
+                        ppuDeseado = 16f;
+                    }
+                    else if (path.IndexOf("Gato", System.StringComparison.OrdinalIgnoreCase) >= 0)
+                    {
+                        ppuDeseado = 18f;
+                    }
                     if (importer.textureType != TextureImporterType.Sprite || Mathf.Abs(importer.spritePixelsPerUnit - ppuDeseado) > 0.01f)
                     {
                         importer.textureType = TextureImporterType.Sprite;
@@ -67,6 +76,11 @@ namespace SoulKnight.Editor
                     if (importer.filterMode != FilterMode.Point)
                     {
                         importer.filterMode = FilterMode.Point; // Pixel art estilo Soul Knight sin blur
+                        modificado = true;
+                    }
+                    if (importer.mipmapEnabled)
+                    {
+                        importer.mipmapEnabled = false;
                         modificado = true;
                     }
                     if (importer.textureCompression != TextureImporterCompression.Uncompressed)
@@ -1995,6 +2009,225 @@ namespace SoulKnight.Editor
             {
                 Debug.LogError($"Error en build: {report.summary.result}");
             }
-        }
     }
+
+        [MenuItem("SoulKnight/Generar Capturas de Salas por Bioma")]
+        public static void GenerarCapturasSalasBiomas()
+        {
+            Debug.Log("== Iniciando Generación de Capturas de Salas por Bioma ==");
+            ConfigurarTexturas();
+            CatalogoBiomas.LimpiarCache();
+
+            string outputDir = Path.Combine(Directory.GetCurrentDirectory(), "CapturasBiomas");
+            if (!Directory.Exists(outputDir)) Directory.CreateDirectory(outputDir);
+
+            string artifactDir = @"C:\Users\Ricardo\.gemini\antigravity\brain\5c974bf4-1ac1-41f8-8beb-7c1da4ef20fb";
+
+            TipoBioma[] biomas = new TipoBioma[]
+            {
+                TipoBioma.Piedra,
+                TipoBioma.Planta,
+                TipoBioma.Hielo,
+                TipoBioma.Fuego,
+                TipoBioma.Arena
+            };
+
+            foreach (var bioma in biomas)
+            {
+                EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+                var root = new GameObject("TestRoom_" + bioma);
+
+                var datos = CatalogoBiomas.Obtener(bioma);
+                string prefijo = datos.prefijo;
+
+                // Dimensiones exactas 22x13 como los previews
+                // x de -10 a 11 (22 tiles)
+                // y de -6 a 6 (13 tiles)
+                int xMin = -11;
+                int xMax = 10;
+                int yMin = -6;
+                int yMax = 6;
+
+                // Suelos y sombras
+                for (int y = yMin + 1; y <= yMax - 2; y++)
+                {
+                    for (int x = xMin + 1; x <= xMax - 1; x++)
+                    {
+                        var sObj = new GameObject("Suelo");
+                        sObj.transform.SetParent(root.transform);
+                        sObj.transform.position = new Vector3(x + 0.5f, y + 0.5f, 0);
+                        var sr = sObj.AddComponent<SpriteRenderer>();
+                        sr.sortingOrder = -1;
+
+                        if (y == yMax - 2)
+                        {
+                            sr.sprite = datos.spriteFloorShadow00 ?? datos.spriteSuelo;
+                        }
+                        else if (y == yMax - 3)
+                        {
+                            sr.sprite = datos.spriteFloorShadow01 ?? datos.spriteSuelo;
+                        }
+                        else
+                        {
+                            if (Random.value < 0.85f && datos.spritesSuelo != null && datos.spritesSuelo.Length >= 4)
+                                sr.sprite = datos.spritesSuelo[Random.Range(0, 4)];
+                            else if (datos.spritesSuelo != null && datos.spritesSuelo.Length >= 8)
+                                sr.sprite = datos.spritesSuelo[Random.Range(4, 8)];
+                            else
+                                sr.sprite = datos.spriteSuelo;
+                        }
+                    }
+                }
+
+                // Wall Top perimetral
+                for (int x = xMin; x <= xMax; x++)
+                {
+                    CrearTileCaptura(root.transform, x + 0.5f, yMax + 0.5f, ObtenerWallTop(datos, x == xMin ? 6 : (x == xMax ? 12 : 10)), 2);
+                    CrearTileCaptura(root.transform, x + 0.5f, yMin + 0.5f, ObtenerWallTop(datos, x == xMin ? 3 : (x == xMax ? 9 : 10)), 2);
+                }
+                for (int y = yMin + 1; y <= yMax - 1; y++)
+                {
+                    CrearTileCaptura(root.transform, xMin + 0.5f, y + 0.5f, ObtenerWallTop(datos, 5), 2);
+                    CrearTileCaptura(root.transform, xMax + 0.5f, y + 0.5f, ObtenerWallTop(datos, 5), 2);
+                }
+
+                // Wall Face norte (fila yMax - 1)
+                for (int x = xMin + 1; x <= xMax - 1; x++)
+                {
+                    bool torch = ((x - xMin) % 4 == 0);
+                    Sprite spFace;
+                    if (torch && datos.framesWallFaceTorch != null && datos.framesWallFaceTorch.Length > 0)
+                    {
+                        spFace = datos.framesWallFaceTorch[0];
+                    }
+                    else
+                    {
+                        float r = Random.value;
+                        if (r < 0.12f && datos.spriteWallFaceCracked != null) spFace = datos.spriteWallFaceCracked;
+                        else if (r < 0.24f && datos.spriteWallFaceDecor != null) spFace = datos.spriteWallFaceDecor;
+                        else if (r < 0.62f && datos.spriteWallFaceB != null) spFace = datos.spriteWallFaceB;
+                        else spFace = datos.spriteWallFaceA ?? datos.spriteMuro;
+                    }
+                    CrearTileCaptura(root.transform, x + 0.5f, yMax - 0.5f, spFace, 2);
+                }
+
+                // Obstáculo de muro central interior
+                for (int ox = -2; ox <= 2; ox++)
+                {
+                    CrearTileCaptura(root.transform, ox + 0.5f, 1.5f, ObtenerWallTop(datos, ox == -2 ? 6 : (ox == 2 ? 12 : 10)), 2);
+                    Sprite spObstFace = (ox == 0 && datos.framesWallFaceTorch != null) ? datos.framesWallFaceTorch[0] : (datos.spriteWallFaceA ?? datos.spriteMuro);
+                    CrearTileCaptura(root.transform, ox + 0.5f, 0.5f, spObstFace, 2);
+
+                    // Sombra bajo el obstáculo central
+                    CrearTileCaptura(root.transform, ox + 0.5f, -0.5f, datos.spriteFloorShadow00 ?? datos.spriteSuelo, -1);
+                }
+
+                // Props oficiales del bioma
+                if (datos.spritePillar != null)
+                {
+                    CrearTileCaptura(root.transform, -6.5f, 3.5f, datos.spritePillar, 3);
+                    CrearTileCaptura(root.transform, 6.5f, 3.5f, datos.spritePillar, 3);
+                }
+                if (datos.spriteBoulderS != null)
+                {
+                    CrearTileCaptura(root.transform, 2.5f, 2.5f, datos.spriteBoulderS, 1);
+                }
+                if (datos.spriteBoulderL != null)
+                {
+                    CrearTileCaptura(root.transform, -3.5f, -2.5f, datos.spriteBoulderL, 1);
+                }
+                if (datos.spriteCrate != null)
+                {
+                    CrearTileCaptura(root.transform, -6.5f, -1.5f, datos.spriteCrate, 1);
+                    CrearTileCaptura(root.transform, -5.5f, -1.5f, datos.spriteCrate, 1);
+                }
+                if (datos.spriteBarrel != null)
+                {
+                    CrearTileCaptura(root.transform, -5.5f, -3.5f, datos.spriteBarrel, 1);
+                }
+                if (datos.spriteSpikesOff != null && datos.spriteSpikesOn != null)
+                {
+                    CrearTileCaptura(root.transform, -1.5f, -2.5f, datos.spriteSpikesOn, 0);
+                    CrearTileCaptura(root.transform, -0.5f, -2.5f, datos.spriteSpikesOff, 0);
+                    CrearTileCaptura(root.transform, 0.5f, -2.5f, datos.spriteSpikesOn, 0);
+                    CrearTileCaptura(root.transform, 1.5f, -2.5f, datos.spriteSpikesOff, 0);
+                }
+                if (datos.framesHazardStrip != null && datos.framesHazardStrip.Length > 0 && datos.framesHazardStrip[0] != null)
+                {
+                    for (int hx = 4; hx <= 5; hx++)
+                    {
+                        for (int hy = -3; hy <= -2; hy++)
+                        {
+                            CrearTileCaptura(root.transform, hx + 0.5f, hy + 0.5f, datos.framesHazardStrip[0], 0);
+                        }
+                    }
+                }
+                if (datos.spriteSpecialProp != null)
+                {
+                    CrearTileCaptura(root.transform, -7.5f, -3.5f, datos.spriteSpecialProp, 1);
+                    CrearTileCaptura(root.transform, 3.5f, -3.5f, datos.spriteSpecialProp, 1);
+                }
+
+                // Cámara y Render
+                var camObj = new GameObject("CamaraCaptura");
+                var cam = camObj.AddComponent<Camera>();
+                cam.orthographic = true;
+                cam.orthographicSize = 6.75f;
+                cam.transform.position = new Vector3(0f, 0.5f, -10f);
+                cam.backgroundColor = Color.black;
+                cam.clearFlags = CameraClearFlags.SolidColor;
+
+                int wPx = 1408;
+                int hPx = 832;
+                var rt = new RenderTexture(wPx, hPx, 24, RenderTextureFormat.ARGB32);
+                cam.targetTexture = rt;
+                cam.Render();
+
+                RenderTexture.active = rt;
+                var tex = new Texture2D(wPx, hPx, TextureFormat.RGB24, false);
+                tex.ReadPixels(new Rect(0, 0, wPx, hPx), 0, 0);
+                tex.Apply();
+
+                byte[] pngBytes = tex.EncodeToPNG();
+                string fileName = $"Captura_Sala_{prefijo}.png";
+                string fullPath = Path.Combine(outputDir, fileName);
+                File.WriteAllBytes(fullPath, pngBytes);
+
+                if (Directory.Exists(artifactDir))
+                {
+                    string artPath = Path.Combine(artifactDir, fileName);
+                    File.WriteAllBytes(artPath, pngBytes);
+                }
+
+                Debug.Log($"[Captura Generada] Bioma {bioma} ({prefijo}) -> {fullPath}");
+
+                cam.targetTexture = null;
+                RenderTexture.active = null;
+                Object.DestroyImmediate(rt);
+                Object.DestroyImmediate(tex);
+                Object.DestroyImmediate(camObj);
+                Object.DestroyImmediate(root);
+            }
+
+            Debug.Log("== Generación de Capturas de Biomas Completada Exitosamente ==");
+        }
+
+        private static Sprite ObtenerWallTop(DatosBioma d, int mask)
+        {
+            if (d.spritesWallTop != null && mask >= 0 && mask < d.spritesWallTop.Length && d.spritesWallTop[mask] != null)
+                return d.spritesWallTop[mask];
+            return d.spriteMuro;
+        }
+
+        private static void CrearTileCaptura(Transform parent, float x, float y, Sprite sprite, int sortingOrder)
+        {
+            if (sprite == null) return;
+            var go = new GameObject("Tile");
+            go.transform.SetParent(parent);
+            go.transform.position = new Vector3(x, y, 0);
+            var sr = go.AddComponent<SpriteRenderer>();
+            sr.sprite = sprite;
+            sr.sortingOrder = sortingOrder;
+        }
+}
 }

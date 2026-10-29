@@ -19,18 +19,44 @@ namespace SoulKnight
     {
         public TipoBioma tipo;
         public string nombreBioma;
+        public string prefijo;
         public Sprite spriteSuelo;
         public Sprite spriteMuro;
         public Sprite spriteColumna;
         public Color colorFondoCamara;
         public Color colorLuzAntorcha = new Color(1f, 0.72f, 0.28f, 1f);
         public Sprite spriteLlamaAntorcha;
+
+        // Sprites oficiales de mazmorra (16x16, 16 PPU)
+        public Sprite[] spritesSuelo;          // floor_00 .. 07
+        public Sprite spriteFloorShadow00;     // floor_shadow_00
+        public Sprite spriteFloorShadow01;     // floor_shadow_01
+        public Sprite spriteVoid;              // void
+        public Sprite[] spritesWallTop;        // wall_top_00 .. 15 (autotile bitmask)
+        public Sprite spriteWallFaceA;         // wall_face_a
+        public Sprite spriteWallFaceB;         // wall_face_b
+        public Sprite spriteWallFaceCracked;   // wall_face_cracked
+        public Sprite spriteWallFaceDecor;     // wall_face_decor
+        public Sprite[] framesWallFaceTorch;   // wall_face_torch (4 frames a 8 fps)
+
+        // Props y Obstáculos del bioma
+        public Sprite spritePillar;            // pillar (16x32)
+        public Sprite spriteBoulderS;          // boulder_s (16x16)
+        public Sprite spriteBoulderL;          // boulder_l (32x32)
+        public Sprite spriteCrate;             // crate (16x16)
+        public Sprite spriteBarrel;            // barrel (16x16)
+        public Sprite spriteSpikesOff;         // spikes_off
+        public Sprite spriteSpikesOn;          // spikes_on
+        public Sprite[] framesSpikesStrip;     // spikes_strip (2 frames)
+        public Sprite[] framesHazardStrip;     // pit (1 frame) o poison/icewater/lava/quicksand (4 frames, 5 fps)
+        public Sprite spriteSpecialProp;       // bones, thornbush, crystal, brazier, cactus
+        public Sprite[] framesSpecialAnim;     // animación brazier si aplica
     }
 
     /// <summary>
-    /// Generador procedural de mazmorras con salas conectadas mediante pasillos transitables,
-    /// puertas de bloqueo por encuentro, antorchas que iluminan las salas al acceder,
-    /// y pasillo final tras el jefe que lleva al hoyo para avanzar de nivel.
+    /// Generador procedural de mazmorras top-down 2D.
+    /// Utiliza el conjunto de sprites oficiales de 5 biomas (stone, ice, fire, plant, desert)
+    /// con autotile para muros, cara frontal, sombras, vacío, props y trampas según LEEME.md.
     /// </summary>
     public class GeneradorMazmorra : MonoBehaviour
     {
@@ -39,6 +65,7 @@ namespace SoulKnight
         [Header("Configuración de Biomas")]
         public TipoBioma biomaActual = TipoBioma.Piedra;
         public bool biomaAleatorio = true;
+        public bool biomasPorSala = true; // Permite que cada sala elija su propio bioma
         public DatosBioma[] biomas;
 
         [Header("Sprites Especiales")]
@@ -63,10 +90,8 @@ namespace SoulKnight
         [HideInInspector]
         public List<Rect> rectPasillos = new List<Rect>();
 
-        // Muros registrados para iluminación dinámica por rango de visión
         private readonly List<SpriteRenderer> _murosVisuales = new List<SpriteRenderer>();
 
-        // Límites globales de la mazmorra para el minimapa
         [HideInInspector]
         public int gridMinX, gridMaxX, gridMinY, gridMaxY;
         [HideInInspector]
@@ -79,6 +104,8 @@ namespace SoulKnight
 
         private static Sprite _spriteCirculoLuz;
         private static Sprite _spriteAntorchaBase;
+        private static Sprite _spriteHaloLuzCalida;
+        private static Sprite _spritePortalInvocacion;
 
         void Awake()
         {
@@ -138,7 +165,7 @@ namespace SoulKnight
             AlGenerarMazmorra?.Invoke(datos);
         }
 
-        private DatosBioma ObtenerDatosBioma(TipoBioma tipo)
+        public DatosBioma ObtenerDatosBioma(TipoBioma tipo)
         {
             var cat = CatalogoBiomas.Obtener(tipo);
             if (cat != null && cat.spriteSuelo != null) return cat;
@@ -185,22 +212,34 @@ namespace SoulKnight
             public int numEnemigos;
             public bool esSalaInicio;
             public bool esSalaJefe;
+            public TipoBioma bioma;
         }
 
         private struct PasilloInfo
         {
             public int x1, y1, x2, y2;
+            public TipoBioma bioma;
         }
 
-        private void ConstruirMazmorra(DatosBioma datos, bool tieneJefe = true)
+        private void ConstruirMazmorra(DatosBioma datosNivel, bool tieneJefe = true)
         {
-            if (datos == null) return;
+            if (datosNivel == null) return;
 
             List<SalaInfo> salas = new List<SalaInfo>();
             List<PasilloInfo> pasillos = new List<PasilloInfo>();
 
-            // Sala 0: Entrada segura (más amplia y cómoda)
-            salas.Add(CrearSala(0, 0, 26, 20, 0, 0, esInicio: true, esJefe: false));
+            TipoBioma[] biomasDisponibles = new TipoBioma[]
+            {
+                TipoBioma.Piedra,
+                TipoBioma.Planta,
+                TipoBioma.Hielo,
+                TipoBioma.Fuego,
+                TipoBioma.Arena
+            };
+
+            // Sala 0: Entrada segura
+            TipoBioma biomaInicio = biomasPorSala ? biomaActual : datosNivel.tipo;
+            salas.Add(CrearSala(0, 0, 26, 20, 0, 0, esInicio: true, esJefe: false, bioma: biomaInicio));
 
             puntosSpawnJugadores.Add(new Vector2(-4.0f, 2.0f));
             puntosSpawnJugadores.Add(new Vector2(-4.0f, -2.0f));
@@ -268,15 +307,17 @@ namespace SoulKnight
 
                 currX = candX;
                 currY = candY;
-                salas.Add(CrearSala(currX, currY, ancho, alto, numCols, numEnems, esInicio: false, esJefe: esJefe));
 
-                // Conectar con la sala anterior del camino principal
+                TipoBioma biomaSala = biomasPorSala ? biomasDisponibles[k % biomasDisponibles.Length] : datosNivel.tipo;
+                salas.Add(CrearSala(currX, currY, ancho, alto, numCols, numEnems, esInicio: false, esJefe: esJefe, bioma: biomaSala));
+
                 pasillos.Add(new PasilloInfo
                 {
                     x1 = salas[k - 1].cx,
                     y1 = salas[k - 1].cy,
                     x2 = salas[k].cx,
-                    y2 = salas[k].cy
+                    y2 = salas[k].cy,
+                    bioma = salas[k - 1].bioma
                 });
             }
 
@@ -284,13 +325,12 @@ namespace SoulKnight
             var salaFinal = salas[totalSalasCaminoPrincipal - 1];
             puntoSpawnJefe = new Vector2(salaFinal.cx, salaFinal.cy);
 
-            // Pasillito de salida después de la sala del jefe (12 bloques hacia la derecha)
             int pasilloJefeXMin = salaFinal.xMax + 1;
             int pasilloJefeXMax = salaFinal.xMax + 12;
             int pasilloJefeY = salaFinal.cy;
             posicionPortal = new Vector2(pasilloJefeXMax - 1.2f, pasilloJefeY + 0.5f);
 
-            // Cuartos Extra sin salida (ramificaciones laterales ortogonales sin invadir zonas previas)
+            // Cuartos Extra sin salida (tienda y tesoro)
             Vector2Int[] dirsRamificacion = new Vector2Int[]
             {
                 new Vector2Int(0, 44),
@@ -315,7 +355,6 @@ namespace SoulKnight
                     int candX = padre.cx + offset.x;
                     int candY = padre.cy + offset.y;
 
-                    // Evitar invadir la zona del pasillo de salida del jefe
                     if (candX + anchoExtra / 2 > salaFinal.xMin - 6 && Mathf.Abs(candY - salaFinal.cy) < 24)
                         continue;
 
@@ -332,14 +371,16 @@ namespace SoulKnight
 
                     if (!colisiona)
                     {
-                        var cuartoExtra = CrearSala(candX, candY, anchoExtra, altoExtra, numColsExtra, 7, esInicio: false, esJefe: false);
+                        TipoBioma biomaExtra = biomasPorSala ? biomasDisponibles[(idxPadre + 2) % biomasDisponibles.Length] : datosNivel.tipo;
+                        var cuartoExtra = CrearSala(candX, candY, anchoExtra, altoExtra, numColsExtra, 7, esInicio: false, esJefe: false, bioma: biomaExtra);
                         salas.Add(cuartoExtra);
                         pasillos.Add(new PasilloInfo
                         {
                             x1 = padre.cx,
                             y1 = padre.cy,
                             x2 = cuartoExtra.cx,
-                            y2 = cuartoExtra.cy
+                            y2 = cuartoExtra.cy,
+                            bioma = padre.bioma
                         });
                         break;
                     }
@@ -361,10 +402,10 @@ namespace SoulKnight
             }
             if (pasilloJefeXMax > maxX) maxX = pasilloJefeXMax;
 
-            minX -= 8;
-            maxX += 8;
-            minY -= 8;
-            maxY += 8;
+            minX -= 6;
+            maxX += 6;
+            minY -= 6;
+            maxY += 6;
 
             gridMinX = minX;
             gridMaxX = maxX;
@@ -374,8 +415,11 @@ namespace SoulKnight
             int gridW = maxX - minX + 1;
             int gridH = maxY - minY + 1;
 
-            byte[,] grid = new byte[gridW, gridH]; // 0 = Nada, 1 = Suelo, 2 = Muro
+            byte[,] grid = new byte[gridW, gridH]; // 0 = Nada/Void, 1 = Suelo, 2 = Muro Top, 3 = Muro Cara Frontal
             gridActual = grid;
+
+            // Matriz para saber a qué bioma pertenece cada celda
+            TipoBioma[,] gridBioma = new TipoBioma[gridW, gridH];
 
             // 1. Marcar Suelos de Salas
             foreach (var s in salas)
@@ -389,6 +433,7 @@ namespace SoulKnight
                         if (gx >= 0 && gx < gridW && gy >= 0 && gy < gridH)
                         {
                             grid[gx, gy] = 1;
+                            gridBioma[gx, gy] = s.bioma;
                         }
                     }
                 }
@@ -408,7 +453,10 @@ namespace SoulKnight
                         int gx = x - minX;
                         int gy = y - minY;
                         if (gx >= 0 && gx < gridW && gy >= 0 && gy < gridH)
+                        {
                             grid[gx, gy] = 1;
+                            gridBioma[gx, gy] = p.bioma;
+                        }
                     }
                 }
 
@@ -422,7 +470,10 @@ namespace SoulKnight
                         int gx = x - minX;
                         int gy = y - minY;
                         if (gx >= 0 && gx < gridW && gy >= 0 && gy < gridH)
+                        {
                             grid[gx, gy] = 1;
+                            gridBioma[gx, gy] = p.bioma;
+                        }
                     }
                 }
             }
@@ -436,11 +487,14 @@ namespace SoulKnight
                     int gx = x - minX;
                     int gy = y - minY;
                     if (gx >= 0 && gx < gridW && gy >= 0 && gy < gridH)
+                    {
                         grid[gx, gy] = 1;
+                        gridBioma[gx, gy] = salaFinal.bioma;
+                    }
                 }
             }
 
-            // 3. Determinar Muros Perimetrales
+            // 3. Determinar Muros Perimetrales (grid = 2)
             int[] dx8 = { -1, 0, 1, -1, 1, -1, 0, 1 };
             int[] dy8 = { -1, -1, -1, 0, 0, 1, 1, 1 };
 
@@ -451,6 +505,7 @@ namespace SoulKnight
                     if (grid[gx, gy] == 0)
                     {
                         bool tieneVecinoSuelo = false;
+                        TipoBioma biomaVecino = datosNivel.tipo;
                         for (int k = 0; k < 8; k++)
                         {
                             int nx = gx + dx8[k];
@@ -458,41 +513,132 @@ namespace SoulKnight
                             if (nx >= 0 && nx < gridW && ny >= 0 && ny < gridH && grid[nx, ny] == 1)
                             {
                                 tieneVecinoSuelo = true;
+                                biomaVecino = gridBioma[nx, ny];
                                 break;
                             }
                         }
                         if (tieneVecinoSuelo)
                         {
-                            grid[gx, gy] = 2;
+                            grid[gx, gy] = 2; // Muro perimetral
+                            gridBioma[gx, gy] = biomaVecino;
                         }
                     }
                 }
             }
 
-            // 4. Instanciar Suelos (unificado en cuadrícula exacta, sin solapes ni desniveles)
-            for (int gy = 0; gy < gridH; gy++)
+            // 4. Determinar Cara Frontal de Muro (grid = 3):
+            // Según LEEME.md regla 3: se coloca en la celda de suelo justo debajo de una celda de muro (se ve la pared de frente).
+            // Es sólida y bloquea movimiento.
+            for (int gx = 0; gx < gridW; gx++)
             {
-                int gxInicio = -1;
-                for (int gx = 0; gx < gridW; gx++)
+                for (int gy = 0; gy < gridH; gy++)
                 {
-                    if (grid[gx, gy] == 1)
+                    if (grid[gx, gy] == 1) // Es celda de suelo
                     {
-                        if (gxInicio == -1) gxInicio = gx;
-                    }
-                    else
-                    {
-                        if (gxInicio != -1)
+                        // Si la celda justo encima (gy + 1) es muro top
+                        if (gy + 1 < gridH && grid[gx, gy + 1] == 2)
                         {
-                            CrearSueloSegmento(gxInicio, gx - 1, gy, minX, minY, datos.spriteSuelo);
-                            gxInicio = -1;
+                            grid[gx, gy] = 3; // Cara frontal de muro (wall_face)
                         }
                     }
                 }
-                if (gxInicio != -1)
+            }
+
+            // 5. Instanciar Suelos, Sombras y Caras Frontales
+            for (int gy = 0; gy < gridH; gy++)
+            {
+                for (int gx = 0; gx < gridW; gx++)
                 {
-                    CrearSueloSegmento(gxInicio, gridW - 1, gy, minX, minY, datos.spriteSuelo);
+                    byte tipoCelda = grid[gx, gy];
+                    if (tipoCelda == 0) continue;
+
+                    TipoBioma biomaCelda = gridBioma[gx, gy];
+                    DatosBioma d = ObtenerDatosBioma(biomaCelda);
+                    if (d == null) d = datosNivel;
+
+                    float wx = gx + minX;
+                    float wy = gy + minY;
+                    Vector2 pos = new Vector2(wx, wy);
+
+                    if (tipoCelda == 1)
+                    {
+                        // Suelo transitable: verificar si está bajo la sombra de un wall_face
+                        // Sombra 00: justo debajo del wall_face (gy + 1 es wall_face)
+                        // Sombra 01: en la siguiente fila (gy + 2 es wall_face)
+                        bool bajoSombra00 = (gy + 1 < gridH && grid[gx, gy + 1] == 3);
+                        bool bajoSombra01 = (!bajoSombra00 && gy + 2 < gridH && grid[gx, gy + 2] == 3);
+
+                        Sprite spSuelo;
+                        if (bajoSombra00 && d.spriteFloorShadow00 != null)
+                        {
+                            spSuelo = d.spriteFloorShadow00;
+                        }
+                        else if (bajoSombra01 && d.spriteFloorShadow01 != null)
+                        {
+                            spSuelo = d.spriteFloorShadow01;
+                        }
+                        else
+                        {
+                            // Regla LEEME.md: floor_00..03 base (~85%), floor_04..07 detalles (~15%)
+                            if (d.spritesSuelo != null && d.spritesSuelo.Length >= 8)
+                            {
+                                if (UnityEngine.Random.value < 0.85f)
+                                    spSuelo = d.spritesSuelo[UnityEngine.Random.Range(0, 4)];
+                                else
+                                    spSuelo = d.spritesSuelo[UnityEngine.Random.Range(4, 8)];
+                            }
+                            else
+                            {
+                                spSuelo = d.spriteSuelo;
+                            }
+                        }
+
+                        InstanciarTileSuelo(pos, spSuelo);
+                    }
+                    else if (tipoCelda == 3)
+                    {
+                        // Cara Frontal del Muro (wall_face)
+                        // Regla LEEME.md: sólida, mezcla a/b, cracked/decor ocasional y antorcha cada ~4-5 tiles
+                        bool esAntorcha = ((gx % 5) == 2);
+                        InstanciarTileWallFace(pos, d, esAntorcha);
+                    }
                 }
             }
+
+            // 6. Instanciar Muros Top con Autotile (16 variantes bitmask)
+            for (int gy = 0; gy < gridH; gy++)
+            {
+                for (int gx = 0; gx < gridW; gx++)
+                {
+                    if (grid[gx, gy] == 2)
+                    {
+                        TipoBioma biomaCelda = gridBioma[gx, gy];
+                        DatosBioma d = ObtenerDatosBioma(biomaCelda);
+                        if (d == null) d = datosNivel;
+
+                        // Bitmask autotile LEEME.md: mask = N*1 + E*2 + S*4 + W*8
+                        int mask = 0;
+                        if (gy + 1 < gridH && grid[gx, gy + 1] == 2) mask |= 1; // N
+                        if (gx + 1 < gridW && grid[gx + 1, gy] == 2) mask |= 2; // E
+                        if (gy - 1 >= 0 && grid[gx, gy - 1] == 2) mask |= 4;    // S
+                        if (gx - 1 >= 0 && grid[gx - 1, gy] == 2) mask |= 8;    // W
+
+                        Sprite spWallTop = null;
+                        if (d.spritesWallTop != null && mask >= 0 && mask < d.spritesWallTop.Length)
+                        {
+                            spWallTop = d.spritesWallTop[mask];
+                        }
+                        if (spWallTop == null) spWallTop = d.spriteMuro;
+
+                        float wx = gx + minX;
+                        float wy = gy + minY;
+                        InstanciarTileWallTop(new Vector2(wx, wy), spWallTop);
+                    }
+                }
+            }
+
+            // 7. Instanciar Fondo Vacío (void) en los alrededores
+            InstanciarFondoVoid(grid, gridW, gridH, minX, minY, datosNivel);
 
             // Registrar rectángulos de pasillos para consultas lógicas
             foreach (var p in pasillos)
@@ -513,71 +659,44 @@ namespace SoulKnight
             }
             rectPasillos.Add(new Rect(pasilloJefeXMin, pasilloJefeY - radioPasillo + 1, pasilloJefeXMax - pasilloJefeXMin + 1, radioPasillo * 2));
 
-            // 5. Instanciar Muros Perimetrales
-            for (int gy = 0; gy < gridH; gy++)
-            {
-                int gxInicio = -1;
-                for (int gx = 0; gx < gridW; gx++)
-                {
-                    if (grid[gx, gy] == 2)
-                    {
-                        if (gxInicio == -1) gxInicio = gx;
-                    }
-                    else
-                    {
-                        if (gxInicio != -1)
-                        {
-                            CrearMuroSegmento(gxInicio, gx - 1, gy, minX, minY, datos.spriteMuro);
-                            gxInicio = -1;
-                        }
-                    }
-                }
-                if (gxInicio != -1)
-                {
-                    CrearMuroSegmento(gxInicio, gridW - 1, gy, minX, minY, datos.spriteMuro);
-                }
-            }
-
-            // 6. Instanciar Controladores de Sala, Antorchas, Puertas de Bloqueo y Spawns por Oleadas
+            // 8. Instanciar Controladores de Sala, Props, Puertas y Encuentros
             AsegurarSpritesAntorcha();
 
-            // Asignación de la Sala de Tienda:
-            // Se ubica exclusivamente en una de las habitaciones de ramificación sin salida (fuera del camino principal).
             int indiceSalaTienda = -1;
             if (salas.Count > totalSalasCaminoPrincipal)
             {
-                // La primera habitación de ramificación lateral es la tienda designada
                 indiceSalaTienda = totalSalasCaminoPrincipal;
             }
 
             for (int idx = 0; idx < salas.Count; idx++)
             {
                 var s = salas[idx];
+                DatosBioma dSala = ObtenerDatosBioma(s.bioma) ?? datosNivel;
+
                 bool esInicio = s.esSalaInicio;
                 bool esSalaFinal = (idx == totalSalasCaminoPrincipal - 1);
                 bool esJefe = esSalaFinal && tieneJefe;
                 bool esTienda = (idx == indiceSalaTienda && !esInicio && !esSalaFinal);
                 bool esCofre = (idx > totalSalasCaminoPrincipal && idx != indiceSalaTienda && !esInicio && !esSalaFinal);
 
-                var salaObj = new GameObject($"Sala_{idx}");
+                var salaObj = new GameObject($"Sala_{idx}_{dSala.prefijo}");
                 salaObj.transform.SetParent(contenedorMapa);
                 salaObj.transform.position = new Vector3(s.cx, s.cy, 0f);
 
                 var ctrl = salaObj.AddComponent<ControladorSala>();
-                ctrl.Inicializar(idx, s.xMin, s.xMax, s.yMin, s.yMax, esInicio, esSalaFinal, esTienda, esCofre);
+                ctrl.Inicializar(idx, s.xMin, s.xMax, s.yMin, s.yMax, esInicio, esSalaFinal, esTienda, esCofre, s.bioma);
+                salasGeneradas.Add(ctrl);
 
                 if (esTienda)
                 {
-                    // La tienda se instancia ÚNICAMENTE en el centro de su habitación designada y como hija de ella
                     PuestitoTienda.CrearPuestito(new Vector2(s.cx, s.cy), salaObj.transform);
                 }
                 else if (esCofre)
                 {
-                    // En las salas de ramificación secundarias se instancia un Cofre de Oro
                     CofreOro.CrearCofre(new Vector2(s.cx, s.cy), salaObj.transform);
                 }
 
-                // Colocar Antorchas en las esquinas interiores de la sala
+                // Antorchas con halos de luz en la sala
                 var posAntorchas = new List<Vector2>
                 {
                     new Vector2(s.xMin + 2.5f, s.yMax - 2.5f),
@@ -586,7 +705,6 @@ namespace SoulKnight
                     new Vector2(s.xMax - 2.5f, s.yMin + 2.5f)
                 };
 
-                // En salas amplias, añadir 2 antorchas intermedias en los laterales para excelente visibilidad
                 if (s.xMax - s.xMin >= 28)
                 {
                     posAntorchas.Add(new Vector2(s.cx, s.yMax - 2.5f));
@@ -595,169 +713,509 @@ namespace SoulKnight
 
                 foreach (var pa in posAntorchas)
                 {
-                    CrearAntorchaEnSala(ctrl, pa);
+                    CrearAntorchaEnSala(ctrl, pa, dSala);
                 }
 
-                // Detectar aberturas en el perímetro de la sala para crear puertas de bloqueo cuando se active el combate
-                CrearPuertasDeBloqueoSala(ctrl, s, grid, minX, minY, gridW, gridH, datos.spriteMuro);
+                // Detectar puertas de bloqueo en el perímetro
+                CrearPuertasDeBloqueoSala(ctrl, s, grid, minX, minY, gridW, gridH, dSala.spriteMuro);
 
-                // Si es la sala final (sea del jefe o de oleadas normales), colocar el muro que sella el pasillito final hasta despejarla
+                // Muro de salida de la sala final
                 if (idx == totalSalasCaminoPrincipal - 1)
                 {
                     var muroSalida = CrearPuertaBloqueoVisual(
                         new Vector2(salaFinal.xMax + 0.5f, pasilloJefeY + 0.5f),
                         new Vector2(1.1f, radioPasillo * 2f + 0.5f),
-                        datos.spriteMuro,
+                        dSala.spriteMuro,
                         new Color(0.75f, 0.25f, 0.25f, 1f)
                     );
                     ctrl.AsignarMuroSalidaJefe(muroSalida);
                 }
 
-                // Columnas Tácticas (no generar en la tienda para no obstruir el puesto)
-                if (s.numColumnas > 0 && datos.spriteColumna != null && !esTienda)
+                // Props y Obstáculos oficiales del bioma
+                if (!esTienda)
                 {
-                    float w = s.xMax - s.xMin + 1;
-                    float h = s.yMax - s.yMin + 1;
-                    float sepX = w * 0.28f;
-                    float sepY = h * 0.25f;
-
-                    if (s.numColumnas == 2)
-                    {
-                        CrearColumna(new Vector2(s.cx - sepX, s.cy), datos.spriteColumna);
-                        CrearColumna(new Vector2(s.cx + sepX, s.cy), datos.spriteColumna);
-                    }
-                    else if (s.numColumnas >= 4)
-                    {
-                        CrearColumna(new Vector2(s.cx - sepX, s.cy + sepY), datos.spriteColumna);
-                        CrearColumna(new Vector2(s.cx + sepX, s.cy + sepY), datos.spriteColumna);
-                        CrearColumna(new Vector2(s.cx - sepX, s.cy - sepY), datos.spriteColumna);
-                        CrearColumna(new Vector2(s.cx + sepX, s.cy - sepY), datos.spriteColumna);
-                    }
+                    InstanciarPropsSala(salaObj.transform, s, dSala);
                 }
 
-                // Portales de Invocación y Oleadas de enemigos
+                // Portales y oleadas de enemigos
                 if (!esInicio && !esTienda)
                 {
-                    if (esSalaFinal)
+                    ConfigurarOleadasSala(ctrl, s, esSalaFinal, esJefe);
+                }
+            }
+        }
+
+        private void InstanciarTileSuelo(Vector2 pos, Sprite spriteSuelo)
+        {
+            var go = new GameObject("Suelo");
+            go.transform.SetParent(contenedorMapa);
+            go.transform.position = (Vector3)pos;
+
+            var sr = go.AddComponent<SpriteRenderer>();
+            sr.sprite = spriteSuelo;
+            sr.sortingOrder = -1;
+        }
+
+        private void InstanciarTileWallTop(Vector2 pos, Sprite spriteWallTop)
+        {
+            var go = new GameObject("WallTop");
+            try { go.tag = "Pared"; } catch { }
+            go.transform.SetParent(contenedorMapa);
+            go.transform.position = (Vector3)pos;
+
+            var sr = go.AddComponent<SpriteRenderer>();
+            sr.sprite = spriteWallTop;
+            sr.sortingOrder = 2;
+
+            var col = go.AddComponent<BoxCollider2D>();
+            col.size = Vector2.one;
+
+            _murosVisuales.Add(sr);
+        }
+
+        private void InstanciarTileWallFace(Vector2 pos, DatosBioma d, bool esAntorcha)
+        {
+            var go = new GameObject("WallFace");
+            try { go.tag = "Pared"; } catch { }
+            go.transform.SetParent(contenedorMapa);
+            go.transform.position = (Vector3)pos;
+
+            var sr = go.AddComponent<SpriteRenderer>();
+            sr.sortingOrder = 2;
+
+            var col = go.AddComponent<BoxCollider2D>();
+            col.size = Vector2.one;
+
+            _murosVisuales.Add(sr);
+
+            if (esAntorcha && d.framesWallFaceTorch != null && d.framesWallFaceTorch.Length > 0 && d.framesWallFaceTorch[0] != null)
+            {
+                var anim = go.AddComponent<AnimadorSpriteTile>();
+                anim.Configurar(sr, d.framesWallFaceTorch, 8f);
+
+                // Halo de iluminación suave
+                var haloObj = new GameObject("HaloLuzPared");
+                haloObj.transform.SetParent(go.transform, false);
+                haloObj.transform.localPosition = new Vector3(0f, -0.3f, 0f);
+                haloObj.transform.localScale = Vector3.one * 6.5f;
+                var srHalo = haloObj.AddComponent<SpriteRenderer>();
+                srHalo.sprite = _spriteHaloLuzCalida;
+                srHalo.color = d.colorLuzAntorcha;
+                srHalo.sortingOrder = 0;
+            }
+            else
+            {
+                // Mezcla a/b, cracked y decor
+                float r = UnityEngine.Random.value;
+                if (r < 0.10f && d.spriteWallFaceCracked != null)
+                    sr.sprite = d.spriteWallFaceCracked;
+                else if (r < 0.20f && d.spriteWallFaceDecor != null)
+                    sr.sprite = d.spriteWallFaceDecor;
+                else if (r < 0.60f && d.spriteWallFaceB != null)
+                    sr.sprite = d.spriteWallFaceB;
+                else
+                    sr.sprite = d.spriteWallFaceA ?? d.spriteMuro;
+            }
+        }
+
+        private void InstanciarFondoVoid(byte[,] grid, int gridW, int gridH, int minX, int minY, DatosBioma dDefecto)
+        {
+            if (dDefecto == null || dDefecto.spriteVoid == null) return;
+
+            var contenedorVoid = new GameObject("FondoVoid");
+            contenedorVoid.transform.SetParent(contenedorMapa);
+
+            for (int gx = 0; gx < gridW; gx++)
+            {
+                for (int gy = 0; gy < gridH; gy++)
+                {
+                    if (grid[gx, gy] == 0)
                     {
-                        // ¡Cámara Final con Oleada Heavy para niveles sin jefe!
-                        // 6 portales luminosos en las esquinas y centros de esta gran sala
-                        float wSala = s.xMax - s.xMin;
-                        float hSala = s.yMax - s.yMin;
-                        float pxOff = Mathf.Max(4.5f, wSala * 0.32f);
-                        float pyOff = Mathf.Max(3.8f, hSala * 0.30f);
-
-                        CrearPortalSpawnEnSala(ctrl, new Vector2(s.cx - pxOff, s.cy + pyOff));
-                        CrearPortalSpawnEnSala(ctrl, new Vector2(s.cx + pxOff, s.cy + pyOff));
-                        CrearPortalSpawnEnSala(ctrl, new Vector2(s.cx - pxOff, s.cy - pyOff));
-                        CrearPortalSpawnEnSala(ctrl, new Vector2(s.cx + pxOff, s.cy - pyOff));
-                        CrearPortalSpawnEnSala(ctrl, new Vector2(s.cx, s.cy + pyOff * 0.85f));
-                        CrearPortalSpawnEnSala(ctrl, new Vector2(s.cx, s.cy - pyOff * 0.85f));
-
-                        // Oleada Heavy 1 (Vanguardia pesada masiva: 16 guardianes de choque)
-                        for (int i = 0; i < 16; i++)
+                        // Solo instanciar void en un borde cercano a los muros o suelos (distancia <= 3)
+                        bool cerca = false;
+                        for (int dy = -3; dy <= 3 && !cerca; dy++)
                         {
-                            Vector2 pPortal = ctrl.posicionesPortales[i % ctrl.posicionesPortales.Count];
-                            Vector2 jitter = new Vector2(((i % 3) - 1) * 0.65f, ((i % 2 == 0) ? 0.5f : -0.5f));
-                            ctrl.puntosSpawnOleada1.Add(pPortal + jitter);
+                            for (int dx = -3; dx <= 3 && !cerca; dx++)
+                            {
+                                int nx = gx + dx;
+                                int ny = gy + dy;
+                                if (nx >= 0 && nx < gridW && ny >= 0 && ny < gridH && grid[nx, ny] != 0)
+                                {
+                                    cerca = true;
+                                }
+                            }
                         }
 
-                        // Oleada Heavy 2 (Invocadores masivos, proyectiles mágicos y tanques: 18 guardianes)
-                        for (int i = 0; i < 18; i++)
+                        if (cerca)
                         {
-                            Vector2 pPortal = ctrl.posicionesPortales[(i + 1) % ctrl.posicionesPortales.Count];
-                            Vector2 jitter = new Vector2(((i % 3) - 1) * -0.65f, ((i % 2 == 0) ? -0.5f : 0.5f));
-                            ctrl.puntosSpawnOleada2.Add(pPortal + jitter);
-                        }
-
-                        // Oleada Heavy 3 (Asalto Élite Definitivo: 22 guardianes simultáneos)
-                        for (int i = 0; i < 22; i++)
-                        {
-                            Vector2 pPortal = ctrl.posicionesPortales[(i + 2) % ctrl.posicionesPortales.Count];
-                            Vector2 jitter = new Vector2(((i % 4) - 1.5f) * 0.55f, ((i % 2 == 0) ? 0.6f : -0.6f));
-                            ctrl.puntosSpawnOleada3.Add(pPortal + jitter);
-                        }
-                    }
-                    else if (!esJefe)
-                    {
-                        float wSala = s.xMax - s.xMin;
-                        float hSala = s.yMax - s.yMin;
-                        float pxOff = Mathf.Max(3.0f, wSala * 0.24f);
-                        float pyOff = Mathf.Max(2.5f, hSala * 0.24f);
-
-                        // 4 portales por sala de combate normal
-                        CrearPortalSpawnEnSala(ctrl, new Vector2(s.cx - pxOff, s.cy + pyOff));
-                        CrearPortalSpawnEnSala(ctrl, new Vector2(s.cx + pxOff, s.cy + pyOff));
-                        CrearPortalSpawnEnSala(ctrl, new Vector2(s.cx - pxOff, s.cy - pyOff));
-                        CrearPortalSpawnEnSala(ctrl, new Vector2(s.cx + pxOff, s.cy - pyOff));
-
-                        // Cantidades elevadas de enemigos por oleada (6-7 en oleada 1, 8-10 en oleada 2)
-                        int cantOleada1 = UnityEngine.Random.Range(6, 8);
-                        int cantOleada2 = UnityEngine.Random.Range(8, 11);
-
-                        for (int i = 0; i < cantOleada1; i++)
-                        {
-                            Vector2 pPortal = ctrl.posicionesPortales[i % ctrl.posicionesPortales.Count];
-                            Vector2 jitter = new Vector2((i % 2 == 0 ? 0.35f : -0.35f), (i >= 2 ? 0.25f : -0.25f));
-                            ctrl.puntosSpawnOleada1.Add(pPortal + jitter);
-                        }
-                        for (int i = 0; i < cantOleada2; i++)
-                        {
-                            Vector2 pPortal = ctrl.posicionesPortales[(i + 1) % ctrl.posicionesPortales.Count];
-                            Vector2 jitter = new Vector2((i % 2 == 0 ? -0.35f : 0.35f), (i >= 2 ? -0.25f : 0.25f));
-                            ctrl.puntosSpawnOleada2.Add(pPortal + jitter);
+                            var vObj = new GameObject("Void");
+                            vObj.transform.SetParent(contenedorVoid.transform);
+                            vObj.transform.position = new Vector3(gx + minX, gy + minY, 0f);
+                            var sr = vObj.AddComponent<SpriteRenderer>();
+                            sr.sprite = dDefecto.spriteVoid;
+                            sr.sortingOrder = -2;
                         }
                     }
                 }
+            }
+        }
 
-                salasGeneradas.Add(ctrl);
+        private void InstanciarPropsSala(Transform padre, SalaInfo s, DatosBioma d)
+        {
+            if (d == null) return;
+
+            float w = s.xMax - s.xMin + 1;
+            float h = s.yMax - s.yMin + 1;
+            float sepX = w * 0.28f;
+            float sepY = h * 0.24f;
+
+            // 1. Columnas / Pilares (16x32)
+            if (d.spritePillar != null && s.numColumnas > 0)
+            {
+                CrearPillar(padre, new Vector2(s.cx - sepX, s.cy + sepY), d.spritePillar);
+                CrearPillar(padre, new Vector2(s.cx + sepX, s.cy + sepY), d.spritePillar);
+                if (s.numColumnas >= 4)
+                {
+                    CrearPillar(padre, new Vector2(s.cx - sepX, s.cy - sepY), d.spritePillar);
+                    CrearPillar(padre, new Vector2(s.cx + sepX, s.cy - sepY), d.spritePillar);
+                }
             }
 
-            // 7. Instanciar el Agujero / Pasadizo Secreto en la pared final del pasillito detrás de la Sala del Jefe
-            var hoyitoObj = new GameObject("HoyitoSiguienteNivel");
-            hoyitoObj.transform.SetParent(contenedorMapa);
-            hoyitoObj.transform.position = new Vector3(pasilloJefeXMax - 0.2f, pasilloJefeY + 0.5f, 0f);
+            // 2. Rocas / Boulders
+            if (d.spriteBoulderL != null)
+            {
+                CrearBoulder(padre, new Vector2(s.cx - sepX * 0.4f, s.cy - sepY * 0.8f), d.spriteBoulderL, grande: true);
+            }
+            if (d.spriteBoulderS != null)
+            {
+                CrearBoulder(padre, new Vector2(s.cx + sepX * 0.6f, s.cy + sepY * 0.8f), d.spriteBoulderS, grande: false);
+            }
 
-            var sr = hoyitoObj.AddComponent<SpriteRenderer>();
-            sr.sprite = (spriteHoyitoParedCerrado != null) ? spriteHoyitoParedCerrado : spriteHoyitoPared;
-            sr.sortingOrder = 3; // Encima del muro del borde (2) y del filtro de oscuridad (1)
-            hoyitoObj.transform.localScale = Vector3.one * 2.1f;
+            // 3. Cajas y Barriles destruibles
+            if (d.spriteCrate != null)
+            {
+                CrearCaja(padre, new Vector2(s.xMin + 3.5f, s.yMin + 3.5f), d.spriteCrate);
+                CrearCaja(padre, new Vector2(s.xMin + 4.5f, s.yMin + 3.5f), d.spriteCrate);
+            }
+            if (d.spriteBarrel != null)
+            {
+                bool esExplosivo = (d.tipo == TipoBioma.Fuego);
+                CrearBarril(padre, new Vector2(s.xMin + 3.5f, s.yMin + 4.5f), d.spriteBarrel, esExplosivo);
+            }
 
-            var col = hoyitoObj.AddComponent<CircleCollider2D>();
+            // 4. Trampas de Pinchos (Spikes)
+            if (d.spriteSpikesOff != null && d.spriteSpikesOn != null && !s.esSalaInicio)
+            {
+                CrearTrampaPinchos(padre, new Vector2(s.cx - 1.5f, s.cy - sepY * 0.5f), d.spriteSpikesOff, d.spriteSpikesOn);
+                CrearTrampaPinchos(padre, new Vector2(s.cx - 0.5f, s.cy - sepY * 0.5f), d.spriteSpikesOff, d.spriteSpikesOn);
+                CrearTrampaPinchos(padre, new Vector2(s.cx + 0.5f, s.cy - sepY * 0.5f), d.spriteSpikesOff, d.spriteSpikesOn);
+                CrearTrampaPinchos(padre, new Vector2(s.cx + 1.5f, s.cy - sepY * 0.5f), d.spriteSpikesOff, d.spriteSpikesOn);
+            }
+
+            // 5. Zona de Peligro / Hazard Continuo en el Suelo
+            if (d.framesHazardStrip != null && d.framesHazardStrip.Length > 0 && d.framesHazardStrip[0] != null && !s.esSalaInicio)
+            {
+                TipoPeligroTile tipoP = TipoPeligroTile.Pozo;
+                switch (d.tipo)
+                {
+                    case TipoBioma.Planta: tipoP = TipoPeligroTile.Veneno; break;
+                    case TipoBioma.Hielo: tipoP = TipoPeligroTile.AguaHelada; break;
+                    case TipoBioma.Fuego: tipoP = TipoPeligroTile.Lava; break;
+                    case TipoBioma.Arena: tipoP = TipoPeligroTile.ArenasVivas; break;
+                }
+
+                Vector2 posHazard = new Vector2(s.cx + sepX * 0.7f, s.cy - sepY * 0.4f);
+                for (int hx = 0; hx < 2; hx++)
+                {
+                    for (int hy = 0; hy < 2; hy++)
+                    {
+                        CrearTilePeligro(padre, posHazard + new Vector2(hx, hy), d.framesHazardStrip, tipoP);
+                    }
+                }
+            }
+
+            // 6. Prop Especial por Bioma
+            if (d.spriteSpecialProp != null && !s.esSalaInicio)
+            {
+                Vector2 posSpec = new Vector2(s.xMin + 3.0f, s.cy);
+                CrearPropEspecial(padre, posSpec, d);
+            }
+        }
+
+        private void CrearPillar(Transform padre, Vector2 pos, Sprite spritePillar)
+        {
+            var go = new GameObject("Pillar");
+            try { go.tag = "Pared"; } catch { }
+            go.transform.SetParent(padre);
+            go.transform.position = (Vector3)pos;
+
+            var sr = go.AddComponent<SpriteRenderer>();
+            sr.sprite = spritePillar;
+            sr.sortingOrder = 3;
+
+            // Collider manifest: x=2, y=20, w=12, h=10
+            var col = go.AddComponent<BoxCollider2D>();
+            col.size = new Vector2(0.75f, 0.625f);
+            col.offset = new Vector2(0f, -0.4f);
+
+            _murosVisuales.Add(sr);
+        }
+
+        private void CrearBoulder(Transform padre, Vector2 pos, Sprite spriteBoulder, bool grande)
+        {
+            var go = new GameObject(grande ? "BoulderLarge" : "BoulderSmall");
+            try { go.tag = "Pared"; } catch { }
+            go.transform.SetParent(padre);
+            go.transform.position = (Vector3)pos;
+
+            var sr = go.AddComponent<SpriteRenderer>();
+            sr.sprite = spriteBoulder;
+            sr.sortingOrder = 1;
+
+            var col = go.AddComponent<BoxCollider2D>();
+            if (grande)
+            {
+                // Manifest boulder_l: w=26, h=18
+                col.size = new Vector2(1.625f, 1.125f);
+                col.offset = new Vector2(0f, 0f);
+            }
+            else
+            {
+                // Manifest boulder_s: w=12, h=8
+                col.size = new Vector2(0.75f, 0.5f);
+                col.offset = new Vector2(0f, -0.1f);
+            }
+
+            _murosVisuales.Add(sr);
+        }
+
+        private void CrearCaja(Transform padre, Vector2 pos, Sprite spriteCrate)
+        {
+            var go = new GameObject("CajaDestruible");
+            try { go.tag = "Pared"; } catch { }
+            go.transform.SetParent(padre);
+            go.transform.position = (Vector3)pos;
+
+            var sr = go.AddComponent<SpriteRenderer>();
+            sr.sprite = spriteCrate;
+            sr.sortingOrder = 1;
+
+            var col = go.AddComponent<BoxCollider2D>();
+            col.size = new Vector2(0.875f, 0.8125f);
+
+            var prop = go.AddComponent<PropDestruible>();
+            prop.vidaMax = 15;
+            prop.esExplosivo = false;
+        }
+
+        private void CrearBarril(Transform padre, Vector2 pos, Sprite spriteBarrel, bool esExplosivo)
+        {
+            var go = new GameObject(esExplosivo ? "BarrilExplosivo" : "BarrilDestruible");
+            try { go.tag = "Pared"; } catch { }
+            go.transform.SetParent(padre);
+            go.transform.position = (Vector3)pos;
+
+            var sr = go.AddComponent<SpriteRenderer>();
+            sr.sprite = spriteBarrel;
+            sr.sortingOrder = 1;
+
+            var col = go.AddComponent<BoxCollider2D>();
+            col.size = new Vector2(0.625f, 0.8125f);
+
+            var prop = go.AddComponent<PropDestruible>();
+            prop.vidaMax = 12;
+            prop.esExplosivo = esExplosivo;
+        }
+
+        private void CrearTrampaPinchos(Transform padre, Vector2 pos, Sprite spOff, Sprite spOn)
+        {
+            var go = new GameObject("TrampaPinchos");
+            go.transform.SetParent(padre);
+            go.transform.position = (Vector3)pos;
+
+            var sr = go.AddComponent<SpriteRenderer>();
+            sr.sprite = spOff;
+            sr.sortingOrder = 0;
+
+            var col = go.AddComponent<BoxCollider2D>();
             col.isTrigger = true;
-            col.radius = 1.4f;
+            col.size = new Vector2(0.85f, 0.85f);
 
-            var pasaje = hoyitoObj.AddComponent<PasajeSiguienteNivel>();
-            pasaje.sr = sr;
-            pasaje.spriteCerrado = spriteHoyitoParedCerrado;
-            pasaje.spriteAbierto = spriteHoyitoPared;
-            pasaje.estaAbierto = false;
+            var trampa = go.AddComponent<TrampaPinchos>();
+            trampa.Configurar(spOff, spOn, 5);
+        }
+
+        private void CrearTilePeligro(Transform padre, Vector2 pos, Sprite[] frames, TipoPeligroTile tipo)
+        {
+            var go = new GameObject($"Hazard_{tipo}");
+            go.transform.SetParent(padre);
+            go.transform.position = (Vector3)pos;
+
+            var sr = go.AddComponent<SpriteRenderer>();
+            sr.sprite = frames[0];
+            sr.sortingOrder = 0;
+
+            if (frames.Length > 1)
+            {
+                var anim = go.AddComponent<AnimadorSpriteTile>();
+                anim.Configurar(sr, frames, 5f);
+            }
+
+            var col = go.AddComponent<BoxCollider2D>();
+            col.isTrigger = true;
+            col.size = new Vector2(0.9f, 0.9f);
+
+            var zona = go.AddComponent<ZonaPeligroTile>();
+            zona.Configurar(tipo, 4);
+        }
+
+        private void CrearPropEspecial(Transform padre, Vector2 pos, DatosBioma d)
+        {
+            var go = new GameObject($"Prop_{d.prefijo}");
+            go.transform.SetParent(padre);
+            go.transform.position = (Vector3)pos;
+
+            var sr = go.AddComponent<SpriteRenderer>();
+            sr.sprite = d.spriteSpecialProp;
+            sr.sortingOrder = 1;
+
+            switch (d.tipo)
+            {
+                case TipoBioma.Piedra:
+                    // bones: decorativo sin colisión
+                    break;
+
+                case TipoBioma.Planta:
+                    // thornbush: sólido, daña al tocar
+                    try { go.tag = "Pared"; } catch { }
+                    var colPlant = go.AddComponent<BoxCollider2D>();
+                    colPlant.size = new Vector2(0.8f, 0.8f);
+                    go.AddComponent<PropDanoContacto>().danoContacto = 4;
+                    _murosVisuales.Add(sr);
+                    break;
+
+                case TipoBioma.Hielo:
+                    // crystal: sólido
+                    try { go.tag = "Pared"; } catch { }
+                    var colIce = go.AddComponent<BoxCollider2D>();
+                    colIce.size = new Vector2(0.8f, 0.8f);
+                    _murosVisuales.Add(sr);
+                    break;
+
+                case TipoBioma.Fuego:
+                    // brazier: sólido, fuego animado a 8 fps
+                    try { go.tag = "Pared"; } catch { }
+                    if (d.framesSpecialAnim != null && d.framesSpecialAnim.Length > 1)
+                    {
+                        var anim = go.AddComponent<AnimadorSpriteTile>();
+                        anim.Configurar(sr, d.framesSpecialAnim, 8f);
+                    }
+                    var colFire = go.AddComponent<BoxCollider2D>();
+                    colFire.size = new Vector2(0.8f, 0.8f);
+                    _murosVisuales.Add(sr);
+                    break;
+
+                case TipoBioma.Arena:
+                    // cactus: sólido, daña al tocar
+                    try { go.tag = "Pared"; } catch { }
+                    var colCactus = go.AddComponent<BoxCollider2D>();
+                    colCactus.size = new Vector2(0.8f, 0.8f);
+                    go.AddComponent<PropDanoContacto>().danoContacto = 4;
+                    _murosVisuales.Add(sr);
+                    break;
+            }
+        }
+
+        private void ConfigurarOleadasSala(ControladorSala ctrl, SalaInfo s, bool esSalaFinal, bool esJefe)
+        {
+            if (esSalaFinal)
+            {
+                float wSala = s.xMax - s.xMin;
+                float hSala = s.yMax - s.yMin;
+                float pxOff = Mathf.Max(4.5f, wSala * 0.32f);
+                float pyOff = Mathf.Max(3.8f, hSala * 0.30f);
+
+                CrearPortalSpawnEnSala(ctrl, new Vector2(s.cx - pxOff, s.cy + pyOff));
+                CrearPortalSpawnEnSala(ctrl, new Vector2(s.cx + pxOff, s.cy + pyOff));
+                CrearPortalSpawnEnSala(ctrl, new Vector2(s.cx - pxOff, s.cy - pyOff));
+                CrearPortalSpawnEnSala(ctrl, new Vector2(s.cx + pxOff, s.cy - pyOff));
+                CrearPortalSpawnEnSala(ctrl, new Vector2(s.cx, s.cy + pyOff * 0.85f));
+                CrearPortalSpawnEnSala(ctrl, new Vector2(s.cx, s.cy - pyOff * 0.85f));
+
+                for (int i = 0; i < 16; i++)
+                {
+                    Vector2 pPortal = ctrl.posicionesPortales[i % ctrl.posicionesPortales.Count];
+                    Vector2 jitter = new Vector2(((i % 3) - 1) * 0.65f, ((i % 2 == 0) ? 0.5f : -0.5f));
+                    ctrl.puntosSpawnOleada1.Add(pPortal + jitter);
+                }
+
+                for (int i = 0; i < 18; i++)
+                {
+                    Vector2 pPortal = ctrl.posicionesPortales[(i + 1) % ctrl.posicionesPortales.Count];
+                    Vector2 jitter = new Vector2(((i % 3) - 1) * -0.65f, ((i % 2 == 0) ? -0.5f : 0.5f));
+                    ctrl.puntosSpawnOleada2.Add(pPortal + jitter);
+                }
+
+                for (int i = 0; i < 22; i++)
+                {
+                    Vector2 pPortal = ctrl.posicionesPortales[(i + 2) % ctrl.posicionesPortales.Count];
+                    Vector2 jitter = new Vector2(((i % 4) - 1.5f) * 0.55f, ((i % 2 == 0) ? 0.6f : -0.6f));
+                    ctrl.puntosSpawnOleada3.Add(pPortal + jitter);
+                }
+            }
+            else if (!esJefe)
+            {
+                float wSala = s.xMax - s.xMin;
+                float hSala = s.yMax - s.yMin;
+                float pxOff = Mathf.Max(3.0f, wSala * 0.24f);
+                float pyOff = Mathf.Max(2.5f, hSala * 0.24f);
+
+                CrearPortalSpawnEnSala(ctrl, new Vector2(s.cx - pxOff, s.cy + pyOff));
+                CrearPortalSpawnEnSala(ctrl, new Vector2(s.cx + pxOff, s.cy + pyOff));
+                CrearPortalSpawnEnSala(ctrl, new Vector2(s.cx - pxOff, s.cy - pyOff));
+                CrearPortalSpawnEnSala(ctrl, new Vector2(s.cx + pxOff, s.cy - pyOff));
+
+                int cantOleada1 = UnityEngine.Random.Range(6, 8);
+                int cantOleada2 = UnityEngine.Random.Range(8, 11);
+
+                for (int i = 0; i < cantOleada1; i++)
+                {
+                    Vector2 pPortal = ctrl.posicionesPortales[i % ctrl.posicionesPortales.Count];
+                    Vector2 jitter = new Vector2(((i % 3) - 1) * 0.5f, ((i % 2 == 0) ? 0.4f : -0.4f));
+                    ctrl.puntosSpawnOleada1.Add(pPortal + jitter);
+                }
+
+                for (int i = 0; i < cantOleada2; i++)
+                {
+                    Vector2 pPortal = ctrl.posicionesPortales[(i + 1) % ctrl.posicionesPortales.Count];
+                    Vector2 jitter = new Vector2(((i % 3) - 1) * -0.5f, ((i % 2 == 0) ? -0.4f : 0.4f));
+                    ctrl.puntosSpawnOleada2.Add(pPortal + jitter);
+                }
+            }
         }
 
         private void ConstruirSantuarioDecisionLoop(DatosBioma datos)
         {
             if (datos == null) return;
 
-            AsegurarSpritesAntorcha();
-
-            int ancho = 34;
-            int alto = 26;
+            int ancho = 30;
+            int alto = 22;
             int hx = ancho / 2;
             int hy = alto / 2;
+
             int xMin = -hx;
             int xMax = hx;
             int yMin = -hy;
             int yMax = hy;
 
-            gridMinX = xMin - 2;
-            gridMaxX = xMax + 2;
-            gridMinY = yMin - 2;
-            gridMaxY = yMax + 2;
+            gridMinX = xMin - 4;
+            gridMaxX = xMax + 4;
+            gridMinY = yMin - 4;
+            gridMaxY = yMax + 4;
             int gridW = gridMaxX - gridMinX + 1;
             int gridH = gridMaxY - gridMinY + 1;
             gridActual = new byte[gridW, gridH];
 
-            // 1. Suelo central ceremonial en grid
             for (int x = xMin; x <= xMax; x++)
             {
                 for (int y = yMin; y <= yMax; y++)
@@ -766,7 +1224,7 @@ namespace SoulKnight
                 }
             }
 
-            // 2. Muros perimetrales en grid
+            // Muros perimetrales
             for (int x = xMin - 1; x <= xMax + 1; x++)
             {
                 gridActual[x - gridMinX, (yMin - 1) - gridMinY] = 2;
@@ -778,94 +1236,78 @@ namespace SoulKnight
                 gridActual[(xMax + 1) - gridMinX, y - gridMinY] = 2;
             }
 
-            // Instanciar Suelos uniformemente
+            // Cara frontal de muro
+            for (int x = xMin; x <= xMax; x++)
+            {
+                gridActual[x - gridMinX, yMax - gridMinY] = 3;
+            }
+
+            // Instanciar suelos y muros
             for (int gy = 0; gy < gridH; gy++)
             {
-                int gxInicio = -1;
                 for (int gx = 0; gx < gridW; gx++)
                 {
-                    if (gridActual[gx, gy] == 1)
+                    byte t = gridActual[gx, gy];
+                    if (t == 0) continue;
+
+                    Vector2 pos = new Vector2(gx + gridMinX, gy + gridMinY);
+                    if (t == 1)
                     {
-                        if (gxInicio == -1) gxInicio = gx;
+                        bool sombra0 = (gy + 1 < gridH && gridActual[gx, gy + 1] == 3);
+                        bool sombra1 = (!sombra0 && gy + 2 < gridH && gridActual[gx, gy + 2] == 3);
+                        Sprite sp = sombra0 ? (datos.spriteFloorShadow00 ?? datos.spriteSuelo)
+                                  : sombra1 ? (datos.spriteFloorShadow01 ?? datos.spriteSuelo)
+                                  : datos.spriteSuelo;
+                        InstanciarTileSuelo(pos, sp);
                     }
-                    else
+                    else if (t == 2)
                     {
-                        if (gxInicio != -1)
-                        {
-                            CrearSueloSegmento(gxInicio, gx - 1, gy, gridMinX, gridMinY, datos.spriteSuelo);
-                            gxInicio = -1;
-                        }
+                        int mask = 0;
+                        if (gy + 1 < gridH && gridActual[gx, gy + 1] == 2) mask |= 1;
+                        if (gx + 1 < gridW && gridActual[gx + 1, gy] == 2) mask |= 2;
+                        if (gy - 1 >= 0 && gridActual[gx, gy - 1] == 2) mask |= 4;
+                        if (gx - 1 >= 0 && gridActual[gx - 1, gy] == 2) mask |= 8;
+                        Sprite sp = (datos.spritesWallTop != null && mask < datos.spritesWallTop.Length) ? datos.spritesWallTop[mask] : datos.spriteMuro;
+                        InstanciarTileWallTop(pos, sp);
                     }
-                }
-                if (gxInicio != -1)
-                {
-                    CrearSueloSegmento(gxInicio, gridW - 1, gy, gridMinX, gridMinY, datos.spriteSuelo);
+                    else if (t == 3)
+                    {
+                        InstanciarTileWallFace(pos, datos, esAntorcha: (gx % 4 == 0));
+                    }
                 }
             }
 
-            // Instanciar Muros uniformemente
-            for (int gy = 0; gy < gridH; gy++)
-            {
-                int gxInicio = -1;
-                for (int gx = 0; gx < gridW; gx++)
-                {
-                    if (gridActual[gx, gy] == 2)
-                    {
-                        if (gxInicio == -1) gxInicio = gx;
-                    }
-                    else
-                    {
-                        if (gxInicio != -1)
-                        {
-                            CrearMuroSegmento(gxInicio, gx - 1, gy, gridMinX, gridMinY, datos.spriteMuro);
-                            gxInicio = -1;
-                        }
-                    }
-                }
-                if (gxInicio != -1)
-                {
-                    CrearMuroSegmento(gxInicio, gridW - 1, gy, gridMinX, gridMinY, datos.spriteMuro);
-                }
-            }
+            InstanciarFondoVoid(gridActual, gridW, gridH, gridMinX, gridMinY, datos);
 
-            // 3. Spawns de jugadores en el centro
+            // Spawns de jugadores
             puntosSpawnJugadores.Add(new Vector2(-3.0f, 0f));
             puntosSpawnJugadores.Add(new Vector2(3.0f, 0f));
             puntosSpawnJugadores.Add(new Vector2(-3.0f, -2.0f));
             puntosSpawnJugadores.Add(new Vector2(3.0f, -2.0f));
 
-            // 4. Controlador de sala ceremonial
             var salaObj = new GameObject("Sala_SantuarioTriunfo");
             salaObj.transform.SetParent(contenedorMapa);
             salaObj.transform.position = Vector3.zero;
             var ctrl = salaObj.AddComponent<ControladorSala>();
-            ctrl.Inicializar(0, xMin, xMax, yMin, yMax, true, false, false);
+            ctrl.Inicializar(0, xMin, xMax, yMin, yMax, true, false, false, bioma: datos.tipo);
             salasGeneradas.Add(ctrl);
 
-            // 5. Columnas monumentales
-            if (datos.spriteColumna != null)
+            if (datos.spritePillar != null)
             {
-                CrearColumna(new Vector2(-9f, 5f), datos.spriteColumna);
-                CrearColumna(new Vector2(9f, 5f), datos.spriteColumna);
-                CrearColumna(new Vector2(-9f, -5f), datos.spriteColumna);
-                CrearColumna(new Vector2(9f, -5f), datos.spriteColumna);
+                CrearPillar(salaObj.transform, new Vector2(-9f, 5f), datos.spritePillar);
+                CrearPillar(salaObj.transform, new Vector2(9f, 5f), datos.spritePillar);
+                CrearPillar(salaObj.transform, new Vector2(-9f, -5f), datos.spritePillar);
+                CrearPillar(salaObj.transform, new Vector2(9f, -5f), datos.spritePillar);
             }
 
-            // 6. Antorchas en las 4 esquinas y alrededor de los portales
-            CrearAntorchaEnSala(ctrl, new Vector2(xMin + 2.5f, yMax - 2.5f));
-            CrearAntorchaEnSala(ctrl, new Vector2(xMax - 2.5f, yMax - 2.5f));
-            CrearAntorchaEnSala(ctrl, new Vector2(xMin + 2.5f, yMin + 2.5f));
-            CrearAntorchaEnSala(ctrl, new Vector2(xMax - 2.5f, yMin + 2.5f));
-            CrearAntorchaEnSala(ctrl, new Vector2(-4.5f, 9.5f));
-            CrearAntorchaEnSala(ctrl, new Vector2(4.5f, 9.5f));
-            CrearAntorchaEnSala(ctrl, new Vector2(-4.5f, -9.5f));
-            CrearAntorchaEnSala(ctrl, new Vector2(4.5f, -9.5f));
+            CrearAntorchaEnSala(ctrl, new Vector2(xMin + 2.5f, yMax - 2.5f), datos);
+            CrearAntorchaEnSala(ctrl, new Vector2(xMax - 2.5f, yMax - 2.5f), datos);
+            CrearAntorchaEnSala(ctrl, new Vector2(xMin + 2.5f, yMin + 2.5f), datos);
+            CrearAntorchaEnSala(ctrl, new Vector2(xMax - 2.5f, yMin + 2.5f), datos);
 
-            // 7. Cartel Central de Victoria
             TextoFlotante.Crear(new Vector3(0, 3.5f, 0), "🏆 ¡MAZMORRA CONQUISTADA! 🏆", new Color(1f, 0.85f, 0.25f));
             TextoFlotante.Crear(new Vector3(0, 2.2f, 0), "Elige tu destino: Sal al Lobby o desafía el Bucle Infinito", Color.white);
 
-            // 8. Portal Superior (Nivel 11+ Bucle)
             var pBucleObj = new GameObject("PortalBucleInfinito");
             pBucleObj.transform.SetParent(contenedorMapa);
             pBucleObj.transform.position = new Vector3(0f, 9.5f, 0f);
@@ -882,7 +1324,6 @@ namespace SoulKnight
             pdBucle.subtituloPortal = "Peligro Extremo - Dificultad Aumentada";
             pdBucle.colorPortal = new Color(0.95f, 0.35f, 0.95f);
 
-            // 9. Portal Inferior (Salir al Lobby)
             var pLobbyObj = new GameObject("PortalSalirLobby");
             pLobbyObj.transform.SetParent(contenedorMapa);
             pLobbyObj.transform.position = new Vector3(0f, -9.5f, 0f);
@@ -902,11 +1343,8 @@ namespace SoulKnight
 
         private void CrearPuertasDeBloqueoSala(ControladorSala ctrl, SalaInfo s, byte[,] grid, int minX, int minY, int gridW, int gridH, Sprite spriteMuro)
         {
-            // Borde Izquierdo (x = s.xMin - 1) y Derecho (x = s.xMax + 1)
             CrearSegmentosPuertaVertical(ctrl, s.xMin - 1, s.yMin, s.yMax, grid, minX, minY, gridW, gridH, spriteMuro);
             CrearSegmentosPuertaVertical(ctrl, s.xMax + 1, s.yMin, s.yMax, grid, minX, minY, gridW, gridH, spriteMuro);
-
-            // Borde Inferior (y = s.yMin - 1) y Superior (y = s.yMax + 1)
             CrearSegmentosPuertaHorizontal(ctrl, s.yMin - 1, s.xMin, s.xMax, grid, minX, minY, gridW, gridH, spriteMuro);
             CrearSegmentosPuertaHorizontal(ctrl, s.yMax + 1, s.xMin, s.xMax, grid, minX, minY, gridW, gridH, spriteMuro);
         }
@@ -993,21 +1431,17 @@ namespace SoulKnight
             sr.drawMode = SpriteDrawMode.Tiled;
             sr.size = tam;
             sr.color = tinte;
-            sr.sortingOrder = 4; // Bloques de borde siempre visibles por encima del filtro de oscuridad (1)
+            sr.sortingOrder = 4;
 
             var col = go.AddComponent<BoxCollider2D>();
             col.size = tam;
             return go;
         }
 
-        private static Sprite _spriteHaloLuzCalida;
-        private static Sprite _spritePortalInvocacion;
-
         private void AsegurarSpritesAntorcha()
         {
             if (_spriteCirculoLuz == null)
             {
-                // Sprite pixel-art de llama definida (12x16)
                 Texture2D texLlama = new Texture2D(12, 16, TextureFormat.RGBA32, false);
                 texLlama.filterMode = FilterMode.Point;
                 for (int y = 0; y < 16; y++)
@@ -1019,11 +1453,11 @@ namespace SoulKnight
                         if (y >= 2 && y <= 14 && dx <= radioMax)
                         {
                             if (dx <= radioMax * 0.45f && y <= 9)
-                                texLlama.SetPixel(x, y, new Color(1f, 0.96f, 0.65f, 1f)); // Núcleo blanco/amarillo
+                                texLlama.SetPixel(x, y, new Color(1f, 0.96f, 0.65f, 1f));
                             else if (dx <= radioMax * 0.75f)
-                                texLlama.SetPixel(x, y, new Color(1f, 0.65f, 0.12f, 1f)); // Fuego naranja
+                                texLlama.SetPixel(x, y, new Color(1f, 0.65f, 0.12f, 1f));
                             else
-                                texLlama.SetPixel(x, y, new Color(0.95f, 0.28f, 0.08f, 0.95f)); // Borde rojo cálido
+                                texLlama.SetPixel(x, y, new Color(0.95f, 0.28f, 0.08f, 0.95f));
                         }
                         else
                         {
@@ -1037,7 +1471,6 @@ namespace SoulKnight
 
             if (_spriteHaloLuzCalida == null)
             {
-                // Halo radial cálido (48x48) que hace evidente que la luz emana de cada antorcha
                 int tam = 48;
                 Texture2D texHalo = new Texture2D(tam, tam, TextureFormat.RGBA32, false);
                 texHalo.filterMode = FilterMode.Bilinear;
@@ -1068,7 +1501,6 @@ namespace SoulKnight
 
             if (_spritePortalInvocacion == null)
             {
-                // Vórtice arcano púrpura/magenta (28x28) para anunciar la aparición de enemigos
                 int tam = 28;
                 Texture2D texP = new Texture2D(tam, tam, TextureFormat.RGBA32, false);
                 texP.filterMode = FilterMode.Point;
@@ -1078,17 +1510,27 @@ namespace SoulKnight
                     for (int x = 0; x < tam; x++)
                     {
                         Vector2 diff = new Vector2(x, y) - c;
-                        float r = diff.magnitude;
-                        float ang = Mathf.Atan2(diff.y, diff.x);
-                        float espiral = Mathf.Sin(ang * 3f + r * 0.85f);
-                        if (r <= 3.2f)
-                            texP.SetPixel(x, y, new Color(0.95f, 0.75f, 1f, 1f)); // Núcleo brillante
-                        else if (r <= 8.5f)
-                            texP.SetPixel(x, y, espiral > 0f ? new Color(0.75f, 0.18f, 0.98f, 0.95f) : new Color(0.32f, 0.06f, 0.55f, 0.92f));
-                        else if (r <= 12.2f)
-                            texP.SetPixel(x, y, espiral > -0.2f ? new Color(0.92f, 0.25f, 0.85f, 0.85f) : Color.clear);
+                        float dist = diff.magnitude;
+                        if (dist <= 13f && dist >= 2.5f)
+                        {
+                            float angle = Mathf.Atan2(diff.y, diff.x);
+                            float spiral = Mathf.Sin(angle * 3f + (13f - dist) * 0.8f);
+                            if (spiral > 0.05f)
+                            {
+                                Color colP = (dist < 7.5f)
+                                    ? Color.Lerp(new Color(1f, 0.95f, 1f, 1f), new Color(0.9f, 0.35f, 0.95f, 1f), dist / 7.5f)
+                                    : Color.Lerp(new Color(0.9f, 0.35f, 0.95f, 1f), new Color(0.4f, 0.1f, 0.85f, 0f), (dist - 7.5f) / 5.5f);
+                                texP.SetPixel(x, y, colP);
+                            }
+                            else
+                            {
+                                texP.SetPixel(x, y, Color.clear);
+                            }
+                        }
                         else
+                        {
                             texP.SetPixel(x, y, Color.clear);
+                        }
                     }
                 }
                 texP.Apply();
@@ -1097,54 +1539,48 @@ namespace SoulKnight
 
             if (_spriteAntorchaBase == null)
             {
-                // Soporte de hierro y madera pixel-art bien definido (12x20)
-                Texture2D texA = new Texture2D(12, 20, TextureFormat.RGBA32, false);
-                texA.filterMode = FilterMode.Point;
-                for (int y = 0; y < 20; y++)
+                Texture2D texB = new Texture2D(6, 12, TextureFormat.RGBA32, false);
+                texB.filterMode = FilterMode.Point;
+                for (int y = 0; y < 12; y++)
                 {
-                    for (int x = 0; x < 12; x++)
+                    for (int x = 0; x < 6; x++)
                     {
-                        if (x >= 5 && x <= 6 && y >= 2 && y <= 12)
-                            texA.SetPixel(x, y, (x == 5) ? new Color(0.52f, 0.32f, 0.16f, 1f) : new Color(0.36f, 0.20f, 0.09f, 1f));
-                        else if (x >= 4 && x <= 7 && y >= 6 && y <= 7)
-                            texA.SetPixel(x, y, new Color(0.25f, 0.27f, 0.32f, 1f)); // Argolla de hierro
-                        else if (x >= 3 && x <= 8 && y >= 13 && y <= 15)
-                            texA.SetPixel(x, y, new Color(0.28f, 0.30f, 0.35f, 1f)); // Cazoleta de hierro
-                        else
-                            texA.SetPixel(x, y, Color.clear);
+                        if (y >= 8) texB.SetPixel(x, y, new Color(0.35f, 0.28f, 0.22f));
+                        else if (x >= 2 && x <= 3) texB.SetPixel(x, y, new Color(0.5f, 0.38f, 0.25f));
+                        else texB.SetPixel(x, y, Color.clear);
                     }
                 }
-                texA.Apply();
-                _spriteAntorchaBase = Sprite.Create(texA, new Rect(0, 0, 12, 20), new Vector2(0.5f, 0.5f), 16f);
+                texB.Apply();
+                _spriteAntorchaBase = Sprite.Create(texB, new Rect(0, 0, 6, 12), new Vector2(0.5f, 0.1f), 16f);
             }
         }
 
         private void CrearPortalSpawnEnSala(ControladorSala ctrl, Vector2 pos)
         {
-            var portalObj = new GameObject("PortalSpawnEnemigos");
-            portalObj.transform.SetParent(ctrl.transform);
-            portalObj.transform.position = (Vector3)pos;
+            var pObj = new GameObject("PortalInvocacion");
+            pObj.transform.SetParent(contenedorMapa);
+            pObj.transform.position = (Vector3)pos;
 
-            var sr = portalObj.AddComponent<SpriteRenderer>();
+            var sr = pObj.AddComponent<SpriteRenderer>();
             sr.sprite = _spritePortalInvocacion;
-            sr.sortingOrder = 2; // Sobre el suelo y visible al activarse la sala
+            sr.color = new Color(0.95f, 0.45f, 1f, 0.88f);
+            sr.sortingOrder = 1;
 
-            ctrl.RegistrarPortalSpawn(pos, portalObj);
+            ctrl.RegistrarPortalSpawn(pos, pObj);
         }
 
-        private void CrearAntorchaEnSala(ControladorSala ctrl, Vector2 pos)
+        private void CrearAntorchaEnSala(ControladorSala ctrl, Vector2 pos, DatosBioma dSala = null)
         {
             var antObj = new GameObject("Antorcha");
-            antObj.transform.SetParent(ctrl.transform);
+            antObj.transform.SetParent(contenedorMapa);
             antObj.transform.position = (Vector3)pos;
 
             var srBase = antObj.AddComponent<SpriteRenderer>();
             srBase.sprite = _spriteAntorchaBase;
             srBase.sortingOrder = 0;
 
-            DatosBioma datos = ObtenerDatosBioma(biomaActual);
+            DatosBioma datos = dSala ?? ObtenerDatosBioma(biomaActual);
 
-            // Resplandor cálido radial sobre el suelo (sortingOrder = 0, bajo el overlay de oscuridad para no traspasar paredes)
             var haloObj = new GameObject("HaloLuzCalida");
             haloObj.transform.SetParent(antObj.transform, false);
             haloObj.transform.localPosition = new Vector3(0f, 0.25f, 0f);
@@ -1157,13 +1593,22 @@ namespace SoulKnight
                 srHalo.color = datos.colorLuzAntorcha;
             }
 
-            // Llama pixel-art definida según el bioma
             var llamaObj = new GameObject("Llama");
             llamaObj.transform.SetParent(antObj.transform, false);
             llamaObj.transform.localPosition = new Vector3(0f, 0.32f, 0f);
             llamaObj.transform.localScale = Vector3.one;
             var srLlama = llamaObj.AddComponent<SpriteRenderer>();
-            srLlama.sprite = (datos != null && datos.spriteLlamaAntorcha != null) ? datos.spriteLlamaAntorcha : _spriteCirculoLuz;
+
+            if (datos != null && datos.framesWallFaceTorch != null && datos.framesWallFaceTorch.Length > 0 && datos.framesWallFaceTorch[0] != null)
+            {
+                var anim = llamaObj.AddComponent<AnimadorSpriteTile>();
+                anim.Configurar(srLlama, datos.framesWallFaceTorch, 8f);
+            }
+            else
+            {
+                srLlama.sprite = (datos != null && datos.spriteLlamaAntorcha != null) ? datos.spriteLlamaAntorcha : _spriteCirculoLuz;
+            }
+
             srLlama.color = Color.white;
             srLlama.sortingOrder = 3;
 
@@ -1175,7 +1620,7 @@ namespace SoulKnight
             // Los muros ya quedan cubiertos directamente por el overlay de oscuridad en SistemaVision (sortingOrder = 4)
         }
 
-        private SalaInfo CrearSala(int cx, int cy, int ancho, int alto, int numCols, int numEnems, bool esInicio, bool esJefe)
+        private SalaInfo CrearSala(int cx, int cy, int ancho, int alto, int numCols, int numEnems, bool esInicio, bool esJefe, TipoBioma bioma = TipoBioma.Piedra)
         {
             int hx = ancho / 2;
             int hy = alto / 2;
@@ -1190,86 +1635,9 @@ namespace SoulKnight
                 numColumnas = numCols,
                 numEnemigos = numEnems,
                 esSalaInicio = esInicio,
-                esSalaJefe = esJefe
+                esSalaJefe = esJefe,
+                bioma = bioma
             };
-        }
-
-        private void CrearSueloVisual(Vector2 pos, Vector2 size, Sprite spriteSuelo)
-        {
-            var go = new GameObject("Suelo");
-            go.transform.SetParent(contenedorMapa);
-            go.transform.position = (Vector3)pos;
-
-            var sr = go.AddComponent<SpriteRenderer>();
-            sr.sprite = spriteSuelo;
-            sr.drawMode = SpriteDrawMode.Tiled;
-            sr.size = size;
-            sr.sortingOrder = -1;
-        }
-
-        private void CrearSueloSegmento(int gx1, int gx2, int gy, int minX, int minY, Sprite spriteSuelo)
-        {
-            float wx1 = gx1 + minX;
-            float wx2 = gx2 + minX;
-            float wy = gy + minY;
-
-            float longitud = wx2 - wx1 + 1f;
-            Vector2 centro = new Vector2((wx1 + wx2) * 0.5f, wy);
-            Vector2 tam = new Vector2(longitud, 1f);
-
-            var go = new GameObject("Suelo");
-            go.transform.SetParent(contenedorMapa);
-            go.transform.position = (Vector3)centro;
-
-            var sr = go.AddComponent<SpriteRenderer>();
-            sr.sprite = spriteSuelo;
-            sr.drawMode = SpriteDrawMode.Tiled;
-            sr.size = tam;
-            sr.sortingOrder = -1;
-        }
-
-        private void CrearMuroSegmento(int gx1, int gx2, int gy, int minX, int minY, Sprite spriteMuro)
-        {
-            float wx1 = gx1 + minX;
-            float wx2 = gx2 + minX;
-            float wy = gy + minY;
-
-            float longitud = wx2 - wx1 + 1f;
-            Vector2 centro = new Vector2((wx1 + wx2) * 0.5f, wy);
-            Vector2 tam = new Vector2(longitud, 1f);
-
-            var go = new GameObject("Muro");
-            try { go.tag = "Pared"; } catch { }
-            go.transform.SetParent(contenedorMapa);
-            go.transform.position = (Vector3)centro;
-
-            var sr = go.AddComponent<SpriteRenderer>();
-            sr.sprite = spriteMuro;
-            sr.drawMode = SpriteDrawMode.Tiled;
-            sr.size = tam;
-            sr.sortingOrder = 2; // Todos los bloques de los bordes siempre visibles por encima de la oscuridad (1)
-
-            var col = go.AddComponent<BoxCollider2D>();
-            col.size = tam;
-
-            _murosVisuales.Add(sr);
-        }
-
-        private void CrearColumna(Vector2 pos, Sprite spriteColumna)
-        {
-            var go = new GameObject("Columna");
-            try { go.tag = "Pared"; } catch { }
-            go.transform.SetParent(contenedorMapa);
-            go.transform.position = (Vector3)pos;
-
-            var sr = go.AddComponent<SpriteRenderer>();
-            sr.sprite = spriteColumna;
-            sr.sortingOrder = 3;
-
-            var col = go.AddComponent<BoxCollider2D>();
-            col.size = new Vector2(0.9f, 1.3f);
-
-            _murosVisuales.Add(sr);
         }
     }
 }

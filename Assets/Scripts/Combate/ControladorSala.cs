@@ -16,6 +16,8 @@ namespace SoulKnight
         public bool esSalaJefe;
         public bool esSalaTienda;
         public bool esSalaCofreTesoro;
+        public TipoBioma biomaSala = TipoBioma.Piedra;
+        public DatosBioma datosBioma;
 
         public Rect limitesSala;       // xMin, yMin, width, height
         public Rect limitesInteriores; // un poco más adentro para que el jugador ya haya cruzado el umbral
@@ -38,13 +40,15 @@ namespace SoulKnight
         private bool _portalesActivos = false;
         private float _escalaPortales = 0f;
 
-        public void Inicializar(int idx, int xMin, int xMax, int yMin, int yMax, bool inicio, bool jefe, bool tienda = false, bool cofreTesoro = false)
+        public void Inicializar(int idx, int xMin, int xMax, int yMin, int yMax, bool inicio, bool jefe, bool tienda = false, bool cofreTesoro = false, TipoBioma bioma = TipoBioma.Piedra)
         {
             indiceSala = idx;
             esSalaInicio = inicio;
             esSalaJefe = jefe;
             esSalaTienda = tienda;
             esSalaCofreTesoro = cofreTesoro;
+            biomaSala = bioma;
+            datosBioma = CatalogoBiomas.Obtener(bioma);
 
             float w = xMax - xMin + 1;
             float h = yMax - yMin + 1;

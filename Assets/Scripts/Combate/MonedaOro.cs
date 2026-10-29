@@ -372,6 +372,16 @@ namespace SoulKnight
             }
         }
 
+                public static MonedaOro Crear(Vector2 pos, int valor = 1)
+        {
+            var go = new GameObject("MonedaOro");
+            go.transform.position = pos;
+            var mon = go.AddComponent<MonedaOro>();
+            Vector2 dir = Random.insideUnitCircle.normalized;
+            mon.IniciarSalto(Random.Range(1000, 99999), valor, dir, Random.Range(2.0f, 4.0f), Random.Range(4.0f, 7.0f));
+            return mon;
+        }
+
         public static void DestruirTodas()
         {
             var lista = new List<MonedaOro>(Todas.Values);
