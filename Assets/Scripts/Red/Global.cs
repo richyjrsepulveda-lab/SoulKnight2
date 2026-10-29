@@ -58,6 +58,7 @@ namespace SoulKnight
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         static void CrearAlIniciar()
         {
+            AplicarAjustesRendimiento();
             if (Instancia != null) return;
             var prefab = Resources.Load<GameObject>("Global");
             if (prefab == null)
@@ -67,6 +68,17 @@ namespace SoulKnight
             }
             var go = Instantiate(prefab);
             go.name = "Global";
+        }
+
+        /// <summary>
+        /// Ajustes ligeros de rendimiento: aplica el VSync guardado en opciones (por defecto activado)
+        /// y limita los FPS cuando el VSync está apagado para no saturar CPU/GPU sin necesidad.
+        /// </summary>
+        static void AplicarAjustesRendimiento()
+        {
+            int vsync = PlayerPrefs.GetInt("VSyncSetting", 1);
+            QualitySettings.vSyncCount = vsync > 0 ? 1 : 0;
+            Application.targetFrameRate = vsync > 0 ? -1 : 144;
         }
 
         void Awake()

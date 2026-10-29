@@ -196,15 +196,7 @@ namespace SoulKnight
             RegistrarMusica(TipoMusica.Lobby, "Audio/Musica/MusicaLobby");
             RegistrarMusica(TipoMusica.Mazmorra, "Audio/Musica/MusicaDungeon");
             // Usar MusicaJefe1 para los combates contra jefes
-            var clipJefe1 = Resources.Load<AudioClip>("Audio/Musica/MusicaJefe1");
-            if (clipJefe1 != null)
-            {
-                _clipsMusica[TipoMusica.Jefe] = clipJefe1;
-            }
-            else
-            {
-                RegistrarMusica(TipoMusica.Jefe, "Audio/Musica/MusicaBoss");
-            }
+            RegistrarMusica(TipoMusica.Jefe, "Audio/Musica/MusicaJefe1");
 
             // SFX
             RegistrarSFX(TipoSFX.Disparo, "Audio/SFX/Disparo");
@@ -231,7 +223,6 @@ namespace SoulKnight
             RegistrarSFX(TipoSFX.RugidoJefe, "Audio/SFX/RugidoJefe");
             RegistrarSFX(TipoSFX.Escudo, "Audio/SFX/Escudo");
             RegistrarSFX(TipoSFX.FuegoDisparo, "Audio/SFX/FuegoDisparo");
-            RegistrarSFX(TipoSFX.FuegoLlamas, "Audio/SFX/FuegoLlamas");
             RegistrarSFX(TipoSFX.HieloDisparo, "Audio/SFX/HieloDisparo");
             RegistrarSFX(TipoSFX.ImpactoHielo, "Audio/SFX/ImpactoHielo");
             RegistrarSFX(TipoSFX.GatoDano1, "Audio/SFX/GatoDano1");
@@ -247,11 +238,11 @@ namespace SoulKnight
             RegistrarSFX(TipoSFX.CargandoUltiRayo, "Audio/SFX/CargandoUltiRayo");
             RegistrarSFX(TipoSFX.LanzandoUltiRayo, "Audio/SFX/LanzandoUltiRayo");
             RegistrarSFX(TipoSFX.ComerPescado, "Audio/SFX/ComerPescado");
-            RegistrarSFX(TipoSFX.FuegoLlamas, "Audio/SFX/Lanzallamas", "Audio/SFX/FuegoLlamas");
-            RegistrarSFX(TipoSFX.Lanzallamas, "Audio/SFX/Lanzallamas", "Audio/SFX/FuegoLlamas");
-            RegistrarSFX(TipoSFX.UltiExplosionFuego, "Audio/SFX/UltiExplosionFuego", "Audio/SFX/UltiExplosionFuegoFinal");
-            RegistrarSFX(TipoSFX.UltiMaullidoFuego, "Audio/SFX/UltiMaullidoFuego", "Audio/SFX/UltiMaullidoFinal");
-            RegistrarSFX(TipoSFX.UltiSiceoFuego, "Audio/SFX/UltiSiceoFuego", "Audio/SFX/UltiSiceoFuegoFinal");
+            RegistrarSFX(TipoSFX.FuegoLlamas, "Audio/SFX/Lanzallamas");
+            RegistrarSFX(TipoSFX.Lanzallamas, "Audio/SFX/Lanzallamas");
+            RegistrarSFX(TipoSFX.UltiExplosionFuego, "Audio/SFX/UltiExplosionFuego");
+            RegistrarSFX(TipoSFX.UltiMaullidoFuego, "Audio/SFX/UltiMaullidoFuego");
+            RegistrarSFX(TipoSFX.UltiSiceoFuego, "Audio/SFX/UltiSiceoFuego");
             RegistrarSFX(TipoSFX.CachinCompra, "Audio/SFX/CachinCompra");
             RegistrarSFX(TipoSFX.GatoRonroneo, "Audio/SFX/GatoRonroneo");
             RegistrarSFX(TipoSFX.GatoMaullido1, "Audio/SFX/GatoMaullido1");

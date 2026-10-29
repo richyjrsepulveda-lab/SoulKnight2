@@ -1087,6 +1087,7 @@ namespace SoulKnight
                 (val) =>
                 {
                     QualitySettings.vSyncCount = val ? 1 : 0;
+                    Application.targetFrameRate = val ? -1 : 144;
                     PlayerPrefs.SetInt("VSyncSetting", QualitySettings.vSyncCount);
                     PlayerPrefs.Save();
                 });
