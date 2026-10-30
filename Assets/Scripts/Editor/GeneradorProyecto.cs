@@ -1290,7 +1290,7 @@ namespace SoulKnight.Editor
                 col.size = new Vector2(0.8f, 0.8f);
                 try { pObj.tag = "Pared"; } catch {}
                 var prop = pObj.AddComponent<PropDestruible>();
-                prop.vidaMax = 10;
+                prop.vidaMax = 28;
             }
             CrearPropLobby(-8, 11, datosStone.spriteCrate);
             CrearPropLobby(-9, 11, datosStone.spriteBarrel);
@@ -2442,7 +2442,7 @@ namespace SoulKnight.Editor
                                 spSuelo = datos.spriteSuelo;
                             }
                         }
-                        CrearTileCaptura(root.transform, wx, wy, spSuelo, -1);
+                        CrearTileCaptura(root.transform, wx, wy, spSuelo, -1, new Color(0.66f, 0.66f, 0.70f, 1f));
 
                         // Calcomanías decorativas orgánicas sobre el suelo (huesos, grietas, charcos, piedras)
                         if (r >= 2 && gridMatriz[c, r] == '.' && datos.spritesDecals != null && datos.spritesDecals.Length > 0)
@@ -2600,7 +2600,7 @@ namespace SoulKnight.Editor
             return d.spriteMuro;
         }
 
-        private static void CrearTileCaptura(Transform parent, float x, float y, Sprite sprite, int sortingOrder)
+        private static void CrearTileCaptura(Transform parent, float x, float y, Sprite sprite, int sortingOrder, Color? color = null)
         {
             if (sprite == null) return;
             var go = new GameObject("Tile");
@@ -2609,6 +2609,7 @@ namespace SoulKnight.Editor
             var sr = go.AddComponent<SpriteRenderer>();
             sr.sprite = sprite;
             sr.sortingOrder = sortingOrder;
+            if (color.HasValue) sr.color = color.Value;
         }
 }
 }

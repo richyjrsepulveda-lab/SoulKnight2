@@ -766,6 +766,10 @@ namespace SoulKnight
             var sr = go.AddComponent<SpriteRenderer>();
             sr.sprite = spriteSuelo;
             sr.sortingOrder = -1;
+            // Tinte mas oscuro y ambiental para que el suelo de la run no resulte brillante
+            sr.color = (d != null && d.tipo == TipoBioma.Piedra)
+                ? new Color(0.66f, 0.66f, 0.70f, 1f)
+                : new Color(0.74f, 0.74f, 0.77f, 1f);
 
             // Decoración viva: calcomanías esparcidas orgánicamente (grietas, guijarros, huesos, charcos)
             if (d != null && d.spritesDecals != null && d.spritesDecals.Length > 0)
@@ -780,7 +784,7 @@ namespace SoulKnight
                     var srDecal = decalObj.AddComponent<SpriteRenderer>();
                     srDecal.sprite = d.spritesDecals[decalIdx];
                     srDecal.sortingOrder = 0;
-                    srDecal.color = new Color(1f, 1f, 1f, UnityEngine.Random.Range(0.70f, 0.95f));
+                    srDecal.color = new Color(0.70f, 0.70f, 0.75f, UnityEngine.Random.Range(0.60f, 0.85f));
                 }
             }
         }
@@ -1184,7 +1188,7 @@ namespace SoulKnight
             col.size = new Vector2(0.875f, 0.8125f);
 
             var prop = go.AddComponent<PropDestruible>();
-            prop.vidaMax = 15;
+            prop.vidaMax = 28;
             prop.esExplosivo = false;
         }
 

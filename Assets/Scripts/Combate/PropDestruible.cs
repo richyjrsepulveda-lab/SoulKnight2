@@ -18,7 +18,7 @@ namespace SoulKnight
     public class PropDestruible : MonoBehaviour
     {
         public TipoPropDestruible tipoProp = TipoPropDestruible.Caja;
-        public int vidaMax = 15;
+        public int vidaMax = 28;
         public bool esExplosivo = false;
         public int danoExplosion = 25;
         public float radioExplosion = 2.4f;
