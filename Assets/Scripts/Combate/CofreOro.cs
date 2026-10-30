@@ -105,7 +105,7 @@ namespace SoulKnight
                 _textoIndicador.gameObject.SetActive(cerca);
             }
 
-            if (cerca && (Input.GetKeyDown(KeyCode.F) || Controles.Pulsada(KeyCode.F)))
+            if (cerca && (Input.GetKeyDown(KeyCode.F)))
             {
                 local.InteractuarCofre(this);
             }

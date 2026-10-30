@@ -941,7 +941,7 @@ namespace SoulKnight
                             {
                                 listaL.Remove(idHabActual);
                                 GestorLoadout.GuardarLoadout(pj, listaL);
-                                GestorAudio.PlaySFX(TipoSFX.Click);
+                                GestorAudio.PlaySFX(TipoSFX.ClickUI);
                                 ConstruirVistaCuarto(pj);
                             }
                         }
@@ -951,7 +951,7 @@ namespace SoulKnight
                             {
                                 listaL.Add(idHabActual);
                                 GestorLoadout.GuardarLoadout(pj, listaL);
-                                GestorAudio.PlaySFX(TipoSFX.Click);
+                                GestorAudio.PlaySFX(TipoSFX.ClickUI);
                                 ConstruirVistaCuarto(pj);
                             }
                         }
