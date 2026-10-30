@@ -8,10 +8,10 @@ namespace SoulKnight
 {
     /// <summary>
     /// Pantalla minijuego cooperativa de combinación para el cofre grande de 50 de oro.
-    /// Un laberinto con 4 bolitas elementales (empiezan en cada esquina).
-    /// Los jugadores mueven las bolitas arrastrándolas con el cursor hasta su receptáculo central correspondiente.
-    /// Las bolitas colisionan con los muros del laberinto Y colisionan entre sí, por lo que los jugadores
-    /// interactúan en tiempo real y se afectan mutuamente (como el puzzle de switch de Among Us).
+    /// Un laberinto con 4 esferas elementales que inician en las 4 esquinas.
+    /// Los jugadores arrastran las esferas con el cursor hasta su receptáculo central correspondiente.
+    /// Las esferas colisionan suavemente con los muros y colisionan físicamente entre sí,
+    /// permitiendo que varios jugadores interactúen y se empujen en tiempo real (estilo Among Us).
     /// </summary>
     public class ScreenPuzzleCofre : MonoBehaviour
     {
@@ -19,44 +19,52 @@ namespace SoulKnight
 
         private CofreOro _cofreActual;
         private CanvasGroup _canvasGroup;
+        private RectTransform _panelVentana;
         private RectTransform _panelTablero;
-        private Image _fondoOscuro;
 
-        private const float RADIO_BOLITA = 18f;
-        private const float DIAMETRO_COLISION = 36f;
-        private const float TOLERANCIA_META = 22f;
+        private const float RADIO_BOLITA = 15f;
+        private const float DIAMETRO_COLISION = 30f;
+        private const float TOLERANCIA_META = 24f;
 
-        // 4 bolitas: 0=Fuego(Roja), 1=Hielo(Cian), 2=Rayo(Amarilla), 3=Planta(Verde)
+        // 4 Esferas: 0=Fuego(Roja), 1=Hielo(Cian), 2=Rayo(Amarilla), 3=Planta(Verde)
         private readonly Vector2[] _posIniciales = new Vector2[]
         {
-            new Vector2(-170f, 170f),  // Top-Left
-            new Vector2(170f, 170f),   // Top-Right
-            new Vector2(-170f, -170f), // Bottom-Left
-            new Vector2(170f, -170f)   // Bottom-Right
+            new Vector2(-175f, 175f),  // Top-Left
+            new Vector2(175f, 175f),   // Top-Right
+            new Vector2(-175f, -175f), // Bottom-Left
+            new Vector2(175f, -175f)   // Bottom-Right
         };
 
         private readonly Vector2[] _metas = new Vector2[]
         {
-            new Vector2(-50f, 50f),    // Receptáculo Fuego
-            new Vector2(50f, 50f),     // Receptáculo Hielo
-            new Vector2(-50f, -50f),   // Receptáculo Rayo
-            new Vector2(50f, -50f)     // Receptáculo Planta
+            new Vector2(-46f, 46f),    // Receptáculo Fuego
+            new Vector2(46f, 46f),     // Receptáculo Hielo
+            new Vector2(-46f, -46f),   // Receptáculo Rayo
+            new Vector2(46f, -46f)     // Receptáculo Planta
         };
 
-        private readonly Color[] _colores = new Color[]
+        private readonly Color[] _coloresBase = new Color[]
         {
-            new Color(1f, 0.32f, 0.22f),  // Fuego
-            new Color(0.25f, 0.85f, 1f),  // Hielo
-            new Color(1f, 0.95f, 0.25f),  // Rayo
-            new Color(0.35f, 0.95f, 0.45f) // Planta
+            new Color(1f, 0.28f, 0.20f),  // Fuego (Rojo vivo)
+            new Color(0.20f, 0.85f, 1f),  // Hielo (Cian gélido)
+            new Color(1f, 0.92f, 0.22f),  // Rayo (Amarillo eléctrico)
+            new Color(0.25f, 0.95f, 0.45f) // Planta (Verde esmeralda)
+        };
+
+        private readonly Color[] _coloresBrillo = new Color[]
+        {
+            new Color(1f, 0.80f, 0.70f),
+            new Color(0.80f, 0.96f, 1f),
+            new Color(1f, 1f, 0.75f),
+            new Color(0.80f, 1f, 0.85f)
         };
 
         private readonly string[] _nombresElementos = new string[]
         {
-            "Fuego", "Hielo", "Rayo", "Naturaleza"
+            "Fuego", "Hielo", "Rayo", "Planta"
         };
 
-        // Posiciones actuales de las bolitas en espacio local del tablero
+        // Posiciones locales en el tablero [-220..220]
         public readonly Vector2[] posicionesBolitas = new Vector2[4];
         public readonly bool[] enMeta = new bool[4];
 
@@ -69,14 +77,20 @@ namespace SoulKnight
         private bool _resuelto = false;
         private float _tiempoUltimoEnvioRed = 0f;
 
-        // Paredes del laberinto (rectángulos en coordenadas locales del tablero [-220..220, -220..220])
+        // Paredes del laberinto (rectángulos locales centrados en (0,0))
         private readonly List<Rect> _murosLaberinto = new List<Rect>();
+
+        private static Sprite _spriteEsferaGenerico;
+        private static Sprite[] _spritesEsferas;
+        private static Sprite[] _spritesMetas;
+        private static Sprite _spriteMuro;
 
         void Awake()
         {
             if (Instancia == null)
             {
                 Instancia = this;
+                DontDestroyOnLoad(gameObject);
             }
             else if (Instancia != this)
             {
@@ -85,43 +99,53 @@ namespace SoulKnight
             }
 
             ConstruirMurosLaberinto();
+            AsegurarTexturasProcedurales();
             ConstruirInterfaz();
             ResetearPosiciones();
             CerrarInstantaneo();
+        }
+
+        void OnDestroy()
+        {
+            if (Instancia == this)
+            {
+                Instancia = null;
+                Controles.Bloqueado = false;
+            }
         }
 
         private void ConstruirMurosLaberinto()
         {
             _murosLaberinto.Clear();
 
-            // Bordes exteriores (grosor 20)
-            _murosLaberinto.Add(new Rect(-240, 220, 480, 20));  // Techo
-            _murosLaberinto.Add(new Rect(-240, -240, 480, 20)); // Suelo
-            _murosLaberinto.Add(new Rect(-240, -240, 20, 480)); // Pared Izq
-            _murosLaberinto.Add(new Rect(220, -240, 20, 480));  // Pared Der
+            // Bordes exteriores del área jugable (área interior [-220..220] x [-220..220], grosor 16)
+            _murosLaberinto.Add(new Rect(-236, 220, 472, 16));  // Techo
+            _murosLaberinto.Add(new Rect(-236, -236, 472, 16)); // Suelo
+            _murosLaberinto.Add(new Rect(-236, -236, 16, 472)); // Pared Izq
+            _murosLaberinto.Add(new Rect(220, -236, 16, 472));  // Pared Der
 
-            // Tabiques internos formando pasadizos de ~44px de ancho (1 bolita de ancho exacto)
-            // Cuadrante Superior Izquierdo
-            _murosLaberinto.Add(new Rect(-130, 80, 16, 140));
-            _murosLaberinto.Add(new Rect(-220, 80, 90, 16));
+            // Baffles de laberinto simétrico cuádruple (pasajes de 55-65px de ancho, amplios y navegables):
+            // Cuadrante II: Top-Left (Fuego)
+            _murosLaberinto.Add(new Rect(-150, 95, 75, 14));
+            _murosLaberinto.Add(new Rect(-105, 30, 14, 75));
 
-            // Cuadrante Superior Derecho
-            _murosLaberinto.Add(new Rect(114, 80, 16, 140));
-            _murosLaberinto.Add(new Rect(130, 80, 90, 16));
+            // Cuadrante I: Top-Right (Hielo)
+            _murosLaberinto.Add(new Rect(75, 95, 75, 14));
+            _murosLaberinto.Add(new Rect(91, 30, 14, 75));
 
-            // Cuadrante Inferior Izquierdo
-            _murosLaberinto.Add(new Rect(-130, -220, 16, 140));
-            _murosLaberinto.Add(new Rect(-220, -96, 90, 16));
+            // Cuadrante III: Bottom-Left (Rayo)
+            _murosLaberinto.Add(new Rect(-150, -109, 75, 14));
+            _murosLaberinto.Add(new Rect(-105, -105, 14, 75));
 
-            // Cuadrante Inferior Derecho
-            _murosLaberinto.Add(new Rect(114, -220, 16, 140));
-            _murosLaberinto.Add(new Rect(130, -96, 90, 16));
+            // Cuadrante IV: Bottom-Right (Planta)
+            _murosLaberinto.Add(new Rect(75, -109, 75, 14));
+            _murosLaberinto.Add(new Rect(91, -105, 14, 75));
 
-            // Chokes de acceso al recinto central
-            _murosLaberinto.Add(new Rect(-90, 0, 40, 16));
-            _murosLaberinto.Add(new Rect(50, 0, 40, 16));
-            _murosLaberinto.Add(new Rect(-8, 50, 16, 40));
-            _murosLaberinto.Add(new Rect(-8, -90, 16, 40));
+            // Pilares de acceso a la cámara central (recinto central [-70..70] x [-70..70] totalmente despejado)
+            _murosLaberinto.Add(new Rect(-7, 72, 14, 38));   // Divisor norte
+            _murosLaberinto.Add(new Rect(-7, -110, 14, 38)); // Divisor sur
+            _murosLaberinto.Add(new Rect(-110, -7, 38, 14)); // Divisor oeste
+            _murosLaberinto.Add(new Rect(72, -7, 38, 14));   // Divisor este
         }
 
         public void ResetearPosiciones()
@@ -131,14 +155,20 @@ namespace SoulKnight
                 posicionesBolitas[i] = _posIniciales[i];
                 enMeta[i] = false;
             }
+            _bolitaAgarrada = -1;
             _resuelto = false;
             ActualizarVisuales();
         }
 
         private void ConstruirInterfaz()
         {
+            transform.localScale = Vector3.one;
+            transform.localPosition = Vector3.zero;
+
+            // Canvas en ScreenSpaceOverlay para que encaje a resolución nativa
             var canvas = GetComponent<Canvas>();
             if (canvas == null) canvas = gameObject.AddComponent<Canvas>();
+            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
             canvas.overrideSorting = true;
             canvas.sortingOrder = 25000;
 
@@ -150,118 +180,159 @@ namespace SoulKnight
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
             scaler.referenceResolution = new Vector2(1920f, 1080f);
             scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
+            scaler.matchWidthOrHeight = 0.5f;
 
             _canvasGroup = GetComponent<CanvasGroup>();
             if (_canvasGroup == null) _canvasGroup = gameObject.AddComponent<CanvasGroup>();
 
-            var rtFondo = gameObject.GetComponent<RectTransform>();
-            if (rtFondo == null) rtFondo = gameObject.AddComponent<RectTransform>();
-            rtFondo.anchorMin = Vector2.zero;
-            rtFondo.anchorMax = Vector2.one;
-            rtFondo.sizeDelta = Vector2.zero;
+            // Fondo translúcido oscuro
+            var rtRoot = GetComponent<RectTransform>();
+            if (rtRoot == null) rtRoot = gameObject.AddComponent<RectTransform>();
+            rtRoot.anchorMin = Vector2.zero;
+            rtRoot.anchorMax = Vector2.one;
+            rtRoot.offsetMin = Vector2.zero;
+            rtRoot.offsetMax = Vector2.zero;
 
-            _fondoOscuro = gameObject.GetComponent<Image>();
-            if (_fondoOscuro == null) _fondoOscuro = gameObject.AddComponent<Image>();
-            _fondoOscuro.color = new Color(0.02f, 0.03f, 0.05f, 0.88f);
+            var imgFondo = GetComponent<Image>();
+            if (imgFondo == null) imgFondo = gameObject.AddComponent<Image>();
+            imgFondo.color = new Color(0.03f, 0.04f, 0.07f, 0.85f);
 
-            // Tablero Central (520 x 520 px)
-            var tableroObj = new GameObject("TableroLaberinto");
-            tableroObj.transform.SetParent(transform, false);
-            _panelTablero = tableroObj.AddComponent<RectTransform>();
-            _panelTablero.sizeDelta = new Vector2(520f, 520f);
-            _panelTablero.anchoredPosition = new Vector2(0f, -15f);
+            // Ventana modal centrada (600 x 640 px)
+            var ventanaObj = new GameObject("PanelVentana");
+            ventanaObj.transform.SetParent(transform, false);
+            _panelVentana = ventanaObj.AddComponent<RectTransform>();
+            _panelVentana.anchorMin = new Vector2(0.5f, 0.5f);
+            _panelVentana.anchorMax = new Vector2(0.5f, 0.5f);
+            _panelVentana.pivot = new Vector2(0.5f, 0.5f);
+            _panelVentana.sizeDelta = new Vector2(580f, 620f);
+            _panelVentana.anchoredPosition = Vector2.zero;
 
-            var imgTablero = tableroObj.AddComponent<Image>();
-            imgTablero.color = new Color(0.10f, 0.12f, 0.18f, 1f);
+            var imgVentana = ventanaObj.AddComponent<Image>();
+            imgVentana.color = new Color(0.12f, 0.14f, 0.19f, 0.98f);
 
-            // Título y Cabecera
-            var headerObj = new GameObject("HeaderPuzzle");
-            headerObj.transform.SetParent(transform, false);
+            // Borde dorado de la ventana modal
+            var bordeObj = new GameObject("BordeVentana");
+            bordeObj.transform.SetParent(ventanaObj.transform, false);
+            var rtBorde = bordeObj.AddComponent<RectTransform>();
+            rtBorde.anchorMin = Vector2.zero;
+            rtBorde.anchorMax = Vector2.one;
+            rtBorde.sizeDelta = Vector2.zero;
+            var outl = bordeObj.AddComponent<Outline>();
+            outl.effectColor = new Color(0.85f, 0.70f, 0.30f, 0.75f);
+            outl.effectDistance = new Vector2(3f, -3f);
+
+            // Barra de Título Superior
+            var headerObj = new GameObject("HeaderVentana");
+            headerObj.transform.SetParent(ventanaObj.transform, false);
             var rtHeader = headerObj.AddComponent<RectTransform>();
-            rtHeader.anchoredPosition = new Vector2(0f, 320f);
-            rtHeader.sizeDelta = new Vector2(700f, 80f);
+            rtHeader.anchorMin = new Vector2(0f, 1f);
+            rtHeader.anchorMax = new Vector2(1f, 1f);
+            rtHeader.pivot = new Vector2(0.5f, 1f);
+            rtHeader.anchoredPosition = new Vector2(0f, -8f);
+            rtHeader.sizeDelta = new Vector2(-20f, 56f);
+
             var txtHeader = headerObj.AddComponent<Text>();
             txtHeader.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            txtHeader.fontSize = 28;
+            txtHeader.fontSize = 22;
             txtHeader.alignment = TextAnchor.MiddleCenter;
-            txtHeader.text = "🔐 MECANISMO DE COMBINACIÓN ANCESTRAL (50 ORO)\n<size=18><color=#ffd700>Arrastra las 4 gemas a sus receptáculos centrales. ¡Pueden cooperar!</color></size>";
+            txtHeader.text = "🔐 MECANISMO ANCESTRAL (50 ORO)\n<size=14><color=#f4c430>Arrastra cada esfera a su casilla central. ¡Pueden cooperar!</color></size>";
             txtHeader.color = Color.white;
 
-            // Botón Cerrar
+            // Botón Cerrar [X]
             var btnCerrarObj = new GameObject("BtnCerrar");
-            btnCerrarObj.transform.SetParent(transform, false);
+            btnCerrarObj.transform.SetParent(ventanaObj.transform, false);
             var rtBtn = btnCerrarObj.AddComponent<RectTransform>();
-            rtBtn.anchoredPosition = new Vector2(280f, 260f);
-            rtBtn.sizeDelta = new Vector2(44f, 44f);
+            rtBtn.anchorMin = new Vector2(1f, 1f);
+            rtBtn.anchorMax = new Vector2(1f, 1f);
+            rtBtn.pivot = new Vector2(1f, 1f);
+            rtBtn.anchoredPosition = new Vector2(-12f, -12f);
+            rtBtn.sizeDelta = new Vector2(36f, 36f);
+
             var imgBtn = btnCerrarObj.AddComponent<Image>();
-            imgBtn.color = new Color(0.8f, 0.2f, 0.2f, 0.9f);
+            imgBtn.color = new Color(0.85f, 0.25f, 0.25f, 0.95f);
             var btn = btnCerrarObj.AddComponent<Button>();
             btn.onClick.AddListener(Cerrar);
 
             var txtBtnObj = new GameObject("TxtX");
             txtBtnObj.transform.SetParent(btnCerrarObj.transform, false);
+            var rtTxtX = txtBtnObj.AddComponent<RectTransform>();
+            rtTxtX.anchorMin = Vector2.zero;
+            rtTxtX.anchorMax = Vector2.one;
+            rtTxtX.sizeDelta = Vector2.zero;
             var txtX = txtBtnObj.AddComponent<Text>();
             txtX.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            txtX.fontSize = 24;
+            txtX.fontSize = 20;
             txtX.alignment = TextAnchor.MiddleCenter;
-            txtX.text = "X";
+            txtX.text = "✕";
             txtX.color = Color.white;
 
-            // Renderizar Muros del Laberinto en el Tablero
-            foreach (var m in _murosLaberinto)
+            // Tablero del Laberinto (480 x 480 px)
+            var tableroObj = new GameObject("TableroLaberinto");
+            tableroObj.transform.SetParent(ventanaObj.transform, false);
+            _panelTablero = tableroObj.AddComponent<RectTransform>();
+            _panelTablero.anchorMin = new Vector2(0.5f, 0f);
+            _panelTablero.anchorMax = new Vector2(0.5f, 0f);
+            _panelTablero.pivot = new Vector2(0.5f, 0f);
+            _panelTablero.sizeDelta = new Vector2(480f, 480f);
+            _panelTablero.anchoredPosition = new Vector2(0f, 20f);
+
+            var imgTablero = tableroObj.AddComponent<Image>();
+            imgTablero.color = new Color(0.08f, 0.09f, 0.13f, 1f);
+
+            // Muros del Laberinto
+            for (int i = 0; i < _murosLaberinto.Count; i++)
             {
-                var muroUI = new GameObject("MuroUI");
+                Rect m = _murosLaberinto[i];
+                var muroUI = new GameObject($"MuroUI_{i}");
                 muroUI.transform.SetParent(_panelTablero, false);
                 var rtMuro = muroUI.AddComponent<RectTransform>();
+                rtMuro.anchorMin = new Vector2(0.5f, 0.5f);
+                rtMuro.anchorMax = new Vector2(0.5f, 0.5f);
+                rtMuro.pivot = new Vector2(0.5f, 0.5f);
                 rtMuro.sizeDelta = new Vector2(m.width, m.height);
                 rtMuro.anchoredPosition = new Vector2(m.x + m.width * 0.5f, m.y + m.height * 0.5f);
+
                 var imgMuro = muroUI.AddComponent<Image>();
-                imgMuro.color = new Color(0.28f, 0.32f, 0.44f, 1f);
+                imgMuro.sprite = _spriteMuro;
+                imgMuro.color = new Color(0.40f, 0.44f, 0.55f, 1f);
             }
 
-            // Crear Receptáculos (Metas) en el centro
+            // Metas / Receptáculos en el centro
             for (int i = 0; i < 4; i++)
             {
                 var metaObj = new GameObject($"Meta_{i}_{_nombresElementos[i]}");
                 metaObj.transform.SetParent(_panelTablero, false);
                 var rtMeta = metaObj.AddComponent<RectTransform>();
-                rtMeta.sizeDelta = new Vector2(44f, 44f);
+                rtMeta.anchorMin = new Vector2(0.5f, 0.5f);
+                rtMeta.anchorMax = new Vector2(0.5f, 0.5f);
+                rtMeta.pivot = new Vector2(0.5f, 0.5f);
+                rtMeta.sizeDelta = new Vector2(42f, 42f);
                 rtMeta.anchoredPosition = _metas[i];
-                var imgMeta = metaObj.AddComponent<Image>();
-                imgMeta.color = new Color(_colores[i].r, _colores[i].g, _colores[i].b, 0.35f);
-                _imgMetas[i] = imgMeta;
 
-                // Anillo exterior decorativo
-                var bordeObj = new GameObject("Borde");
-                bordeObj.transform.SetParent(metaObj.transform, false);
-                var rtBorde = bordeObj.AddComponent<RectTransform>();
-                rtBorde.sizeDelta = new Vector2(40f, 40f);
-                var imgBorde = bordeObj.AddComponent<Image>();
-                imgBorde.color = new Color(_colores[i].r, _colores[i].g, _colores[i].b, 0.85f);
+                var imgMeta = metaObj.AddComponent<Image>();
+                imgMeta.sprite = _spritesMetas[i];
+                imgMeta.color = new Color(1f, 1f, 1f, 0.45f);
+                _imgMetas[i] = imgMeta;
             }
 
-            // Crear las 4 Bolitas
+            // 4 Esferas Elementales
             for (int i = 0; i < 4; i++)
             {
-                var bolitaObj = new GameObject($"Bolita_{i}_{_nombresElementos[i]}");
+                var bolitaObj = new GameObject($"Esfera_{i}_{_nombresElementos[i]}");
                 bolitaObj.transform.SetParent(_panelTablero, false);
                 var rtB = bolitaObj.AddComponent<RectTransform>();
+                rtB.anchorMin = new Vector2(0.5f, 0.5f);
+                rtB.anchorMax = new Vector2(0.5f, 0.5f);
+                rtB.pivot = new Vector2(0.5f, 0.5f);
                 rtB.sizeDelta = new Vector2(RADIO_BOLITA * 2f, RADIO_BOLITA * 2f);
                 rtB.anchoredPosition = posicionesBolitas[i];
+
                 var imgB = bolitaObj.AddComponent<Image>();
-                imgB.color = _colores[i];
+                imgB.sprite = _spritesEsferas[i];
+                imgB.color = Color.white;
 
                 _visualBolitas[i] = rtB;
                 _imgBolitas[i] = imgB;
-
-                // Destello interior brillante
-                var brilloObj = new GameObject("Brillo");
-                brilloObj.transform.SetParent(bolitaObj.transform, false);
-                var rtBrillo = brilloObj.AddComponent<RectTransform>();
-                rtBrillo.sizeDelta = new Vector2(12f, 12f);
-                rtBrillo.anchoredPosition = new Vector2(-4f, 4f);
-                var imgBrillo = brilloObj.AddComponent<Image>();
-                imgBrillo.color = new Color(1f, 1f, 1f, 0.85f);
             }
         }
 
@@ -276,6 +347,7 @@ namespace SoulKnight
             _canvasGroup.blocksRaycasts = true;
             _canvasGroup.interactable = true;
 
+            Controles.Bloqueado = true;
             GestorAudio.PlaySFX(TipoSFX.ClickUI);
         }
 
@@ -283,9 +355,13 @@ namespace SoulKnight
         {
             _estaAbierto = false;
             _bolitaAgarrada = -1;
-            _canvasGroup.alpha = 0f;
-            _canvasGroup.blocksRaycasts = false;
-            _canvasGroup.interactable = false;
+            if (_canvasGroup != null)
+            {
+                _canvasGroup.alpha = 0f;
+                _canvasGroup.blocksRaycasts = false;
+                _canvasGroup.interactable = false;
+            }
+            Controles.Bloqueado = false;
             gameObject.SetActive(false);
         }
 
@@ -299,12 +375,13 @@ namespace SoulKnight
                 _canvasGroup.blocksRaycasts = false;
                 _canvasGroup.interactable = false;
             }
+            Controles.Bloqueado = false;
             gameObject.SetActive(false);
         }
 
         void Update()
         {
-            if (!_estaAbierto || _resuelto) return;
+            if (!_estaAbierto) return;
 
             if (Input.GetKeyDown(KeyCode.Escape))
             {
@@ -312,24 +389,26 @@ namespace SoulKnight
                 return;
             }
 
+            if (_resuelto) return;
+
             ProcesarInteraccionCursor();
             VerificarVictoria();
         }
 
         private void ProcesarInteraccionCursor()
         {
-            Vector2 mousePantalla = Input.mousePosition;
+            // Convertir coordenadas del cursor a coordenadas locales del tablero
             RectTransformUtility.ScreenPointToLocalPointInRectangle(
                 _panelTablero,
-                mousePantalla,
+                Input.mousePosition,
                 null,
                 out Vector2 mouseLocal);
 
-            // Al hacer clic, buscar si agarramos alguna bolita
+            // Al pulsar clic izquierdo, verificar si seleccionamos alguna esfera
             if (Input.GetMouseButtonDown(0))
             {
                 int mejorIndice = -1;
-                float menorDist = 32f;
+                float menorDist = 34f;
                 for (int i = 0; i < 4; i++)
                 {
                     float d = Vector2.Distance(mouseLocal, posicionesBolitas[i]);
@@ -342,19 +421,19 @@ namespace SoulKnight
                 _bolitaAgarrada = mejorIndice;
             }
 
-            // Soltar
+            // Al soltar clic izquierdo
             if (Input.GetMouseButtonUp(0))
             {
                 _bolitaAgarrada = -1;
             }
 
-            // Arrastrar bolita
+            // Arrastrar la esfera activa
             if (_bolitaAgarrada >= 0 && Input.GetMouseButton(0))
             {
                 MoverBolitaConFisica(_bolitaAgarrada, mouseLocal);
 
-                // Sincronizar en red si está activo
-                if (Time.time - _tiempoUltimoEnvioRed >= 0.04f) // ~25Hz
+                // Enviar sincronización de red
+                if (Time.time - _tiempoUltimoEnvioRed >= 0.04f)
                 {
                     _tiempoUltimoEnvioRed = Time.time;
                     if (SalaRed.Instancia != null)
@@ -374,24 +453,25 @@ namespace SoulKnight
             float dist = paso.magnitude;
             if (dist < 0.001f) return;
 
-            // Movimiento suave y acotado
-            float velocidadMax = 450f * Time.deltaTime;
+            // Velocidad de arrastre ágil
+            float velocidadMax = 520f * Time.deltaTime;
             Vector2 delta = paso.normalized * Mathf.Min(dist, velocidadMax);
             Vector2 cand = posActual + delta;
 
-            // 1. Colisión con los Muros del Laberinto (deslizamiento por ejes)
+            // 1. Deslizamiento suave en X e Y contra muros
             Vector2 candX = new Vector2(cand.x, posActual.y);
             if (!ColisionaConMuros(candX))
             {
                 posActual.x = candX.x;
             }
+
             Vector2 candY = new Vector2(posActual.x, cand.y);
             if (!ColisionaConMuros(candY))
             {
                 posActual.y = candY.y;
             }
 
-            // 2. Colisión física entre Bolitas (se empujan y bloquean entre sí)
+            // 2. Colisión física entre Esferas (se empujan mutuamente estilo Among Us)
             for (int j = 0; j < 4; j++)
             {
                 if (j == indice) continue;
@@ -403,7 +483,6 @@ namespace SoulKnight
                     Vector2 dirSep = diff.normalized;
                     float penetracion = DIAMETRO_COLISION - dBol;
 
-                    // Empujar ambas bolitas (o la otra si una está agarrada)
                     Vector2 nuevaOtra = posicionesBolitas[j] - dirSep * (penetracion * 0.5f);
                     if (!ColisionaConMuros(nuevaOtra))
                     {
@@ -414,16 +493,16 @@ namespace SoulKnight
                 }
             }
 
-            // 3. Imán/Snap hacia su receptáculo meta si está muy cerca
+            // 3. Imán / Encastre en la meta correspondiente
             float distMeta = Vector2.Distance(posActual, _metas[indice]);
             if (distMeta <= TOLERANCIA_META)
             {
-                posActual = Vector2.MoveTowards(posActual, _metas[indice], 120f * Time.deltaTime);
-                if (distMeta <= 6f && !enMeta[indice])
+                posActual = Vector2.MoveTowards(posActual, _metas[indice], 140f * Time.deltaTime);
+                if (distMeta <= 5f && !enMeta[indice])
                 {
                     posActual = _metas[indice];
                     enMeta[indice] = true;
-                    GestorAudio.PlaySFX(TipoSFX.Mejora, 1.15f);
+                    GestorAudio.PlaySFX(TipoSFX.Mejora, 1.25f);
                 }
             }
             else
@@ -436,13 +515,14 @@ namespace SoulKnight
 
         private bool ColisionaConMuros(Vector2 pos)
         {
-            // Bounding box circular aproximado vs rectángulos de muros
+            // Detección exacta de círculo (radio R) contra rectángulo (AABB)
             for (int i = 0; i < _murosLaberinto.Count; i++)
             {
                 Rect r = _murosLaberinto[i];
-                // Expandir muro por el radio de la bolita
-                if (pos.x >= r.x - RADIO_BOLITA && pos.x <= r.xMax + RADIO_BOLITA &&
-                    pos.y >= r.y - RADIO_BOLITA && pos.y <= r.yMax + RADIO_BOLITA)
+                float cx = Mathf.Clamp(pos.x, r.xMin, r.xMax);
+                float cy = Mathf.Clamp(pos.y, r.yMin, r.yMax);
+                float distSq = (pos.x - cx) * (pos.x - cx) + (pos.y - cy) * (pos.y - cy);
+                if (distSq < RADIO_BOLITA * RADIO_BOLITA)
                 {
                     return true;
                 }
@@ -455,7 +535,7 @@ namespace SoulKnight
             if (bolitaIdx >= 0 && bolitaIdx < 4)
             {
                 posicionesBolitas[bolitaIdx] = pos;
-                enMeta[bolitaIdx] = (Vector2.Distance(pos, _metas[bolitaIdx]) <= 8f);
+                enMeta[bolitaIdx] = (Vector2.Distance(pos, _metas[bolitaIdx]) <= 6f);
                 ActualizarVisuales();
             }
         }
@@ -469,12 +549,12 @@ namespace SoulKnight
                     _visualBolitas[i].anchoredPosition = posicionesBolitas[i];
                     if (enMeta[i])
                     {
-                        _imgMetas[i].color = new Color(_colores[i].r, _colores[i].g, _colores[i].b, 0.90f);
-                        _visualBolitas[i].localScale = Vector3.one * (1.15f + Mathf.Sin(Time.time * 8f) * 0.08f);
+                        _imgMetas[i].color = new Color(1f, 1f, 1f, 1f);
+                        _visualBolitas[i].localScale = Vector3.one * (1.18f + Mathf.Sin(Time.time * 9f) * 0.08f);
                     }
                     else
                     {
-                        _imgMetas[i].color = new Color(_colores[i].r, _colores[i].g, _colores[i].b, 0.35f);
+                        _imgMetas[i].color = new Color(1f, 1f, 1f, 0.45f);
                         _visualBolitas[i].localScale = Vector3.one;
                     }
                 }
@@ -483,17 +563,10 @@ namespace SoulKnight
 
         private void VerificarVictoria()
         {
-            bool todasEnMeta = true;
-            for (int i = 0; i < 4; i++)
-            {
-                if (Vector2.Distance(posicionesBolitas[i], _metas[i]) > 10f)
-                {
-                    todasEnMeta = false;
-                    break;
-                }
-            }
+            if (_resuelto) return;
 
-            if (todasEnMeta && !_resuelto)
+            bool todasEnMeta = enMeta[0] && enMeta[1] && enMeta[2] && enMeta[3];
+            if (todasEnMeta)
             {
                 _resuelto = true;
                 StartCoroutine(RutinaVictoria());
@@ -502,34 +575,155 @@ namespace SoulKnight
 
         private IEnumerator RutinaVictoria()
         {
-            GestorAudio.PlaySFX(TipoSFX.Victoria, 1.2f);
-            TextoFlotante.Crear(Vector3.zero, "✨ ¡COMBINACIÓN RESUELTA! ✨", new Color(1f, 0.92f, 0.35f));
-
-            yield return new WaitForSeconds(0.7f);
+            GestorAudio.PlaySFX(TipoSFX.Mejora, 1.4f);
+            GestorAudio.PlaySFX(TipoSFX.RecogerOro, 1.2f);
 
             if (_cofreActual != null)
             {
-                Personaje local = null;
-                for (int i = 0; i < Personaje.Todos.Count; i++)
-                {
-                    if (Personaje.Todos[i] != null && Personaje.Todos[i].EsControlLocal)
-                    {
-                        local = Personaje.Todos[i];
-                        break;
-                    }
-                }
-
-                if (local != null)
-                {
-                    local.InteractuarCofreDirecto(_cofreActual);
-                }
-                else
-                {
-                    _cofreActual.AbrirPorServidor();
-                }
+                TextoFlotante.Crear(_cofreActual.transform.position + Vector3.up * 1.5f, "¡COMBINACIÓN RESUELTA! +50 💰", new Color(1f, 0.95f, 0.25f));
+                _cofreActual.AbrirPorServidor();
             }
 
+            yield return new WaitForSeconds(0.75f);
             Cerrar();
+        }
+
+        private static void AsegurarTexturasProcedurales()
+        {
+            if (_spritesEsferas != null && _spritesMetas != null && _spriteMuro != null) return;
+
+            Color[] cBases = new Color[]
+            {
+                new Color(1f, 0.28f, 0.20f),  // Fuego
+                new Color(0.20f, 0.85f, 1f),  // Hielo
+                new Color(1f, 0.92f, 0.22f),  // Rayo
+                new Color(0.25f, 0.95f, 0.45f) // Planta
+            };
+
+            Color[] cBrillos = new Color[]
+            {
+                new Color(1f, 0.85f, 0.80f),
+                new Color(0.85f, 0.98f, 1f),
+                new Color(1f, 1f, 0.85f),
+                new Color(0.85f, 1f, 0.90f)
+            };
+
+            // 1. Sprites de las 4 Esferas (32x32 con sombreado esférico 3D)
+            _spritesEsferas = new Sprite[4];
+            for (int i = 0; i < 4; i++)
+            {
+                const int sz = 32;
+                Texture2D tex = new Texture2D(sz, sz, TextureFormat.RGBA32, false);
+                tex.filterMode = FilterMode.Bilinear;
+                tex.wrapMode = TextureWrapMode.Clamp;
+
+                Vector2 centro = new Vector2(sz * 0.5f - 0.5f, sz * 0.5f - 0.5f);
+                Vector2 centroLuz = new Vector2(sz * 0.36f, sz * 0.64f);
+                float radio = sz * 0.46f;
+
+                for (int y = 0; y < sz; y++)
+                {
+                    for (int x = 0; x < sz; x++)
+                    {
+                        Vector2 p = new Vector2(x, y);
+                        float dist = Vector2.Distance(p, centro);
+                        if (dist > radio + 0.6f)
+                        {
+                            tex.SetPixel(x, y, Color.clear);
+                        }
+                        else
+                        {
+                            float alpha = Mathf.Clamp01((radio + 0.6f - dist) * 1.5f);
+                            float distLuz = Vector2.Distance(p, centroLuz);
+                            float factorLuz = Mathf.Clamp01(1f - distLuz / (radio * 1.35f));
+                            float highlight = Mathf.Pow(factorLuz, 3.2f);
+
+                            Color cBase = cBases[i];
+                            Color cSombra = cBase * 0.45f;
+                            Color cInterm = Color.Lerp(cSombra, cBase, Mathf.Clamp01((y + (sz - x)) / (sz * 1.8f)));
+                            Color cFinal = Color.Lerp(cInterm, cBrillos[i], highlight);
+                            cFinal.a = alpha;
+                            tex.SetPixel(x, y, cFinal);
+                        }
+                    }
+                }
+                tex.Apply();
+                _spritesEsferas[i] = Sprite.Create(tex, new Rect(0, 0, sz, sz), new Vector2(0.5f, 0.5f), 100f);
+            }
+
+            // 2. Sprites de los 4 Receptáculos / Metas (44x44 con runa y halo)
+            _spritesMetas = new Sprite[4];
+            for (int i = 0; i < 4; i++)
+            {
+                const int sz = 44;
+                Texture2D tex = new Texture2D(sz, sz, TextureFormat.RGBA32, false);
+                tex.filterMode = FilterMode.Bilinear;
+                tex.wrapMode = TextureWrapMode.Clamp;
+
+                Vector2 centro = new Vector2(sz * 0.5f - 0.5f, sz * 0.5f - 0.5f);
+                float rExt = sz * 0.46f;
+                float rAnillo = sz * 0.34f;
+                float rInt = sz * 0.22f;
+
+                for (int y = 0; y < sz; y++)
+                {
+                    for (int x = 0; x < sz; x++)
+                    {
+                        float dist = Vector2.Distance(new Vector2(x, y), centro);
+                        if (dist > rExt)
+                        {
+                            tex.SetPixel(x, y, Color.clear);
+                        }
+                        else if (dist >= rAnillo)
+                        {
+                            // Borde exterior runico
+                            Color c = cBases[i];
+                            c.a = Mathf.Clamp01((rExt - dist) * 2f) * 0.9f;
+                            tex.SetPixel(x, y, c);
+                        }
+                        else if (dist >= rInt)
+                        {
+                            // Anillo luminoso
+                            Color c = Color.Lerp(cBases[i], cBrillos[i], 0.6f);
+                            c.a = 0.85f;
+                            tex.SetPixel(x, y, c);
+                        }
+                        else
+                        {
+                            // Centro hundido oscuro
+                            Color c = new Color(0.04f, 0.05f, 0.08f, 0.90f);
+                            tex.SetPixel(x, y, c);
+                        }
+                    }
+                }
+                tex.Apply();
+                _spritesMetas[i] = Sprite.Create(tex, new Rect(0, 0, sz, sz), new Vector2(0.5f, 0.5f), 100f);
+            }
+
+            // 3. Sprite para los Muros del Laberinto (16x16 biselado de piedra azulada)
+            {
+                const int sz = 16;
+                Texture2D tex = new Texture2D(sz, sz, TextureFormat.RGBA32, false);
+                tex.filterMode = FilterMode.Point;
+                tex.wrapMode = TextureWrapMode.Clamp;
+
+                for (int y = 0; y < sz; y++)
+                {
+                    for (int x = 0; x < sz; x++)
+                    {
+                        bool bordeSupIzq = (x == 0 || y == sz - 1);
+                        bool bordeInfDer = (x == sz - 1 || y == 0);
+                        if (bordeSupIzq)
+                            tex.SetPixel(x, y, new Color(0.55f, 0.60f, 0.75f));
+                        else if (bordeInfDer)
+                            tex.SetPixel(x, y, new Color(0.18f, 0.20f, 0.28f));
+                        else
+                            tex.SetPixel(x, y, new Color(0.32f, 0.36f, 0.48f));
+                    }
+                }
+                tex.Apply();
+                _spriteMuro = Sprite.Create(tex, new Rect(0, 0, sz, sz), new Vector2(0.5f, 0.5f), 16f);
+            }
         }
     }
 }

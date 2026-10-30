@@ -73,6 +73,26 @@ namespace SoulKnight
             CrearTextoIndicador();
         }
 
+        public static MiniCofre ObtenerCofreMasCercano(Vector2 posJugador, float radioMax)
+        {
+            MiniCofre mejor = null;
+            float menorDist = radioMax;
+
+            for (int i = 0; i < Todos.Count; i++)
+            {
+                var c = Todos[i];
+                if (c == null || c.EstaAbiertoLocal || !c.gameObject.activeInHierarchy) continue;
+
+                float d = Vector2.Distance(posJugador, c.transform.position);
+                if (d <= menorDist)
+                {
+                    menorDist = d;
+                    mejor = c;
+                }
+            }
+            return mejor;
+        }
+
         void Update()
         {
             if (EstaAbiertoLocal)
@@ -95,50 +115,54 @@ namespace SoulKnight
             }
             if (local == null) return;
 
-            float dist = Vector2.Distance(transform.position, local.transform.position);
-            bool cerca = dist <= distanciaInteraccion;
+            // Sistema estilo Warzone / Fortnite: SOLO el cofre interactuable más cercano está enfocado y recibe [F]
+            MiniCofre enfocado = ObtenerCofreMasCercano(local.transform.position, distanciaInteraccion);
+            bool soyElEnfocado = (enfocado == this);
 
-            if (_textoIndicador != null)
+            if (!soyElEnfocado)
             {
-                _textoIndicador.gameObject.SetActive(cerca);
+                if (_textoIndicador != null && _textoIndicador.gameObject.activeSelf)
+                {
+                    _textoIndicador.gameObject.SetActive(false);
+                }
+                _tiempoSostenidoActual = 0f;
+                return;
             }
 
-            if (cerca)
+            if (_textoIndicador != null && !_textoIndicador.gameObject.activeSelf)
             {
-                bool sosteniendo = Input.GetKey(KeyCode.F) || Controles.Mantenida(KeyCode.F);
-                if (sosteniendo)
+                _textoIndicador.gameObject.SetActive(true);
+            }
+
+            bool sosteniendo = Input.GetKey(KeyCode.F) || Controles.Mantenida(KeyCode.F);
+            if (sosteniendo)
+            {
+                _tiempoSostenidoActual += Time.deltaTime;
+                float pct = Mathf.Clamp01(_tiempoSostenidoActual / tiempoSostenerRequerido);
+
+                int totalBarras = 8;
+                int barrasLlenas = Mathf.RoundToInt(pct * totalBarras);
+                string barraVisual = new string('█', barrasLlenas) + new string('░', totalBarras - barrasLlenas);
+
+                if (_textoIndicador != null)
                 {
-                    _tiempoSostenidoActual += Time.deltaTime;
-                    float pct = Mathf.Clamp01(_tiempoSostenidoActual / tiempoSostenerRequerido);
-
-                    int totalBarras = 8;
-                    int barrasLlenas = Mathf.RoundToInt(pct * totalBarras);
-                    string barraVisual = new string('█', barrasLlenas) + new string('░', totalBarras - barrasLlenas);
-
-                    if (_textoIndicador != null)
-                    {
-                        _textoIndicador.text = $"[MANTÉN F]\n[{barraVisual}] {Mathf.RoundToInt(pct * 100)}%";
-                        _textoIndicador.color = Color.Lerp(new Color(1f, 0.85f, 0.3f), new Color(0.3f, 1f, 0.4f), pct);
-                    }
-
-                    if (_tiempoSostenidoActual >= tiempoSostenerRequerido)
-                    {
-                        Abrir(local);
-                    }
+                    _textoIndicador.text = $"[MANTÉN F]\n[{barraVisual}] {Mathf.RoundToInt(pct * 100)}%";
+                    _textoIndicador.color = Color.Lerp(new Color(1f, 0.85f, 0.3f), new Color(0.3f, 1f, 0.4f), pct);
                 }
-                else
+
+                if (_tiempoSostenidoActual >= tiempoSostenerRequerido)
                 {
-                    _tiempoSostenidoActual = Mathf.Max(0f, _tiempoSostenidoActual - Time.deltaTime * 3f);
-                    if (_textoIndicador != null)
-                    {
-                        _textoIndicador.text = "[MANTÉN F] MINI COFRE\n(5-15 ORO)";
-                        _textoIndicador.color = new Color(1f, 0.90f, 0.35f);
-                    }
+                    Abrir(local);
                 }
             }
             else
             {
-                _tiempoSostenidoActual = 0f;
+                _tiempoSostenidoActual = Mathf.Max(0f, _tiempoSostenidoActual - Time.deltaTime * 3f);
+                if (_textoIndicador != null)
+                {
+                    _textoIndicador.text = "[MANTÉN F] MINI COFRE\n(5-15 ORO)";
+                    _textoIndicador.color = new Color(1f, 0.90f, 0.35f);
+                }
             }
         }
 

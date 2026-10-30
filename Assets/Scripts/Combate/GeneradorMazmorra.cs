@@ -746,7 +746,7 @@ namespace SoulKnight
                 // Props y Obstáculos oficiales del bioma
                 if (!esTienda)
                 {
-                    InstanciarPropsSala(salaObj.transform, s, dSala);
+                    InstanciarPropsSala(salaObj.transform, s, dSala, esCofre);
                 }
 
                 // Portales y oleadas de enemigos
@@ -908,7 +908,7 @@ namespace SoulKnight
                 "..sss...D....sss..",
                 "...s....c.....s...",
                 ".......m..c.......",
-                ".......c..m.......",
+                ".......c..p.......",
                 "...s.....c....s...",
                 "..sss....D...sss..",
                 "...s..........s...",
@@ -933,8 +933,8 @@ namespace SoulKnight
                 "......s.ss.s......",
                 ".....s.s..s.s.....",
                 "..D...s.ss.s...D..",
-                "..D....mp.pm...D..",
-                "..D....mp.pm...D..",
+                "..D....cp.pm...D..",
+                "..D....pp.pc...D..",
                 "..D...s.ss.s...D..",
                 ".....s.s..s.s.....",
                 "......s.ss.s......",
@@ -973,7 +973,7 @@ namespace SoulKnight
                 "..ww....ss....ww..",
                 ".ww.....ss.....ww.",
                 ".w....s.pm.s....w.",
-                ".w....s.mp.s....w.",
+                ".w....s.pp.s....w.",
                 ".ww.....ss.....ww.",
                 "..ww....ss....ww..",
                 "...wwwwwwwwwwww...",
@@ -1012,7 +1012,7 @@ namespace SoulKnight
                 "...#.s......s.#...",
                 ".D.#.s..cc..s.#.D.",
                 ".D......cm......D.",
-                ".D......mc......D.",
+                ".D......cc......D.",
                 ".D.#.s..cc..s.#.D.",
                 "...#.s......s.#...",
                 "..#.sss....sss.#..",
@@ -1033,14 +1033,14 @@ namespace SoulKnight
             }
         };
 
-        private void InstanciarPropsSala(Transform padre, SalaInfo s, DatosBioma d)
+        private void InstanciarPropsSala(Transform padre, SalaInfo s, DatosBioma d, bool esCofre = false)
         {
             if (d == null) return;
 
             // En mazmorra de piedra (excepto la sala inicial), instanciar layouts de room_layouts.json
             if (d.tipo == TipoBioma.Piedra && !s.esSalaInicio)
             {
-                InstanciarLayoutSalaPiedra(padre, s, d);
+                InstanciarLayoutSalaPiedra(padre, s, d, -1, esCofre);
                 return;
             }
 
@@ -1350,7 +1350,7 @@ namespace SoulKnight
             col.size = Vector2.one;
         }
 
-        public void InstanciarLayoutSalaPiedra(Transform padre, SalaInfo s, DatosBioma d, int indiceLayout = -1)
+        public void InstanciarLayoutSalaPiedra(Transform padre, SalaInfo s, DatosBioma d, int indiceLayout = -1, bool esSalaCofre = false)
         {
             if (PlantillasLayoutsStone == null || PlantillasLayoutsStone.Length == 0) return;
 
@@ -1388,6 +1388,13 @@ namespace SoulKnight
                     if (ch == '.') continue;
 
                     Vector2 pos = new Vector2(startX + c, startY - r);
+
+                    // Si es la sala del super cofre, NUNCA generar mini cofres ni obstaculos que tapen el cofre central
+                    if (esSalaCofre)
+                    {
+                        if (ch == 'm') continue;
+                        if (Mathf.Abs(pos.x - s.cx) <= 1.9f && Mathf.Abs(pos.y - s.cy) <= 1.9f) continue;
+                    }
 
                     switch (ch)
                     {
