@@ -113,7 +113,17 @@ namespace SoulKnight
                     if (hit.collider == null || hit.collider.gameObject == gameObject) continue;
                     if (_lanzador != null && hit.collider.gameObject == _lanzador.gameObject) continue;
 
-                    // Obstáculo o Pared
+                    // 1. Objeto destruible (jarrones, cajas, barriles, muros destructibles)
+                    var propDest = hit.collider.GetComponent<PropDestruible>();
+                    if (propDest != null)
+                    {
+                        propDest.RecibirDano(Dano);
+                        CrearEfectoImpactoPared(hit.point);
+                        Reciclar();
+                        return;
+                    }
+
+                    // 2. Obstáculo o Pared indestructible
                     if (EsPared(hit.collider))
                     {
                         CrearEfectoImpactoPared(hit.point);

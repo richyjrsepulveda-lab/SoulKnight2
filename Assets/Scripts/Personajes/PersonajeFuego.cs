@@ -694,6 +694,12 @@ namespace SoulKnight
                         enemigo.AplicarKnockback(dirEmpuje, 500f);
                     }
                 }
+
+                var prop = h.GetComponent<PropDestruible>();
+                if (prop != null)
+                {
+                    prop.RecibirDano(danoExp);
+                }
             }
 
             // 2. Disparar 16 bolas de fuego en abanico circular de 360°

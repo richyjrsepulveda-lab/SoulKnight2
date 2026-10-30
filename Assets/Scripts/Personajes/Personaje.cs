@@ -871,6 +871,12 @@ namespace SoulKnight
         public void InteractuarCofre(CofreOro cofre)
         {
             if (cofre == null || cofre.EstaAbiertoLocal) return;
+            cofre.AbrirPuzzle(this);
+        }
+
+        public void InteractuarCofreDirecto(CofreOro cofre)
+        {
+            if (cofre == null || cofre.EstaAbiertoLocal) return;
 
             if (NetworkManager != null && NetworkManager.IsListening)
             {

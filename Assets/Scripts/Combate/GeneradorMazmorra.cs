@@ -190,6 +190,7 @@ namespace SoulKnight
         {
             PuestitoTienda.DestruirTodos();
             CofreOro.DestruirTodos();
+            MiniCofre.DestruirTodos();
             MonedaOro.DestruirTodas();
             puntosSpawnJugadores.Clear();
             puntosSpawnEnemigos.Clear();
@@ -900,46 +901,46 @@ namespace SoulKnight
 
         public static readonly string[][] PlantillasLayoutsStone = new string[][]
         {
-            // 0: La Bóveda Acorazada (Muros destructibles centrales sellando tesoro y diamantes de pinchos)
+            // 0: La Bóveda Acorazada (Muros de 1 solo tile, mini cofre m y pinchos en diamante)
             new string[] {
                 "...P..........P...",
                 "...s..........s...",
-                "..sss...DD...sss..",
-                "...s....cc....s...",
-                "........cc........",
-                "........cc........",
-                "...s....cc....s...",
-                "..sss...DD...sss..",
+                "..sss...D....sss..",
+                "...s....c.....s...",
+                ".......m..c.......",
+                ".......c..m.......",
+                "...s.....c....s...",
+                "..sss....D...sss..",
                 "...s..........s...",
                 "...P..........P..."
             },
-            // 1: Los Cuatro Bastiones y Trampas en Corona (Muros macizos en esquinas y núcleo explosivo protegido)
+            // 1: Los Cuatro Bastiones (1 columna en cada esquina, núcleo explosivo protegido por muro destructible D)
             new string[] {
-                ".##..s......s..##.",
-                ".##.sss....sss.##.",
+                ".P...s......s...P.",
+                "...sss......sss...",
                 ".....s......s.....",
                 ".s..............s.",
                 "sss....Dr.rD...sss",
                 "sss....Dr.rD...sss",
                 ".s..............s.",
                 ".....s......s.....",
-                ".##.sss....sss.##.",
-                ".##..s......s..##."
+                "...sss......sss...",
+                ".P...s......s...P."
             },
-            // 2: El Tablero de Ajedrez Rítmico (Franjas diagonales seguras, muros indestructibles y jarrones)
+            // 2: El Tablero de Ajedrez Rítmico (Franjas seguras, muros de 1 tile de grosor y mini cofre)
             new string[] {
-                "..##..........##..",
-                "..#...s.ss.s...#..",
+                ".#..............#.",
+                "......s.ss.s......",
                 ".....s.s..s.s.....",
                 "..D...s.ss.s...D..",
-                "..D.....pp.....D..",
-                "..D.....pp.....D..",
+                "..D....mp.pm...D..",
+                "..D....mp.pm...D..",
                 "..D...s.ss.s...D..",
                 ".....s.s..s.s.....",
-                "..#...s.ss.s...#..",
-                "..##..........##.."
+                "......s.ss.s......",
+                ".#..............#."
             },
-            // 3: El Laberinto en Cruz (Muros macizos y destructibles dividiendo en cuadrantes con trampas en aspas)
+            // 3: El Laberinto en Cruz (Paredes de 1 solo tile # y D con aspas de trampas)
             new string[] {
                 "....#...ss...#....",
                 "....#...ss...#....",
@@ -952,33 +953,33 @@ namespace SoulKnight
                 "....#...ss...#....",
                 "....#...ss...#...."
             },
-            // 4: La Arena de Foso y Trampas Geométricas (Foso central, columnas, alas de picos y barriles bajo muros destructibles)
+            // 4: La Arena de Foso y Columnas (Foso central, columnas P de 1 tile, alas de picos y barriles)
             new string[] {
                 "...P..........P...",
-                "..###........###..",
-                "..#....ssss....#..",
+                ".#..............#.",
+                ".......ssss.......",
                 ".......s..s.......",
                 ".Db....oooo....bD.",
                 ".Db....oooo....bD.",
                 ".......s..s.......",
-                "..#....ssss....#..",
-                "..###........###..",
+                ".......ssss.......",
+                ".#..............#.",
                 "...P..........P..."
             },
-            // 5: El Estanque Sagrado y Puentes de Trampas (Agua animada y pasarelas de pinchos con jarrones)
+            // 5: El Estanque Sagrado (Agua poco profunda transitable con islote central de jarrones y mini cofre)
             new string[] {
-                "......wwwwww......",
-                ".##.wwwwwwwwww.##.",
-                ".##ww...ss...ww##.",
-                "...w....ss....w...",
-                "...w..s.pp.s..w...",
-                "...w..s.pp.s..w...",
-                "...w....ss....w...",
-                ".##ww...ss...ww##.",
-                ".##.wwwwwwwwww.##.",
-                "......wwwwww......"
+                ".....wwwwwwww.....",
+                "...wwwwwwwwwwww...",
+                "..ww....ss....ww..",
+                ".ww.....ss.....ww.",
+                ".w....s.pm.s....w.",
+                ".w....s.mp.s....w.",
+                ".ww.....ss.....ww.",
+                "..ww....ss....ww..",
+                "...wwwwwwwwwwww...",
+                ".....wwwwwwww....."
             },
-            // 6: La Cámara del Búnker Central (Fuerte central con puertas rompibles y foso de pinchos perimetral)
+            // 6: La Cámara del Búnker Central (Muros de 1 solo tile de grosor # con puertas D y foso de pinchos)
             new string[] {
                 ".......ssss.......",
                 "...s...ssss...s...",
@@ -991,44 +992,44 @@ namespace SoulKnight
                 "...s...ssss...s...",
                 ".......ssss......."
             },
-            // 7: Las Alas del Fénix (Simetría en diamantes de pinchos, columnas centrales y muros destructibles en flancos)
-            new string[] {
-                "..##..........##..",
-                "..#..ss....ss..#..",
-                "....ssss..ssss....",
-                ".....ss....ss.....",
-                ".DD............DD.",
-                ".DD....PPPP....DD.",
-                ".....ss....ss.....",
-                "....ssss..ssss....",
-                "..#..ss....ss..#..",
-                "..##..........##.."
-            },
-            // 8: El Pasadizo Secreto de Cajas (Guantelete escalonado con nichos de muros rompibles y cajas)
+            // 7: Las Alas del Fénix (Simetría en diamantes de pinchos, columnas P y muros rompibles D de 1 tile)
             new string[] {
                 ".P..............P.",
-                ".###.sss..sss.###.",
-                "...#.s......s.#...",
-                ".D.#.s..cc..s.#.D.",
-                ".D......cc......D.",
-                ".D......cc......D.",
-                ".D.#.s..cc..s.#.D.",
-                "...#.s......s.#...",
-                ".###.sss..sss.###.",
+                ".....ss....ss.....",
+                "....ssss..ssss....",
+                ".....ss....ss.....",
+                ".D..............D.",
+                ".D.....PPPP.....D.",
+                ".....ss....ss.....",
+                "....ssss..ssss....",
+                ".....ss....ss.....",
                 ".P..............P."
             },
-            // 9: El Coliseo de Pinchos y Bloques de Piedra (Combate táctico con atajos rompibles y cruz central)
+            // 8: El Pasadizo Secreto de Cajas (Guantelete de 1 solo tile de grosor con nichos D y mini cofre m)
             new string[] {
-                "..##....ss....##..",
-                "..##...ssss...##..",
+                ".P..............P.",
+                "..#.sss....sss.#..",
+                "...#.s......s.#...",
+                ".D.#.s..cc..s.#.D.",
+                ".D......cm......D.",
+                ".D......mc......D.",
+                ".D.#.s..cc..s.#.D.",
+                "...#.s......s.#...",
+                "..#.sss....sss.#..",
+                ".P..............P."
+            },
+            // 9: El Coliseo de Piedra (Paredes de 1 tile de grosor #, atajos destructibles D y cruz de pinchos)
+            new string[] {
+                ".#......ss......#.",
+                ".......ssss.......",
                 "........ss........",
-                ".ss.DD......DD.ss.",
-                ".ss.DD..rr..DD.ss.",
-                ".ss.DD..rr..DD.ss.",
-                ".ss.DD......DD.ss.",
+                ".ss.D........D.ss.",
+                ".ss.D...rr...D.ss.",
+                ".ss.D...rr...D.ss.",
+                ".ss.D........D.ss.",
                 "........ss........",
-                "..##...ssss...##..",
-                "..##....ss....##.."
+                ".......ssss.......",
+                ".#......ss......#."
             }
         };
 
@@ -1227,6 +1228,14 @@ namespace SoulKnight
             prop.esExplosivo = false;
         }
 
+        private void CrearMiniCofre(Transform padre, Vector2 pos)
+        {
+            var go = new GameObject("MiniCofre");
+            go.transform.SetParent(padre);
+            go.transform.position = (Vector3)pos;
+            go.AddComponent<MiniCofre>();
+        }
+
         private void CrearMuroDestructible(Transform padre, Vector2 pos, DatosBioma d)
         {
             var go = new GameObject("MuroDestructible");
@@ -1320,8 +1329,9 @@ namespace SoulKnight
                 }
             }
 
-            // Bloquea el paso a personajes, balas pasan por encima (no tag Pared, nombre Agua)
+            // Agua poco profunda transitable: los personajes pueden vadearla sin ser bloqueados
             var col = go.AddComponent<BoxCollider2D>();
+            col.isTrigger = true;
             col.size = Vector2.one;
         }
 
@@ -1381,6 +1391,10 @@ namespace SoulKnight
 
                     switch (ch)
                     {
+                        case 'm':
+                            CrearMiniCofre(padre, pos);
+                            break;
+
                         case 'D':
                         case 'x':
                             CrearMuroDestructible(padre, pos, d);

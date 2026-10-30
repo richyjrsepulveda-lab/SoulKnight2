@@ -921,6 +921,11 @@ namespace SoulKnight
                 }
                 else
                 {
+                    var prop = hit.collider.GetComponent<PropDestruible>();
+                    if (prop != null)
+                    {
+                        prop.RecibirDano(Mathf.Max(2, Mathf.RoundToInt(danoRayo * MultiplicadorDanoTotal * 0.5f)));
+                    }
                     bool esPared = false;
                     try { esPared = hit.collider.CompareTag("Pared"); } catch { esPared = false; }
                     if (esPared || hit.collider.name.IndexOf("pared", System.StringComparison.OrdinalIgnoreCase) >= 0 || hit.collider.name.IndexOf("muro", System.StringComparison.OrdinalIgnoreCase) >= 0)

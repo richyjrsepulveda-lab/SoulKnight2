@@ -634,6 +634,12 @@ namespace SoulKnight
                     enemigo.RecibirDano(danoEscalado, new Color(1f, 0.96f, 0.22f, 1f)); // Amarillo rayo
                     enemigo.AplicarKnockback(dir, 350f);
                 }
+
+                var prop = col.GetComponent<PropDestruible>();
+                if (prop != null)
+                {
+                    prop.RecibirDano(Mathf.RoundToInt(danoEspada * MultiplicadorDanoTotal));
+                }
             }
 
             MostrarEspadaClientRpc(dir, origenEfectivo);

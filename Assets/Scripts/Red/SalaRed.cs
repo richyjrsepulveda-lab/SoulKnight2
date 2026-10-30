@@ -710,6 +710,21 @@ namespace SoulKnight
             }
         }
 
+        [ServerRpc(RequireOwnership = false)]
+        public void ActualizarPosicionBolitaServerRpc(int bolitaIdx, Vector2 pos, ServerRpcParams rpcParams = default)
+        {
+            SincronizarPosicionBolitaClientRpc(bolitaIdx, pos);
+        }
+
+        [ClientRpc]
+        public void SincronizarPosicionBolitaClientRpc(int bolitaIdx, Vector2 pos)
+        {
+            if (ScreenPuzzleCofre.Instancia != null)
+            {
+                ScreenPuzzleCofre.Instancia.AplicarPosicionRemota(bolitaIdx, pos);
+            }
+        }
+
         static string Recortar(string s, int max) =>
             string.IsNullOrEmpty(s) ? "" : (s.Length <= max ? s : s.Substring(0, max));
     }

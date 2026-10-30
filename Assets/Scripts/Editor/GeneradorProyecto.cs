@@ -2505,6 +2505,11 @@ namespace SoulKnight.Editor
                                 CrearTileCaptura(root.transform, wx, wy, datos.spritePot ?? datos.spriteCrate, 1);
                                 break;
 
+                            case 'm':
+                                Sprite spM = MiniCofre.ObtenerSpriteMiniCerrado();
+                                CrearTileCaptura(root.transform, wx, wy, spM, 2);
+                                break;
+
                             case 's':
                                 Sprite spS = (datos.framesSpikesStrip != null && datos.framesSpikesStrip.Length > 2)
                                     ? datos.framesSpikesStrip[2] : (datos.spriteSpikesOn ?? datos.spriteSpikesOff);

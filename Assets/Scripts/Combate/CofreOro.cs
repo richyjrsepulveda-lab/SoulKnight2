@@ -101,6 +101,23 @@ namespace SoulKnight
             }
         }
 
+        public void AbrirPuzzle(Personaje local)
+        {
+            if (EstaAbiertoLocal) return;
+
+            // Asegurar que la pantalla de combinación exista en la escena
+            if (ScreenPuzzleCofre.Instancia == null)
+            {
+                var go = new GameObject("ScreenPuzzleCofre");
+                go.AddComponent<ScreenPuzzleCofre>();
+            }
+
+            if (ScreenPuzzleCofre.Instancia != null)
+            {
+                ScreenPuzzleCofre.Instancia.Abrir(this);
+            }
+        }
+
         public void AbrirPorServidor()
         {
             if (EstaAbiertoLocal) return;
@@ -203,7 +220,7 @@ namespace SoulKnight
             txtObj.transform.localPosition = new Vector3(0f, 1.4f, 0f);
 
             _textoIndicador = txtObj.AddComponent<TextMesh>();
-            _textoIndicador.text = "[F] ABRIR COFRE DE ORO";
+            _textoIndicador.text = "[F] COMBINACIÓN (50 ORO)";
             _textoIndicador.fontSize = 24;
             _textoIndicador.characterSize = 0.08f;
             _textoIndicador.alignment = TextAlignment.Center;
