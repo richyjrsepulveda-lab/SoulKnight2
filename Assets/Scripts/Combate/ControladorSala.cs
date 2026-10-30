@@ -167,32 +167,10 @@ namespace SoulKnight
 
         void Update()
         {
-            // Animación dinámica de fuego y expansión de luz cálida en las antorchas encendidas
-            if (descubierta)
+            // Antorchas con escala 1:1 fija sin bombeo; animadas pixel a pixel a 8 fps
+            if (descubierta && _progresoEncendido < 1f)
             {
-                if (_progresoEncendido < 1f)
-                {
-                    _progresoEncendido = Mathf.MoveTowards(_progresoEncendido, 1f, Time.deltaTime * 2.8f);
-                }
-
-                for (int i = 0; i < _llamasAntorchas.Count; i++)
-                {
-                    float desfase = i * 1.7f + indiceSala;
-                    float flicker = 1f + Mathf.Sin(Time.time * 10f + desfase) * 0.08f + Mathf.Cos(Time.time * 17f + desfase) * 0.05f;
-
-                    if (_llamasAntorchas[i] != null)
-                    {
-                        float escLlamaX = 1.35f + Mathf.Sin(Time.time * 14f + desfase) * 0.18f;
-                        float escLlamaY = 1.48f + Mathf.Cos(Time.time * 18f + desfase) * 0.22f;
-                        _llamasAntorchas[i].transform.localScale = new Vector3(escLlamaX, escLlamaY, 1f);
-                    }
-
-                    if (i < _lucesAntorchas.Count && _lucesAntorchas[i] != null)
-                    {
-                        float escHalo = 13.5f * _progresoEncendido * flicker;
-                        _lucesAntorchas[i].transform.localScale = new Vector3(escHalo, escHalo, 1f);
-                    }
-                }
+                _progresoEncendido = Mathf.MoveTowards(_progresoEncendido, 1f, Time.deltaTime * 2.8f);
             }
 
             // Animación de vórtice giratorio de los portales de invocación mientras están activos

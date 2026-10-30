@@ -1116,43 +1116,114 @@ namespace SoulKnight.Editor
                 cam.gameObject.AddComponent<CamaraSeguir>();
             }
 
-            // 2. Mapa físico del Salón de Espera y Cuartos Perimetrales Físicos
-            var spriteSuelo = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Arte/Mapas/SueloPiedra.png");
-            var spriteMuro = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Arte/Mapas/MuroPiedra.png");
-            var spriteColumna = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Arte/Mapas/ColumnaPiedra.png");
-            var spriteColHielo = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Arte/Mapas/ColumnaHielo.png");
-            var spriteColMagma = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Arte/Mapas/ColumnaMagma.png");
+            // 2. Mapa fisico del Salon de Espera usando sprites oficiales de piedra
+            var datosStone = CatalogoBiomas.Obtener(TipoBioma.Piedra);
             var spritePortal = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Arte/Mapas/PortalSalida.png");
 
             var mapaLobby = new GameObject("MapaLobby");
 
-            // Función auxiliar para colocar suelo
+            // Funcion auxiliar para colocar suelo estructurado
             void PonerSuelo(int x, int y, Color? tinte = null)
             {
                 var suelo = new GameObject($"Suelo_{x}_{y}");
                 suelo.transform.SetParent(mapaLobby.transform);
                 suelo.transform.position = new Vector3(x, y, 0);
                 var sr = suelo.AddComponent<SpriteRenderer>();
-                sr.sprite = spriteSuelo;
+
+                // Orden estructurado 2x2 de losas de piedra
+                int slabX = Mathf.FloorToInt((x + 20f) / 2f);
+                int slabY = Mathf.FloorToInt((y + 20f) / 2f);
+                bool alterno = ((slabX + slabY) % 2 == 1);
+                Sprite sp = alterno ? (datosStone.spritesSuelo[3] ?? datosStone.spritesSuelo[0]) : datosStone.spritesSuelo[0];
+
+                int mx = Mathf.Abs(x + 20) % 6;
+                int my = Mathf.Abs(y + 20) % 6;
+                if (mx == 2 && my == 3) sp = datosStone.spritesSuelo[1];
+                else if (mx == 5 && my == 1) sp = datosStone.spritesSuelo[4];
+                else if (mx == 0 && my == 4) sp = datosStone.spritesSuelo[6];
+
+                sr.sprite = sp;
                 if (tinte.HasValue) sr.color = tinte.Value;
                 sr.sortingOrder = 0;
+
+                // Calcomanias decorativas en orden estructurado
+                if (!tinte.HasValue && datosStone.spritesDecals != null && datosStone.spritesDecals.Length > 0)
+                {
+                    if ((Mathf.Abs(x + 20) % 7 == 3) && (Mathf.Abs(y + 20) % 7 == 4))
+                    {
+                        int dIdx = Mathf.Abs(x * 3 + y) % datosStone.spritesDecals.Length;
+                        var dObj = new GameObject("Decal");
+                        dObj.transform.SetParent(suelo.transform, false);
+                        var srD = dObj.AddComponent<SpriteRenderer>();
+                        srD.sprite = datosStone.spritesDecals[dIdx];
+                        srD.sortingOrder = 1;
+                    }
+                }
             }
 
-            // Función auxiliar para colocar muro
-            void CrearMuro(int x, int y)
+            // Funcion auxiliar para colocar muro de 1 tile de grosor
+            void CrearMuro(int x, int y, int mask = 10)
             {
                 var muro = new GameObject($"Muro_{x}_{y}");
                 muro.transform.SetParent(mapaLobby.transform);
                 muro.transform.position = new Vector3(x, y, 0);
                 var sr = muro.AddComponent<SpriteRenderer>();
-                sr.sprite = spriteMuro;
+                sr.sprite = ObtenerWallTop(datosStone, mask);
                 sr.sortingOrder = 2;
                 var col = muro.AddComponent<BoxCollider2D>();
                 col.size = Vector2.one;
                 try { muro.tag = "Pared"; } catch {}
             }
 
-            // Salón Central Ampliado (21 tiles de ancho X de -10 a 10, 25 tiles de alto Y de -12 a 12)
+            // Funcion para colocar cara frontal de muro norte con antorchas y halo fijo
+            void CrearWallFaceNorte(int x, int y, bool ponerAntorcha = false)
+            {
+                var faceObj = new GameObject($"WallFace_{x}_{y}");
+                faceObj.transform.SetParent(mapaLobby.transform);
+                faceObj.transform.position = new Vector3(x, y, 0);
+                var sr = faceObj.AddComponent<SpriteRenderer>();
+                sr.sortingOrder = 2;
+                var col = faceObj.AddComponent<BoxCollider2D>();
+                col.size = Vector2.one;
+                try { faceObj.tag = "Pared"; } catch {}
+
+                if (ponerAntorcha && datosStone.framesWallFaceTorch != null && datosStone.framesWallFaceTorch.Length > 0)
+                {
+                    var anim = faceObj.AddComponent<AnimadorSpriteTile>();
+                    anim.Configurar(sr, datosStone.framesWallFaceTorch, 8f);
+
+                    // Halo fijo sin deformacion
+                    if (datosStone.spriteTorchGlow != null)
+                    {
+                        var glow = new GameObject("TorchGlow");
+                        glow.transform.SetParent(faceObj.transform, false);
+                        glow.transform.localPosition = new Vector3(0f, 0.16f, 0f);
+                        glow.transform.localScale = Vector3.one;
+                        var srGlow = glow.AddComponent<SpriteRenderer>();
+                        srGlow.sprite = datosStone.spriteTorchGlow;
+                        srGlow.color = Color.white;
+                        srGlow.sortingOrder = 3;
+                    }
+                }
+                else
+                {
+                    int rx = Mathf.Abs(x) % 5;
+                    if (rx == 0 && datosStone.spriteWallFaceBanner != null) sr.sprite = datosStone.spriteWallFaceBanner;
+                    else if (rx == 2 && datosStone.spriteWallFaceDecor != null) sr.sprite = datosStone.spriteWallFaceDecor;
+                    else if (rx == 3 && datosStone.spriteWallFaceCracked != null) sr.sprite = datosStone.spriteWallFaceCracked;
+                    else sr.sprite = (x % 2 == 0) ? (datosStone.spriteWallFaceB ?? datosStone.spriteWallFaceA) : datosStone.spriteWallFaceA;
+                }
+
+                // Sombra bajo el muro norte
+                var shObj = new GameObject($"Sombra_{x}_{y - 1}");
+                shObj.transform.SetParent(mapaLobby.transform);
+                shObj.transform.position = new Vector3(x, y - 1, 0);
+                var srSh = shObj.AddComponent<SpriteRenderer>();
+                srSh.sprite = datosStone.spriteFloorShadow00 ?? datosStone.spriteSuelo;
+                srSh.sortingOrder = 1;
+            }
+
+            // Salon Central (X de -10 a 10, Y de -12 a 12)
             for (int x = -10; x <= 10; x++)
             {
                 for (int y = -12; y <= 12; y++)
@@ -1161,14 +1232,16 @@ namespace SoulKnight.Editor
                 }
             }
 
-            // Muros Norte y Sur del Salón Central
+            // Muros Norte del Salon Central (fila 13 muro top, fila 12 cara frontal)
             for (int x = -11; x <= 11; x++)
             {
-                if (x < -2 || x > 2) // Alcoba norte libre hacia el portal
+                if (x < -2 || x > 2)
                 {
-                    CrearMuro(x, 13);
+                    CrearMuro(x, 13, 10);
+                    bool torch = (Mathf.Abs(x) % 4 == 0);
+                    CrearWallFaceNorte(x, 12, torch);
                 }
-                CrearMuro(x, -13);
+                CrearMuro(x, -13, 10); // Muro sur (1 tile)
             }
 
             // Alcoba del Portal al Norte: X de -2 a 2, Y de 13 a 16
@@ -1178,34 +1251,55 @@ namespace SoulKnight.Editor
                 {
                     PonerSuelo(x, y, new Color(0.85f, 0.95f, 1f));
                 }
-                CrearMuro(x, 17); // Pared norte de la alcoba
+                CrearMuro(x, 17, 10);
+                bool torchAlcoba = (x == -2 || x == 2);
+                CrearWallFaceNorte(x, 16, torchAlcoba);
             }
-            CrearMuro(-3, 14); CrearMuro(-3, 15); CrearMuro(-3, 16);
-            CrearMuro(3, 14);  CrearMuro(3, 15);  CrearMuro(3, 16);
+            CrearMuro(-3, 14, 5); CrearMuro(-3, 15, 5); CrearMuro(-3, 16, 5);
+            CrearMuro(3, 14, 5);  CrearMuro(3, 15, 5);  CrearMuro(3, 16, 5);
 
-            // Columnas decorativas del salón central
-            void CrearColumna(int x, int y, Sprite colSprite)
+            // Columnas / Pilares de piedra oficiales (16x32)
+            void CrearColumna(int x, int y)
             {
-                var colObj = new GameObject($"Columna_{x}_{y}");
+                var colObj = new GameObject($"Pilar_{x}_{y}");
                 colObj.transform.SetParent(mapaLobby.transform);
                 colObj.transform.position = new Vector3(x, y, 0);
                 var sr = colObj.AddComponent<SpriteRenderer>();
-                sr.sprite = colSprite ?? spriteColumna;
+                sr.sprite = datosStone.spritePillar;
                 sr.sortingOrder = 4;
                 var col = colObj.AddComponent<BoxCollider2D>();
-                col.size = new Vector2(0.8f, 0.8f);
-                col.offset = new Vector2(0, -0.2f);
+                col.size = new Vector2(0.75f, 0.625f);
+                col.offset = new Vector2(0, -0.4f);
                 try { colObj.tag = "Pared"; } catch {}
             }
-            CrearColumna(-7, 8, spriteColMagma);
-            CrearColumna(7, 8, spriteColumna);
-            CrearColumna(-7, -8, spriteColumna);
-            CrearColumna(7, -8, spriteColumna);
+            CrearColumna(-7, 8);
+            CrearColumna(7, 8);
+            CrearColumna(-7, -8);
+            CrearColumna(7, -8);
 
-            // Función constructora de cuartos físicos
+            // Props decorativos en el lobby
+            void CrearPropLobby(int x, int y, Sprite sp)
+            {
+                var pObj = new GameObject($"Prop_{x}_{y}");
+                pObj.transform.SetParent(mapaLobby.transform);
+                pObj.transform.position = new Vector3(x, y, 0);
+                var sr = pObj.AddComponent<SpriteRenderer>();
+                sr.sprite = sp;
+                sr.sortingOrder = 3;
+                var col = pObj.AddComponent<BoxCollider2D>();
+                col.size = new Vector2(0.8f, 0.8f);
+                try { pObj.tag = "Pared"; } catch {}
+                var prop = pObj.AddComponent<PropDestruible>();
+                prop.vidaMax = 10;
+            }
+            CrearPropLobby(-8, 11, datosStone.spriteCrate);
+            CrearPropLobby(-9, 11, datosStone.spriteBarrel);
+            CrearPropLobby(8, 11, datosStone.spritePot);
+            CrearPropLobby(9, 11, datosStone.spriteCrate);
+
+            // Funcion constructora de cuartos fisicos
             void ConstruirCuartoFisico(string nombre, TipoPersonaje tipo, bool esProx, int xMin, int xMax, int yMin, int yMax, int puertaY1, int puertaY2, bool esOeste, Color tinteSuelo, string textoCartel)
             {
-                // Suelo interior del cuarto
                 for (int x = xMin; x <= xMax; x++)
                 {
                     for (int y = yMin; y <= yMax; y++)
@@ -1214,40 +1308,37 @@ namespace SoulKnight.Editor
                     }
                 }
 
-                // Muros perimetrales del cuarto (exterior, superior, inferior)
+                // Muros perimetrales del cuarto (1 tile exacto de grosor)
                 int paredExtX = esOeste ? xMin - 1 : xMax + 1;
                 for (int y = yMin - 1; y <= yMax + 1; y++)
                 {
-                    CrearMuro(paredExtX, y); // Pared exterior lateral
+                    CrearMuro(paredExtX, y, 5);
                 }
                 for (int x = xMin; x <= xMax; x++)
                 {
-                    CrearMuro(x, yMax + 1); // Pared superior
-                    CrearMuro(x, yMin - 1); // Pared inferior
+                    CrearMuro(x, yMax + 1, 10);
+                    CrearWallFaceNorte(x, yMax, (x == xMin + 2 || x == xMax - 2));
+                    CrearMuro(x, yMin - 1, 10);
                 }
 
-                // Pared divisoria con la sala central (dejando la puerta libre de 3 tiles)
                 int paredSalidaX = esOeste ? xMax + 1 : xMin - 1;
                 for (int y = yMin; y <= yMax; y++)
                 {
                     if (y < puertaY1 || y > puertaY2)
                     {
-                        CrearMuro(paredSalidaX, y);
+                        CrearMuro(paredSalidaX, y, 5);
                     }
                 }
 
-                // Suelo en el umbral / puerta conectando con la sala central
                 for (int y = puertaY1; y <= puertaY2; y++)
                 {
                     PonerSuelo(paredSalidaX, y, tinteSuelo);
                 }
 
-                // Trigger físico accesible del cuarto (estrictamente en el interior del cuarto, no en la puerta ni en el pasillo)
                 var cuartoObj = new GameObject($"Trigger_{nombre}");
                 cuartoObj.transform.SetParent(mapaLobby.transform);
                 float ancho = (xMax - xMin + 1) * 0.75f;
                 float alto = (yMax - yMin + 1) * 0.75f;
-                // Posicionar el centro bien adentro del cuarto (lejos de la puerta)
                 float centroX = esOeste ? ((xMin + xMax) * 0.5f - 0.6f) : ((xMin + xMax) * 0.5f + 0.6f);
                 float centroY = (yMin + yMax) * 0.5f;
                 cuartoObj.transform.position = new Vector3(centroX, centroY, 0);
@@ -1261,7 +1352,6 @@ namespace SoulKnight.Editor
                 compCuarto.esProximamente = esProx;
                 compCuarto.nombreCuarto = nombre;
 
-                // Estatua / Visual del personaje dentro del cuarto (decorativo)
                 if (!esProx)
                 {
                     var prevObj = new GameObject($"Estatua_{nombre}");
@@ -1278,40 +1368,33 @@ namespace SoulKnight.Editor
                     srPrev.sortingOrder = 3;
                 }
 
-                // Cartel elegante DENTRO del cuarto (en la pared superior norte del cuarto)
-                // Posición: centrado en X dentro del cuarto, pegado al muro norte (yMax)
                 var cartelObj = new GameObject($"Cartel_{nombre}");
                 cartelObj.transform.SetParent(mapaLobby.transform);
                 float cartelX = (xMin + xMax) * 0.5f;
-                float cartelY = yMax - 0.25f; // En la parte superior interior del cuarto
+                float cartelY = yMax - 0.25f;
                 cartelObj.transform.position = new Vector3(cartelX, cartelY, 0f);
 
-                // Colisionador para que el personaje físicamente camine por abajo y no lo traspase
                 var colCartel = cartelObj.AddComponent<BoxCollider2D>();
                 colCartel.size = new Vector2(4.8f, 0.9f);
-                colCartel.offset = Vector2.zero;
                 try { cartelObj.tag = "Pared"; } catch {}
 
-                // Borde decorativo luminoso del cartel
                 var bordeCartel = new GameObject("BordeCartel");
                 bordeCartel.transform.SetParent(cartelObj.transform, false);
                 bordeCartel.transform.localScale = new Vector3(5.1f, 1.25f, 1f);
                 var srBorde = bordeCartel.AddComponent<SpriteRenderer>();
-                srBorde.sprite = spriteSuelo;
+                srBorde.sprite = datosStone.spritesSuelo[0];
                 Color colorBorde = esProx ? new Color(0.4f, 0.45f, 0.55f, 0.9f) : (tipo == TipoPersonaje.Fuego ? new Color(1f, 0.45f, 0.1f, 0.95f) : (tipo == TipoPersonaje.Hielo ? new Color(0.2f, 0.8f, 1f, 0.95f) : new Color(1f, 0.9f, 0.2f, 0.95f)));
                 srBorde.color = colorBorde;
-                srBorde.sortingOrder = 7; // Por encima del personaje (el personaje tiene sortingOrder 3)
+                srBorde.sortingOrder = 7;
 
-                // Placa de fondo oscuro satinado
                 var fondoCartel = new GameObject("FondoCartel");
                 fondoCartel.transform.SetParent(cartelObj.transform, false);
                 fondoCartel.transform.localScale = new Vector3(4.8f, 1.05f, 1f);
                 var srFondo = fondoCartel.AddComponent<SpriteRenderer>();
-                srFondo.sprite = spriteSuelo;
+                srFondo.sprite = datosStone.spritesSuelo[0];
                 srFondo.color = new Color(0.04f, 0.06f, 0.10f, 0.96f);
-                srFondo.sortingOrder = 8; // Siempre visible al frente del personaje
+                srFondo.sortingOrder = 8;
 
-                // Texto del cartel estilizado y nítido
                 var textoObj = new GameObject("TextoCartel");
                 textoObj.transform.SetParent(cartelObj.transform, false);
                 textoObj.transform.localPosition = new Vector3(0, 0, -0.1f);
@@ -1324,45 +1407,44 @@ namespace SoulKnight.Editor
                 tm.anchor = TextAnchor.MiddleCenter;
                 tm.color = esProx ? new Color(0.85f, 0.88f, 0.92f) : (tipo == TipoPersonaje.Fuego ? new Color(1f, 0.72f, 0.35f) : (tipo == TipoPersonaje.Hielo ? new Color(0.55f, 0.96f, 1f) : new Color(1f, 0.98f, 0.45f)));
                 var mr = textoObj.GetComponent<MeshRenderer>();
-                if (mr != null) mr.sortingOrder = 9; // Al frente de todo
+                if (mr != null) mr.sortingOrder = 9;
             }
 
             // --- CUARTOS JUGABLES (LADO OESTE, X de -19 a -12) ---
-            // 1. Cuarto de Fuego (Norte: Y de 6 a 11, Puerta Y de 8 a 10)
-            ConstruirCuartoFisico("Fuego", TipoPersonaje.Fuego, false, -19, -12, 6, 11, 8, 10, true, new Color(1f, 0.88f, 0.85f), "🔥 FUEGO");
-            CrearColumna(-15, 8, spriteColMagma);
+            ConstruirCuartoFisico("Fuego", TipoPersonaje.Fuego, false, -19, -12, 6, 11, 8, 10, true, new Color(1f, 0.90f, 0.88f), "🔥 FUEGO");
+            CrearColumna(-15, 8);
 
-            // 2. Cuarto de Hielo (Centro: Y de -3 a 2, Puerta Y de -1 a 1)
-            ConstruirCuartoFisico("Hielo", TipoPersonaje.Hielo, false, -19, -12, -3, 2, -1, 1, true, new Color(0.85f, 0.95f, 1f), "❄️ HIELO");
-            CrearColumna(-15, 0, spriteColHielo);
+            ConstruirCuartoFisico("Hielo", TipoPersonaje.Hielo, false, -19, -12, -3, 2, -1, 1, true, new Color(0.88f, 0.95f, 1f), "❄️ HIELO");
+            CrearColumna(-15, 0);
 
-            // 3. Cuarto Eléctrico (Sur: Y de -12 a -7, Puerta Y de -10 a -8)
-            ConstruirCuartoFisico("Electrico", TipoPersonaje.Electrico, false, -19, -12, -12, -7, -10, -8, true, new Color(1f, 1f, 0.88f), "⚡ ELÉCTRICO");
-            CrearColumna(-15, -9, spriteColumna);
+            ConstruirCuartoFisico("Electrico", TipoPersonaje.Electrico, false, -19, -12, -12, -7, -10, -8, true, new Color(1f, 1f, 0.90f), "⚡ ELÉCTRICO");
+            CrearColumna(-15, -9);
 
-            // Muros divisorios de la pared Oeste entre las puertas
             for (int y = -12; y <= 12; y++)
             {
-                // Puertas en [-10, -8], [-1, 1], [8, 10]
                 bool esPuerta = (y >= -10 && y <= -8) || (y >= -1 && y <= 1) || (y >= 8 && y <= 10);
                 if (!esPuerta)
                 {
-                    CrearMuro(-11, y);
+                    CrearMuro(-11, y, 5);
                 }
             }
 
             // --- CUARTOS PRÓXIMAMENTE (LADO ESTE, X de 12 a 19) ---
-            ConstruirCuartoFisico("Proximamente_1", TipoPersonaje.Ninguno, true, 12, 19, 6, 11, 8, 10, false, new Color(0.75f, 0.75f, 0.8f), "🔒 PRÓXIMAMENTE");
-            ConstruirCuartoFisico("Proximamente_2", TipoPersonaje.Ninguno, true, 12, 19, -3, 2, -1, 1, false, new Color(0.75f, 0.75f, 0.8f), "🔒 PRÓXIMAMENTE");
-            ConstruirCuartoFisico("Proximamente_3", TipoPersonaje.Ninguno, true, 12, 19, -12, -7, -10, -8, false, new Color(0.75f, 0.75f, 0.8f), "🔒 PRÓXIMAMENTE");
+            ConstruirCuartoFisico("Proximamente_1", TipoPersonaje.Ninguno, true, 12, 19, 6, 11, 8, 10, false, new Color(0.88f, 0.98f, 0.88f), "🔒 PRÓXIMAMENTE");
+            CrearColumna(15, 8);
 
-            // Muros divisorios de la pared Este entre las puertas
+            ConstruirCuartoFisico("Proximamente_2", TipoPersonaje.Ninguno, true, 12, 19, -3, 2, -1, 1, false, new Color(0.95f, 0.88f, 1f), "🔒 PRÓXIMAMENTE");
+            CrearColumna(15, 0);
+
+            ConstruirCuartoFisico("Proximamente_3", TipoPersonaje.Ninguno, true, 12, 19, -12, -7, -10, -8, false, new Color(0.92f, 0.90f, 0.88f), "🔒 PRÓXIMAMENTE");
+            CrearColumna(15, -9);
+
             for (int y = -12; y <= 12; y++)
             {
                 bool esPuerta = (y >= -10 && y <= -8) || (y >= -1 && y <= 1) || (y >= 8 && y <= 10);
                 if (!esPuerta)
                 {
-                    CrearMuro(11, y);
+                    CrearMuro(11, y, 5);
                 }
             }
 
@@ -1385,7 +1467,6 @@ namespace SoulKnight.Editor
             var tSpawn2 = new GameObject("Spawn2").transform; tSpawn2.position = new Vector3(-1, 0, 0); tSpawn2.SetParent(spawnsLobby.transform);
             var tSpawn3 = new GameObject("Spawn3").transform; tSpawn3.position = new Vector3(1, 0, 0); tSpawn3.SetParent(spawnsLobby.transform);
             var tSpawn4 = new GameObject("Spawn4").transform; tSpawn4.position = new Vector3(3, 0, 0); tSpawn4.SetParent(spawnsLobby.transform);
-
             // 3. UI Overlay del Lobby (Limpio y despejado para ver los cuartos en el juego)
             var canvasObj = new GameObject("UI_Lobby");
             ConfigurarCanvas(canvasObj, out var canvas, out var panel);
@@ -2215,7 +2296,7 @@ namespace SoulKnight.Editor
         [MenuItem("SoulKnight/Generar Capturas de 3 Cuartos Piedra")]
         public static void GenerarCapturasTresCuartosPiedra()
         {
-            Debug.Log("== Iniciando Generacion de Capturas de 3 Salas de Mazmorra de Piedra ==");
+            Debug.Log("== Iniciando Generacion de Capturas de 3 Salas de Mazmorra de Piedra (Fiel a Preview 20x13) ==");
             ConfigurarTexturas();
             CatalogoBiomas.LimpiarCache();
 
@@ -2229,7 +2310,7 @@ namespace SoulKnight.Editor
 
             var datos = CatalogoBiomas.Obtener(TipoBioma.Piedra);
 
-            // 3 layouts contrastantes: 7 ("arena"), 5 ("estanque"), 8 ("foso")
+            // 3 layouts de 18x10: 7 ("arena"), 5 ("estanque"), 8 ("foso")
             int[] layouts = new int[] { 7, 5, 8 };
             string[] nombresSalas = new string[] { "arena", "estanque", "foso" };
 
@@ -2241,110 +2322,73 @@ namespace SoulKnight.Editor
                 EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
                 var root = new GameObject("Room_Piedra_" + layoutNombre);
 
-                int xMin = -11;
-                int xMax = 10;
-                int yMin = -6;
-                int yMax = 6;
+                // Cuarto de exactamente 20 columnas x 13 filas (escala 1:1 fiel a stone_room_arena.png)
+                // X: de -9.5f a 9.5f (20 tiles: pared izq=-9.5, interior=-8.5..8.5, pared der=9.5)
+                // Y: de -6.5f a 5.5f (13 tiles: pared sup=5.5, wall_face=4.5, interior 10 filas=3.5..-5.5, pared inf=-6.5)
 
-                // 1. Fondo Void exterior
+                // 1. Vacio exterior (stone_void)
                 if (datos.spriteVoid != null)
                 {
-                    for (int vy = yMin - 2; vy <= yMax + 2; vy++)
+                    for (int vy = -8; vy <= 7; vy++)
                     {
-                        for (int vx = xMin - 2; vx <= xMax + 2; vx++)
+                        for (int vx = -11; vx <= 11; vx++)
                         {
-                            if (vx < xMin || vx > xMax || vy < yMin || vy > yMax)
+                            if (vx < -9 || vx > 9 || vy < -6 || vy > 5)
                             {
-                                CrearTileCaptura(root.transform, vx + 0.5f, vy + 0.5f, datos.spriteVoid, -2);
+                                CrearTileCaptura(root.transform, vx - 0.5f, vy + 0.5f, datos.spriteVoid, -2);
                             }
                         }
                     }
                 }
 
-                // 2. Suelo base y sombras
-                for (int y = yMin + 1; y <= yMax - 2; y++)
+                // 2. Fila 0 (Superior): Muro Top Perimetral (1 tile de grosor exacto)
+                CrearTileCaptura(root.transform, -9.5f, 5.5f, ObtenerWallTop(datos, 6), 2);
+                for (int c = 0; c < 18; c++)
                 {
-                    for (int x = xMin + 1; x <= xMax - 1; x++)
-                    {
-                        Sprite spSuelo;
-                        if (y == yMax - 2)
-                        {
-                            spSuelo = datos.spriteFloorShadow00 ?? datos.spriteSuelo;
-                        }
-                        else if (y == yMax - 3)
-                        {
-                            spSuelo = datos.spriteFloorShadow01 ?? datos.spriteSuelo;
-                        }
-                        else
-                        {
-                            if (Random.value < 0.85f && datos.spritesSuelo != null && datos.spritesSuelo.Length >= 4)
-                                spSuelo = datos.spritesSuelo[Random.Range(0, 4)];
-                            else if (datos.spritesSuelo != null && datos.spritesSuelo.Length >= 8)
-                                spSuelo = datos.spritesSuelo[Random.Range(4, 8)];
-                            else
-                                spSuelo = datos.spriteSuelo;
-                        }
-
-                        CrearTileCaptura(root.transform, x + 0.5f, y + 0.5f, spSuelo, -1);
-
-                        // Calcomanías de suelo (decals) en 14% de tiles fuera de sombra
-                        if (y < yMax - 3 && datos.spritesDecals != null && datos.spritesDecals.Length > 0 && Random.value < 0.14f)
-                        {
-                            var spDecal = datos.spritesDecals[Random.Range(0, datos.spritesDecals.Length)];
-                            CrearTileCaptura(root.transform, x + 0.5f, y + 0.5f, spDecal, 0);
-                        }
-                    }
+                    CrearTileCaptura(root.transform, -8.5f + c, 5.5f, ObtenerWallTop(datos, 10), 2);
                 }
+                CrearTileCaptura(root.transform, 9.5f, 5.5f, ObtenerWallTop(datos, 12), 2);
 
-                // 3. Wall Top perimetral con autotile bitmask
-                for (int x = xMin; x <= xMax; x++)
+                // 3. Fila 1: Cara Frontal de Muro Norte (wall_face) con antorchas cada 4 tiles y halo torch_glow fijo
+                CrearTileCaptura(root.transform, -9.5f, 4.5f, ObtenerWallTop(datos, 5), 2); // Lateral izq
+                for (int c = 0; c < 18; c++)
                 {
-                    CrearTileCaptura(root.transform, x + 0.5f, yMax + 0.5f, ObtenerWallTop(datos, x == xMin ? 6 : (x == xMax ? 12 : 10)), 2);
-                    CrearTileCaptura(root.transform, x + 0.5f, yMin + 0.5f, ObtenerWallTop(datos, x == xMin ? 3 : (x == xMax ? 9 : 10)), 2);
-                }
-                for (int y = yMin + 1; y <= yMax - 1; y++)
-                {
-                    CrearTileCaptura(root.transform, xMin + 0.5f, y + 0.5f, ObtenerWallTop(datos, 5), 2);
-                    CrearTileCaptura(root.transform, xMax + 0.5f, y + 0.5f, ObtenerWallTop(datos, 5), 2);
-                }
+                    float wx = -8.5f + c;
+                    bool esAntorcha = (c == 1 || c == 5 || c == 9 || c == 13 || c == 17);
 
-                // 4. Wall Face norte (fila yMax - 1) con antorchas cada 4 tiles y halo torch_glow
-                for (int x = xMin + 1; x <= xMax - 1; x++)
-                {
-                    bool torch = ((x - xMin) % 4 == 0);
                     Sprite spFace;
-                    if (torch && datos.framesWallFaceTorch != null && datos.framesWallFaceTorch.Length > 0)
+                    if (esAntorcha && datos.framesWallFaceTorch != null && datos.framesWallFaceTorch.Length > 0)
                     {
                         spFace = datos.framesWallFaceTorch[0];
-                        CrearTileCaptura(root.transform, x + 0.5f, yMax - 0.5f, spFace, 2);
+                        CrearTileCaptura(root.transform, wx, 4.5f, spFace, 2);
 
-                        // Halo Glow antorcha
+                        // Halo Glow centrado en la llama a escala 1:1 sin deformacion
                         if (datos.spriteTorchGlow != null)
                         {
                             var glowObj = new GameObject("TorchGlow");
                             glowObj.transform.SetParent(root.transform);
-                            glowObj.transform.position = new Vector3(x + 0.5f, yMax - 0.8f, 0);
-                            glowObj.transform.localScale = Vector3.one * 1.5f;
+                            glowObj.transform.position = new Vector3(wx, 4.5f + 0.16f, 0);
+                            glowObj.transform.localScale = Vector3.one;
                             var srGlow = glowObj.AddComponent<SpriteRenderer>();
                             srGlow.sprite = datos.spriteTorchGlow;
-                            srGlow.color = datos.colorLuzAntorcha;
-                            srGlow.sortingOrder = 0;
+                            srGlow.color = Color.white; // Ya contiene gradiente y alfa suave
+                            srGlow.sortingOrder = 3;
                         }
                     }
                     else
                     {
-                        float r = Random.value;
-                        if (r < 0.10f && datos.spriteWallFaceBanner != null) spFace = datos.spriteWallFaceBanner;
-                        else if (r < 0.20f && datos.spriteWallFaceCracked != null) spFace = datos.spriteWallFaceCracked;
-                        else if (r < 0.32f && datos.spriteWallFaceDecor != null) spFace = datos.spriteWallFaceDecor;
-                        else if (r < 0.65f && datos.spriteWallFaceB != null) spFace = datos.spriteWallFaceB;
+                        if (c == 8 && datos.spriteWallFaceBanner != null) spFace = datos.spriteWallFaceBanner;
+                        else if ((c == 3 || c == 15) && datos.spriteWallFaceDecor != null) spFace = datos.spriteWallFaceDecor;
+                        else if ((c == 4 || c == 12) && datos.spriteWallFaceCracked != null) spFace = datos.spriteWallFaceCracked;
+                        else if (c % 2 == 0 && datos.spriteWallFaceB != null) spFace = datos.spriteWallFaceB;
                         else spFace = datos.spriteWallFaceA ?? datos.spriteMuro;
 
-                        CrearTileCaptura(root.transform, x + 0.5f, yMax - 0.5f, spFace, 2);
+                        CrearTileCaptura(root.transform, wx, 4.5f, spFace, 2);
                     }
                 }
+                CrearTileCaptura(root.transform, 9.5f, 4.5f, ObtenerWallTop(datos, 5), 2); // Lateral der
 
-                // 5. Interior Layout según room_layouts.json
+                // 4. Filas 2 a 11: Interior del cuarto (18 cols x 10 rows)
                 string[] plantilla = GeneradorMazmorra.PlantillasLayoutsStone[layoutIdx];
                 int cols = 18;
                 int rows = 10;
@@ -2358,20 +2402,65 @@ namespace SoulKnight.Editor
                     }
                 }
 
-                float startX = -8.5f;
-                float startY = 4.5f;
-
-                for (int r = 0; r < rows; r++)
+                for (int r = 0; r < 10; r++)
                 {
-                    for (int c = 0; c < cols; c++)
+                    float wy = 3.5f - r;
+
+                    // Muros laterales izquierdo y derecho (1 tile grosor exacto, mask 5)
+                    CrearTileCaptura(root.transform, -9.5f, wy, ObtenerWallTop(datos, 5), 2);
+                    CrearTileCaptura(root.transform, 9.5f, wy, ObtenerWallTop(datos, 5), 2);
+
+                    for (int c = 0; c < 18; c++)
                     {
+                        float wx = -8.5f + c;
+
+                        // Suelo estructurado:
+                        Sprite spSuelo;
+                        if (r == 0)
+                        {
+                            spSuelo = datos.spriteFloorShadow00 ?? datos.spriteSuelo;
+                        }
+                        else if (r == 1)
+                        {
+                            spSuelo = datos.spriteFloorShadow01 ?? datos.spriteSuelo;
+                        }
+                        else
+                        {
+                            // Orden estructurado de losas 2x2
+                            int slabX = Mathf.FloorToInt((wx + 10f) / 2f);
+                            int slabY = Mathf.FloorToInt((wy + 10f) / 2f);
+                            bool alterno = ((slabX + slabY) % 2 == 1);
+                            spSuelo = alterno ? (datos.spritesSuelo[3] ?? datos.spritesSuelo[0]) : datos.spritesSuelo[0];
+
+                            // Acentos ritmicos espaciados
+                            int mx = Mathf.Abs(Mathf.FloorToInt(wx + 10f)) % 5;
+                            int my = Mathf.Abs(Mathf.FloorToInt(wy + 10f)) % 5;
+                            if (mx == 2 && my == 3) spSuelo = datos.spritesSuelo[1];
+                            else if (mx == 4 && my == 1) spSuelo = datos.spritesSuelo[4];
+                            else if (mx == 0 && my == 4) spSuelo = datos.spritesSuelo[6];
+                        }
+                        CrearTileCaptura(root.transform, wx, wy, spSuelo, -1);
+
+                        // Calcomanias decorativas en orden estructurado
+                        if (r >= 2 && gridMatriz[c, r] == '.' && datos.spritesDecals != null && datos.spritesDecals.Length > 0)
+                        {
+                            int dX = Mathf.Abs(Mathf.FloorToInt(wx + 10f)) % 6;
+                            int dY = Mathf.Abs(Mathf.FloorToInt(wy + 10f)) % 5;
+                            if (dX == 2 && dY == 3)
+                            {
+                                int decalIdx = Mathf.Abs(Mathf.FloorToInt(wx * 2 + wy)) % datos.spritesDecals.Length;
+                                CrearTileCaptura(root.transform, wx, wy, datos.spritesDecals[decalIdx], 0);
+                            }
+                        }
+
+                        // Props / Elementos del layout
                         char ch = gridMatriz[c, r];
                         if (ch == '.') continue;
-                        Vector2 pos = new Vector2(startX + c, startY - r);
 
                         switch (ch)
                         {
                             case '#':
+                                // Bloque autotile 1 tile exacto de grosor
                                 int mask = 0;
                                 if (r > 0 && gridMatriz[c, r - 1] == '#') mask |= 1;
                                 if (c + 1 < cols && gridMatriz[c + 1, r] == '#') mask |= 2;
@@ -2379,58 +2468,66 @@ namespace SoulKnight.Editor
                                 if (c > 0 && gridMatriz[c - 1, r] == '#') mask |= 8;
                                 Sprite spB = (datos.spritesBlock != null && mask >= 0 && mask < datos.spritesBlock.Length)
                                     ? datos.spritesBlock[mask] : datos.spriteMuro;
-                                CrearTileCaptura(root.transform, pos.x, pos.y, spB, 2);
+                                CrearTileCaptura(root.transform, wx, wy, spB, 2);
                                 break;
 
                             case 'P':
-                                CrearTileCaptura(root.transform, pos.x, pos.y, datos.spritePillar, 3);
+                                CrearTileCaptura(root.transform, wx, wy, datos.spritePillar, 3);
                                 break;
 
                             case 'c':
-                                CrearTileCaptura(root.transform, pos.x, pos.y, datos.spriteCrate, 1);
+                                CrearTileCaptura(root.transform, wx, wy, datos.spriteCrate, 1);
                                 break;
 
                             case 'b':
-                                CrearTileCaptura(root.transform, pos.x, pos.y, datos.spriteBarrel, 1);
+                                CrearTileCaptura(root.transform, wx, wy, datos.spriteBarrel, 1);
                                 break;
 
                             case 'r':
-                                CrearTileCaptura(root.transform, pos.x, pos.y, datos.spriteBarrelRed ?? datos.spriteBarrel, 1);
+                                CrearTileCaptura(root.transform, wx, wy, datos.spriteBarrelRed ?? datos.spriteBarrel, 1);
                                 break;
 
                             case 'p':
-                                CrearTileCaptura(root.transform, pos.x, pos.y, datos.spritePot ?? datos.spriteCrate, 1);
+                                CrearTileCaptura(root.transform, wx, wy, datos.spritePot ?? datos.spriteCrate, 1);
                                 break;
 
                             case 's':
                                 Sprite spS = (datos.framesSpikesStrip != null && datos.framesSpikesStrip.Length > 2)
                                     ? datos.framesSpikesStrip[2] : (datos.spriteSpikesOn ?? datos.spriteSpikesOff);
-                                CrearTileCaptura(root.transform, pos.x, pos.y, spS, 0);
+                                CrearTileCaptura(root.transform, wx, wy, spS, 0);
                                 break;
 
                             case 'w':
                                 Sprite spW = (datos.framesWaterStrip != null && datos.framesWaterStrip.Length > 0)
                                     ? datos.framesWaterStrip[0] : null;
-                                CrearTileCaptura(root.transform, pos.x, pos.y, spW, 0);
+                                CrearTileCaptura(root.transform, wx, wy, spW, 0);
                                 break;
 
                             case 'o':
-                                CrearTileCaptura(root.transform, pos.x, pos.y, datos.spritePit, 0);
+                                CrearTileCaptura(root.transform, wx, wy, datos.spritePit, 0);
                                 break;
                         }
                     }
                 }
 
-                // 6. Cámara y Render
+                // 5. Fila 12 (Inferior): Muro Top Inferior Perimetral (1 tile exacto de grosor)
+                CrearTileCaptura(root.transform, -9.5f, -6.5f, ObtenerWallTop(datos, 3), 2);
+                for (int c = 0; c < 18; c++)
+                {
+                    CrearTileCaptura(root.transform, -8.5f + c, -6.5f, ObtenerWallTop(datos, 10), 2);
+                }
+                CrearTileCaptura(root.transform, 9.5f, -6.5f, ObtenerWallTop(datos, 9), 2);
+
+                // 6. Camara y Render (encuadre exacto 20x13 a 1280x832 px)
                 var camObj = new GameObject("CamaraCaptura");
                 var cam = camObj.AddComponent<Camera>();
                 cam.orthographic = true;
-                cam.orthographicSize = 6.75f;
-                cam.transform.position = new Vector3(0f, 0.5f, -10f);
-                cam.backgroundColor = Color.black;
+                cam.orthographicSize = 6.5f;
+                cam.transform.position = new Vector3(0f, -0.5f, -10f);
+                cam.backgroundColor = new Color(0.12f, 0.12f, 0.18f, 1f);
                 cam.clearFlags = CameraClearFlags.SolidColor;
 
-                int wPx = 1408;
+                int wPx = 1280;
                 int hPx = 832;
                 var rt = new RenderTexture(wPx, hPx, 24, RenderTextureFormat.ARGB32);
                 cam.targetTexture = rt;
@@ -2453,7 +2550,6 @@ namespace SoulKnight.Editor
                     File.WriteAllBytes(Path.Combine(artifactDir, fileNameNum), pngBytes);
                 }
 
-                // Si es la primera sala, actualizar también Captura_Sala_stone.png
                 if (i == 0)
                 {
                     string stoneName = "Captura_Sala_stone.png";

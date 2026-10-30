@@ -719,9 +719,12 @@ namespace SoulKnight
                     posAntorchas.Add(new Vector2(s.cx, s.yMin + 2.5f));
                 }
 
-                foreach (var pa in posAntorchas)
+                if (dSala.tipo != TipoBioma.Piedra)
                 {
-                    CrearAntorchaEnSala(ctrl, pa, dSala);
+                    foreach (var pa in posAntorchas)
+                    {
+                        CrearAntorchaEnSala(ctrl, pa, dSala);
+                    }
                 }
 
                 // Detectar puertas de bloqueo en el perímetro
@@ -760,18 +763,50 @@ namespace SoulKnight
             go.transform.position = (Vector3)pos;
 
             var sr = go.AddComponent<SpriteRenderer>();
-            sr.sprite = spriteSuelo;
-            sr.sortingOrder = -1;
 
-            // Decals de suelo (~14% de tiles transitables si el bioma cuenta con calcomanías)
-            if (d != null && d.spritesDecals != null && d.spritesDecals.Length > 0 && UnityEngine.Random.value < 0.14f)
+            // Si es bioma de piedra, aplicar orden estructurado de losas 2x2
+            if (d != null && d.tipo == TipoBioma.Piedra && d.spritesSuelo != null && d.spritesSuelo.Length >= 8)
             {
-                var decalObj = new GameObject("DecalSuelo");
-                decalObj.transform.SetParent(go.transform, false);
-                var srDecal = decalObj.AddComponent<SpriteRenderer>();
-                srDecal.sprite = d.spritesDecals[UnityEngine.Random.Range(0, d.spritesDecals.Length)];
-                srDecal.sortingOrder = 0;
+                int slabX = Mathf.FloorToInt(pos.x / 2f);
+                int slabY = Mathf.FloorToInt(pos.y / 2f);
+                bool alterno = ((slabX + slabY) % 2 == 1);
+                Sprite spEstructurado = alterno ? (d.spritesSuelo[3] ?? d.spritesSuelo[0]) : d.spritesSuelo[0];
+
+                // Acentos de detalle rítmicos estructurados
+                int modX = Mathf.Abs(Mathf.FloorToInt(pos.x)) % 6;
+                int modY = Mathf.Abs(Mathf.FloorToInt(pos.y)) % 6;
+                if (modX == 2 && modY == 3) spEstructurado = d.spritesSuelo[1];
+                else if (modX == 5 && modY == 1) spEstructurado = d.spritesSuelo[4];
+                else if (modX == 0 && modY == 4) spEstructurado = d.spritesSuelo[6];
+
+                sr.sprite = spEstructurado;
+
+                // Calcomanías colocadas en orden estructurado y espaciado
+                int dX = Mathf.Abs(Mathf.FloorToInt(pos.x)) % 7;
+                int dY = Mathf.Abs(Mathf.FloorToInt(pos.y)) % 7;
+                if (d.spritesDecals != null && d.spritesDecals.Length > 0 && dX == 3 && dY == 4)
+                {
+                    int decalIdx = (Mathf.Abs(Mathf.FloorToInt(pos.x * 3 + pos.y))) % d.spritesDecals.Length;
+                    var decalObj = new GameObject("DecalSuelo");
+                    decalObj.transform.SetParent(go.transform, false);
+                    var srDecal = decalObj.AddComponent<SpriteRenderer>();
+                    srDecal.sprite = d.spritesDecals[decalIdx];
+                    srDecal.sortingOrder = 0;
+                }
             }
+            else
+            {
+                sr.sprite = spriteSuelo;
+                if (d != null && d.spritesDecals != null && d.spritesDecals.Length > 0 && UnityEngine.Random.value < 0.12f)
+                {
+                    var decalObj = new GameObject("DecalSuelo");
+                    decalObj.transform.SetParent(go.transform, false);
+                    var srDecal = decalObj.AddComponent<SpriteRenderer>();
+                    srDecal.sprite = d.spritesDecals[UnityEngine.Random.Range(0, d.spritesDecals.Length)];
+                    srDecal.sortingOrder = 0;
+                }
+            }
+            sr.sortingOrder = -1;
         }
 
         private void InstanciarTileWallTop(Vector2 pos, Sprite spriteWallTop)
@@ -811,23 +846,15 @@ namespace SoulKnight
                 var anim = go.AddComponent<AnimadorSpriteTile>();
                 anim.Configurar(sr, d.framesWallFaceTorch, 8f);
 
-                // Halo de iluminación suave (usa stone_torch_glow si existe)
+                // Halo de iluminación suave (usa stone_torch_glow centrado en la llama a escala 1:1 fija)
                 var haloObj = new GameObject("HaloLuzPared");
                 haloObj.transform.SetParent(go.transform, false);
-                haloObj.transform.localPosition = new Vector3(0f, -0.3f, 0f);
+                haloObj.transform.localPosition = new Vector3(0f, 0.16f, 0f); // Centrado en la llama según manifest
+                haloObj.transform.localScale = Vector3.one;
                 var srHalo = haloObj.AddComponent<SpriteRenderer>();
-                if (d.spriteTorchGlow != null)
-                {
-                    srHalo.sprite = d.spriteTorchGlow;
-                    haloObj.transform.localScale = Vector3.one * 1.5f;
-                }
-                else
-                {
-                    srHalo.sprite = _spriteHaloLuzCalida;
-                    haloObj.transform.localScale = Vector3.one * 6.5f;
-                }
-                srHalo.color = d.colorLuzAntorcha;
-                srHalo.sortingOrder = 0;
+                srHalo.sprite = d.spriteTorchGlow ?? _spriteHaloLuzCalida;
+                srHalo.color = Color.white; // El sprite ya contiene su gradiente suave y color cálido
+                srHalo.sortingOrder = 3;
             }
             else
             {
