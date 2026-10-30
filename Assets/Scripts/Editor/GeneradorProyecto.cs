@@ -2311,9 +2311,9 @@ namespace SoulKnight.Editor
 
             var datos = CatalogoBiomas.Obtener(TipoBioma.Piedra);
 
-            // 3 layouts de 18x10: 7 ("arena"), 5 ("estanque"), 8 ("foso")
-            int[] layouts = new int[] { 7, 5, 8 };
-            string[] nombresSalas = new string[] { "arena", "estanque", "foso" };
+            // 3 layouts de 18x10: 1 ("bastiones"), 5 ("estanque"), 6 ("bunker")
+            int[] layouts = new int[] { 1, 5, 6 };
+            string[] nombresSalas = new string[] { "bastiones", "estanque", "bunker" };
 
             for (int i = 0; i < layouts.Length; i++)
             {
@@ -2415,7 +2415,7 @@ namespace SoulKnight.Editor
                     {
                         float wx = -8.5f + c;
 
-                        // Suelo estructurado:
+                        // Suelo continuo vivo según LEEME.md con sombras drop en filas 0 y 1
                         Sprite spSuelo;
                         if (r == 0)
                         {
@@ -2427,29 +2427,30 @@ namespace SoulKnight.Editor
                         }
                         else
                         {
-                            // Orden estructurado de losas 2x2
-                            int slabX = Mathf.FloorToInt((wx + 10f) / 2f);
-                            int slabY = Mathf.FloorToInt((wy + 10f) / 2f);
-                            bool alterno = ((slabX + slabY) % 2 == 1);
-                            spSuelo = alterno ? (datos.spritesSuelo[3] ?? datos.spritesSuelo[0]) : datos.spritesSuelo[0];
-
-                            // Acentos ritmicos espaciados
-                            int mx = Mathf.Abs(Mathf.FloorToInt(wx + 10f)) % 5;
-                            int my = Mathf.Abs(Mathf.FloorToInt(wy + 10f)) % 5;
-                            if (mx == 2 && my == 3) spSuelo = datos.spritesSuelo[1];
-                            else if (mx == 4 && my == 1) spSuelo = datos.spritesSuelo[4];
-                            else if (mx == 0 && my == 4) spSuelo = datos.spritesSuelo[6];
+                            // Distribución continua plana: base floor_00..03 (~85%), detalles floor_04..07 (~15%)
+                            int hash = Mathf.Abs((c * 37 + r * 19) ^ (i * 103));
+                            if (hash % 100 < 85 && datos.spritesSuelo != null && datos.spritesSuelo.Length >= 4)
+                            {
+                                spSuelo = datos.spritesSuelo[hash % 4];
+                            }
+                            else if (datos.spritesSuelo != null && datos.spritesSuelo.Length >= 8)
+                            {
+                                spSuelo = datos.spritesSuelo[4 + (hash % 4)];
+                            }
+                            else
+                            {
+                                spSuelo = datos.spriteSuelo;
+                            }
                         }
                         CrearTileCaptura(root.transform, wx, wy, spSuelo, -1);
 
-                        // Calcomanias decorativas en orden estructurado
+                        // Calcomanías decorativas orgánicas sobre el suelo (huesos, grietas, charcos, piedras)
                         if (r >= 2 && gridMatriz[c, r] == '.' && datos.spritesDecals != null && datos.spritesDecals.Length > 0)
                         {
-                            int dX = Mathf.Abs(Mathf.FloorToInt(wx + 10f)) % 6;
-                            int dY = Mathf.Abs(Mathf.FloorToInt(wy + 10f)) % 5;
-                            if (dX == 2 && dY == 3)
+                            int roll = Mathf.Abs((c * 13 + r * 29) ^ (i * 71)) % 100;
+                            if (roll < 14)
                             {
-                                int decalIdx = Mathf.Abs(Mathf.FloorToInt(wx * 2 + wy)) % datos.spritesDecals.Length;
+                                int decalIdx = Mathf.Abs(c * 7 + r * 11) % datos.spritesDecals.Length;
                                 CrearTileCaptura(root.transform, wx, wy, datos.spritesDecals[decalIdx], 0);
                             }
                         }
@@ -2460,6 +2461,18 @@ namespace SoulKnight.Editor
 
                         switch (ch)
                         {
+                            case 'D':
+                            case 'x':
+                                // Muro Destructible: bloque de piedra con grieta superpuesta
+                                Sprite spDestr = (datos.spritesBlock != null && datos.spritesBlock.Length > 0 && datos.spritesBlock[0] != null)
+                                    ? datos.spritesBlock[0] : datos.spriteMuro;
+                                CrearTileCaptura(root.transform, wx, wy, spDestr, 2);
+                                if (datos.spritesDecals != null && datos.spritesDecals.Length > 0 && datos.spritesDecals[0] != null)
+                                {
+                                    CrearTileCaptura(root.transform, wx, wy, datos.spritesDecals[0], 3);
+                                }
+                                break;
+
                             case '#':
                                 // Bloque autotile 1 tile exacto de grosor
                                 int mask = 0;

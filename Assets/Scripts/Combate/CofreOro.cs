@@ -156,6 +156,37 @@ namespace SoulKnight
             {
                 _textoIndicador.gameObject.SetActive(false);
             }
+
+            // A 1 segundo de abrirse: oscurecer visualmente y volverse traspasable
+            StartCoroutine(RutinaOscurecerYTraspasable());
+        }
+
+        private System.Collections.IEnumerator RutinaOscurecerYTraspasable()
+        {
+            yield return new WaitForSeconds(1.0f);
+
+            // Hacer traspasable para que no estorbe el paso si hay obstáculos o columnas cerca
+            var col = GetComponent<Collider2D>();
+            if (col != null)
+            {
+                col.enabled = false;
+            }
+
+            // Oscurecer a tono atenuado de cofre saqueado
+            if (_sr != null)
+            {
+                Color cIni = _sr.color;
+                Color cFin = new Color(0.38f, 0.38f, 0.42f, 0.75f);
+                float dur = 0.35f;
+                float t = 0f;
+                while (t < dur)
+                {
+                    t += Time.deltaTime;
+                    if (_sr != null) _sr.color = Color.Lerp(cIni, cFin, t / dur);
+                    yield return null;
+                }
+                if (_sr != null) _sr.color = cFin;
+            }
         }
 
         public void EfectosApertura()

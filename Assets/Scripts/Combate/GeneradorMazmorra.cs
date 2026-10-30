@@ -763,50 +763,25 @@ namespace SoulKnight
             go.transform.position = (Vector3)pos;
 
             var sr = go.AddComponent<SpriteRenderer>();
+            sr.sprite = spriteSuelo;
+            sr.sortingOrder = -1;
 
-            // Si es bioma de piedra, aplicar orden estructurado de losas 2x2
-            if (d != null && d.tipo == TipoBioma.Piedra && d.spritesSuelo != null && d.spritesSuelo.Length >= 8)
+            // Decoración viva: calcomanías esparcidas orgánicamente (grietas, guijarros, huesos, charcos)
+            if (d != null && d.spritesDecals != null && d.spritesDecals.Length > 0)
             {
-                int slabX = Mathf.FloorToInt(pos.x / 2f);
-                int slabY = Mathf.FloorToInt(pos.y / 2f);
-                bool alterno = ((slabX + slabY) % 2 == 1);
-                Sprite spEstructurado = alterno ? (d.spritesSuelo[3] ?? d.spritesSuelo[0]) : d.spritesSuelo[0];
-
-                // Acentos de detalle rítmicos estructurados
-                int modX = Mathf.Abs(Mathf.FloorToInt(pos.x)) % 6;
-                int modY = Mathf.Abs(Mathf.FloorToInt(pos.y)) % 6;
-                if (modX == 2 && modY == 3) spEstructurado = d.spritesSuelo[1];
-                else if (modX == 5 && modY == 1) spEstructurado = d.spritesSuelo[4];
-                else if (modX == 0 && modY == 4) spEstructurado = d.spritesSuelo[6];
-
-                sr.sprite = spEstructurado;
-
-                // Calcomanías colocadas en orden estructurado y espaciado
-                int dX = Mathf.Abs(Mathf.FloorToInt(pos.x)) % 7;
-                int dY = Mathf.Abs(Mathf.FloorToInt(pos.y)) % 7;
-                if (d.spritesDecals != null && d.spritesDecals.Length > 0 && dX == 3 && dY == 4)
+                // No sobreponer calcomanías en las sombras proyectadas por la pared norte
+                bool esFilaSombra = (spriteSuelo == d.spriteFloorShadow00 || spriteSuelo == d.spriteFloorShadow01);
+                if (!esFilaSombra && UnityEngine.Random.value < 0.15f)
                 {
-                    int decalIdx = (Mathf.Abs(Mathf.FloorToInt(pos.x * 3 + pos.y))) % d.spritesDecals.Length;
+                    int decalIdx = UnityEngine.Random.Range(0, d.spritesDecals.Length);
                     var decalObj = new GameObject("DecalSuelo");
                     decalObj.transform.SetParent(go.transform, false);
                     var srDecal = decalObj.AddComponent<SpriteRenderer>();
                     srDecal.sprite = d.spritesDecals[decalIdx];
                     srDecal.sortingOrder = 0;
+                    srDecal.color = new Color(1f, 1f, 1f, UnityEngine.Random.Range(0.70f, 0.95f));
                 }
             }
-            else
-            {
-                sr.sprite = spriteSuelo;
-                if (d != null && d.spritesDecals != null && d.spritesDecals.Length > 0 && UnityEngine.Random.value < 0.12f)
-                {
-                    var decalObj = new GameObject("DecalSuelo");
-                    decalObj.transform.SetParent(go.transform, false);
-                    var srDecal = decalObj.AddComponent<SpriteRenderer>();
-                    srDecal.sprite = d.spritesDecals[UnityEngine.Random.Range(0, d.spritesDecals.Length)];
-                    srDecal.sortingOrder = 0;
-                }
-            }
-            sr.sortingOrder = -1;
         }
 
         private void InstanciarTileWallTop(Vector2 pos, Sprite spriteWallTop)
@@ -925,135 +900,135 @@ namespace SoulKnight
 
         public static readonly string[][] PlantillasLayoutsStone = new string[][]
         {
-            // 0: vacio_cajas
+            // 0: La Bóveda Acorazada (Muros destructibles centrales sellando tesoro y diamantes de pinchos)
             new string[] {
-                "..................",
-                "..................",
-                "..c............c..",
-                "..................",
-                "..................",
-                "..................",
-                "..................",
-                "..c............c..",
-                "..................",
-                ".................."
-            },
-            // 1: pilares
-            new string[] {
-                "..................",
-                "..................",
-                "...##........##...",
-                "...##........##...",
-                "..................",
-                "..................",
-                "...##........##...",
-                "...##........##...",
-                "..................",
-                ".................."
-            },
-            // 2: cruz
-            new string[] {
-                "..................",
-                "........##........",
-                "........##........",
-                "..................",
-                "..###........###..",
-                "..###........###..",
-                "..................",
-                "........##........",
-                "........##........",
-                ".................."
-            },
-            // 3: anillo
-            new string[] {
-                "..................",
-                "..................",
-                "....####..####....",
-                "....##......##....",
+                "...P..........P...",
+                "...s..........s...",
+                "..sss...DD...sss..",
+                "...s....cc....s...",
                 "........cc........",
                 "........cc........",
-                "....##......##....",
-                "....####..####....",
-                "..................",
-                ".................."
+                "...s....cc....s...",
+                "..sss...DD...sss..",
+                "...s..........s...",
+                "...P..........P..."
             },
-            // 4: pasillos
+            // 1: Los Cuatro Bastiones y Trampas en Corona (Muros macizos en esquinas y núcleo explosivo protegido)
             new string[] {
-                "..................",
-                ".....##...........",
-                ".....##...........",
-                ".....##.....##....",
-                ".....##.....##....",
-                ".....##.....##....",
-                ".....##.....##....",
-                "............##....",
-                "............##....",
-                ".................."
+                ".##..s......s..##.",
+                ".##.sss....sss.##.",
+                ".....s......s.....",
+                ".s..............s.",
+                "sss....Dr.rD...sss",
+                "sss....Dr.rD...sss",
+                ".s..............s.",
+                ".....s......s.....",
+                ".##.sss....sss.##.",
+                ".##..s......s..##."
             },
-            // 5: estanque
+            // 2: El Tablero de Ajedrez Rítmico (Franjas diagonales seguras, muros indestructibles y jarrones)
             new string[] {
-                "..................",
                 "..##..........##..",
-                "..................",
+                "..#...s.ss.s...#..",
+                ".....s.s..s.s.....",
+                "..D...s.ss.s...D..",
+                "..D.....pp.....D..",
+                "..D.....pp.....D..",
+                "..D...s.ss.s...D..",
+                ".....s.s..s.s.....",
+                "..#...s.ss.s...#..",
+                "..##..........##.."
+            },
+            // 3: El Laberinto en Cruz (Muros macizos y destructibles dividiendo en cuadrantes con trampas en aspas)
+            new string[] {
+                "....#...ss...#....",
+                "....#...ss...#....",
+                "....#........#....",
+                ".ss.D........D.ss.",
+                ".ss.D...cc...D.ss.",
+                ".ss.D...cc...D.ss.",
+                ".ss.D........D.ss.",
+                "....#........#....",
+                "....#...ss...#....",
+                "....#...ss...#...."
+            },
+            // 4: La Arena de Foso y Trampas Geométricas (Foso central, columnas, alas de picos y barriles bajo muros destructibles)
+            new string[] {
+                "...P..........P...",
+                "..###........###..",
+                "..#....ssss....#..",
+                ".......s..s.......",
+                ".Db....oooo....bD.",
+                ".Db....oooo....bD.",
+                ".......s..s.......",
+                "..#....ssss....#..",
+                "..###........###..",
+                "...P..........P..."
+            },
+            // 5: El Estanque Sagrado y Puentes de Trampas (Agua animada y pasarelas de pinchos con jarrones)
+            new string[] {
                 "......wwwwww......",
-                "......wwwwww......",
-                "......wwwwww......",
-                "......wwwwww......",
-                "..................",
+                ".##.wwwwwwwwww.##.",
+                ".##ww...ss...ww##.",
+                "...w....ss....w...",
+                "...w..s.pp.s..w...",
+                "...w..s.pp.s..w...",
+                "...w....ss....w...",
+                ".##ww...ss...ww##.",
+                ".##.wwwwwwwwww.##.",
+                "......wwwwww......"
+            },
+            // 6: La Cámara del Búnker Central (Fuerte central con puertas rompibles y foso de pinchos perimetral)
+            new string[] {
+                ".......ssss.......",
+                "...s...ssss...s...",
+                "...s..######..s...",
+                "..ss..#....#..ss..",
+                ".sss..D.rr.D..sss.",
+                ".sss..D.rr.D..sss.",
+                "..ss..#....#..ss..",
+                "...s..######..s...",
+                "...s...ssss...s...",
+                ".......ssss......."
+            },
+            // 7: Las Alas del Fénix (Simetría en diamantes de pinchos, columnas centrales y muros destructibles en flancos)
+            new string[] {
                 "..##..........##..",
-                ".................."
+                "..#..ss....ss..#..",
+                "....ssss..ssss....",
+                ".....ss....ss.....",
+                ".DD............DD.",
+                ".DD....PPPP....DD.",
+                ".....ss....ss.....",
+                "....ssss..ssss....",
+                "..#..ss....ss..#..",
+                "..##..........##.."
             },
-            // 6: trampas
+            // 8: El Pasadizo Secreto de Cajas (Guantelete escalonado con nichos de muros rompibles y cajas)
             new string[] {
-                "..................",
-                "..................",
-                "..s.s.s.s.s.s.s.s.",
-                "..................",
-                "....c........c....",
-                "....c........c....",
-                "..................",
-                "..s.s.s.s.s.s.s.s.",
-                "..................",
-                ".................."
+                ".P..............P.",
+                ".###.sss..sss.###.",
+                "...#.s......s.#...",
+                ".D.#.s..cc..s.#.D.",
+                ".D......cc......D.",
+                ".D......cc......D.",
+                ".D.#.s..cc..s.#.D.",
+                "...#.s......s.#...",
+                ".###.sss..sss.###.",
+                ".P..............P."
             },
-            // 7: arena
+            // 9: El Coliseo de Pinchos y Bloques de Piedra (Combate táctico con atajos rompibles y cruz central)
             new string[] {
-                "..................",
-                "..###........###..",
-                "..#............#..",
-                "..#............#..",
-                ".......r..r.......",
-                "........pp........",
-                "..#............#..",
-                "..#............#..",
-                "..###........###..",
-                ".................."
-            },
-            // 8: foso
-            new string[] {
-                "..................",
-                "..................",
-                "...P..........P...",
-                "..................",
-                ".......oooo.......",
-                ".......oooo.......",
-                "..................",
-                "...P..........P...",
-                "..................",
-                ".................."
-            },
-            // 9: sueltos
-            new string[] {
-                "..................",
-                ".##..........##...",
-                "..................",
-                "......#....#......",
-                "..................",
-                "..................",
-                "......#....#......",
-                "..................",
-                ".##..........##...",
-                ".................."
+                "..##....ss....##..",
+                "..##...ssss...##..",
+                "........ss........",
+                ".ss.DD......DD.ss.",
+                ".ss.DD..rr..DD.ss.",
+                ".ss.DD..rr..DD.ss.",
+                ".ss.DD......DD.ss.",
+                "........ss........",
+                "..##...ssss...##..",
+                "..##....ss....##.."
             }
         };
 
@@ -1252,6 +1227,45 @@ namespace SoulKnight
             prop.esExplosivo = false;
         }
 
+        private void CrearMuroDestructible(Transform padre, Vector2 pos, DatosBioma d)
+        {
+            var go = new GameObject("MuroDestructible");
+            try { go.tag = "Pared"; } catch { }
+            go.transform.SetParent(padre);
+            go.transform.position = (Vector3)pos;
+
+            var sr = go.AddComponent<SpriteRenderer>();
+            Sprite spBase = (d.spritesBlock != null && d.spritesBlock.Length > 0 && d.spritesBlock[0] != null)
+                ? d.spritesBlock[0] : d.spriteMuro;
+            sr.sprite = spBase;
+            sr.sortingOrder = 2;
+
+            // Grieta visible decorativa en el centro del muro destructible para que el jugador sepa que es rompible
+            if (d.spritesDecals != null && d.spritesDecals.Length > 0 && d.spritesDecals[0] != null)
+            {
+                var crackObj = new GameObject("GrietaMuro");
+                crackObj.transform.SetParent(go.transform, false);
+                var srCrack = crackObj.AddComponent<SpriteRenderer>();
+                srCrack.sprite = d.spritesDecals[0]; // stone_decal_crack
+                srCrack.sortingOrder = 3;
+                srCrack.color = new Color(0.95f, 0.85f, 0.70f, 0.95f);
+            }
+            else if (d.spriteWallFaceCracked != null)
+            {
+                sr.sprite = d.spriteWallFaceCracked;
+            }
+
+            var col = go.AddComponent<BoxCollider2D>();
+            col.size = Vector2.one;
+
+            var prop = go.AddComponent<PropDestruible>();
+            prop.tipoProp = TipoPropDestruible.MuroDestructible;
+            prop.vidaMax = 25;
+            prop.esExplosivo = false;
+
+            _murosVisuales.Add(sr);
+        }
+
         private void CrearBloqueAutotile(Transform padre, Vector2 pos, Sprite sp)
         {
             var go = new GameObject("BloquePiedra");
@@ -1367,6 +1381,11 @@ namespace SoulKnight
 
                     switch (ch)
                     {
+                        case 'D':
+                        case 'x':
+                            CrearMuroDestructible(padre, pos, d);
+                            break;
+
                         case '#':
                             // Bloque autotile bitmask: N*1 + E*2 + S*4 + W*8
                             int mask = 0;

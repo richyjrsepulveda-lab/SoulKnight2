@@ -8,7 +8,8 @@ namespace SoulKnight
         Caja = 0,
         Barril = 1,
         BarrilExplosivo = 2,
-        Jarron = 3
+        Jarron = 3,
+        MuroDestructible = 4
     }
 
     /// <summary>
@@ -65,6 +66,28 @@ namespace SoulKnight
             if (esExplosivo)
             {
                 DetonarBarril();
+            }
+            else if (tipoProp == TipoPropDestruible.MuroDestructible)
+            {
+                // Efecto de destrucción de muro de piedra: sonido y escombros en el suelo
+                GestorAudio.PlaySFX(TipoSFX.ImpactoEnemigo, 1.25f);
+                TextoFlotante.Crear(transform.position + Vector3.up * 0.4f, "💥 ¡ROTO!", new Color(0.9f, 0.85f, 0.7f));
+
+                var escombrosObj = new GameObject("EscombrosPiedra");
+                escombrosObj.transform.position = transform.position;
+                var srEsc = escombrosObj.AddComponent<SpriteRenderer>();
+                srEsc.sortingOrder = 0;
+                var cat = CatalogoBiomas.Obtener(TipoBioma.Piedra);
+                if (cat != null && cat.spritesDecals != null && cat.spritesDecals.Length > 1 && cat.spritesDecals[1] != null)
+                {
+                    srEsc.sprite = cat.spritesDecals[1]; // stone_decal_pebbles
+                    srEsc.color = new Color(0.9f, 0.9f, 0.95f, 0.9f);
+                }
+
+                if (Random.value < 0.45f)
+                {
+                    MonedaOro.Crear(transform.position, Random.Range(1, 3));
+                }
             }
             else
             {
