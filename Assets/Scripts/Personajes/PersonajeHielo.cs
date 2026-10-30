@@ -999,7 +999,7 @@ namespace SoulKnight
                         var col = colEnemigos[i];
                         if (col == null) continue;
                         var enemigo = col.GetComponent<EnemigoBase>();
-                        if (enemigo != null && !enemigo.EstaMuerto.Value)
+                        if (enemigo != null && enemigo.VidaActual.Value > 0)
                         {
                             enemigo.AplicarRalentizacion(3.5f + (nvEspinas * 0.5f));
                             enemigo.RecibirDano(danoEspinas, new Color(0.42f, 0.88f, 1f, 1f));

@@ -1081,10 +1081,10 @@ namespace SoulKnight
             _knockback = direccion.normalized * Mathf.Min(fuerza / 32f, 10f);
         }
 
-        public void AplicarRalentizacion()
+        public void AplicarRalentizacion(float duracionPersonalizada = -1f)
         {
             if (!IsServer || EstaCongelado.Value) return;
-            _tiempoRalentizado = duracionRalentizacion;
+            _tiempoRalentizado = duracionPersonalizada > 0f ? duracionPersonalizada : duracionRalentizacion;
             _velocidadActual = velocidadBase * 0.45f;
             EstaRalentizado.Value = true;
         }
