@@ -117,13 +117,28 @@ namespace SoulKnight
             return "Jugador";
         }
 
-        public float MultiplicadorDanoTotal => (nivelProgreso != null ? nivelProgreso.MultiplicadorDano : 1f) * MultiplicadorDanoLoot.Value;
+        /// <summary>
+        /// Multiplicador de Daño escalado por la Maestría permanente de la cuenta:
+        /// - Empieza pegando menos a Nivel 1 (0.65x, -35% daño).
+        /// - Escala +5% por nivel hasta 1.60x (+60% de daño permanente a Nivel 20).
+        /// Aumenta el daño de TODOS los ataques básicos y habilidades de combate.
+        /// </summary>
+        public float MultiplicadorDanoMaestria
+        {
+            get
+            {
+                int nivelM = IsOwner ? GestorMaestria.ObtenerNivelMaestria(TipoPj) : NivelMaestriaSincronizado.Value;
+                return Mathf.Clamp(0.65f + ((nivelM - 1) * 0.05f), 0.65f, 2.0f);
+            }
+        }
+
+        public float MultiplicadorDanoTotal => MultiplicadorDanoMaestria * (nivelProgreso != null ? nivelProgreso.MultiplicadorDano : 1f) * MultiplicadorDanoLoot.Value;
 
         /// <summary>
         /// Comprueba las 3 capas estrictas de progresión:
-        /// 1. Maestría (Permanente): Si no está desbloqueada por maestría, NUNCA se puede usar en la run.
-        /// 2. Loadout (Lobby): Debe estar elegida en el equipamiento del personaje.
-        /// 3. Nivel Run (1-10): Debe haberse alcanzado el nivel requerido en la partida.
+        /// 1. Maestría (Permanente): Si no está desbloqueada por maestría, NO PUEDO USARLA EN LA RUN AUNQUE YA TENGA EL NIVEL DE RUN SUFICIENTE.
+        /// 2. Loadout (Lobby): Necesito equiparla en el lobby para poder usarla en las runs.
+        /// 3. Nivel Run (1-10): Una vez desbloqueada por maestría y equipada en el lobby, requiere el nivel de la partida.
         /// </summary>
         public bool PuedeUsarHabilidad(IdHabilidad id, out string motivoBloqueo)
         {
@@ -133,23 +148,20 @@ namespace SoulKnight
             var def = CatalogoHabilidades.Obtener(id);
             if (def == null) return true;
 
-            // 1. Maestría (Requisito absoluto y permanente de NIVEL de cuenta)
+            // 1. Maestría (Requisito absoluto y permanente de cuenta)
             int nivelMaestriaActual = IsOwner ? GestorMaestria.ObtenerNivelMaestria(TipoPj) : NivelMaestriaSincronizado.Value;
             if (nivelMaestriaActual < def.nivelMaestriaRequerido)
             {
-                motivoBloqueo = $"🔒 Requiere Nivel {def.nivelMaestriaRequerido} de Maestría (Actual: Nv.{nivelMaestriaActual})";
+                motivoBloqueo = $"🔒 Bloqueada: Requiere Maestría Nivel {def.nivelMaestriaRequerido}";
                 return false;
             }
 
-            // 2. Loadout elegido en el lobby
-            if (IsOwner)
+            // 2. Loadout elegido y equipado en el Lobby
+            var loadout = GestorLoadout.ObtenerLoadout(TipoPj);
+            if (!loadout.Contains(id))
             {
-                var loadout = GestorLoadout.ObtenerLoadout(TipoPj);
-                if (!loadout.Contains(id))
-                {
-                    motivoBloqueo = "No está equipada en tu Loadout";
-                    return false;
-                }
+                motivoBloqueo = "⚠️ No equipada (Debes equiparla en el Lobby)";
+                return false;
             }
 
             // 3. Nivel de la run actual

@@ -597,7 +597,10 @@ namespace SoulKnight
                     ? "<color=#ffd700>(¡MAX!)</color>"
                     : $"<color=#a0d8ef>({xpProgresoNivel}/{GestorMaestria.XP_POR_NIVEL_MAESTRIA} XP)</color>";
 
-                textoMaestriaCuarto.text = $"<b>⭐ MAESTRÍA: NV.{nivelMaestria}</b>  {infoSiguiente}";
+                float bonoDano = (0.65f + ((nivelMaestria - 1) * 0.05f) - 1.0f) * 100f;
+                string bonoDanoStr = bonoDano >= 0 ? $"<color=#ffcf4a>(+{bonoDano:0}% Daño)</color>" : $"<color=#ff8f8f>({bonoDano:0}% Daño Inicial)</color>";
+
+                textoMaestriaCuarto.text = $"<b>⭐ MAESTRÍA: NV.{nivelMaestria}</b>  {infoSiguiente}  {bonoDanoStr}";
 
                 // Botón interactivo de ayuda de maestría al lado
                 if (panelVistaCuarto != null)
@@ -769,8 +772,10 @@ namespace SoulKnight
             // Obtener fuente pixel art del juego
             Font fuentePixel = FuenteUtil.ObtenerFuentePixelify();
 
-            // Obtener habilidades del personaje
+            // Obtener habilidades del personaje y loadout actual
             var todasHabilidades = CatalogoHabilidades.ObtenerHabilidadesPersonaje(pj);
+            var loadout = GestorLoadout.ObtenerLoadout(pj);
+
             if (_habilidadSeleccionadaCuarto == IdHabilidad.Ninguna && todasHabilidades.Count > 0)
             {
                 _habilidadSeleccionadaCuarto = todasHabilidades[0].id;
@@ -778,7 +783,25 @@ namespace SoulKnight
 
             string[] teclas = new string[] { "CLICK IZQ", "E", "Q", "R" };
 
-            // Construir lista vertical: Icono grande, nombre a la derecha con tipografía pixel y descripción que no se solapa
+            // Banner superior de estado del Loadout
+            var bannerLoadoutObj = new GameObject("BannerLoadout");
+            bannerLoadoutObj.transform.SetParent(contenedorSlotsHabilidades, false);
+            var rtBanner = bannerLoadoutObj.AddComponent<RectTransform>();
+            rtBanner.sizeDelta = new Vector2(680f, 26f);
+            var leBanner = bannerLoadoutObj.AddComponent<LayoutElement>();
+            leBanner.preferredHeight = 26f;
+            leBanner.minHeight = 26f;
+
+            var txtBanner = bannerLoadoutObj.AddComponent<Text>();
+            txtBanner.font = fuentePixel;
+            txtBanner.fontSize = 15;
+            txtBanner.fontStyle = FontStyle.Bold;
+            txtBanner.alignment = TextAnchor.MiddleCenter;
+            txtBanner.color = EstiloUIUX.ColDorado;
+            txtBanner.text = $"⚔️ LOADOUT DE RUN: {loadout.Count}/4 HABILIDADES EQUIPADAS  <color=#8fe0ff>(Equipa tus habilidades aquí para poder usarlas en la Run)</color>";
+            txtBanner.raycastTarget = false;
+
+            // Construir lista vertical: Icono grande, nombre, botón Equipar/Desequipar y descripción técnica
             for (int i = 0; i < todasHabilidades.Count && i < 4; i++)
             {
                 var hab = todasHabilidades[i];
@@ -786,11 +809,14 @@ namespace SoulKnight
                 string teclaStr = i < teclas.Length ? teclas[i] : "HAB";
                 string desc = !string.IsNullOrEmpty(hab.descripcionTecnica) ? hab.descripcionTecnica : hab.descripcion;
 
+                bool desbloqueada = GestorMaestria.EstaDesbloqueada(pj, hab.id);
+                bool equipada = loadout.Contains(hab.id);
+
                 var slotObj = new GameObject($"SlotHab_{i}");
                 slotObj.transform.SetParent(contenedorSlotsHabilidades, false);
 
                 var rtSlot = slotObj.AddComponent<RectTransform>();
-                float altoSlot = seleccionada ? 180f : 58f;
+                float altoSlot = seleccionada ? 180f : 60f;
                 rtSlot.sizeDelta = new Vector2(680f, altoSlot);
 
                 var le = slotObj.AddComponent<LayoutElement>();
@@ -798,13 +824,24 @@ namespace SoulKnight
                 le.minHeight = altoSlot;
                 le.flexibleWidth = 1f;
 
-                // Borde exterior resaltado al seleccionar
+                // Borde exterior
                 var imgBorde = slotObj.AddComponent<Image>();
                 imgBorde.sprite = EstiloUIUX.ObtenerSpriteTarjeta();
                 imgBorde.type = Image.Type.Sliced;
-                imgBorde.color = seleccionada ? new Color(0.35f, 0.85f, 1f, 1f) : new Color(0.7f, 0.7f, 0.7f, 0.9f);
+                if (!desbloqueada)
+                {
+                    imgBorde.color = new Color(0.40f, 0.35f, 0.30f, 0.70f);
+                }
+                else if (equipada)
+                {
+                    imgBorde.color = seleccionada ? new Color(0.35f, 0.95f, 0.55f, 1f) : new Color(0.20f, 0.80f, 0.40f, 0.85f);
+                }
+                else
+                {
+                    imgBorde.color = seleccionada ? new Color(0.35f, 0.85f, 1f, 1f) : new Color(0.55f, 0.55f, 0.60f, 0.80f);
+                }
 
-                // Fondo interior con marco pixel-art
+                // Fondo interior
                 var fondoInt = new GameObject("FondoInterno");
                 fondoInt.transform.SetParent(slotObj.transform, false);
                 var rtFi = fondoInt.AddComponent<RectTransform>();
@@ -813,12 +850,21 @@ namespace SoulKnight
                 rtFi.offsetMin = new Vector2(3f, 3f);
                 rtFi.offsetMax = new Vector2(-3f, -3f);
                 var imgFi = fondoInt.AddComponent<Image>();
-                imgFi.color = seleccionada
-                    ? new Color(0.12f, 0.18f, 0.32f, 0.98f)
-                    : new Color(0.08f, 0.10f, 0.16f, 0.95f);
+                if (!desbloqueada)
+                {
+                    imgFi.color = new Color(0.06f, 0.06f, 0.09f, 0.95f);
+                }
+                else if (seleccionada)
+                {
+                    imgFi.color = equipada ? new Color(0.08f, 0.22f, 0.16f, 0.98f) : new Color(0.12f, 0.18f, 0.32f, 0.98f);
+                }
+                else
+                {
+                    imgFi.color = equipada ? new Color(0.06f, 0.14f, 0.10f, 0.95f) : new Color(0.08f, 0.10f, 0.16f, 0.95f);
+                }
                 imgFi.raycastTarget = false;
 
-                // 1. Icono grande a la izquierda (48x48) con marco propio
+                // 1. Icono a la izquierda con marco
                 var icoMarco = new GameObject("IconoMarco");
                 icoMarco.transform.SetParent(fondoInt.transform, false);
                 var rtIcoMarco = icoMarco.AddComponent<RectTransform>();
@@ -829,9 +875,9 @@ namespace SoulKnight
                 rtIcoMarco.sizeDelta = new Vector2(48f, 48f);
 
                 var imgMarco = icoMarco.AddComponent<Image>();
-                imgMarco.color = seleccionada
-                    ? new Color(0.25f, 0.65f, 0.90f, 0.85f)
-                    : new Color(0.16f, 0.20f, 0.28f, 0.80f);
+                imgMarco.color = desbloqueada
+                    ? (equipada ? new Color(0.20f, 0.65f, 0.35f, 0.85f) : new Color(0.25f, 0.65f, 0.90f, 0.85f))
+                    : new Color(0.15f, 0.15f, 0.20f, 0.70f);
                 imgMarco.raycastTarget = false;
 
                 var icoImgObj = new GameObject("Icono");
@@ -845,10 +891,80 @@ namespace SoulKnight
                 var imgIco = icoImgObj.AddComponent<Image>();
                 imgIco.sprite = CatalogoHabilidades.ObtenerSpriteHabilidad(hab.id);
                 imgIco.preserveAspect = true;
-                imgIco.color = Color.white;
+                imgIco.color = desbloqueada ? Color.white : new Color(0.35f, 0.35f, 0.40f, 0.45f);
                 imgIco.raycastTarget = false;
 
-                // 2. Textos
+                // 2. Insignia Bloqueada o Botón Interactivo EQUIPAR / DESEQUIPAR a la derecha
+                if (!desbloqueada)
+                {
+                    var lockObj = new GameObject("InsigniaBloqueada");
+                    lockObj.transform.SetParent(fondoInt.transform, false);
+                    var rtLock = lockObj.AddComponent<RectTransform>();
+                    rtLock.anchorMin = new Vector2(1f, 0.5f);
+                    rtLock.anchorMax = new Vector2(1f, 0.5f);
+                    rtLock.pivot = new Vector2(1f, 0.5f);
+                    rtLock.anchoredPosition = new Vector2(-12f, seleccionada ? (altoSlot * 0.5f - 30f) : 0f);
+                    rtLock.sizeDelta = new Vector2(175f, 36f);
+
+                    var imgLock = lockObj.AddComponent<Image>();
+                    imgLock.sprite = EstiloUIUX.ObtenerSpriteTarjeta();
+                    imgLock.type = Image.Type.Sliced;
+                    imgLock.color = new Color(0.22f, 0.16f, 0.10f, 0.92f);
+                    imgLock.raycastTarget = false;
+
+                    var txtLObj = new GameObject("TextoLock");
+                    txtLObj.transform.SetParent(lockObj.transform, false);
+                    var rtTL = txtLObj.AddComponent<RectTransform>();
+                    rtTL.anchorMin = Vector2.zero;
+                    rtTL.anchorMax = Vector2.one;
+                    var txtL = txtLObj.AddComponent<Text>();
+                    txtL.font = fuentePixel;
+                    txtL.fontSize = 13;
+                    txtL.fontStyle = FontStyle.Bold;
+                    txtL.alignment = TextAnchor.MiddleCenter;
+                    txtL.color = new Color(1f, 0.70f, 0.25f);
+                    txtL.text = $"🔒 MAESTRÍA NV.{hab.nivelMaestriaRequerido}";
+                    txtL.raycastTarget = false;
+                }
+                else
+                {
+                    string textoBoton = equipada ? "✓ EQUIPADA" : "+ EQUIPAR";
+                    TipoBotonUI tipoBtn = equipada ? TipoBotonUI.Verde : TipoBotonUI.Dorado;
+                    IdHabilidad idHabActual = hab.id;
+
+                    var btnEquip = EstiloUIUX.CrearBoton(fondoInt.transform, "BtnEquipSlot", textoBoton, tipoBtn, new Vector2(150f, 38f), () =>
+                    {
+                        var listaL = GestorLoadout.ObtenerLoadout(pj);
+                        if (listaL.Contains(idHabActual))
+                        {
+                            if (listaL.Count > 1)
+                            {
+                                listaL.Remove(idHabActual);
+                                GestorLoadout.GuardarLoadout(pj, listaL);
+                                GestorAudio.PlaySFX(TipoSFX.Click);
+                                ConstruirVistaCuarto(pj);
+                            }
+                        }
+                        else
+                        {
+                            if (listaL.Count < 4)
+                            {
+                                listaL.Add(idHabActual);
+                                GestorLoadout.GuardarLoadout(pj, listaL);
+                                GestorAudio.PlaySFX(TipoSFX.Click);
+                                ConstruirVistaCuarto(pj);
+                            }
+                        }
+                    });
+
+                    var rtBtnE = btnEquip.GetComponent<RectTransform>();
+                    rtBtnE.anchorMin = new Vector2(1f, 0.5f);
+                    rtBtnE.anchorMax = new Vector2(1f, 0.5f);
+                    rtBtnE.pivot = new Vector2(1f, 0.5f);
+                    rtBtnE.anchoredPosition = new Vector2(-12f, seleccionada ? (altoSlot * 0.5f - 30f) : 0f);
+                }
+
+                // 3. Textos
                 var txtNombreObj = new GameObject("TextoNombre");
                 txtNombreObj.transform.SetParent(fondoInt.transform, false);
                 var rtTxtNom = txtNombreObj.AddComponent<RectTransform>();
@@ -865,11 +981,12 @@ namespace SoulKnight
                     rtTxtNom.anchorMin = new Vector2(0f, 0f);
                     rtTxtNom.anchorMax = new Vector2(1f, 1f);
                     rtTxtNom.offsetMin = new Vector2(74f, 0f);
-                    rtTxtNom.offsetMax = new Vector2(-12f, 0f);
+                    rtTxtNom.offsetMax = new Vector2(-195f, 0f);
                     txtNom.fontSize = 18;
                     txtNom.alignment = TextAnchor.MiddleLeft;
-                    txtNom.color = EstiloUIUX.ColTextoCrema;
-                    txtNom.text = $"{hab.nombre.ToUpper()}  <color=#ffcf4a>({teclaStr})</color>";
+                    txtNom.color = desbloqueada ? EstiloUIUX.ColTextoCrema : new Color(0.6f, 0.6f, 0.65f);
+                    string tagEq = equipada ? "  <color=#3df28d>[EQUIPADA]</color>" : "";
+                    txtNom.text = $"{hab.nombre.ToUpper()}  <color=#ffcf4a>({teclaStr})</color>{tagEq}";
                 }
                 else
                 {
@@ -877,11 +994,12 @@ namespace SoulKnight
                     rtTxtNom.anchorMax = new Vector2(1f, 1f);
                     rtTxtNom.pivot = new Vector2(0f, 1f);
                     rtTxtNom.anchoredPosition = new Vector2(74f, -8f);
-                    rtTxtNom.sizeDelta = new Vector2(-80f, 28f);
+                    rtTxtNom.sizeDelta = new Vector2(-270f, 28f);
                     txtNom.fontSize = 20;
                     txtNom.alignment = TextAnchor.MiddleLeft;
-                    txtNom.color = EstiloUIUX.ColCyan;
-                    txtNom.text = $"{hab.nombre.ToUpper()}  <color=#ffcf4a>({teclaStr})</color>";
+                    txtNom.color = desbloqueada ? (equipada ? EstiloUIUX.ColDorado : EstiloUIUX.ColCyan) : new Color(0.65f, 0.65f, 0.70f);
+                    string tagEq = equipada ? "  <color=#3df28d>[EQUIPADA]</color>" : "";
+                    txtNom.text = $"{hab.nombre.ToUpper()}  <color=#ffcf4a>({teclaStr})</color>{tagEq}";
 
                     // Descripción técnica espaciosa y legible
                     var txtDescObj = new GameObject("TextoDescripcion");
@@ -891,21 +1009,21 @@ namespace SoulKnight
                     rtTxtDesc.anchorMax = new Vector2(1f, 1f);
                     rtTxtDesc.pivot = new Vector2(0f, 0f);
                     rtTxtDesc.offsetMin = new Vector2(74f, 8f);
-                    rtTxtDesc.offsetMax = new Vector2(-16f, -42f);
+                    rtTxtDesc.offsetMax = new Vector2(-195f, -42f);
 
                     var txtDesc = txtDescObj.AddComponent<Text>();
                     txtDesc.font = fuentePixel;
-                    txtDesc.fontSize = 20;
-                    txtDesc.lineSpacing = 1.35f;
+                    txtDesc.fontSize = 19;
+                    txtDesc.lineSpacing = 1.30f;
                     txtDesc.alignment = TextAnchor.UpperLeft;
                     txtDesc.horizontalOverflow = HorizontalWrapMode.Wrap;
                     txtDesc.verticalOverflow = VerticalWrapMode.Overflow;
-                    txtDesc.color = EstiloUIUX.ColTextoCrema;
+                    txtDesc.color = desbloqueada ? EstiloUIUX.ColTextoCrema : new Color(0.65f, 0.65f, 0.70f);
                     txtDesc.raycastTarget = false;
                     txtDesc.text = desc;
                 }
 
-                // Botón interactivo para desplegar al hacer clic
+                // Botón interactivo para desplegar al hacer clic sobre el slot
                 var btn = slotObj.AddComponent<Button>();
                 IdHabilidad idClick = hab.id;
                 btn.onClick.AddListener(() =>
@@ -967,15 +1085,16 @@ namespace SoulKnight
                 txtCuerpo.horizontalOverflow = HorizontalWrapMode.Wrap;
                 txtCuerpo.verticalOverflow = VerticalWrapMode.Overflow;
                 txtCuerpo.text =
-                    "• La Maestría es PERMANENTE en tu cuenta y se conserva para siempre.\n\n" +
-                    "• Ganas XP de maestría eliminando monstruos y jefes en mazmorras (~35% de la XP de combate).\n\n" +
-                    "• Desbloqueo progresivo de habilidades por personaje:\n" +
+                    "• <color=#ffcf4a>La Maestría es PERMANENTE:</color> Se guarda en tu cuenta y progresa para siempre.\n\n" +
+                    "• <color=#8fe0ff>Aumento de Daño Global:</color> La Maestría multiplica el daño de TODOS tus ataques básicos y habilidades. Comienzas al 65% de daño a Nivel 1 y escalas +5% por nivel hasta 160% a Nivel 20.\n\n" +
+                    "• <color=#3df28d>Regla Estricta de Run y Loadout:</color> Aunque subas de nivel durante una partida, NO podrás usar una habilidad si tu Maestría no la ha desbloqueado o si NO la equipaste en este cuarto antes de iniciar la Run.\n\n" +
+                    "• Desbloqueo progresivo por personaje:\n" +
                     "   <color=#8fe0ff>Nv. 1:</color> Habilidad Básica (Click Izquierdo)\n" +
                     "   <color=#8fe0ff>Nv. 2:</color> Habilidad Activa 1 (Tecla E)\n" +
                     "   <color=#8fe0ff>Nv. 3:</color> Habilidad Activa 2 (Tecla Q)\n" +
                     "   <color=#8fe0ff>Nv. 4:</color> Habilidad Definitiva (Tecla R / Ultimate)\n" +
-                    "   <color=#ffcf4a>Nv. 5 a 20:</color> Bonificaciones de maestría de cuenta.\n\n" +
-                    "¡Completa partidas para alcanzar el nivel máximo y dominar a todos los gatos!";
+                    "   <color=#ffcf4a>Nv. 5 a 20:</color> +5% de daño adicional por nivel a todas tus habilidades.\n\n" +
+                    "¡Equipa tus habilidades desbloqueadas en el cuarto de cada gato antes de entrar a la mazmorra!";
 
                 // Botón Cerrar
                 var btn = EstiloUIUX.CrearBoton(cardObj.transform, "BotonCerrar", "ENTENDIDO", TipoBotonUI.Piedra, new Vector2(220f, 48f), () =>

@@ -50,27 +50,10 @@ namespace SoulKnight
                 }
             }
 
-            // Sincronización automática de habilidades default:
-            // "COMO SON HABILIDADES DEFAULT APENAS SE DESBLOQUEEN EN MAESTRÍA SE EQUIPARAN DURANTE LA RUN"
-            var todasDesbloqueadas = GestorMaestria.ObtenerHabilidadesDesbloqueadas(pj);
-            bool huboCambios = false;
-            foreach (var h in todasDesbloqueadas)
-            {
-                if (!res.Contains(h) && res.Count < 4)
-                {
-                    res.Add(h);
-                    huboCambios = true;
-                }
-            }
-
+            // Si no hay loadout guardado, asignar sólo la habilidad básica inicial
             if (res.Count == 0)
             {
                 res = GenerarLoadoutPorDefecto(pj);
-                huboCambios = true;
-            }
-
-            if (huboCambios)
-            {
                 GuardarLoadout(pj, res);
             }
 
@@ -95,26 +78,12 @@ namespace SoulKnight
         public static List<IdHabilidad> GenerarLoadoutPorDefecto(TipoPersonaje pj)
         {
             var res = new List<IdHabilidad>();
-            var todas = CatalogoHabilidades.ObtenerHabilidadesPersonaje(pj);
-            // Ordenar por slot sugerido (0 = LMB, 1 = E, 2 = Q, 3 = R)
-            todas.Sort((a, b) => a.slotPorDefecto.CompareTo(b.slotPorDefecto));
-
-            int nivelMaestria = GestorMaestria.ObtenerNivelMaestria(pj);
-            foreach (var h in todas)
+            // Por defecto, sólo la habilidad básica (Click izquierdo) viene equipada al iniciar
+            IdHabilidad basica = CatalogoHabilidades.ObtenerHabilidadBasica(pj);
+            if (basica != IdHabilidad.Ninguna)
             {
-                if (nivelMaestria >= h.nivelMaestriaRequerido)
-                {
-                    res.Add(h.id);
-                    if (res.Count >= 4) break;
-                }
+                res.Add(basica);
             }
-
-            // La habilidad básica siempre está disponible desde Nivel 1 de Maestría
-            if (res.Count == 0)
-            {
-                res.Add(CatalogoHabilidades.ObtenerHabilidadBasica(pj));
-            }
-
             return res;
         }
     }

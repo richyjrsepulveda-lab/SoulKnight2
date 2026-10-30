@@ -2481,27 +2481,42 @@ namespace SoulKnight
                 var def = CatalogoHabilidades.Obtener(habId);
                 if (def == null) continue;
 
-                // 1. Condición Absoluta: Desbloqueada por Maestría permanente
+                var loadout = GestorLoadout.ObtenerLoadout(_personajeLocal.TipoPj);
+                bool equipadaEnLobby = loadout.Contains(habId);
                 bool desbloqueadaPorMaestria = GestorMaestria.EstaDesbloqueada(_personajeLocal.TipoPj, habId);
+
+                // 1. Condición Absoluta: Desbloqueada por Maestría permanente
+                // Si la maestría no la ha desbloqueado, NO SE PUEDE USAR NUNCA
                 if (!desbloqueadaPorMaestria)
                 {
-                    // Totalmente oscurecida porque aún no se alcanza la maestría necesaria
-                    slot.icono.color = new Color(0.12f, 0.12f, 0.16f, 0.38f);
+                    slot.icono.color = new Color(0.12f, 0.12f, 0.16f, 0.35f);
                     if (slot.textoTiempo != null)
                     {
-                        slot.textoTiempo.fontSize = 10;
-                        slot.textoTiempo.text = "🔒 BLOQ";
-                        slot.textoTiempo.color = new Color(1f, 0.70f, 0.25f);
+                        slot.textoTiempo.fontSize = 9;
+                        slot.textoTiempo.text = $"🔒 M.{def.nivelMaestriaRequerido}";
+                        slot.textoTiempo.color = new Color(1f, 0.65f, 0.20f);
                     }
                     continue;
                 }
 
-                // 2. Condición Temporal: Nivel dentro de la run actual
+                // 2. Condición de Equipamiento en el Lobby: Necesita equiparse en el Lobby para usarse en la Run
+                if (!equipadaEnLobby)
+                {
+                    slot.icono.color = new Color(0.18f, 0.18f, 0.22f, 0.38f);
+                    if (slot.textoTiempo != null)
+                    {
+                        slot.textoTiempo.fontSize = 9;
+                        slot.textoTiempo.text = "❌ NO EQ";
+                        slot.textoTiempo.color = new Color(0.95f, 0.35f, 0.35f);
+                    }
+                    continue;
+                }
+
+                // 3. Condición Temporal de Run: Nivel de la run actual
                 bool bloqueadaPorRun = nivelRun < def.nivelRequeridoRun;
                 if (bloqueadaPorRun)
                 {
-                    // Oscurecida según el nivel de la run
-                    slot.icono.color = new Color(0.25f, 0.25f, 0.30f, 0.65f);
+                    slot.icono.color = new Color(0.28f, 0.28f, 0.33f, 0.65f);
                     if (slot.textoTiempo != null)
                     {
                         slot.textoTiempo.fontSize = 11;
@@ -2511,9 +2526,9 @@ namespace SoulKnight
                     continue;
                 }
 
-                // 3. Desbloqueada y disponible para usar
+                // 4. Completamente desbloqueada, equipada y lista para usar
                 slot.icono.color = Color.white;
-                if (slot.textoTiempo != null && (slot.textoTiempo.text.StartsWith("Nv.") || slot.textoTiempo.text.Contains("BLOQ") || slot.textoTiempo.text.Contains("MAESTRÍA")))
+                if (slot.textoTiempo != null && (slot.textoTiempo.text.StartsWith("Nv.") || slot.textoTiempo.text.Contains("BLOQ") || slot.textoTiempo.text.Contains("NO EQ") || slot.textoTiempo.text.Contains("M.")))
                 {
                     slot.textoTiempo.text = "";
                 }
