@@ -73,7 +73,7 @@ namespace SoulKnight
         [Header("Configuración de Biomas")]
         public TipoBioma biomaActual = TipoBioma.Piedra;
         public bool biomaAleatorio = true;
-        public bool biomasPorSala = true; // Permite que cada sala elija su propio bioma
+        public bool biomasPorSala = false; // Mantiene el bioma unificado según la recámara del nivel
         public DatosBioma[] biomas;
 
         [Header("Sprites Especiales")]
@@ -874,6 +874,12 @@ namespace SoulKnight
         }
 
         private void InstanciarFondoVoid(byte[,] grid, int gridW, int gridH, int minX, int minY, DatosBioma dDefecto)
+        {
+            // Omitido: sin borde exterior de void para mantener la pared limpia contra el fondo de cámara
+            return;
+        }
+
+        private void InstanciarFondoVoidAntiguo(byte[,] grid, int gridW, int gridH, int minX, int minY, DatosBioma dDefecto)
         {
             if (dDefecto == null || dDefecto.spriteVoid == null) return;
 

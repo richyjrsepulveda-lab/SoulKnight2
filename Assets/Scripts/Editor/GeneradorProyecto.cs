@@ -1603,6 +1603,7 @@ namespace SoulKnight.Editor
             // Mapa base procedural
             var mapa = new GameObject("Mapa");
             var genMaz = mapa.AddComponent<GeneradorMazmorra>();
+            genMaz.biomasPorSala = false;
             mapa.AddComponent<SistemaVision>();
             genMaz.contenedorMapa = mapa.transform;
             genMaz.spritePortal = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Arte/Mapas/PortalSalida.png");
@@ -2327,7 +2328,7 @@ namespace SoulKnight.Editor
                 // Y: de -6.5f a 5.5f (13 tiles: pared sup=5.5, wall_face=4.5, interior 10 filas=3.5..-5.5, pared inf=-6.5)
 
                 // 1. Vacio exterior (stone_void)
-                if (datos.spriteVoid != null)
+                if (false && datos.spriteVoid != null)
                 {
                     for (int vy = -8; vy <= 7; vy++)
                     {
@@ -2524,7 +2525,7 @@ namespace SoulKnight.Editor
                 cam.orthographic = true;
                 cam.orthographicSize = 6.5f;
                 cam.transform.position = new Vector3(0f, -0.5f, -10f);
-                cam.backgroundColor = new Color(0.12f, 0.12f, 0.18f, 1f);
+                cam.backgroundColor = new Color(0.05f, 0.05f, 0.07f, 1f);
                 cam.clearFlags = CameraClearFlags.SolidColor;
 
                 int wPx = 1280;
