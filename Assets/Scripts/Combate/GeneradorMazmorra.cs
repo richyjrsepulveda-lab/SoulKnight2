@@ -1203,6 +1203,18 @@ namespace SoulKnight
             sr.sprite = spriteBarrel;
             sr.sortingOrder = 1;
 
+            if (esExplosivo)
+            {
+                // Tinte rojizo de advertencia de bomba
+                sr.color = new Color(1f, 0.45f, 0.35f, 1f);
+
+                // Mecha encendida con chispas titilantes en la parte superior
+                var mechaObj = new GameObject("MechaBomba");
+                mechaObj.transform.SetParent(go.transform, false);
+                mechaObj.transform.localPosition = new Vector3(0f, 0.52f, -0.05f);
+                mechaObj.AddComponent<AnimadorMechaBomba>();
+            }
+
             var col = go.AddComponent<BoxCollider2D>();
             col.size = new Vector2(0.625f, 0.8125f);
 

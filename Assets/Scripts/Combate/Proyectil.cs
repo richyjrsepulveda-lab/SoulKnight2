@@ -422,8 +422,9 @@ namespace SoulKnight
             }
             else if (aplicaCongelacion || aplicaRalentizacion || TipoElemento.Value == 2)
             {
-                ZonaPeligroPiso.Instanciar(pos, 1.6f, TipoZonaPeligro.Hielo, 5.5f, esServidor: true, danoTick: 3);
-                SpawnearZonaPeligroClientRpc(pos, 1.6f, (int)TipoZonaPeligro.Hielo, 5.5f);
+                // Duracion reducida a 2.4s para que los charcos de hielo de proyectiles enemigos se disuelvan rapidamente
+                ZonaPeligroPiso.Instanciar(pos, 1.6f, TipoZonaPeligro.Hielo, 2.4f, esServidor: true, danoTick: 3);
+                SpawnearZonaPeligroClientRpc(pos, 1.6f, (int)TipoZonaPeligro.Hielo, 2.4f);
             }
         }
 

@@ -413,8 +413,9 @@ namespace SoulKnight
         {
             if (!IsServer || VidaActual.Value <= 0) return;
             Vector2 pos = transform.position;
-            ZonaPeligroPiso.Instanciar(pos, 1.8f, TipoZonaPeligro.Hielo, 5.5f, esServidor: true, danoTick: 3);
-            CrearZonaPeligroClientRpc(pos, 1.8f, (int)TipoZonaPeligro.Hielo, 5.5f);
+            // Duracion acotada a 2.4s para que se derrita y no inunde permanentemente el cuarto
+            ZonaPeligroPiso.Instanciar(pos, 1.8f, TipoZonaPeligro.Hielo, 2.4f, esServidor: true, danoTick: 3);
+            CrearZonaPeligroClientRpc(pos, 1.8f, (int)TipoZonaPeligro.Hielo, 2.4f);
         }
 
         [ClientRpc]

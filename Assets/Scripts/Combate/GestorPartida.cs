@@ -709,6 +709,13 @@ namespace SoulKnight
                     salaCompletada.MostrarPortalesSpawn(false);
                     salaCompletada.BloquearSala(false);
 
+                    // Limpiar todas las areas de hielo y fuego que hayan dejado los enemigos al completarse la sala
+                    ZonaPeligroPiso.LimpiarTodas();
+                    if (SalaRed.Instancia != null)
+                    {
+                        SalaRed.Instancia.LimpiarZonasPeligroClientRpc();
+                    }
+
                     if (salaCompletada.esSalaJefe)
                     {
                         // Se mató al jefe o se completó la cámara de guardianes: abrir el pasillo final y activar el hoyo

@@ -725,6 +725,18 @@ namespace SoulKnight
             }
         }
 
+        [ClientRpc]
+        public void MostrarExplosionBombaClientRpc(Vector2 pos, float radio)
+        {
+            EfectoExplosionBomba.Crear(pos, radio);
+        }
+
+        [ClientRpc]
+        public void LimpiarZonasPeligroClientRpc()
+        {
+            ZonaPeligroPiso.LimpiarTodas();
+        }
+
         static string Recortar(string s, int max) =>
             string.IsNullOrEmpty(s) ? "" : (s.Length <= max ? s : s.Substring(0, max));
     }

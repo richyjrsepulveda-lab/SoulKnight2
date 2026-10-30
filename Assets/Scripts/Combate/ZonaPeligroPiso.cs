@@ -18,6 +18,8 @@ namespace SoulKnight
     /// </summary>
     public class ZonaPeligroPiso : MonoBehaviour
     {
+        public static readonly List<ZonaPeligroPiso> Todas = new List<ZonaPeligroPiso>();
+
         public TipoZonaPeligro tipoZona;
         public float radio = 1.9f;
         public float duracion = 6.5f;
@@ -36,6 +38,33 @@ namespace SoulKnight
         private static Sprite _spriteNubeHielo;
         private static Sprite _spriteMota;
 
+        void OnEnable()
+        {
+            if (!Todas.Contains(this)) Todas.Add(this);
+        }
+
+        void OnDisable()
+        {
+            Todas.Remove(this);
+        }
+
+        void OnDestroy()
+        {
+            Todas.Remove(this);
+        }
+
+        public static void LimpiarTodas()
+        {
+            for (int i = Todas.Count - 1; i >= 0; i--)
+            {
+                if (Todas[i] != null)
+                {
+                    Destroy(Todas[i].gameObject);
+                }
+            }
+            Todas.Clear();
+        }
+
         public static ZonaPeligroPiso Instanciar(Vector2 posicion, float radio, TipoZonaPeligro tipo, float duracion, bool esServidor, int danoTick = 4)
         {
             var go = new GameObject($"ZonaPeligro_{tipo}");
@@ -48,6 +77,9 @@ namespace SoulKnight
             zona.esServidor = esServidor;
             zona.danoPorTick = danoTick;
             zona.InicializarVisuales();
+
+            // Garantia infalible del motor de Unity para autodestruccion segura
+            Destroy(go, duracion + 0.05f);
 
             return zona;
         }
@@ -174,7 +206,7 @@ namespace SoulKnight
                 }
             }
 
-            // Desvanecimiento suave en los últimos 0.8 segundos
+            // Desvanecimiento y disolucion visible en los ultimos 0.8 segundos (se derrite / evapora)
             float tiempoRestante = duracion - _tiempoVivo;
             if (tiempoRestante <= 0.8f)
             {
@@ -184,6 +216,7 @@ namespace SoulKnight
                     Color c = _srNube.color;
                     c.a = alfa * 0.78f;
                     _srNube.color = c;
+                    _srNube.transform.localScale = Vector3.one * (radio * 2.2f * alfa);
                 }
                 if (_lrAnillo != null)
                 {
@@ -191,6 +224,7 @@ namespace SoulKnight
                     c.a = alfa * 0.90f;
                     _lrAnillo.startColor = c;
                     _lrAnillo.endColor = c;
+                    _lrAnillo.transform.localScale = Vector3.one * alfa;
                 }
             }
 
