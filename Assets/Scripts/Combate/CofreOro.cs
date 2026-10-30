@@ -87,6 +87,16 @@ namespace SoulKnight
             }
             if (local == null) return;
 
+            // Si el minijuego de la cerradura ya está abierto, silenciar texto e ignorar pulsaciones
+            if (ScreenPuzzleCofre.Instancia != null && ScreenPuzzleCofre.Instancia.EstaAbierto)
+            {
+                if (_textoIndicador != null && _textoIndicador.gameObject.activeSelf)
+                {
+                    _textoIndicador.gameObject.SetActive(false);
+                }
+                return;
+            }
+
             float dist = Vector2.Distance(transform.position, local.transform.position);
             bool cerca = dist <= distanciaInteraccion;
 
@@ -95,7 +105,7 @@ namespace SoulKnight
                 _textoIndicador.gameObject.SetActive(cerca);
             }
 
-            if (cerca && Input.GetKeyDown(KeyCode.F))
+            if (cerca && (Input.GetKeyDown(KeyCode.F) || Controles.Pulsada(KeyCode.F)))
             {
                 local.InteractuarCofre(this);
             }

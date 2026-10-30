@@ -76,6 +76,8 @@ namespace SoulKnight
         private int _bolitaAgarrada = -1;
         private bool _estaAbierto = false;
         private bool _resuelto = false;
+        public bool EstaAbierto => _estaAbierto;
+        public bool Resuelto => _resuelto;
         private float _tiempoUltimoEnvioRed = 0f;
 
         // Paredes mecánicas del laberinto (rectángulos locales)
@@ -254,10 +256,11 @@ namespace SoulKnight
             rtHeader.sizeDelta = new Vector2(-28f, 60f);
 
             var txtHeader = headerObj.AddComponent<Text>();
-            txtHeader.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            txtHeader.fontSize = 23;
+            txtHeader.font = FuenteUtil.ObtenerFuentePixelify();
+            txtHeader.fontSize = 22;
+            txtHeader.lineSpacing = 1.2f;
             txtHeader.alignment = TextAnchor.MiddleCenter;
-            txtHeader.text = "🔐 CERRADURA MECÁNICA ANCESTRAL (50 ORO)\n<size=15><color=#f5c642>Guía los 4 pernos elementales por el laberinto de la cerradura hasta el tambor central</color></size>";
+            txtHeader.text = "🔐 CERRADURA MECÁNICA ANCESTRAL (50 ORO)\n<size=15><color=#f5c642>Arrastra los 4 pernos elementales por el laberinto hasta los tambores del centro</color></size>";
             txtHeader.color = Color.white;
 
             // Botón de Cierre [✕]
@@ -282,25 +285,27 @@ namespace SoulKnight
             rtTxtX.anchorMax = Vector2.one;
             rtTxtX.sizeDelta = Vector2.zero;
             var txtX = txtBtnObj.AddComponent<Text>();
-            txtX.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            txtX.font = FuenteUtil.ObtenerFuentePixelify();
             txtX.fontSize = 22;
             txtX.alignment = TextAnchor.MiddleCenter;
             txtX.text = "✕";
             txtX.color = Color.white;
 
             // Placa de la Cerradura / Laberinto (620 x 620 px - Tamaño ideal y nítido)
+            // IMPORTANTE: Pivot en (0.5, 0.5) para que las coordenadas locales coincidan 1:1 con el centro (0, 0)
             var tableroObj = new GameObject("TableroCerradura");
             tableroObj.transform.SetParent(ventanaObj.transform, false);
             _panelTablero = tableroObj.AddComponent<RectTransform>();
-            _panelTablero.anchorMin = new Vector2(0.5f, 0f);
-            _panelTablero.anchorMax = new Vector2(0.5f, 0f);
-            _panelTablero.pivot = new Vector2(0.5f, 0f);
+            _panelTablero.anchorMin = new Vector2(0.5f, 0.5f);
+            _panelTablero.anchorMax = new Vector2(0.5f, 0.5f);
+            _panelTablero.pivot = new Vector2(0.5f, 0.5f);
             _panelTablero.sizeDelta = new Vector2(620f, 620f);
-            _panelTablero.anchoredPosition = new Vector2(0f, 22f);
+            _panelTablero.anchoredPosition = new Vector2(0f, -42f);
 
             var imgTablero = tableroObj.AddComponent<Image>();
             imgTablero.sprite = _spritePlacaCerradura;
             imgTablero.color = Color.white;
+            imgTablero.raycastTarget = false;
 
             // Emblema Central: Ojo de Cerradura Antiguo grabado en el fondo del tambor
             var ojoObj = new GameObject("OjoCerraduraCentro");
@@ -314,6 +319,7 @@ namespace SoulKnight
             var imgOjo = ojoObj.AddComponent<Image>();
             imgOjo.sprite = _spriteOjoCerradura;
             imgOjo.color = new Color(0.85f, 0.70f, 0.30f, 0.40f);
+            imgOjo.raycastTarget = false;
 
             // Muros y Deflectores Mecánicos del Laberinto
             for (int i = 0; i < _murosLaberinto.Count; i++)
@@ -331,6 +337,7 @@ namespace SoulKnight
                 var imgMuro = muroUI.AddComponent<Image>();
                 imgMuro.sprite = _spriteMuroCerradura;
                 imgMuro.color = Color.white;
+                imgMuro.raycastTarget = false;
             }
 
             // Tambores / Receptáculos en la Cámara Central
@@ -348,6 +355,7 @@ namespace SoulKnight
                 var imgMeta = metaObj.AddComponent<Image>();
                 imgMeta.sprite = _spritesTambores[i];
                 imgMeta.color = new Color(1f, 1f, 1f, 0.55f);
+                imgMeta.raycastTarget = false;
                 _imgMetas[i] = imgMeta;
             }
 
@@ -366,6 +374,7 @@ namespace SoulKnight
                 var imgP = pernoObj.AddComponent<Image>();
                 imgP.sprite = _spritesPernos[i];
                 imgP.color = Color.white;
+                imgP.raycastTarget = false;
 
                 _visualBolitas[i] = rtP;
                 _imgBolitas[i] = imgP;
@@ -377,11 +386,18 @@ namespace SoulKnight
             if (cofre == null || cofre.EstaAbiertoLocal) return;
             _cofreActual = cofre;
             _estaAbierto = true;
+            _resuelto = false;
+            _bolitaAgarrada = -1;
+
+            ResetearPosiciones();
 
             gameObject.SetActive(true);
-            _canvasGroup.alpha = 1f;
-            _canvasGroup.blocksRaycasts = true;
-            _canvasGroup.interactable = true;
+            if (_canvasGroup != null)
+            {
+                _canvasGroup.alpha = 1f;
+                _canvasGroup.blocksRaycasts = true;
+                _canvasGroup.interactable = true;
+            }
 
             Controles.Bloqueado = true;
             GestorAudio.PlaySFX(TipoSFX.ClickUI);
@@ -428,6 +444,8 @@ namespace SoulKnight
             if (_resuelto) return;
 
             ProcesarInteraccionCursor();
+            AplicarImanMetas();
+            ActualizarVisuales();
             VerificarVictoria();
         }
 
@@ -439,11 +457,11 @@ namespace SoulKnight
                 null,
                 out Vector2 mouseLocal);
 
-            // Al pulsar clic izquierdo, determinar si agarramos un perno
+            // Al pulsar clic izquierdo, determinar si agarramos un perno (52px de tolerancia de agarre)
             if (Input.GetMouseButtonDown(0))
             {
                 int mejorIndice = -1;
-                float menorDist = 36f;
+                float menorDist = 52f;
                 for (int i = 0; i < 4; i++)
                 {
                     float d = Vector2.Distance(mouseLocal, posicionesBolitas[i]);
@@ -454,6 +472,10 @@ namespace SoulKnight
                     }
                 }
                 _bolitaAgarrada = mejorIndice;
+                if (_bolitaAgarrada >= 0)
+                {
+                    GestorAudio.PlaySFX(TipoSFX.ClickUI, 1.15f);
+                }
             }
 
             // Al soltar el clic
@@ -462,7 +484,7 @@ namespace SoulKnight
                 _bolitaAgarrada = -1;
             }
 
-            // Arrastrar perno
+            // Arrastrar perno agarrado
             if (_bolitaAgarrada >= 0 && Input.GetMouseButton(0))
             {
                 MoverPernoConFisica(_bolitaAgarrada, mouseLocal);
@@ -477,8 +499,6 @@ namespace SoulKnight
                     }
                 }
             }
-
-            ActualizarVisuales();
         }
 
         private void MoverPernoConFisica(int indice, Vector2 destinoDeseado)
@@ -488,21 +508,27 @@ namespace SoulKnight
             float dist = paso.magnitude;
             if (dist < 0.001f) return;
 
-            float velocidadMax = 560f * Time.deltaTime;
-            Vector2 delta = paso.normalized * Mathf.Min(dist, velocidadMax);
-            Vector2 cand = posActual + delta;
+            // Desplazamiento reactivo de alta fluidez (hasta 2200 px/s)
+            float velocidadMax = 2200f * Time.deltaTime;
+            float avanceTotal = Mathf.Min(dist, velocidadMax);
+            int subPasos = Mathf.Clamp(Mathf.CeilToInt(avanceTotal / 3.5f), 1, 28);
+            float avancePorPaso = avanceTotal / subPasos;
+            Vector2 dir = paso.normalized;
 
-            // 1. Deslizamiento suave contra los muros mecánicos de la cerradura
-            Vector2 candX = new Vector2(cand.x, posActual.y);
-            if (!ColisionaConMuros(candX))
+            // 1. Sub-pasos con deslizamiento suave contra los muros mecánicos sin atravesar
+            for (int s = 0; s < subPasos; s++)
             {
-                posActual.x = candX.x;
-            }
+                Vector2 candX = new Vector2(posActual.x + dir.x * avancePorPaso, posActual.y);
+                if (!ColisionaConMuros(candX))
+                {
+                    posActual.x = candX.x;
+                }
 
-            Vector2 candY = new Vector2(posActual.x, cand.y);
-            if (!ColisionaConMuros(candY))
-            {
-                posActual.y = candY.y;
+                Vector2 candY = new Vector2(posActual.x, posActual.y + dir.y * avancePorPaso);
+                if (!ColisionaConMuros(candY))
+                {
+                    posActual.y = candY.y;
+                }
             }
 
             // 2. Colisión física entre Pernos (se empujan entre sí estilo Among Us)
@@ -527,24 +553,36 @@ namespace SoulKnight
                 }
             }
 
-            // 3. Imán / Encastre en el tambor de la cerradura
-            float distMeta = Vector2.Distance(posActual, _metas[indice]);
-            if (distMeta <= TOLERANCIA_META)
+            posicionesBolitas[indice] = posActual;
+        }
+
+        private void AplicarImanMetas()
+        {
+            for (int i = 0; i < 4; i++)
             {
-                posActual = Vector2.MoveTowards(posActual, _metas[indice], 150f * Time.deltaTime);
-                if (distMeta <= 5f && !enMeta[indice])
+                float distMeta = Vector2.Distance(posicionesBolitas[i], _metas[i]);
+                if (distMeta <= TOLERANCIA_META)
                 {
-                    posActual = _metas[indice];
-                    enMeta[indice] = true;
-                    GestorAudio.PlaySFX(TipoSFX.Mejora, 1.25f);
+                    // Si no está siendo arrastrado o ya está en el centro del tambor, encastrar
+                    if (_bolitaAgarrada != i || distMeta <= 12f)
+                    {
+                        posicionesBolitas[i] = Vector2.MoveTowards(posicionesBolitas[i], _metas[i], 320f * Time.deltaTime);
+                        if (Vector2.Distance(posicionesBolitas[i], _metas[i]) <= 4f)
+                        {
+                            posicionesBolitas[i] = _metas[i];
+                            if (!enMeta[i])
+                            {
+                                enMeta[i] = true;
+                                GestorAudio.PlaySFX(TipoSFX.Mejora, 1.35f);
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    enMeta[i] = false;
                 }
             }
-            else
-            {
-                enMeta[indice] = false;
-            }
-
-            posicionesBolitas[indice] = posActual;
         }
 
         private bool ColisionaConMuros(Vector2 pos)
@@ -567,6 +605,7 @@ namespace SoulKnight
         {
             if (bolitaIdx >= 0 && bolitaIdx < 4)
             {
+                if (_bolitaAgarrada == bolitaIdx) return;
                 posicionesBolitas[bolitaIdx] = pos;
                 enMeta[bolitaIdx] = (Vector2.Distance(pos, _metas[bolitaIdx]) <= 6f);
                 ActualizarVisuales();
@@ -582,12 +621,17 @@ namespace SoulKnight
                     _visualBolitas[i].anchoredPosition = posicionesBolitas[i];
                     if (enMeta[i])
                     {
-                        _imgMetas[i].color = new Color(1f, 1f, 1f, 1f);
+                        if (_imgMetas[i] != null) _imgMetas[i].color = new Color(1f, 1f, 1f, 1f);
                         _visualBolitas[i].localScale = Vector3.one * (1.18f + Mathf.Sin(Time.time * 9f) * 0.08f);
+                    }
+                    else if (_bolitaAgarrada == i)
+                    {
+                        if (_imgMetas[i] != null) _imgMetas[i].color = new Color(1f, 1f, 1f, 0.75f);
+                        _visualBolitas[i].localScale = Vector3.one * 1.25f; // Resaltado al arrastrar
                     }
                     else
                     {
-                        _imgMetas[i].color = new Color(1f, 1f, 1f, 0.55f);
+                        if (_imgMetas[i] != null) _imgMetas[i].color = new Color(1f, 1f, 1f, 0.55f);
                         _visualBolitas[i].localScale = Vector3.one;
                     }
                 }
@@ -614,7 +658,25 @@ namespace SoulKnight
             if (_cofreActual != null)
             {
                 TextoFlotante.Crear(_cofreActual.transform.position + Vector3.up * 1.5f, "¡CERRADURA DESBLOQUEADA! +50 💰", new Color(1f, 0.95f, 0.25f));
-                _cofreActual.AbrirPorServidor();
+
+                Personaje local = null;
+                for (int i = 0; i < Personaje.Todos.Count; i++)
+                {
+                    if (Personaje.Todos[i] != null && Personaje.Todos[i].EsControlLocal)
+                    {
+                        local = Personaje.Todos[i];
+                        break;
+                    }
+                }
+
+                if (local != null)
+                {
+                    local.InteractuarCofreDirecto(_cofreActual);
+                }
+                else
+                {
+                    _cofreActual.AbrirPorServidor();
+                }
             }
 
             yield return new WaitForSeconds(0.75f);
