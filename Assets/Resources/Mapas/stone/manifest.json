@@ -1,0 +1,987 @@
+{
+ "game": "Just a Cat Adventure",
+ "biome": "stone",
+ "tile_size": 16,
+ "pixels_per_unit": 16,
+ "filter": "point/nearest",
+ "compression": "none",
+ "sprites": [
+  {
+   "id": "stone_floor_00",
+   "file": "tiles/stone_floor_00.png",
+   "w": 16,
+   "h": 16,
+   "frames": 1,
+   "fps": 0,
+   "kind": "floor",
+   "note": "todas continuas y planas: se pueden mezclar al azar sin que se vea la rejilla"
+  },
+  {
+   "id": "stone_floor_01",
+   "file": "tiles/stone_floor_01.png",
+   "w": 16,
+   "h": 16,
+   "frames": 1,
+   "fps": 0,
+   "kind": "floor",
+   "note": ""
+  },
+  {
+   "id": "stone_floor_02",
+   "file": "tiles/stone_floor_02.png",
+   "w": 16,
+   "h": 16,
+   "frames": 1,
+   "fps": 0,
+   "kind": "floor",
+   "note": ""
+  },
+  {
+   "id": "stone_floor_03",
+   "file": "tiles/stone_floor_03.png",
+   "w": 16,
+   "h": 16,
+   "frames": 1,
+   "fps": 0,
+   "kind": "floor",
+   "note": ""
+  },
+  {
+   "id": "stone_floor_04",
+   "file": "tiles/stone_floor_04.png",
+   "w": 16,
+   "h": 16,
+   "frames": 1,
+   "fps": 0,
+   "kind": "floor",
+   "note": ""
+  },
+  {
+   "id": "stone_floor_05",
+   "file": "tiles/stone_floor_05.png",
+   "w": 16,
+   "h": 16,
+   "frames": 1,
+   "fps": 0,
+   "kind": "floor",
+   "note": ""
+  },
+  {
+   "id": "stone_floor_06",
+   "file": "tiles/stone_floor_06.png",
+   "w": 16,
+   "h": 16,
+   "frames": 1,
+   "fps": 0,
+   "kind": "floor",
+   "note": ""
+  },
+  {
+   "id": "stone_floor_07",
+   "file": "tiles/stone_floor_07.png",
+   "w": 16,
+   "h": 16,
+   "frames": 1,
+   "fps": 0,
+   "kind": "floor",
+   "note": ""
+  },
+  {
+   "id": "stone_floor_shadow_00",
+   "file": "tiles/stone_floor_shadow_00.png",
+   "w": 16,
+   "h": 16,
+   "frames": 1,
+   "fps": 0,
+   "kind": "floor_shadow",
+   "note": "00 justo debajo de la cara del muro, 01 la fila siguiente"
+  },
+  {
+   "id": "stone_floor_shadow_01",
+   "file": "tiles/stone_floor_shadow_01.png",
+   "w": 16,
+   "h": 16,
+   "frames": 1,
+   "fps": 0,
+   "kind": "floor_shadow",
+   "note": ""
+  },
+  {
+   "id": "stone_void",
+   "file": "tiles/stone_void.png",
+   "w": 16,
+   "h": 16,
+   "frames": 1,
+   "fps": 0,
+   "kind": "void"
+  },
+  {
+   "id": "stone_decal_crack",
+   "file": "tiles/stone_decal_crack.png",
+   "w": 16,
+   "h": 16,
+   "frames": 1,
+   "fps": 0,
+   "kind": "decal",
+   "note": "transparente, dibujar encima del piso en ~20% de las celdas"
+  },
+  {
+   "id": "stone_decal_pebbles",
+   "file": "tiles/stone_decal_pebbles.png",
+   "w": 16,
+   "h": 16,
+   "frames": 1,
+   "fps": 0,
+   "kind": "decal",
+   "note": ""
+  },
+  {
+   "id": "stone_decal_bones",
+   "file": "tiles/stone_decal_bones.png",
+   "w": 16,
+   "h": 16,
+   "frames": 1,
+   "fps": 0,
+   "kind": "decal",
+   "note": ""
+  },
+  {
+   "id": "stone_decal_puddle",
+   "file": "tiles/stone_decal_puddle.png",
+   "w": 16,
+   "h": 16,
+   "frames": 1,
+   "fps": 0,
+   "kind": "decal",
+   "note": ""
+  },
+  {
+   "id": "stone_wall_top_00",
+   "file": "walls/stone_wall_top_00.png",
+   "w": 16,
+   "h": 16,
+   "frames": 1,
+   "fps": 0,
+   "kind": "wall_top",
+   "mask": 0,
+   "solid": true
+  },
+  {
+   "id": "stone_wall_top_01",
+   "file": "walls/stone_wall_top_01.png",
+   "w": 16,
+   "h": 16,
+   "frames": 1,
+   "fps": 0,
+   "kind": "wall_top",
+   "mask": 1,
+   "solid": true
+  },
+  {
+   "id": "stone_wall_top_02",
+   "file": "walls/stone_wall_top_02.png",
+   "w": 16,
+   "h": 16,
+   "frames": 1,
+   "fps": 0,
+   "kind": "wall_top",
+   "mask": 2,
+   "solid": true
+  },
+  {
+   "id": "stone_wall_top_03",
+   "file": "walls/stone_wall_top_03.png",
+   "w": 16,
+   "h": 16,
+   "frames": 1,
+   "fps": 0,
+   "kind": "wall_top",
+   "mask": 3,
+   "solid": true
+  },
+  {
+   "id": "stone_wall_top_04",
+   "file": "walls/stone_wall_top_04.png",
+   "w": 16,
+   "h": 16,
+   "frames": 1,
+   "fps": 0,
+   "kind": "wall_top",
+   "mask": 4,
+   "solid": true
+  },
+  {
+   "id": "stone_wall_top_05",
+   "file": "walls/stone_wall_top_05.png",
+   "w": 16,
+   "h": 16,
+   "frames": 1,
+   "fps": 0,
+   "kind": "wall_top",
+   "mask": 5,
+   "solid": true
+  },
+  {
+   "id": "stone_wall_top_06",
+   "file": "walls/stone_wall_top_06.png",
+   "w": 16,
+   "h": 16,
+   "frames": 1,
+   "fps": 0,
+   "kind": "wall_top",
+   "mask": 6,
+   "solid": true
+  },
+  {
+   "id": "stone_wall_top_07",
+   "file": "walls/stone_wall_top_07.png",
+   "w": 16,
+   "h": 16,
+   "frames": 1,
+   "fps": 0,
+   "kind": "wall_top",
+   "mask": 7,
+   "solid": true
+  },
+  {
+   "id": "stone_wall_top_08",
+   "file": "walls/stone_wall_top_08.png",
+   "w": 16,
+   "h": 16,
+   "frames": 1,
+   "fps": 0,
+   "kind": "wall_top",
+   "mask": 8,
+   "solid": true
+  },
+  {
+   "id": "stone_wall_top_09",
+   "file": "walls/stone_wall_top_09.png",
+   "w": 16,
+   "h": 16,
+   "frames": 1,
+   "fps": 0,
+   "kind": "wall_top",
+   "mask": 9,
+   "solid": true
+  },
+  {
+   "id": "stone_wall_top_10",
+   "file": "walls/stone_wall_top_10.png",
+   "w": 16,
+   "h": 16,
+   "frames": 1,
+   "fps": 0,
+   "kind": "wall_top",
+   "mask": 10,
+   "solid": true
+  },
+  {
+   "id": "stone_wall_top_11",
+   "file": "walls/stone_wall_top_11.png",
+   "w": 16,
+   "h": 16,
+   "frames": 1,
+   "fps": 0,
+   "kind": "wall_top",
+   "mask": 11,
+   "solid": true
+  },
+  {
+   "id": "stone_wall_top_12",
+   "file": "walls/stone_wall_top_12.png",
+   "w": 16,
+   "h": 16,
+   "frames": 1,
+   "fps": 0,
+   "kind": "wall_top",
+   "mask": 12,
+   "solid": true
+  },
+  {
+   "id": "stone_wall_top_13",
+   "file": "walls/stone_wall_top_13.png",
+   "w": 16,
+   "h": 16,
+   "frames": 1,
+   "fps": 0,
+   "kind": "wall_top",
+   "mask": 13,
+   "solid": true
+  },
+  {
+   "id": "stone_wall_top_14",
+   "file": "walls/stone_wall_top_14.png",
+   "w": 16,
+   "h": 16,
+   "frames": 1,
+   "fps": 0,
+   "kind": "wall_top",
+   "mask": 14,
+   "solid": true
+  },
+  {
+   "id": "stone_wall_top_15",
+   "file": "walls/stone_wall_top_15.png",
+   "w": 16,
+   "h": 16,
+   "frames": 1,
+   "fps": 0,
+   "kind": "wall_top",
+   "mask": 15,
+   "solid": true
+  },
+  {
+   "id": "stone_wall_face_a",
+   "file": "walls/stone_wall_face_a.png",
+   "w": 16,
+   "h": 16,
+   "frames": 1,
+   "fps": 0,
+   "kind": "wall_face",
+   "solid": true
+  },
+  {
+   "id": "stone_wall_face_b",
+   "file": "walls/stone_wall_face_b.png",
+   "w": 16,
+   "h": 16,
+   "frames": 1,
+   "fps": 0,
+   "kind": "wall_face",
+   "solid": true
+  },
+  {
+   "id": "stone_wall_face_cracked",
+   "file": "walls/stone_wall_face_cracked.png",
+   "w": 16,
+   "h": 16,
+   "frames": 1,
+   "fps": 0,
+   "kind": "wall_face",
+   "solid": true
+  },
+  {
+   "id": "stone_wall_face_grate",
+   "file": "walls/stone_wall_face_grate.png",
+   "w": 16,
+   "h": 16,
+   "frames": 1,
+   "fps": 0,
+   "kind": "wall_face",
+   "solid": true
+  },
+  {
+   "id": "stone_wall_face_banner",
+   "file": "walls/stone_wall_face_banner.png",
+   "w": 16,
+   "h": 16,
+   "frames": 1,
+   "fps": 0,
+   "kind": "wall_face",
+   "solid": true
+  },
+  {
+   "id": "stone_wall_face_torch_strip",
+   "file": "walls/stone_wall_face_torch_strip.png",
+   "w": 16,
+   "h": 16,
+   "frames": 4,
+   "fps": 8,
+   "kind": "wall_face_anim",
+   "solid": true
+  },
+  {
+   "id": "stone_torch_glow",
+   "file": "walls/stone_torch_glow.png",
+   "w": 48,
+   "h": 48,
+   "frames": 1,
+   "fps": 0,
+   "kind": "light",
+   "note": "halo 48x48, centrar en la llama (7.5, 5) del tile de la antorcha; mezcla aditiva o alpha normal"
+  },
+  {
+   "id": "stone_block_00",
+   "file": "blocks/stone_block_00.png",
+   "w": 16,
+   "h": 16,
+   "frames": 1,
+   "fps": 0,
+   "kind": "block_autotile",
+   "mask": 0,
+   "solid": true,
+   "note": "autotile con la misma regla de mask que los muros; el frente se dibuja solo cuando no hay bloque debajo"
+  },
+  {
+   "id": "stone_block_01",
+   "file": "blocks/stone_block_01.png",
+   "w": 16,
+   "h": 16,
+   "frames": 1,
+   "fps": 0,
+   "kind": "block_autotile",
+   "mask": 1,
+   "solid": true,
+   "note": "autotile con la misma regla de mask que los muros; el frente se dibuja solo cuando no hay bloque debajo"
+  },
+  {
+   "id": "stone_block_02",
+   "file": "blocks/stone_block_02.png",
+   "w": 16,
+   "h": 16,
+   "frames": 1,
+   "fps": 0,
+   "kind": "block_autotile",
+   "mask": 2,
+   "solid": true,
+   "note": "autotile con la misma regla de mask que los muros; el frente se dibuja solo cuando no hay bloque debajo"
+  },
+  {
+   "id": "stone_block_03",
+   "file": "blocks/stone_block_03.png",
+   "w": 16,
+   "h": 16,
+   "frames": 1,
+   "fps": 0,
+   "kind": "block_autotile",
+   "mask": 3,
+   "solid": true,
+   "note": "autotile con la misma regla de mask que los muros; el frente se dibuja solo cuando no hay bloque debajo"
+  },
+  {
+   "id": "stone_block_04",
+   "file": "blocks/stone_block_04.png",
+   "w": 16,
+   "h": 16,
+   "frames": 1,
+   "fps": 0,
+   "kind": "block_autotile",
+   "mask": 4,
+   "solid": true,
+   "note": "autotile con la misma regla de mask que los muros; el frente se dibuja solo cuando no hay bloque debajo"
+  },
+  {
+   "id": "stone_block_05",
+   "file": "blocks/stone_block_05.png",
+   "w": 16,
+   "h": 16,
+   "frames": 1,
+   "fps": 0,
+   "kind": "block_autotile",
+   "mask": 5,
+   "solid": true,
+   "note": "autotile con la misma regla de mask que los muros; el frente se dibuja solo cuando no hay bloque debajo"
+  },
+  {
+   "id": "stone_block_06",
+   "file": "blocks/stone_block_06.png",
+   "w": 16,
+   "h": 16,
+   "frames": 1,
+   "fps": 0,
+   "kind": "block_autotile",
+   "mask": 6,
+   "solid": true,
+   "note": "autotile con la misma regla de mask que los muros; el frente se dibuja solo cuando no hay bloque debajo"
+  },
+  {
+   "id": "stone_block_07",
+   "file": "blocks/stone_block_07.png",
+   "w": 16,
+   "h": 16,
+   "frames": 1,
+   "fps": 0,
+   "kind": "block_autotile",
+   "mask": 7,
+   "solid": true,
+   "note": "autotile con la misma regla de mask que los muros; el frente se dibuja solo cuando no hay bloque debajo"
+  },
+  {
+   "id": "stone_block_08",
+   "file": "blocks/stone_block_08.png",
+   "w": 16,
+   "h": 16,
+   "frames": 1,
+   "fps": 0,
+   "kind": "block_autotile",
+   "mask": 8,
+   "solid": true,
+   "note": "autotile con la misma regla de mask que los muros; el frente se dibuja solo cuando no hay bloque debajo"
+  },
+  {
+   "id": "stone_block_09",
+   "file": "blocks/stone_block_09.png",
+   "w": 16,
+   "h": 16,
+   "frames": 1,
+   "fps": 0,
+   "kind": "block_autotile",
+   "mask": 9,
+   "solid": true,
+   "note": "autotile con la misma regla de mask que los muros; el frente se dibuja solo cuando no hay bloque debajo"
+  },
+  {
+   "id": "stone_block_10",
+   "file": "blocks/stone_block_10.png",
+   "w": 16,
+   "h": 16,
+   "frames": 1,
+   "fps": 0,
+   "kind": "block_autotile",
+   "mask": 10,
+   "solid": true,
+   "note": "autotile con la misma regla de mask que los muros; el frente se dibuja solo cuando no hay bloque debajo"
+  },
+  {
+   "id": "stone_block_11",
+   "file": "blocks/stone_block_11.png",
+   "w": 16,
+   "h": 16,
+   "frames": 1,
+   "fps": 0,
+   "kind": "block_autotile",
+   "mask": 11,
+   "solid": true,
+   "note": "autotile con la misma regla de mask que los muros; el frente se dibuja solo cuando no hay bloque debajo"
+  },
+  {
+   "id": "stone_block_12",
+   "file": "blocks/stone_block_12.png",
+   "w": 16,
+   "h": 16,
+   "frames": 1,
+   "fps": 0,
+   "kind": "block_autotile",
+   "mask": 12,
+   "solid": true,
+   "note": "autotile con la misma regla de mask que los muros; el frente se dibuja solo cuando no hay bloque debajo"
+  },
+  {
+   "id": "stone_block_13",
+   "file": "blocks/stone_block_13.png",
+   "w": 16,
+   "h": 16,
+   "frames": 1,
+   "fps": 0,
+   "kind": "block_autotile",
+   "mask": 13,
+   "solid": true,
+   "note": "autotile con la misma regla de mask que los muros; el frente se dibuja solo cuando no hay bloque debajo"
+  },
+  {
+   "id": "stone_block_14",
+   "file": "blocks/stone_block_14.png",
+   "w": 16,
+   "h": 16,
+   "frames": 1,
+   "fps": 0,
+   "kind": "block_autotile",
+   "mask": 14,
+   "solid": true,
+   "note": "autotile con la misma regla de mask que los muros; el frente se dibuja solo cuando no hay bloque debajo"
+  },
+  {
+   "id": "stone_block_15",
+   "file": "blocks/stone_block_15.png",
+   "w": 16,
+   "h": 16,
+   "frames": 1,
+   "fps": 0,
+   "kind": "block_autotile",
+   "mask": 15,
+   "solid": true,
+   "note": "autotile con la misma regla de mask que los muros; el frente se dibuja solo cuando no hay bloque debajo"
+  },
+  {
+   "id": "stone_block_1x1",
+   "file": "blocks/stone_block_1x1.png",
+   "w": 16,
+   "h": 16,
+   "frames": 1,
+   "fps": 0,
+   "kind": "block_prefab",
+   "solid": true,
+   "cells": [
+    [
+     0,
+     0
+    ]
+   ],
+   "note": "cada celda de 16x16 es colisionable"
+  },
+  {
+   "id": "stone_block_2x1",
+   "file": "blocks/stone_block_2x1.png",
+   "w": 32,
+   "h": 16,
+   "frames": 1,
+   "fps": 0,
+   "kind": "block_prefab",
+   "solid": true,
+   "cells": [
+    [
+     0,
+     0
+    ],
+    [
+     1,
+     0
+    ]
+   ],
+   "note": "cada celda de 16x16 es colisionable"
+  },
+  {
+   "id": "stone_block_3x1",
+   "file": "blocks/stone_block_3x1.png",
+   "w": 48,
+   "h": 16,
+   "frames": 1,
+   "fps": 0,
+   "kind": "block_prefab",
+   "solid": true,
+   "cells": [
+    [
+     0,
+     0
+    ],
+    [
+     1,
+     0
+    ],
+    [
+     2,
+     0
+    ]
+   ],
+   "note": "cada celda de 16x16 es colisionable"
+  },
+  {
+   "id": "stone_block_1x2",
+   "file": "blocks/stone_block_1x2.png",
+   "w": 16,
+   "h": 32,
+   "frames": 1,
+   "fps": 0,
+   "kind": "block_prefab",
+   "solid": true,
+   "cells": [
+    [
+     0,
+     0
+    ],
+    [
+     0,
+     1
+    ]
+   ],
+   "note": "cada celda de 16x16 es colisionable"
+  },
+  {
+   "id": "stone_block_1x3",
+   "file": "blocks/stone_block_1x3.png",
+   "w": 16,
+   "h": 48,
+   "frames": 1,
+   "fps": 0,
+   "kind": "block_prefab",
+   "solid": true,
+   "cells": [
+    [
+     0,
+     0
+    ],
+    [
+     0,
+     1
+    ],
+    [
+     0,
+     2
+    ]
+   ],
+   "note": "cada celda de 16x16 es colisionable"
+  },
+  {
+   "id": "stone_block_2x2",
+   "file": "blocks/stone_block_2x2.png",
+   "w": 32,
+   "h": 32,
+   "frames": 1,
+   "fps": 0,
+   "kind": "block_prefab",
+   "solid": true,
+   "cells": [
+    [
+     0,
+     0
+    ],
+    [
+     1,
+     0
+    ],
+    [
+     0,
+     1
+    ],
+    [
+     1,
+     1
+    ]
+   ],
+   "note": "cada celda de 16x16 es colisionable"
+  },
+  {
+   "id": "stone_block_L",
+   "file": "blocks/stone_block_L.png",
+   "w": 32,
+   "h": 32,
+   "frames": 1,
+   "fps": 0,
+   "kind": "block_prefab",
+   "solid": true,
+   "cells": [
+    [
+     0,
+     0
+    ],
+    [
+     0,
+     1
+    ],
+    [
+     1,
+     1
+    ]
+   ],
+   "note": "cada celda de 16x16 es colisionable"
+  },
+  {
+   "id": "stone_block_T",
+   "file": "blocks/stone_block_T.png",
+   "w": 48,
+   "h": 32,
+   "frames": 1,
+   "fps": 0,
+   "kind": "block_prefab",
+   "solid": true,
+   "cells": [
+    [
+     0,
+     0
+    ],
+    [
+     1,
+     0
+    ],
+    [
+     2,
+     0
+    ],
+    [
+     1,
+     1
+    ]
+   ],
+   "note": "cada celda de 16x16 es colisionable"
+  },
+  {
+   "id": "stone_block_plus",
+   "file": "blocks/stone_block_plus.png",
+   "w": 48,
+   "h": 48,
+   "frames": 1,
+   "fps": 0,
+   "kind": "block_prefab",
+   "solid": true,
+   "cells": [
+    [
+     1,
+     0
+    ],
+    [
+     0,
+     1
+    ],
+    [
+     1,
+     1
+    ],
+    [
+     2,
+     1
+    ],
+    [
+     1,
+     2
+    ]
+   ],
+   "note": "cada celda de 16x16 es colisionable"
+  },
+  {
+   "id": "stone_block_U",
+   "file": "blocks/stone_block_U.png",
+   "w": 48,
+   "h": 32,
+   "frames": 1,
+   "fps": 0,
+   "kind": "block_prefab",
+   "solid": true,
+   "cells": [
+    [
+     0,
+     0
+    ],
+    [
+     2,
+     0
+    ],
+    [
+     0,
+     1
+    ],
+    [
+     1,
+     1
+    ],
+    [
+     2,
+     1
+    ]
+   ],
+   "note": "cada celda de 16x16 es colisionable"
+  },
+  {
+   "id": "stone_crate",
+   "file": "props/stone_crate.png",
+   "w": 16,
+   "h": 16,
+   "frames": 1,
+   "fps": 0,
+   "kind": "prop",
+   "solid": true,
+   "destructible": true,
+   "collider": [
+    1,
+    1,
+    14,
+    14
+   ]
+  },
+  {
+   "id": "stone_barrel",
+   "file": "props/stone_barrel.png",
+   "w": 16,
+   "h": 16,
+   "frames": 1,
+   "fps": 0,
+   "kind": "prop",
+   "solid": true,
+   "destructible": true,
+   "collider": [
+    2,
+    2,
+    12,
+    12
+   ]
+  },
+  {
+   "id": "stone_barrel_red",
+   "file": "props/stone_barrel_red.png",
+   "w": 16,
+   "h": 16,
+   "frames": 1,
+   "fps": 0,
+   "kind": "prop",
+   "solid": true,
+   "destructible": true,
+   "explosive": true,
+   "collider": [
+    2,
+    2,
+    12,
+    12
+   ]
+  },
+  {
+   "id": "stone_pot",
+   "file": "props/stone_pot.png",
+   "w": 16,
+   "h": 16,
+   "frames": 1,
+   "fps": 0,
+   "kind": "prop",
+   "solid": true,
+   "destructible": true,
+   "collider": [
+    3,
+    3,
+    10,
+    10
+   ]
+  },
+  {
+   "id": "stone_pillar",
+   "file": "props/stone_pillar.png",
+   "w": 16,
+   "h": 24,
+   "frames": 1,
+   "fps": 0,
+   "kind": "prop",
+   "solid": true,
+   "collider": [
+    3,
+    14,
+    10,
+    8
+   ],
+   "pivot": "bottom-center",
+   "note": "16x24, ocupa 1 celda, la parte alta se dibuja por encima del personaje si esta detras"
+  },
+  {
+   "id": "stone_spikes_strip",
+   "file": "props/stone_spikes_strip.png",
+   "w": 16,
+   "h": 16,
+   "frames": 4,
+   "fps": 0,
+   "kind": "trap_anim",
+   "damage": true,
+   "note": "frames: 0 apagado, 1 aviso, 2 y 3 activo (dano). Cambia el frame desde codigo: 0 -> 1 (0.4s) -> 2/3 (0.6s) -> 0"
+  },
+  {
+   "id": "stone_water_strip",
+   "file": "props/stone_water_strip.png",
+   "w": 16,
+   "h": 16,
+   "frames": 2,
+   "fps": 2,
+   "kind": "hazard_anim",
+   "solid": true,
+   "bullets_pass": true,
+   "note": "agua: bloquea al jugador pero no a las balas"
+  },
+  {
+   "id": "stone_pit",
+   "file": "props/stone_pit.png",
+   "w": 16,
+   "h": 16,
+   "frames": 1,
+   "fps": 0,
+   "kind": "hazard",
+   "solid": true,
+   "bullets_pass": true,
+   "note": "foso: bloquea / cae"
+  }
+ ],
+ "atlas": {
+  "file": "stone_tileset_atlas.png",
+  "size": [
+   256,
+   80
+  ],
+  "cell": 16,
+  "layout": "fila0: floor_00-07, shadow 00-01 (cols 8-9), void (10), decals crack/pebbles/bones/puddle (11-14); fila1: wall_top_00-15; fila2: wall_face a,b,cracked,grate,banner (0-4), torch f0-f3 (5-8); fila3: block_00-15; fila4: crate, barrel, barrel_red, pot, water f0-f1, pit (0-6), spikes f0-f3 (7-10)"
+ },
+ "autotile": "mask = N*1 + E*2 + S*4 + O*8 (1 si el vecino de esa direccion es del mismo tipo). Aplica a wall_top_XX y block_XX"
+}

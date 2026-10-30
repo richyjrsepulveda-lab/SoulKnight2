@@ -3,12 +3,20 @@ using UnityEngine;
 
 namespace SoulKnight
 {
+    public enum TipoPropDestruible
+    {
+        Caja = 0,
+        Barril = 1,
+        BarrilExplosivo = 2,
+        Jarron = 3
+    }
+
     /// <summary>
-    /// Obstáculo destruible en la mazmorra (caja o barril).
-    /// En el bioma de fuego, los barriles son explosivos e infligen daño en área al romperse.
+    /// Obstáculo destruible en la mazmorra (caja, barril, barril rojo explosivo o jarrón).
     /// </summary>
     public class PropDestruible : MonoBehaviour
     {
+        public TipoPropDestruible tipoProp = TipoPropDestruible.Caja;
         public int vidaMax = 15;
         public bool esExplosivo = false;
         public int danoExplosion = 25;
@@ -60,8 +68,9 @@ namespace SoulKnight
             }
             else
             {
-                // Posibilidad de spawnear una moneda de oro al romperse
-                if (Random.value < 0.45f)
+                // Posibilidad de spawnear una moneda de oro al romperse (mayor en jarrones)
+                float chance = (tipoProp == TipoPropDestruible.Jarron) ? 0.65f : 0.40f;
+                if (Random.value < chance)
                 {
                     MonedaOro.Crear(transform.position, Random.Range(1, 3));
                 }

@@ -4,7 +4,29 @@ Este registro consolida la evolución técnica y de diseño de **SoulKnight 2**,
 
 ---
 
-## Versión Actual: v1.2.0 (Octubre 2026 - Commit `aa3ada1`)
+## Versión Actual: v1.3.0 (Octubre 2026 - Mazmorra de Piedra Soul Knight & Sprites Oficiales)
+
+### 🏰 Mazmorra de Piedra Oficial (`stone_dungeon_16px`)
+- **Importación Estandarizada:** 16 PPU (1 tile = 1 unidad Unity = 16x16 px), filtro Point/Nearest, sin compresión ni mipmaps, garantizando pixel art retro nítido 1:1.
+- **Autotile de Muros y Bloques:** Implementación de máscaras bitmask de 4 direcciones (`mask = N*1 + E*2 + S*4 + W*8`) para `stone_wall_top_00..15` y `stone_block_00..15`.
+- **Variantes Frontales y Antorchas Animadas:** `stone_wall_face_a`, `stone_wall_face_b`, `cracked`, `grate` y `banner`. Antorchas colocadas periódicamente cada 4 tiles animadas a 8 fps con halo ambiental suave (`stone_torch_glow`).
+- **Suelo Dinámico, Calcomanías y Sombras:** Suelos base (`stone_floor_00..03`) y detallados (`04..07`), sombras superiores de 2 filas (`floor_shadow_00` y `01`), y calcomanías decorativas procedurales (`stone_decal_crack`, `pebbles`, `bones`, `puddle`) en el 14% de las baldosas.
+- **Vacío Perimetral:** Baldosas `stone_void` rellenando el fondo circundante fuera del mapa.
+
+### 🧱 Layouts Procedurales de Salas y Nuevos Props Interactivos
+- **Motor de Plantillas de Mazmorra:** Integración de los 10 esquemas de `room_layouts.json` (`vacio_cajas`, `pilares`, `cruz`, `anillo`, `pasillos`, `estanque`, `trampas`, `arena`, `foso`, `sueltos`), centrados en la sala con volteo horizontal y vertical aleatorio.
+- **Props y Obstáculos:**
+  - `stone_crate` (cajas) y `stone_barrel` (barriles): Destruibles mediante disparos de jugadores y enemigos.
+  - `stone_barrel_red`: Barriles explosivos con detonación y daño en área.
+  - `stone_pot`: Jarrones destruibles con probabilidad aumentada de soltar monedas de oro.
+  - `stone_pillar`: Columnas de 16x32 con colisión ajustada.
+  - `stone_spikes_strip`: Trampas de pinchos animadas de 4 fases (oculto, aviso, activo con daño de contacto, repliegue).
+  - `stone_water_strip`: Agua superficial animada a 2 fps (bloquea el paso físico de personajes pero los proyectiles la atraviesan sin destruirse).
+  - `stone_pit`: Fosos de abismo (bloquean el paso físico pero permiten disparar a través).
+
+---
+
+## Versión Anterior: v1.2.0 (Octubre 2026 - Commit `aa3ada1`)
 
 ### 🛒 Tienda de la Run Completa y Mercado Felino (`Shop.dc.html` / `PanelTiendaRun`)
 - **Diseño Retro 1:1:** Implementación de interfaz de tienda temática con tarjetas dinámicas con halo circular elemental, marcos de estilo pixel art y animación de entrada.

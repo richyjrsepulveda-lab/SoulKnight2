@@ -36,8 +36,12 @@ namespace SoulKnight
         public Sprite spriteWallFaceA;         // wall_face_a
         public Sprite spriteWallFaceB;         // wall_face_b
         public Sprite spriteWallFaceCracked;   // wall_face_cracked
-        public Sprite spriteWallFaceDecor;     // wall_face_decor
+        public Sprite spriteWallFaceDecor;     // wall_face_decor / grate
+        public Sprite spriteWallFaceBanner;    // wall_face_banner
         public Sprite[] framesWallFaceTorch;   // wall_face_torch (4 frames a 8 fps)
+        public Sprite spriteTorchGlow;         // halo ambiental torch_glow
+        public Sprite[] spritesDecals;         // stone_decal_crack, pebbles, bones, puddle
+        public Sprite[] spritesBlock;          // stone_block_00 .. 15 (autotile bitmask)
 
         // Props y Obstáculos del bioma
         public Sprite spritePillar;            // pillar (16x32)
@@ -45,9 +49,13 @@ namespace SoulKnight
         public Sprite spriteBoulderL;          // boulder_l (32x32)
         public Sprite spriteCrate;             // crate (16x16)
         public Sprite spriteBarrel;            // barrel (16x16)
+        public Sprite spriteBarrelRed;         // barrel_red (16x16 explosivo)
+        public Sprite spritePot;               // pot (16x16 rompible con drop de oro)
         public Sprite spriteSpikesOff;         // spikes_off
         public Sprite spriteSpikesOn;          // spikes_on
-        public Sprite[] framesSpikesStrip;     // spikes_strip (2 frames)
+        public Sprite[] framesSpikesStrip;     // spikes_strip (2 o 4 frames)
+        public Sprite[] framesWaterStrip;      // water_strip (2 frames a 2 fps)
+        public Sprite spritePit;               // pit (16x16 foso intransitable, balas pasan)
         public Sprite[] framesHazardStrip;     // pit (1 frame) o poison/icewater/lava/quicksand (4 frames, 5 fps)
         public Sprite spriteSpecialProp;       // bones, thornbush, crystal, brazier, cactus
         public Sprite[] framesSpecialAnim;     // animación brazier si aplica
@@ -593,13 +601,13 @@ namespace SoulKnight
                             }
                         }
 
-                        InstanciarTileSuelo(pos, spSuelo);
+                        InstanciarTileSuelo(pos, spSuelo, d);
                     }
                     else if (tipoCelda == 3)
                     {
                         // Cara Frontal del Muro (wall_face)
-                        // Regla LEEME.md: sólida, mezcla a/b, cracked/decor ocasional y antorcha cada ~4-5 tiles
-                        bool esAntorcha = ((gx % 5) == 2);
+                        // Regla LEEME.md: sólida, mezcla a/b, cracked/decor/banner ocasional y antorcha cada 4 tiles
+                        bool esAntorcha = ((gx % 4) == 0);
                         InstanciarTileWallFace(pos, d, esAntorcha);
                     }
                 }
@@ -745,7 +753,7 @@ namespace SoulKnight
             }
         }
 
-        private void InstanciarTileSuelo(Vector2 pos, Sprite spriteSuelo)
+        private void InstanciarTileSuelo(Vector2 pos, Sprite spriteSuelo, DatosBioma d = null)
         {
             var go = new GameObject("Suelo");
             go.transform.SetParent(contenedorMapa);
@@ -754,6 +762,16 @@ namespace SoulKnight
             var sr = go.AddComponent<SpriteRenderer>();
             sr.sprite = spriteSuelo;
             sr.sortingOrder = -1;
+
+            // Decals de suelo (~14% de tiles transitables si el bioma cuenta con calcomanías)
+            if (d != null && d.spritesDecals != null && d.spritesDecals.Length > 0 && UnityEngine.Random.value < 0.14f)
+            {
+                var decalObj = new GameObject("DecalSuelo");
+                decalObj.transform.SetParent(go.transform, false);
+                var srDecal = decalObj.AddComponent<SpriteRenderer>();
+                srDecal.sprite = d.spritesDecals[UnityEngine.Random.Range(0, d.spritesDecals.Length)];
+                srDecal.sortingOrder = 0;
+            }
         }
 
         private void InstanciarTileWallTop(Vector2 pos, Sprite spriteWallTop)
@@ -793,25 +811,35 @@ namespace SoulKnight
                 var anim = go.AddComponent<AnimadorSpriteTile>();
                 anim.Configurar(sr, d.framesWallFaceTorch, 8f);
 
-                // Halo de iluminación suave
+                // Halo de iluminación suave (usa stone_torch_glow si existe)
                 var haloObj = new GameObject("HaloLuzPared");
                 haloObj.transform.SetParent(go.transform, false);
                 haloObj.transform.localPosition = new Vector3(0f, -0.3f, 0f);
-                haloObj.transform.localScale = Vector3.one * 6.5f;
                 var srHalo = haloObj.AddComponent<SpriteRenderer>();
-                srHalo.sprite = _spriteHaloLuzCalida;
+                if (d.spriteTorchGlow != null)
+                {
+                    srHalo.sprite = d.spriteTorchGlow;
+                    haloObj.transform.localScale = Vector3.one * 1.5f;
+                }
+                else
+                {
+                    srHalo.sprite = _spriteHaloLuzCalida;
+                    haloObj.transform.localScale = Vector3.one * 6.5f;
+                }
                 srHalo.color = d.colorLuzAntorcha;
                 srHalo.sortingOrder = 0;
             }
             else
             {
-                // Mezcla a/b, cracked y decor
+                // Mezcla a/b, cracked, grate y banner
                 float r = UnityEngine.Random.value;
-                if (r < 0.10f && d.spriteWallFaceCracked != null)
+                if (r < 0.08f && d.spriteWallFaceBanner != null)
+                    sr.sprite = d.spriteWallFaceBanner;
+                else if (r < 0.16f && d.spriteWallFaceCracked != null)
                     sr.sprite = d.spriteWallFaceCracked;
-                else if (r < 0.20f && d.spriteWallFaceDecor != null)
+                else if (r < 0.26f && d.spriteWallFaceDecor != null)
                     sr.sprite = d.spriteWallFaceDecor;
-                else if (r < 0.60f && d.spriteWallFaceB != null)
+                else if (r < 0.62f && d.spriteWallFaceB != null)
                     sr.sprite = d.spriteWallFaceB;
                 else
                     sr.sprite = d.spriteWallFaceA ?? d.spriteMuro;
@@ -860,9 +888,152 @@ namespace SoulKnight
             }
         }
 
+        public int layoutPiedraForzado = -1;
+
+        public static readonly string[][] PlantillasLayoutsStone = new string[][]
+        {
+            // 0: vacio_cajas
+            new string[] {
+                "..................",
+                "..................",
+                "..c............c..",
+                "..................",
+                "..................",
+                "..................",
+                "..................",
+                "..c............c..",
+                "..................",
+                ".................."
+            },
+            // 1: pilares
+            new string[] {
+                "..................",
+                "..................",
+                "...##........##...",
+                "...##........##...",
+                "..................",
+                "..................",
+                "...##........##...",
+                "...##........##...",
+                "..................",
+                ".................."
+            },
+            // 2: cruz
+            new string[] {
+                "..................",
+                "........##........",
+                "........##........",
+                "..................",
+                "..###........###..",
+                "..###........###..",
+                "..................",
+                "........##........",
+                "........##........",
+                ".................."
+            },
+            // 3: anillo
+            new string[] {
+                "..................",
+                "..................",
+                "....####..####....",
+                "....##......##....",
+                "........cc........",
+                "........cc........",
+                "....##......##....",
+                "....####..####....",
+                "..................",
+                ".................."
+            },
+            // 4: pasillos
+            new string[] {
+                "..................",
+                ".....##...........",
+                ".....##...........",
+                ".....##.....##....",
+                ".....##.....##....",
+                ".....##.....##....",
+                ".....##.....##....",
+                "............##....",
+                "............##....",
+                ".................."
+            },
+            // 5: estanque
+            new string[] {
+                "..................",
+                "..##..........##..",
+                "..................",
+                "......wwwwww......",
+                "......wwwwww......",
+                "......wwwwww......",
+                "......wwwwww......",
+                "..................",
+                "..##..........##..",
+                ".................."
+            },
+            // 6: trampas
+            new string[] {
+                "..................",
+                "..................",
+                "..s.s.s.s.s.s.s.s.",
+                "..................",
+                "....c........c....",
+                "....c........c....",
+                "..................",
+                "..s.s.s.s.s.s.s.s.",
+                "..................",
+                ".................."
+            },
+            // 7: arena
+            new string[] {
+                "..................",
+                "..###........###..",
+                "..#............#..",
+                "..#............#..",
+                ".......r..r.......",
+                "........pp........",
+                "..#............#..",
+                "..#............#..",
+                "..###........###..",
+                ".................."
+            },
+            // 8: foso
+            new string[] {
+                "..................",
+                "..................",
+                "...P..........P...",
+                "..................",
+                ".......oooo.......",
+                ".......oooo.......",
+                "..................",
+                "...P..........P...",
+                "..................",
+                ".................."
+            },
+            // 9: sueltos
+            new string[] {
+                "..................",
+                ".##..........##...",
+                "..................",
+                "......#....#......",
+                "..................",
+                "..................",
+                "......#....#......",
+                "..................",
+                ".##..........##...",
+                ".................."
+            }
+        };
+
         private void InstanciarPropsSala(Transform padre, SalaInfo s, DatosBioma d)
         {
             if (d == null) return;
+
+            // En mazmorra de piedra (excepto la sala inicial), instanciar layouts de room_layouts.json
+            if (d.tipo == TipoBioma.Piedra && !s.esSalaInicio)
+            {
+                InstanciarLayoutSalaPiedra(padre, s, d);
+                return;
+            }
 
             float w = s.xMax - s.xMin + 1;
             float h = s.yMax - s.yMin + 1;
@@ -1023,8 +1194,200 @@ namespace SoulKnight
             col.size = new Vector2(0.625f, 0.8125f);
 
             var prop = go.AddComponent<PropDestruible>();
+            prop.tipoProp = esExplosivo ? TipoPropDestruible.BarrilExplosivo : TipoPropDestruible.Barril;
             prop.vidaMax = 12;
             prop.esExplosivo = esExplosivo;
+        }
+
+        private void CrearJarron(Transform padre, Vector2 pos, Sprite spJarron)
+        {
+            var go = new GameObject("JarronDestruible");
+            try { go.tag = "Pared"; } catch { }
+            go.transform.SetParent(padre);
+            go.transform.position = (Vector3)pos;
+
+            var sr = go.AddComponent<SpriteRenderer>();
+            sr.sprite = spJarron;
+            sr.sortingOrder = 1;
+
+            var col = go.AddComponent<BoxCollider2D>();
+            col.size = new Vector2(0.625f, 0.75f);
+
+            var prop = go.AddComponent<PropDestruible>();
+            prop.tipoProp = TipoPropDestruible.Jarron;
+            prop.vidaMax = 8;
+            prop.esExplosivo = false;
+        }
+
+        private void CrearBloqueAutotile(Transform padre, Vector2 pos, Sprite sp)
+        {
+            var go = new GameObject("BloquePiedra");
+            try { go.tag = "Pared"; } catch { }
+            go.transform.SetParent(padre);
+            go.transform.position = (Vector3)pos;
+
+            var sr = go.AddComponent<SpriteRenderer>();
+            sr.sprite = sp;
+            sr.sortingOrder = 2;
+
+            var col = go.AddComponent<BoxCollider2D>();
+            col.size = Vector2.one;
+
+            _murosVisuales.Add(sr);
+        }
+
+        private void CrearTrampaPinchosAnimada(Transform padre, Vector2 pos, Sprite[] frames)
+        {
+            var go = new GameObject("TrampaPinchos");
+            go.transform.SetParent(padre);
+            go.transform.position = (Vector3)pos;
+
+            var sr = go.AddComponent<SpriteRenderer>();
+            sr.sprite = frames[0];
+            sr.sortingOrder = 0;
+
+            var col = go.AddComponent<BoxCollider2D>();
+            col.isTrigger = true;
+            col.size = new Vector2(0.85f, 0.85f);
+
+            var trampa = go.AddComponent<TrampaPinchos>();
+            trampa.Configurar(frames, 5);
+        }
+
+        private void CrearTileAgua(Transform padre, Vector2 pos, Sprite[] framesWater)
+        {
+            var go = new GameObject("Agua");
+            go.transform.SetParent(padre);
+            go.transform.position = (Vector3)pos;
+
+            var sr = go.AddComponent<SpriteRenderer>();
+            sr.sortingOrder = 0;
+
+            if (framesWater != null && framesWater.Length > 0)
+            {
+                sr.sprite = framesWater[0];
+                if (framesWater.Length > 1)
+                {
+                    var anim = go.AddComponent<AnimadorSpriteTile>();
+                    anim.Configurar(sr, framesWater, 2f); // 2 fps según especificación
+                }
+            }
+
+            // Bloquea el paso a personajes, balas pasan por encima (no tag Pared, nombre Agua)
+            var col = go.AddComponent<BoxCollider2D>();
+            col.size = Vector2.one;
+        }
+
+        private void CrearTileFoso(Transform padre, Vector2 pos, Sprite spPit)
+        {
+            var go = new GameObject("Foso");
+            go.transform.SetParent(padre);
+            go.transform.position = (Vector3)pos;
+
+            var sr = go.AddComponent<SpriteRenderer>();
+            sr.sprite = spPit;
+            sr.sortingOrder = 0;
+
+            // Bloquea el paso a personajes, balas pasan por encima (no tag Pared, nombre Foso)
+            var col = go.AddComponent<BoxCollider2D>();
+            col.size = Vector2.one;
+        }
+
+        public void InstanciarLayoutSalaPiedra(Transform padre, SalaInfo s, DatosBioma d, int indiceLayout = -1)
+        {
+            if (PlantillasLayoutsStone == null || PlantillasLayoutsStone.Length == 0) return;
+
+            int idx = indiceLayout >= 0 ? (indiceLayout % PlantillasLayoutsStone.Length)
+                     : (layoutPiedraForzado >= 0 ? (layoutPiedraForzado % PlantillasLayoutsStone.Length)
+                     : UnityEngine.Random.Range(0, PlantillasLayoutsStone.Length));
+
+            string[] plantilla = PlantillasLayoutsStone[idx];
+            bool flipH = (indiceLayout < 0 && layoutPiedraForzado < 0) ? (UnityEngine.Random.value > 0.5f) : false;
+            bool flipV = (indiceLayout < 0 && layoutPiedraForzado < 0) ? (UnityEngine.Random.value > 0.5f) : false;
+
+            int cols = 18;
+            int rows = 10;
+            char[,] gridMatriz = new char[cols, rows];
+
+            for (int r = 0; r < rows; r++)
+            {
+                int rSrc = flipV ? (rows - 1 - r) : r;
+                string fila = plantilla[rSrc];
+                for (int c = 0; c < cols; c++)
+                {
+                    int cSrc = flipH ? (cols - 1 - c) : c;
+                    gridMatriz[c, r] = (cSrc < fila.Length) ? fila[cSrc] : '.';
+                }
+            }
+
+            float startX = s.cx - 8.5f;
+            float startY = s.cy + 4.5f;
+
+            for (int r = 0; r < rows; r++)
+            {
+                for (int c = 0; c < cols; c++)
+                {
+                    char ch = gridMatriz[c, r];
+                    if (ch == '.') continue;
+
+                    Vector2 pos = new Vector2(startX + c, startY - r);
+
+                    switch (ch)
+                    {
+                        case '#':
+                            // Bloque autotile bitmask: N*1 + E*2 + S*4 + W*8
+                            int mask = 0;
+                            if (r > 0 && gridMatriz[c, r - 1] == '#') mask |= 1; // N
+                            if (c + 1 < cols && gridMatriz[c + 1, r] == '#') mask |= 2; // E
+                            if (r + 1 < rows && gridMatriz[c, r + 1] == '#') mask |= 4; // S
+                            if (c > 0 && gridMatriz[c - 1, r] == '#') mask |= 8; // W
+
+                            Sprite spBloque = (d.spritesBlock != null && mask >= 0 && mask < d.spritesBlock.Length && d.spritesBlock[mask] != null)
+                                ? d.spritesBlock[mask] : d.spriteMuro;
+                            CrearBloqueAutotile(padre, pos, spBloque);
+                            break;
+
+                        case 'P':
+                            CrearPillar(padre, pos, d.spritePillar);
+                            break;
+
+                        case 'c':
+                            CrearCaja(padre, pos, d.spriteCrate);
+                            break;
+
+                        case 'b':
+                            CrearBarril(padre, pos, d.spriteBarrel, esExplosivo: false);
+                            break;
+
+                        case 'r':
+                            CrearBarril(padre, pos, d.spriteBarrelRed ?? d.spriteBarrel, esExplosivo: true);
+                            break;
+
+                        case 'p':
+                            CrearJarron(padre, pos, d.spritePot ?? d.spriteCrate);
+                            break;
+
+                        case 's':
+                            if (d.framesSpikesStrip != null && d.framesSpikesStrip.Length > 0 && d.framesSpikesStrip[0] != null)
+                            {
+                                CrearTrampaPinchosAnimada(padre, pos, d.framesSpikesStrip);
+                            }
+                            else if (d.spriteSpikesOff != null && d.spriteSpikesOn != null)
+                            {
+                                CrearTrampaPinchos(padre, pos, d.spriteSpikesOff, d.spriteSpikesOn);
+                            }
+                            break;
+
+                        case 'w':
+                            CrearTileAgua(padre, pos, d.framesWaterStrip);
+                            break;
+
+                        case 'o':
+                            CrearTileFoso(padre, pos, d.spritePit);
+                            break;
+                    }
+                }
+            }
         }
 
         private void CrearTrampaPinchos(Transform padre, Vector2 pos, Sprite spOff, Sprite spOn)
@@ -1258,7 +1621,7 @@ namespace SoulKnight
                         Sprite sp = sombra0 ? (datos.spriteFloorShadow00 ?? datos.spriteSuelo)
                                   : sombra1 ? (datos.spriteFloorShadow01 ?? datos.spriteSuelo)
                                   : datos.spriteSuelo;
-                        InstanciarTileSuelo(pos, sp);
+                        InstanciarTileSuelo(pos, sp, datos);
                     }
                     else if (t == 2)
                     {

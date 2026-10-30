@@ -164,7 +164,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 1509957853
+  GlobalObjectIdHash: 3594533680
   InScenePlacedSourceGlobalObjectIdHash: 0
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
@@ -236,12 +236,21 @@ MonoBehaviour:
     m_InternalValue: 120
   EstaCongelado:
     m_InternalValue: 0
+  EstaRalentizado:
+    m_InternalValue: 0
   EstaQuemado:
     m_InternalValue: 0
-  tipoJefe: 0
+  BiomaActualNet:
+    m_InternalValue: 0
+  RolActualNet:
+    m_InternalValue: 0
+  EscalaVisualNet:
+    m_InternalValue: 1
+  tipoJefe: 5
   nombreJefe: "Rey Slime de \xC1cido"
   multiplicadorVidaPorJugador: 0.75
   multiplicadorDanoPorJugador: 0.2
+  reduccionDano: 0.35
   tiempoEntreHabilidadesEspeciales: 5
   prefabProyectilJefe: {fileID: 4367512012789463595, guid: 9c502e3c10a7b274b9de8513717a7276, type: 3}
   VidaMaxSincronizada:

@@ -4,19 +4,20 @@ using UnityEngine;
 namespace SoulKnight
 {
     /// <summary>
-    /// Trampa de pinchos interactiva de mazmorra. Alterna periódicamente entre oculta (spikes_off)
-    /// y activa (spikes_on). Solo causa daño cuando los pinchos están alzados.
+    /// Trampa de pinchos interactiva de mazmorra.
+    /// Soporta 2 frames (off/on) o 4 frames (0 apagado -> 1 aviso -> 2/3 activos con daño -> 0).
+    /// Solo causa daño cuando los pinchos están alzados.
     /// </summary>
     public class TrampaPinchos : MonoBehaviour
     {
         public SpriteRenderer sr;
-        public Sprite spriteOff;
-        public Sprite spriteOn;
+        public Sprite[] frames;
         public float intervaloOculto = 1.8f;
-        public float intervaloActivo = 1.4f;
+        public float duracionAviso = 0.4f;
+        public float duracionActivo = 1.2f;
         public int danoTick = 5;
 
-        private bool _estaActiva = false;
+        private int _estado = 0; // 0 = Oculto, 1 = Aviso, 2 = Activo
         private float _timer = 0f;
         private float _timerDano = 0f;
         private readonly List<Collider2D> _personajesDentro = new List<Collider2D>();
@@ -28,26 +29,34 @@ namespace SoulKnight
 
         void Start()
         {
-            // Desfasar el inicio para que no todas las trampas de la sala se activen en sincronía perfecta
             _timer = Random.Range(0f, intervaloOculto);
-            ActualizarEstado(false);
+            ActualizarEstado(0);
         }
 
         void Update()
         {
             _timer += Time.deltaTime;
-            float tiempoObjetivo = _estaActiva ? intervaloActivo : intervaloOculto;
 
-            if (_timer >= tiempoObjetivo)
+            if (_estado == 0 && _timer >= intervaloOculto)
             {
                 _timer = 0f;
-                ActualizarEstado(!_estaActiva);
+                ActualizarEstado((frames != null && frames.Length >= 4) ? 1 : 2);
+            }
+            else if (_estado == 1 && _timer >= duracionAviso)
+            {
+                _timer = 0f;
+                ActualizarEstado(2);
+            }
+            else if (_estado == 2 && _timer >= duracionActivo)
+            {
+                _timer = 0f;
+                ActualizarEstado(0);
             }
 
-            if (_estaActiva && _personajesDentro.Count > 0)
+            if (_estado == 2 && _personajesDentro.Count > 0)
             {
                 _timerDano += Time.deltaTime;
-                if (_timerDano >= 0.5f)
+                if (_timerDano >= 0.45f)
                 {
                     _timerDano = 0f;
                     AplicarDanoPersonajes();
@@ -55,14 +64,28 @@ namespace SoulKnight
             }
         }
 
-        private void ActualizarEstado(bool activa)
+        private void ActualizarEstado(int nuevoEstado)
         {
-            _estaActiva = activa;
-            if (sr != null)
+            _estado = nuevoEstado;
+            if (sr != null && frames != null && frames.Length > 0)
             {
-                sr.sprite = _estaActiva ? spriteOn : spriteOff;
+                if (frames.Length >= 4)
+                {
+                    if (_estado == 0) sr.sprite = frames[0];
+                    else if (_estado == 1) sr.sprite = frames[1];
+                    else sr.sprite = frames[2];
+                }
+                else if (frames.Length >= 2)
+                {
+                    sr.sprite = (_estado == 2) ? frames[1] : frames[0];
+                }
+                else
+                {
+                    sr.sprite = frames[0];
+                }
             }
-            if (_estaActiva)
+
+            if (_estado == 2)
             {
                 AplicarDanoPersonajes();
             }
@@ -99,7 +122,7 @@ namespace SoulKnight
             if (!_personajesDentro.Contains(other))
             {
                 _personajesDentro.Add(other);
-                if (_estaActiva)
+                if (_estado == 2)
                 {
                     AplicarDanoPersonajes();
                 }
@@ -111,12 +134,18 @@ namespace SoulKnight
             _personajesDentro.Remove(other);
         }
 
+        public void Configurar(Sprite[] framesAnim, int dano = 5)
+        {
+            frames = framesAnim;
+            danoTick = dano;
+            ActualizarEstado(0);
+        }
+
         public void Configurar(Sprite off, Sprite on, int dano = 5)
         {
-            spriteOff = off;
-            spriteOn = on;
+            frames = new Sprite[] { off, on };
             danoTick = dano;
-            ActualizarEstado(false);
+            ActualizarEstado(0);
         }
     }
 }

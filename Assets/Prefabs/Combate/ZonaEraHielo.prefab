@@ -324,7 +324,7 @@ CircleCollider2D:
   m_UsedByComposite: 0
   m_Offset: {x: 0, y: 0}
   serializedVersion: 2
-  m_Radius: 10
+  m_Radius: 5.8
 --- !u!114 &6429177195032615926
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -337,7 +337,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 2141779015
+  GlobalObjectIdHash: 3594533680
   InScenePlacedSourceGlobalObjectIdHash: 0
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
@@ -364,6 +364,7 @@ MonoBehaviour:
   anilloExterior: {fileID: 8056082526592172107}
   fondoAura: {fileID: 1548782021049064555}
   destelloTick: {fileID: 9153429124932354062}
+  radioZona: 10
 --- !u!1 &8426746880864839686
 GameObject:
   m_ObjectHideFlags: 0

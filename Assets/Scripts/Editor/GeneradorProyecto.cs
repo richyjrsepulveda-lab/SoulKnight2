@@ -2212,6 +2212,272 @@ namespace SoulKnight.Editor
             Debug.Log("== Generación de Capturas de Biomas Completada Exitosamente ==");
         }
 
+        [MenuItem("SoulKnight/Generar Capturas de 3 Cuartos Piedra")]
+        public static void GenerarCapturasTresCuartosPiedra()
+        {
+            Debug.Log("== Iniciando Generacion de Capturas de 3 Salas de Mazmorra de Piedra ==");
+            ConfigurarTexturas();
+            CatalogoBiomas.LimpiarCache();
+
+            string outputDir = Path.Combine(Directory.GetCurrentDirectory(), "CapturasBiomas");
+            if (!Directory.Exists(outputDir)) Directory.CreateDirectory(outputDir);
+
+            string docsScreenshotsDir = Path.Combine(Directory.GetCurrentDirectory(), "docs", "screenshots");
+            if (!Directory.Exists(docsScreenshotsDir)) Directory.CreateDirectory(docsScreenshotsDir);
+
+            string artifactDir = @"C:\Users\Ricardo\.gemini\antigravity\brain\5c974bf4-1ac1-41f8-8beb-7c1da4ef20fb";
+
+            var datos = CatalogoBiomas.Obtener(TipoBioma.Piedra);
+
+            // 3 layouts contrastantes: 7 ("arena"), 5 ("estanque"), 8 ("foso")
+            int[] layouts = new int[] { 7, 5, 8 };
+            string[] nombresSalas = new string[] { "arena", "estanque", "foso" };
+
+            for (int i = 0; i < layouts.Length; i++)
+            {
+                int layoutIdx = layouts[i];
+                string layoutNombre = nombresSalas[i];
+
+                EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+                var root = new GameObject("Room_Piedra_" + layoutNombre);
+
+                int xMin = -11;
+                int xMax = 10;
+                int yMin = -6;
+                int yMax = 6;
+
+                // 1. Fondo Void exterior
+                if (datos.spriteVoid != null)
+                {
+                    for (int vy = yMin - 2; vy <= yMax + 2; vy++)
+                    {
+                        for (int vx = xMin - 2; vx <= xMax + 2; vx++)
+                        {
+                            if (vx < xMin || vx > xMax || vy < yMin || vy > yMax)
+                            {
+                                CrearTileCaptura(root.transform, vx + 0.5f, vy + 0.5f, datos.spriteVoid, -2);
+                            }
+                        }
+                    }
+                }
+
+                // 2. Suelo base y sombras
+                for (int y = yMin + 1; y <= yMax - 2; y++)
+                {
+                    for (int x = xMin + 1; x <= xMax - 1; x++)
+                    {
+                        Sprite spSuelo;
+                        if (y == yMax - 2)
+                        {
+                            spSuelo = datos.spriteFloorShadow00 ?? datos.spriteSuelo;
+                        }
+                        else if (y == yMax - 3)
+                        {
+                            spSuelo = datos.spriteFloorShadow01 ?? datos.spriteSuelo;
+                        }
+                        else
+                        {
+                            if (Random.value < 0.85f && datos.spritesSuelo != null && datos.spritesSuelo.Length >= 4)
+                                spSuelo = datos.spritesSuelo[Random.Range(0, 4)];
+                            else if (datos.spritesSuelo != null && datos.spritesSuelo.Length >= 8)
+                                spSuelo = datos.spritesSuelo[Random.Range(4, 8)];
+                            else
+                                spSuelo = datos.spriteSuelo;
+                        }
+
+                        CrearTileCaptura(root.transform, x + 0.5f, y + 0.5f, spSuelo, -1);
+
+                        // Calcomanías de suelo (decals) en 14% de tiles fuera de sombra
+                        if (y < yMax - 3 && datos.spritesDecals != null && datos.spritesDecals.Length > 0 && Random.value < 0.14f)
+                        {
+                            var spDecal = datos.spritesDecals[Random.Range(0, datos.spritesDecals.Length)];
+                            CrearTileCaptura(root.transform, x + 0.5f, y + 0.5f, spDecal, 0);
+                        }
+                    }
+                }
+
+                // 3. Wall Top perimetral con autotile bitmask
+                for (int x = xMin; x <= xMax; x++)
+                {
+                    CrearTileCaptura(root.transform, x + 0.5f, yMax + 0.5f, ObtenerWallTop(datos, x == xMin ? 6 : (x == xMax ? 12 : 10)), 2);
+                    CrearTileCaptura(root.transform, x + 0.5f, yMin + 0.5f, ObtenerWallTop(datos, x == xMin ? 3 : (x == xMax ? 9 : 10)), 2);
+                }
+                for (int y = yMin + 1; y <= yMax - 1; y++)
+                {
+                    CrearTileCaptura(root.transform, xMin + 0.5f, y + 0.5f, ObtenerWallTop(datos, 5), 2);
+                    CrearTileCaptura(root.transform, xMax + 0.5f, y + 0.5f, ObtenerWallTop(datos, 5), 2);
+                }
+
+                // 4. Wall Face norte (fila yMax - 1) con antorchas cada 4 tiles y halo torch_glow
+                for (int x = xMin + 1; x <= xMax - 1; x++)
+                {
+                    bool torch = ((x - xMin) % 4 == 0);
+                    Sprite spFace;
+                    if (torch && datos.framesWallFaceTorch != null && datos.framesWallFaceTorch.Length > 0)
+                    {
+                        spFace = datos.framesWallFaceTorch[0];
+                        CrearTileCaptura(root.transform, x + 0.5f, yMax - 0.5f, spFace, 2);
+
+                        // Halo Glow antorcha
+                        if (datos.spriteTorchGlow != null)
+                        {
+                            var glowObj = new GameObject("TorchGlow");
+                            glowObj.transform.SetParent(root.transform);
+                            glowObj.transform.position = new Vector3(x + 0.5f, yMax - 0.8f, 0);
+                            glowObj.transform.localScale = Vector3.one * 1.5f;
+                            var srGlow = glowObj.AddComponent<SpriteRenderer>();
+                            srGlow.sprite = datos.spriteTorchGlow;
+                            srGlow.color = datos.colorLuzAntorcha;
+                            srGlow.sortingOrder = 0;
+                        }
+                    }
+                    else
+                    {
+                        float r = Random.value;
+                        if (r < 0.10f && datos.spriteWallFaceBanner != null) spFace = datos.spriteWallFaceBanner;
+                        else if (r < 0.20f && datos.spriteWallFaceCracked != null) spFace = datos.spriteWallFaceCracked;
+                        else if (r < 0.32f && datos.spriteWallFaceDecor != null) spFace = datos.spriteWallFaceDecor;
+                        else if (r < 0.65f && datos.spriteWallFaceB != null) spFace = datos.spriteWallFaceB;
+                        else spFace = datos.spriteWallFaceA ?? datos.spriteMuro;
+
+                        CrearTileCaptura(root.transform, x + 0.5f, yMax - 0.5f, spFace, 2);
+                    }
+                }
+
+                // 5. Interior Layout según room_layouts.json
+                string[] plantilla = GeneradorMazmorra.PlantillasLayoutsStone[layoutIdx];
+                int cols = 18;
+                int rows = 10;
+                char[,] gridMatriz = new char[cols, rows];
+                for (int r = 0; r < rows; r++)
+                {
+                    string fila = plantilla[r];
+                    for (int c = 0; c < cols; c++)
+                    {
+                        gridMatriz[c, r] = (c < fila.Length) ? fila[c] : '.';
+                    }
+                }
+
+                float startX = -8.5f;
+                float startY = 4.5f;
+
+                for (int r = 0; r < rows; r++)
+                {
+                    for (int c = 0; c < cols; c++)
+                    {
+                        char ch = gridMatriz[c, r];
+                        if (ch == '.') continue;
+                        Vector2 pos = new Vector2(startX + c, startY - r);
+
+                        switch (ch)
+                        {
+                            case '#':
+                                int mask = 0;
+                                if (r > 0 && gridMatriz[c, r - 1] == '#') mask |= 1;
+                                if (c + 1 < cols && gridMatriz[c + 1, r] == '#') mask |= 2;
+                                if (r + 1 < rows && gridMatriz[c, r + 1] == '#') mask |= 4;
+                                if (c > 0 && gridMatriz[c - 1, r] == '#') mask |= 8;
+                                Sprite spB = (datos.spritesBlock != null && mask >= 0 && mask < datos.spritesBlock.Length)
+                                    ? datos.spritesBlock[mask] : datos.spriteMuro;
+                                CrearTileCaptura(root.transform, pos.x, pos.y, spB, 2);
+                                break;
+
+                            case 'P':
+                                CrearTileCaptura(root.transform, pos.x, pos.y, datos.spritePillar, 3);
+                                break;
+
+                            case 'c':
+                                CrearTileCaptura(root.transform, pos.x, pos.y, datos.spriteCrate, 1);
+                                break;
+
+                            case 'b':
+                                CrearTileCaptura(root.transform, pos.x, pos.y, datos.spriteBarrel, 1);
+                                break;
+
+                            case 'r':
+                                CrearTileCaptura(root.transform, pos.x, pos.y, datos.spriteBarrelRed ?? datos.spriteBarrel, 1);
+                                break;
+
+                            case 'p':
+                                CrearTileCaptura(root.transform, pos.x, pos.y, datos.spritePot ?? datos.spriteCrate, 1);
+                                break;
+
+                            case 's':
+                                Sprite spS = (datos.framesSpikesStrip != null && datos.framesSpikesStrip.Length > 2)
+                                    ? datos.framesSpikesStrip[2] : (datos.spriteSpikesOn ?? datos.spriteSpikesOff);
+                                CrearTileCaptura(root.transform, pos.x, pos.y, spS, 0);
+                                break;
+
+                            case 'w':
+                                Sprite spW = (datos.framesWaterStrip != null && datos.framesWaterStrip.Length > 0)
+                                    ? datos.framesWaterStrip[0] : null;
+                                CrearTileCaptura(root.transform, pos.x, pos.y, spW, 0);
+                                break;
+
+                            case 'o':
+                                CrearTileCaptura(root.transform, pos.x, pos.y, datos.spritePit, 0);
+                                break;
+                        }
+                    }
+                }
+
+                // 6. Cámara y Render
+                var camObj = new GameObject("CamaraCaptura");
+                var cam = camObj.AddComponent<Camera>();
+                cam.orthographic = true;
+                cam.orthographicSize = 6.75f;
+                cam.transform.position = new Vector3(0f, 0.5f, -10f);
+                cam.backgroundColor = Color.black;
+                cam.clearFlags = CameraClearFlags.SolidColor;
+
+                int wPx = 1408;
+                int hPx = 832;
+                var rt = new RenderTexture(wPx, hPx, 24, RenderTextureFormat.ARGB32);
+                cam.targetTexture = rt;
+                cam.Render();
+
+                RenderTexture.active = rt;
+                var tex = new Texture2D(wPx, hPx, TextureFormat.RGB24, false);
+                tex.ReadPixels(new Rect(0, 0, wPx, hPx), 0, 0);
+                tex.Apply();
+
+                byte[] pngBytes = tex.EncodeToPNG();
+
+                string fileNameNum = $"Captura_Sala_Piedra_{i + 1}.png";
+                string fullPathNum = Path.Combine(outputDir, fileNameNum);
+                File.WriteAllBytes(fullPathNum, pngBytes);
+                File.WriteAllBytes(Path.Combine(docsScreenshotsDir, fileNameNum), pngBytes);
+
+                if (Directory.Exists(artifactDir))
+                {
+                    File.WriteAllBytes(Path.Combine(artifactDir, fileNameNum), pngBytes);
+                }
+
+                // Si es la primera sala, actualizar también Captura_Sala_stone.png
+                if (i == 0)
+                {
+                    string stoneName = "Captura_Sala_stone.png";
+                    File.WriteAllBytes(Path.Combine(outputDir, stoneName), pngBytes);
+                    File.WriteAllBytes(Path.Combine(docsScreenshotsDir, stoneName), pngBytes);
+                    if (Directory.Exists(artifactDir))
+                    {
+                        File.WriteAllBytes(Path.Combine(artifactDir, stoneName), pngBytes);
+                    }
+                }
+
+                Debug.Log($"[Captura Piedra {i + 1}] Layout {layoutNombre} -> {fullPathNum}");
+
+                cam.targetTexture = null;
+                RenderTexture.active = null;
+                Object.DestroyImmediate(rt);
+                Object.DestroyImmediate(tex);
+                Object.DestroyImmediate(camObj);
+                Object.DestroyImmediate(root);
+            }
+
+            Debug.Log("== Generacion de Capturas de 3 Cuartos Piedra Completada Exitosamente ==");
+        }
+
         private static Sprite ObtenerWallTop(DatosBioma d, int mask)
         {
             if (d.spritesWallTop != null && mask >= 0 && mask < d.spritesWallTop.Length && d.spritesWallTop[mask] != null)

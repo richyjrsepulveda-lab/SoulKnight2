@@ -228,6 +228,14 @@ namespace SoulKnight
                 esPared = true;
             }
 
+            var propDestruible = other.GetComponent<PropDestruible>();
+            if (propDestruible != null)
+            {
+                propDestruible.RecibirDano(dano);
+                if (aplicaCongelacion || tieneExplosionArea) DetonarExplosionArea(null);
+                DestruirProyectil();
+                return true;
+            }
             if (destruirConPared && esPared)
             {
                 if (proyectilEnemigo)

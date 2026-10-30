@@ -86,7 +86,8 @@ namespace SoulKnight
             b.spriteWallFaceA = CargarSprite($"Mapas/{prefijo}/walls/{prefijo}_wall_face_a");
             b.spriteWallFaceB = CargarSprite($"Mapas/{prefijo}/walls/{prefijo}_wall_face_b");
             b.spriteWallFaceCracked = CargarSprite($"Mapas/{prefijo}/walls/{prefijo}_wall_face_cracked");
-            b.spriteWallFaceDecor = CargarSprite($"Mapas/{prefijo}/walls/{prefijo}_wall_face_decor");
+            b.spriteWallFaceDecor = CargarSprite($"Mapas/{prefijo}/walls/{prefijo}_wall_face_grate") ?? CargarSprite($"Mapas/{prefijo}/walls/{prefijo}_wall_face_decor");
+            b.spriteWallFaceBanner = CargarSprite($"Mapas/{prefijo}/walls/{prefijo}_wall_face_banner");
 
             b.framesWallFaceTorch = new Sprite[4];
             for (int i = 0; i < 4; i++)
@@ -94,64 +95,97 @@ namespace SoulKnight
                 b.framesWallFaceTorch[i] = CargarSprite($"Mapas/{prefijo}/walls/{prefijo}_wall_face_torch_f{i}");
             }
             b.spriteLlamaAntorcha = b.framesWallFaceTorch[0];
+            b.spriteTorchGlow = CargarSprite($"Mapas/{prefijo}/walls/{prefijo}_torch_glow");
 
-            // 5. Props Generales
+            // 5. Calcomanías de Suelo (en stone y biomas que aplique)
+            var decalCrack = CargarSprite($"Mapas/{prefijo}/tiles/{prefijo}_decal_crack");
+            var decalPebbles = CargarSprite($"Mapas/{prefijo}/tiles/{prefijo}_decal_pebbles");
+            var decalBones = CargarSprite($"Mapas/{prefijo}/tiles/{prefijo}_decal_bones");
+            var decalPuddle = CargarSprite($"Mapas/{prefijo}/tiles/{prefijo}_decal_puddle");
+            var listDecals = new List<Sprite>();
+            if (decalCrack != null) listDecals.Add(decalCrack);
+            if (decalPebbles != null) listDecals.Add(decalPebbles);
+            if (decalBones != null) listDecals.Add(decalBones);
+            if (decalPuddle != null) listDecals.Add(decalPuddle);
+            b.spritesDecals = listDecals.Count > 0 ? listDecals.ToArray() : null;
+
+            // 6. Bloques Autotile (16 variantes bitmask N*1 + E*2 + S*4 + W*8)
+            b.spritesBlock = new Sprite[16];
+            for (int i = 0; i < 16; i++)
+            {
+                b.spritesBlock[i] = CargarSprite($"Mapas/{prefijo}/blocks/{prefijo}_block_{i:D2}");
+            }
+
+            // 7. Props Generales
             b.spritePillar = CargarSprite($"Mapas/{prefijo}/props/{prefijo}_pillar");
             b.spriteColumna = b.spritePillar;
             b.spriteBoulderS = CargarSprite($"Mapas/{prefijo}/props/{prefijo}_boulder_s");
             b.spriteBoulderL = CargarSprite($"Mapas/{prefijo}/props/{prefijo}_boulder_l");
             b.spriteCrate = CargarSprite($"Mapas/{prefijo}/props/{prefijo}_crate");
             b.spriteBarrel = CargarSprite($"Mapas/{prefijo}/props/{prefijo}_barrel");
-            b.spriteSpikesOff = CargarSprite($"Mapas/{prefijo}/props/{prefijo}_spikes_off");
-            b.spriteSpikesOn = CargarSprite($"Mapas/{prefijo}/props/{prefijo}_spikes_on");
+            b.spriteBarrelRed = CargarSprite($"Mapas/{prefijo}/props/{prefijo}_barrel_red");
+            b.spritePot = CargarSprite($"Mapas/{prefijo}/props/{prefijo}_pot");
+            b.spritePit = CargarSprite($"Mapas/{prefijo}/props/{prefijo}_pit");
 
-            if (b.spriteSpikesOff != null && b.spriteSpikesOn != null)
+            // Trampa de pinchos: 4 frames (stone) o 2 frames (otros biomas)
+            var spF0 = CargarSprite($"Mapas/{prefijo}/props/{prefijo}_spikes_f0");
+            var spF1 = CargarSprite($"Mapas/{prefijo}/props/{prefijo}_spikes_f1");
+            var spF2 = CargarSprite($"Mapas/{prefijo}/props/{prefijo}_spikes_f2");
+            var spF3 = CargarSprite($"Mapas/{prefijo}/props/{prefijo}_spikes_f3");
+            if (spF0 != null && spF1 != null && spF2 != null && spF3 != null)
             {
-                b.framesSpikesStrip = new Sprite[] { b.spriteSpikesOff, b.spriteSpikesOn };
+                b.framesSpikesStrip = new Sprite[] { spF0, spF1, spF2, spF3 };
+                b.spriteSpikesOff = spF0;
+                b.spriteSpikesOn = spF2;
+            }
+            else
+            {
+                b.spriteSpikesOff = CargarSprite($"Mapas/{prefijo}/props/{prefijo}_spikes_off");
+                b.spriteSpikesOn = CargarSprite($"Mapas/{prefijo}/props/{prefijo}_spikes_on");
+                if (b.spriteSpikesOff != null && b.spriteSpikesOn != null)
+                {
+                    b.framesSpikesStrip = new Sprite[] { b.spriteSpikesOff, b.spriteSpikesOn };
+                }
             }
 
-            // 6. Hazard de Suelo y Prop Especial por Bioma
+            // Agua animada (stone)
+            var wF0 = CargarSprite($"Mapas/{prefijo}/props/{prefijo}_water_f0");
+            var wF1 = CargarSprite($"Mapas/{prefijo}/props/{prefijo}_water_f1");
+            if (wF0 != null && wF1 != null)
+            {
+                b.framesWaterStrip = new Sprite[] { wF0, wF1 };
+            }
+
+            // Hazard por bioma
             switch (prefijo)
             {
                 case "stone":
-                    b.framesHazardStrip = new Sprite[] { CargarSprite("Mapas/stone/props/stone_pit") };
-                    b.spriteSpecialProp = CargarSprite("Mapas/stone/props/stone_bones");
+                    if (b.spritePit != null)
+                    {
+                        b.framesHazardStrip = new Sprite[] { b.spritePit };
+                    }
+                    b.spriteSpecialProp = CargarSprite($"Mapas/{prefijo}/tiles/{prefijo}_decal_bones") ?? CargarSprite($"Mapas/{prefijo}/props/{prefijo}_bones");
                     break;
                 case "plant":
                     b.framesHazardStrip = new Sprite[4];
-                    for (int i = 0; i < 4; i++)
-                    {
-                        b.framesHazardStrip[i] = CargarSprite($"Mapas/plant/props/plant_poison_f{i}");
-                    }
+                    for (int i = 0; i < 4; i++) b.framesHazardStrip[i] = CargarSprite($"Mapas/plant/props/plant_poison_f{i}");
                     b.spriteSpecialProp = CargarSprite("Mapas/plant/props/plant_thornbush");
                     break;
                 case "ice":
                     b.framesHazardStrip = new Sprite[4];
-                    for (int i = 0; i < 4; i++)
-                    {
-                        b.framesHazardStrip[i] = CargarSprite($"Mapas/ice/props/ice_icewater_f{i}");
-                    }
+                    for (int i = 0; i < 4; i++) b.framesHazardStrip[i] = CargarSprite($"Mapas/ice/props/ice_icewater_f{i}");
                     b.spriteSpecialProp = CargarSprite("Mapas/ice/props/ice_crystal");
                     break;
                 case "fire":
                     b.framesHazardStrip = new Sprite[4];
-                    for (int i = 0; i < 4; i++)
-                    {
-                        b.framesHazardStrip[i] = CargarSprite($"Mapas/fire/props/fire_lava_f{i}");
-                    }
+                    for (int i = 0; i < 4; i++) b.framesHazardStrip[i] = CargarSprite($"Mapas/fire/props/fire_lava_f{i}");
                     b.framesSpecialAnim = new Sprite[4];
-                    for (int i = 0; i < 4; i++)
-                    {
-                        b.framesSpecialAnim[i] = CargarSprite($"Mapas/fire/props/fire_brazier_f{i}");
-                    }
+                    for (int i = 0; i < 4; i++) b.framesSpecialAnim[i] = CargarSprite($"Mapas/fire/props/fire_brazier_f{i}");
                     b.spriteSpecialProp = b.framesSpecialAnim[0];
                     break;
                 case "desert":
                     b.framesHazardStrip = new Sprite[4];
-                    for (int i = 0; i < 4; i++)
-                    {
-                        b.framesHazardStrip[i] = CargarSprite($"Mapas/desert/props/desert_quicksand_f{i}");
-                    }
+                    for (int i = 0; i < 4; i++) b.framesHazardStrip[i] = CargarSprite($"Mapas/desert/props/desert_quicksand_f{i}");
                     b.spriteSpecialProp = CargarSprite("Mapas/desert/props/desert_cactus");
                     break;
             }
@@ -176,7 +210,6 @@ namespace SoulKnight
             if (sp != null) return sp;
 #endif
 
-            // Fallback de carga directa de disco en tiempo de ejecución
             try
             {
                 string pathDisco = System.IO.Path.Combine(Application.dataPath, "Resources", rutaRelativa.Replace('/', System.IO.Path.DirectorySeparatorChar) + ".png");
@@ -198,7 +231,6 @@ namespace SoulKnight
 
         private static void AsegurarFallbacks(DatosBioma b, string prefijo)
         {
-            // Si por alguna razón algún sprite faltara, garantizar que ningún array tenga elementos nulos
             Sprite fallbackSuelo = b.spriteSuelo ?? CrearSpriteSolido(ObtenerColorBaseBioma(prefijo));
             for (int i = 0; i < 8; i++)
             {

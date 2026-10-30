@@ -174,7 +174,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 1509957853
+  GlobalObjectIdHash: 3594533680
   InScenePlacedSourceGlobalObjectIdHash: 0
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
@@ -246,11 +246,19 @@ MonoBehaviour:
     m_InternalValue: 120
   EstaCongelado:
     m_InternalValue: 0
+  EstaRalentizado:
+    m_InternalValue: 0
   EstaQuemado:
     m_InternalValue: 0
+  BiomaActualNet:
+    m_InternalValue: 0
+  RolActualNet:
+    m_InternalValue: 0
+  EscalaVisualNet:
+    m_InternalValue: 1
   prefabProyectil: {fileID: 4367512012789463595, guid: 9c502e3c10a7b274b9de8513717a7276, type: 3}
-  tiempoEntreDisparos: 2.8
-  danoProyectil: 12
+  tiempoEntreDisparos: 1.35
+  danoProyectil: 8
   rangoDisparo: 12
   distanciaOptima: 5.5
 --- !u!1 &6970240887647099677
