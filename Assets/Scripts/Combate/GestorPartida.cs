@@ -719,7 +719,7 @@ namespace SoulKnight
                         SalaRed.Instancia.LimpiarZonasPeligroClientRpc();
                     }
 
-                    bool esSalaFinalCamino = (generadorMazmorra != null && indiceSala == generadorMazmorra.totalSalasCaminoPrincipal - 1);
+                    bool esSalaFinalCamino = salaCompletada.esSalaJefe;
                     if (salaCompletada.esSalaJefe || esSalaFinalCamino)
                     {
                         // Se mató al jefe o se completó la cámara de guardianes: abrir el pasillo final y activar el hoyo
