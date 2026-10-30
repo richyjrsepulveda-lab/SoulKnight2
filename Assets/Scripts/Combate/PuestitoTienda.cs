@@ -132,6 +132,7 @@ namespace SoulKnight
                 pool.Add(TipoMejoraTienda.Hielo_DuracionCongelacion);
                 pool.Add(TipoMejoraTienda.Hielo_AreaVentisca);
                 pool.Add(TipoMejoraTienda.Hielo_PotenciaGlacial);
+                pool.Add(TipoMejoraTienda.Hielo_EspinasHielo);
                 pool.Add(TipoMejoraTienda.Hielo_TormentaEterna);
             }
 

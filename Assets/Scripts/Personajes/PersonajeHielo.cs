@@ -979,6 +979,71 @@ namespace SoulKnight
             StartCoroutine(RutinaArmadura());
         }
 
+        public override void RecibirDano(int cantidad)
+        {
+            base.RecibirDano(cantidad);
+
+            if (!IsServer || EstaMuerto.Value) return;
+
+            // Espinas de Hielo: si la armadura está activa y se tiene la mejora comprada, contraataca
+            if (ArmaduraActiva.Value)
+            {
+                int nvEspinas = ObtenerNivelMejora(TipoMejoraTienda.Hielo_EspinasHielo);
+                if (nvEspinas > 0)
+                {
+                    int danoEspinas = 14 + (nvEspinas * 8);
+                    float radioEspinas = 3.8f;
+                    Collider2D[] colEnemigos = Physics2D.OverlapCircleAll(transform.position, radioEspinas);
+                    for (int i = 0; i < colEnemigos.Length; i++)
+                    {
+                        var col = colEnemigos[i];
+                        if (col == null) continue;
+                        var enemigo = col.GetComponent<EnemigoBase>();
+                        if (enemigo != null && !enemigo.EstaMuerto.Value)
+                        {
+                            enemigo.AplicarRalentizacion(3.5f + (nvEspinas * 0.5f));
+                            enemigo.RecibirDano(danoEspinas, new Color(0.42f, 0.88f, 1f, 1f));
+                        }
+                    }
+
+                    EfectoVisualEspinasHieloClientRpc(transform.position);
+                }
+            }
+        }
+
+        [ClientRpc]
+        private void EfectoVisualEspinasHieloClientRpc(Vector2 pos)
+        {
+            GestorAudio.PlaySFX(TipoSFX.ImpactoHielo);
+            GestorAudio.PlaySFX(TipoSFX.EraHieloHit, 0.8f);
+
+            var espinasObj = new GameObject("EspinasHieloBurst");
+            espinasObj.transform.position = new Vector3(pos.x, pos.y, -0.4f);
+
+            const int numPuas = 8;
+            for (int i = 0; i < numPuas; i++)
+            {
+                float ang = (i * (360f / numPuas)) * Mathf.Deg2Rad;
+                Vector3 dir = new Vector3(Mathf.Cos(ang), Mathf.Sin(ang), 0f);
+
+                var pua = new GameObject("PuaGlacial");
+                pua.transform.SetParent(espinasObj.transform, false);
+
+                var lr = pua.AddComponent<LineRenderer>();
+                lr.material = MaterialUtil.SpritesDefault;
+                lr.sortingOrder = 12;
+                lr.startWidth = 0.20f;
+                lr.endWidth = 0.02f;
+                lr.startColor = new Color(0.85f, 0.98f, 1f, 0.95f);
+                lr.endColor = new Color(0.35f, 0.80f, 1f, 0.2f);
+                lr.positionCount = 2;
+                lr.SetPosition(0, dir * 0.45f);
+                lr.SetPosition(1, dir * 2.2f);
+            }
+
+            Destroy(espinasObj, 0.35f);
+        }
+
         private IEnumerator RutinaArmadura()
         {
             ArmaduraActiva.Value = true;

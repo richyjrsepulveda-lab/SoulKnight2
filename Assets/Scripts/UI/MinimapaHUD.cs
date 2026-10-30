@@ -55,6 +55,7 @@ namespace SoulKnight
             imgMarco.sprite = EstiloUIUX.ObtenerSpritePanel();
             imgMarco.type = Image.Type.Sliced;
             imgMarco.color = Color.white;
+            imgMarco.raycastTarget = false;
 
             var rtMarco = marcoObj.GetComponent<RectTransform>();
             rtMarco.anchorMin = new Vector2(1f, 1f);
@@ -106,17 +107,6 @@ namespace SoulKnight
             rtLbl.pivot = new Vector2(0.5f, 1f);
             rtLbl.anchoredPosition = new Vector2(0f, -3f);
             rtLbl.sizeDelta = new Vector2(0f, 20f);
-
-            // Botón interactivo para abrir el mapa grande al hacer clic sobre el minimapa
-            var btnMinimapa = marcoObj.AddComponent<Button>();
-            btnMinimapa.transition = Selectable.Transition.ColorTint;
-            btnMinimapa.onClick.AddListener(() =>
-            {
-                if (HUDJugador.Instancia != null)
-                {
-                    HUDJugador.Instancia.AlternarMapaGrande();
-                }
-            });
 
             var comp = marcoObj.AddComponent<MinimapaHUD>();
             comp.Inicializar(raw);

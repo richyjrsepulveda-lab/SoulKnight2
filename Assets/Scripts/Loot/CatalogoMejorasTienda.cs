@@ -25,6 +25,7 @@ namespace SoulKnight
         Hielo_AreaVentisca = 21,
         Hielo_PotenciaGlacial = 22,
         Hielo_TormentaEterna = 23,
+        Hielo_EspinasHielo = 24,
 
         // Gato Eléctrico
         Elec_Voltaje = 30,
@@ -49,6 +50,7 @@ namespace SoulKnight
                 case TipoMejoraTienda.Hielo_AreaVentisca:
                 case TipoMejoraTienda.Hielo_PotenciaGlacial:
                 case TipoMejoraTienda.Hielo_TormentaEterna:
+                case TipoMejoraTienda.Hielo_EspinasHielo:
                     return TipoPersonaje.Hielo;
 
                 case TipoMejoraTienda.Elec_Voltaje:
@@ -76,6 +78,7 @@ namespace SoulKnight
                 case TipoMejoraTienda.Hielo_DuracionCongelacion: return IdHabilidad.Hielo_RayoHielo;
                 case TipoMejoraTienda.Hielo_AreaVentisca: return IdHabilidad.Hielo_BolaHielo;
                 case TipoMejoraTienda.Hielo_PotenciaGlacial: return IdHabilidad.Hielo_Armadura;
+                case TipoMejoraTienda.Hielo_EspinasHielo: return IdHabilidad.Hielo_Armadura;
                 case TipoMejoraTienda.Hielo_TormentaEterna: return IdHabilidad.Hielo_EraHielo;
 
                 // Eléctrico
@@ -194,6 +197,12 @@ namespace SoulKnight
                     desc = (nivelActual >= 5)
                         ? "Potencia al nivel máximo (5/5)."
                         : $"+12% Daño contra objetivos congelados/lentos.\nNivel actual: {nivelActual}/5";
+                    break;
+                case TipoMejoraTienda.Hielo_EspinasHielo:
+                    nombre = "ESPINAS DE HIELO";
+                    desc = (nivelActual >= 5)
+                        ? "Espinas Glaciales al nivel máximo (5/5)."
+                        : $"La Armadura de Hielo devuelve espinas que dañan y ralentizan a quienes te ataquen.\nNivel actual: {nivelActual}/5";
                     break;
                 case TipoMejoraTienda.Hielo_TormentaEterna:
                     nombre = "VENTISCA ETERNA";

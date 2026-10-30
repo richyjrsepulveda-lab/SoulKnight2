@@ -929,6 +929,16 @@ namespace SoulKnight
                     colAccent = new Color32(0x58, 0xC4, 0xFF, 0xFF);
                     colTag = new Color32(0x8F, 0xE0, 0xFF, 0xFF);
                     break;
+                case TipoMejoraTienda.Hielo_EspinasHielo:
+                    nombre = "Espinas de Hielo";
+                    tag = (nivelActual >= 5) ? "ARMADURA • HIELO  [MÁXIMO]" : $"ARMADURA • HIELO  [NV. {nivelActual}/5]";
+                    desc = (nivelActual >= 5)
+                        ? "Espinas de Hielo al tope (+54 daño reflejado y ralentización de 6.0s)."
+                        : $"Al recibir un golpe con la Armadura activa, el atacante sufre {14 + (sigNv * 8)} de daño glacial y {3.5f + (sigNv * 0.5f):0.0}s de ralentización.\nNv. actual: {nivelActual}/5";
+                    slot = "Q";
+                    colAccent = new Color32(0x58, 0xC4, 0xFF, 0xFF);
+                    colTag = new Color32(0x8F, 0xE0, 0xFF, 0xFF);
+                    break;
                 case TipoMejoraTienda.Hielo_TormentaEterna:
                     nombre = "Ventisca Eterna";
                     tag = (nivelActual >= 5) ? "DEFINITIVA • HIELO  [MÁXIMO]" : $"DEFINITIVA • HIELO  [NV. {nivelActual}/5]";

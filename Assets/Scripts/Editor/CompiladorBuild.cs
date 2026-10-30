@@ -21,10 +21,11 @@ namespace SoulKnight.Editor
                 "Assets/Escenas/Juego.unity"
             };
 
-            string carpetaDestino = @"C:\Users\Usuario\Desktop\soulknight2Test";
+            string carpetaDestino = @"C:\Users\Ricardo\Desktop\unityJuegos\SoulKnight2_Build";
             if (!Directory.Exists(carpetaDestino))
             {
-                Directory.CreateDirectory(carpetaDestino);
+                carpetaDestino = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "soulknight2Test");
+                if (!Directory.Exists(carpetaDestino)) Directory.CreateDirectory(carpetaDestino);
             }
 
             string rutaExe = Path.Combine(carpetaDestino, "SoulKnight2.exe");

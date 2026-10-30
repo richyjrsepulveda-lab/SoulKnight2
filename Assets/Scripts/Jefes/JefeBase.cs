@@ -495,6 +495,16 @@ namespace SoulKnight
                         AplicarQuemadura();
                         RecibirDano(18);
                     }
+                    else if (pj is PersonajeHielo pjHielo && pjHielo.ArmaduraActiva.Value)
+                    {
+                        int nvEspinas = pjHielo.ObtenerNivelMejora(TipoMejoraTienda.Hielo_EspinasHielo);
+                        if (nvEspinas > 0)
+                        {
+                            int danoEspinas = 14 + (nvEspinas * 8);
+                            AplicarRalentizacion(3.5f + (nvEspinas * 0.5f));
+                            RecibirDano(danoEspinas);
+                        }
+                    }
                 }
             }
 
@@ -537,6 +547,22 @@ namespace SoulKnight
                     pj.RecibirDano(danoSismo);
                     Vector2 dirKnock = ((Vector2)pj.transform.position - (Vector2)transform.position).normalized;
                     pj.AplicarKnockback(dirKnock, 400f);
+
+                    if (pj is PersonajeFuego pjFuego && pjFuego.ArmaduraActiva.Value)
+                    {
+                        AplicarQuemadura();
+                        RecibirDano(18);
+                    }
+                    else if (pj is PersonajeHielo pjHielo && pjHielo.ArmaduraActiva.Value)
+                    {
+                        int nvEspinas = pjHielo.ObtenerNivelMejora(TipoMejoraTienda.Hielo_EspinasHielo);
+                        if (nvEspinas > 0)
+                        {
+                            int danoEspinas = 14 + (nvEspinas * 8);
+                            AplicarRalentizacion(3.5f + (nvEspinas * 0.5f));
+                            RecibirDano(danoEspinas);
+                        }
+                    }
                 }
             }
 

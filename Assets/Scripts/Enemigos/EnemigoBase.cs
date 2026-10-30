@@ -24,7 +24,7 @@ namespace SoulKnight
         public int dano = 10;
         public float rangoAtaque = 2.4f;
         public float tiempoEntreAtaques = 2.5f;
-        public float rangoMaximoDeteccion = 14f; // No puede ver a jugadores si están lejos
+        public float rangoMaximoDeteccion = 22f; // Visión amplia y reactiva para no quedarse inerte
         public bool enAnimacionEntrada = false;
 
         [Header("Efectos de Estado")]
@@ -67,11 +67,25 @@ namespace SoulKnight
         private int _danoAcumuladoTotal = 0;
         private float _timerVentanaAcumulada = 0f;
 
-        // IA Probabilística
-        private float _timerDecision = 0f;
-        private ModoMovimiento _modoActual = ModoMovimiento.Perseguir;
-        private Vector2 _direccionMovimiento = Vector2.zero;
-        private float _factorVelocidad = 1f;
+        // IA Probabilística y Coordinación
+        protected float _timerDecision = 0f;
+        protected ModoMovimiento _modoActual = ModoMovimiento.Perseguir;
+        protected Vector2 _direccionMovimiento = Vector2.zero;
+        protected float _factorVelocidad = 1f;
+
+        // IA Mejorada: Esquiva Reactiva, Anti-atasco y Consciencia Amplificada
+        protected float _tiempoAlerta = 0f;
+        protected float _cooldownDodge = 0f;
+        protected float _timerDodgeActivo = 0f;
+        protected Vector2 _dirDodge = Vector2.zero;
+        protected Vector2 _posicionMuestreada = Vector2.zero;
+        protected float _timerMuestreoAtasco = 0f;
+        protected float _tiempoAtascado = 0f;
+        protected float _timerManiobraEscape = 0f;
+        protected Vector2 _dirEscapeAtasco = Vector2.zero;
+        protected bool _escapeLado = false;
+        private static readonly Collider2D[] _amenazasBuffer = new Collider2D[16];
+        private static readonly float[] _angulosBigotes = new float[] { 0f, 25f, -25f, 50f, -50f, 75f, -75f, 100f, -100f, 130f, -130f };
 
         private Vector2 _knockback = Vector2.zero;
         private float _knockbackFriccion = 25f;
@@ -662,14 +676,35 @@ namespace SoulKnight
                         RecibirDano(18);
                         MostrarDanoClientRpc(18, new Color(1f, 0.45f, 0.1f));
                     }
+                    else if (jugadorCercano is PersonajeHielo pjHielo && pjHielo.ArmaduraActiva.Value)
+                    {
+                        int nvEspinas = pjHielo.ObtenerNivelMejora(TipoMejoraTienda.Hielo_EspinasHielo);
+                        if (nvEspinas > 0)
+                        {
+                            int danoEspinas = 14 + (nvEspinas * 8);
+                            AplicarRalentizacion(3.5f + (nvEspinas * 0.5f));
+                            RecibirDano(danoEspinas, new Color(0.42f, 0.88f, 1f, 1f));
+                            MostrarDanoClientRpc(danoEspinas, new Color(0.42f, 0.88f, 1f, 1f));
+                        }
+                    }
 
                     _tiempoAtaqueActual = tiempoEntreAtaques;
 
-                    // Al golpear, mantiene la presión sobre el jugador
-                    _modoActual = ModoMovimiento.Perseguir;
-                    _timerDecision = 0.35f;
-                    _direccionMovimiento = dirAtaque;
-                    _factorVelocidad = 0.95f;
+                    // Al golpear, finta o reposicionamiento táctico para ceder paso a compañeros y armar combos
+                    if (UnityEngine.Random.value < 0.40f)
+                    {
+                        _modoActual = ModoMovimiento.Retroceder;
+                        _timerDecision = 0.35f;
+                        _direccionMovimiento = -dirAtaque;
+                        _factorVelocidad = 0.80f;
+                    }
+                    else
+                    {
+                        _modoActual = ModoMovimiento.Flanquear;
+                        _timerDecision = 0.35f;
+                        _direccionMovimiento = new Vector2(-dirAtaque.y, dirAtaque.x);
+                        _factorVelocidad = 1.05f;
+                    }
                 }
             }
         }
@@ -682,6 +717,11 @@ namespace SoulKnight
                 return;
             }
 
+            if (_tiempoAlerta > 0f)
+            {
+                _tiempoAlerta -= Time.fixedDeltaTime;
+            }
+
             Personaje jugador = ObtenerJugadorMasCercano();
             if (jugador == null)
             {
@@ -690,16 +730,69 @@ namespace SoulKnight
             }
             else
             {
-                // Decisión de movimiento dinámica y rápida (entre 0.6s y 1.2s)
+                // Decisión de movimiento dinámica y rápida (entre 0.35s y 0.70s)
                 _timerDecision -= Time.fixedDeltaTime;
                 if (_timerDecision <= 0f)
                 {
-                    _timerDecision = UnityEngine.Random.Range(0.6f, 1.2f);
+                    _timerDecision = UnityEngine.Random.Range(0.35f, 0.70f);
                     TomarDecisionProbabilistica(jugador);
                 }
             }
 
-            Vector2 movimiento = _direccionMovimiento * (_velocidadActual * _factorVelocidad);
+            // Esquiva reactiva ante ataques/proyectiles entrantes
+            if (_cooldownDodge > 0f) _cooldownDodge -= Time.fixedDeltaTime;
+
+            if (_timerDodgeActivo > 0f)
+            {
+                _timerDodgeActivo -= Time.fixedDeltaTime;
+                _direccionMovimiento = _dirDodge;
+                _factorVelocidad = 2.25f;
+            }
+            else if (_cooldownDodge <= 0f && jugador != null)
+            {
+                VerificarEsquivaReactiva();
+            }
+
+            // Sistema Anti-atasco: vigilar si el enemigo intenta moverse pero está trabado contra obstáculos
+            _timerMuestreoAtasco += Time.fixedDeltaTime;
+            if (_timerMuestreoAtasco >= 0.25f)
+            {
+                _timerMuestreoAtasco = 0f;
+                float distMovida = ((Vector2)transform.position - _posicionMuestreada).sqrMagnitude;
+                if (_direccionMovimiento.sqrMagnitude > 0.08f && distMovida < 0.007f)
+                {
+                    _tiempoAtascado += 0.25f;
+                    if (_tiempoAtascado >= 0.40f)
+                    {
+                        // Iniciar maniobra de escape lateral inmediata
+                        _escapeLado = !_escapeLado;
+                        Vector2 perp = new Vector2(-_direccionMovimiento.y, _direccionMovimiento.x) * (_escapeLado ? 1f : -1f);
+                        _dirEscapeAtasco = (perp * 0.85f - _direccionMovimiento * 0.25f).normalized;
+                        _timerManiobraEscape = 0.50f;
+                        _tiempoAtascado = 0f;
+                    }
+                }
+                else
+                {
+                    _tiempoAtascado = 0f;
+                }
+                _posicionMuestreada = transform.position;
+            }
+
+            Vector2 dirFinal = _direccionMovimiento;
+            if (_timerManiobraEscape > 0f)
+            {
+                _timerManiobraEscape -= Time.fixedDeltaTime;
+                dirFinal = _dirEscapeAtasco;
+                _factorVelocidad = 1.35f;
+            }
+            else if (_timerDodgeActivo <= 0f && dirFinal.sqrMagnitude > 0.01f)
+            {
+                // Esquivar obstáculos suavemente usando rayos bigotes (whisker steering)
+                dirFinal = EvitarObstaculos(transform.position, dirFinal);
+            }
+
+            Vector2 movimiento = dirFinal * (_velocidadActual * _factorVelocidad);
 
             if (_knockback.sqrMagnitude > 0.01f)
             {
@@ -722,14 +815,91 @@ namespace SoulKnight
                     Vector2 posMuro = m.transform.position;
                     Vector2 dirEscape = ((Vector2)transform.position - posMuro);
                     if (dirEscape.sqrMagnitude < 0.001f) dirEscape = Vector2.down;
-                    _rb.position += dirEscape.normalized * (1.2f * Time.fixedDeltaTime);
+                    _rb.position += dirEscape.normalized * (1.5f * Time.fixedDeltaTime);
                     _knockback = Vector2.zero;
                     break;
                 }
             }
         }
 
-        private void TomarDecisionProbabilistica(Personaje jugador)
+        public Vector2 EvitarObstaculos(Vector2 posOrigen, Vector2 dirDeseada)
+        {
+            if (dirDeseada.sqrMagnitude < 0.001f) return Vector2.zero;
+
+            float longitudRayo = 1.15f;
+            for (int i = 0; i < _angulosBigotes.Length; i++)
+            {
+                float ang = _angulosBigotes[i];
+                Vector2 dirCandidata = Quaternion.Euler(0, 0, ang) * dirDeseada;
+                RaycastHit2D hit = Physics2D.Raycast(posOrigen, dirCandidata, longitudRayo);
+                if (hit.collider == null || !EsObstaculoSolido(hit.collider))
+                {
+                    return dirCandidata.normalized;
+                }
+            }
+
+            return dirDeseada;
+        }
+
+        private bool EsObstaculoSolido(Collider2D col)
+        {
+            if (col == null || col.isTrigger) return false;
+            if (col.gameObject == gameObject) return false;
+            if (col.GetComponent<Personaje>() != null) return false;
+            if (col.GetComponent<EnemigoBase>() != null) return false;
+            return true;
+        }
+
+        protected void VerificarEsquivaReactiva()
+        {
+            if (_cooldownDodge > 0f || _timerDodgeActivo > 0f) return;
+
+            int n = Physics2D.OverlapCircleNonAlloc(transform.position, 2.7f, _amenazasBuffer);
+            for (int i = 0; i < n; i++)
+            {
+                var col = _amenazasBuffer[i];
+                if (col == null) continue;
+
+                var proj = col.GetComponent<Proyectil>();
+                if (proj != null && !proj.proyectilEnemigo)
+                {
+                    Rigidbody2D rbProj = proj.GetComponent<Rigidbody2D>();
+                    Vector2 velProj = rbProj != null ? rbProj.velocity : Vector2.zero;
+                    Vector2 haciaEnemigo = ((Vector2)transform.position - (Vector2)col.transform.position).normalized;
+
+                    if (velProj.sqrMagnitude > 0.5f && Vector2.Dot(velProj.normalized, haciaEnemigo) > 0.35f)
+                    {
+                        Vector2 dirEsquiva = Vector2.Perpendicular(velProj.normalized) * (UnityEngine.Random.value > 0.5f ? 1f : -1f);
+                        dirEsquiva = EvitarObstaculos(transform.position, dirEsquiva);
+
+                        _dirDodge = dirEsquiva;
+                        _timerDodgeActivo = 0.22f;
+                        _cooldownDodge = UnityEngine.Random.Range(2.2f, 3.8f);
+                        MostrarEfectoDodgeClientRpc(transform.position, dirEsquiva);
+                        break;
+                    }
+                }
+            }
+        }
+
+        [ClientRpc]
+        protected void MostrarEfectoDodgeClientRpc(Vector2 pos, Vector2 dir)
+        {
+            var ghostObj = new GameObject("GhostDodge");
+            ghostObj.transform.position = new Vector3(pos.x, pos.y, -0.3f);
+            var sr = ghostObj.AddComponent<SpriteRenderer>();
+            var miSr = GetComponentInChildren<SpriteRenderer>();
+            if (miSr != null)
+            {
+                sr.sprite = miSr.sprite;
+                sr.flipX = miSr.flipX;
+                sr.color = new Color(1f, 1f, 1f, 0.40f);
+                sr.sortingOrder = miSr.sortingOrder - 1;
+            }
+            Destroy(ghostObj, 0.20f);
+        }
+
+        protected virtual void TomarDecisionProbabilistica(Personaje jugador)
         {
             Vector2 posJugador = jugador.transform.position;
             Vector2 posPropia = transform.position;
@@ -739,56 +909,73 @@ namespace SoulKnight
             // Vector perpendicular para rodear / flanquear
             Vector2 dirPerpendicular = new Vector2(-dirHaciaJugador.y, dirHaciaJugador.x) * (UnityEngine.Random.value > 0.5f ? 1f : -1f);
 
+            // Ángulo de manada coordinada para rodear y no apilarse en fila india ("combiar")
+            int slotId = (int)(NetworkObjectId % 8);
+            float anguloFlanqueo = 0f;
+            switch (slotId)
+            {
+                case 1: anguloFlanqueo = 36f; break;
+                case 2: anguloFlanqueo = -36f; break;
+                case 3: anguloFlanqueo = 72f; break;
+                case 4: anguloFlanqueo = -72f; break;
+                case 5: anguloFlanqueo = 110f; break;
+                case 6: anguloFlanqueo = -110f; break;
+                case 7: anguloFlanqueo = 20f; break;
+                default: anguloFlanqueo = 0f; break;
+            }
+
+            Vector2 dirFlanqueoCoordinado = Quaternion.Euler(0, 0, anguloFlanqueo) * dirHaciaJugador;
+
             float tirada = UnityEngine.Random.value;
 
             // Si está muy cerca (< 2.5m), ataca y presiona agresivamente al jugador
             if (distancia < 2.5f)
             {
-                if (tirada < 0.75f)
+                if (tirada < 0.70f)
                 {
-                    // 75% Probabilidad: Embestir directo
+                    // 70% Probabilidad: Embestir directo
                     _modoActual = ModoMovimiento.Perseguir;
                     _direccionMovimiento = dirHaciaJugador;
-                    _factorVelocidad = 1.05f;
+                    _factorVelocidad = 1.10f;
                 }
                 else if (tirada < 0.90f)
                 {
-                    // 15% Probabilidad: Flanqueo cerrado
+                    // 20% Probabilidad: Flanqueo cerrado
                     _modoActual = ModoMovimiento.Flanquear;
-                    _direccionMovimiento = (dirHaciaJugador * 0.4f + dirPerpendicular * 0.8f).normalized;
-                    _factorVelocidad = 0.95f;
+                    _direccionMovimiento = (dirHaciaJugador * 0.35f + dirPerpendicular * 0.85f).normalized;
+                    _factorVelocidad = 1.0f;
                 }
                 else
                 {
                     // 10% Probabilidad: Breve finta
                     _modoActual = ModoMovimiento.Retroceder;
                     _direccionMovimiento = -dirHaciaJugador;
-                    _factorVelocidad = 0.65f;
+                    _factorVelocidad = 0.70f;
                 }
                 return;
             }
 
             // A distancia normal:
-            if (tirada < 0.70f)
+            if (tirada < 0.55f)
             {
-                // 70% Probabilidad: Perseguir directamente
+                // Flanqueo coordinado en manada (rodear por flancos)
+                _modoActual = ModoMovimiento.Flanquear;
+                _direccionMovimiento = dirFlanqueoCoordinado;
+                _factorVelocidad = 1.05f;
+            }
+            else if (tirada < 0.85f)
+            {
+                // Perseguir directamente
                 _modoActual = ModoMovimiento.Perseguir;
                 _direccionMovimiento = dirHaciaJugador;
                 _factorVelocidad = 1.0f;
             }
-            else if (tirada < 0.90f)
-            {
-                // 20% Probabilidad: Flanquear agresivo
-                _modoActual = ModoMovimiento.Flanquear;
-                _direccionMovimiento = (dirHaciaJugador * 0.45f + dirPerpendicular * 0.75f).normalized;
-                _factorVelocidad = 0.95f;
-            }
             else
             {
-                // 10% Probabilidad: Ajuste de ángulo
+                // Ajuste de ángulo y finta
                 _modoActual = ModoMovimiento.Retroceder;
-                _direccionMovimiento = -dirHaciaJugador;
-                _factorVelocidad = 0.65f;
+                _direccionMovimiento = (dirPerpendicular * 0.8f - dirHaciaJugador * 0.3f).normalized;
+                _factorVelocidad = 0.85f;
             }
         }
 
@@ -803,6 +990,16 @@ namespace SoulKnight
             if (GestorPartida.Instancia != null && GestorPartida.Instancia.CombateDetenido)
             {
                 return;
+            }
+
+            _tiempoAlerta = 6.0f; // Alerta máxima de combate tras recibir impacto
+            for (int i = 0; i < Todos.Count; i++)
+            {
+                var comp = Todos[i];
+                if (comp != null && (comp.transform.position - transform.position).sqrMagnitude < 144f)
+                {
+                    comp._tiempoAlerta = 5.0f;
+                }
             }
 
             VidaActual.Value = Mathf.Max(0, VidaActual.Value - cantidad);
@@ -984,7 +1181,8 @@ namespace SoulKnight
             }
 
             Personaje masCercano = null;
-            float menorDistSq = rangoMaximoDeteccion * rangoMaximoDeteccion;
+            float maxRango = (_tiempoAlerta > 0f) ? 32f : rangoMaximoDeteccion;
+            float menorDistSq = maxRango * maxRango;
             Vector2 miPos = transform.position;
 
             for (int i = 0; i < Personaje.Todos.Count; i++)

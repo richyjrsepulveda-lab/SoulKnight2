@@ -2057,9 +2057,9 @@ namespace SoulKnight.Editor
         {
             ReconstruirTodo();
 
-            string buildDir = Directory.Exists("C:/Users/Usuario/Desktop/soulknight2Test")
-                ? "C:/Users/Usuario/Desktop/soulknight2Test"
-                : "C:/Users/Ricardo/Desktop/unityJuegos/SoulKnight2_Build";
+            string buildDir = Directory.Exists("C:/Users/Ricardo/Desktop/unityJuegos/SoulKnight2_Build")
+                ? "C:/Users/Ricardo/Desktop/unityJuegos/SoulKnight2_Build"
+                : "C:/Users/Usuario/Desktop/soulknight2Test";
             if (!Directory.Exists(buildDir)) Directory.CreateDirectory(buildDir);
 
             string exePath = Path.Combine(buildDir, "SoulKnight2.exe");
