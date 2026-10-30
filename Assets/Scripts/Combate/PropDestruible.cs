@@ -174,7 +174,7 @@ namespace SoulKnight
                 var pj = col.GetComponent<Personaje>();
                 if (pj != null && !pj.EstaMuerto.Value)
                 {
-                    pj.RecibirDano(10);
+                    pj.RecibirDano(1);
                 }
 
                 var otroProp = col.GetComponent<PropDestruible>();

@@ -224,18 +224,20 @@ namespace SoulKnight
                 _col.sharedMaterial = matSinFriccion;
             }
 
-            // Calibrar hitbox precisa del jugador para evitar colisiones excesivas con puertas y esquinas
+            // Calibrar hitbox precisa y compacta en los pies para evitar atascos con paredes, esquinas y puertas
             var box = GetComponent<BoxCollider2D>();
             if (box != null)
             {
-                box.size = new Vector2(0.65f, 0.85f);
-                box.offset = new Vector2(0f, -0.05f);
+                box.size = new Vector2(0.60f, 0.65f);
+                box.offset = new Vector2(0f, -0.22f);
+                box.sharedMaterial = matSinFriccion;
             }
             var circle = GetComponent<CircleCollider2D>();
             if (circle != null)
             {
-                circle.radius = 0.40f;
-                circle.offset = new Vector2(0f, -0.05f);
+                circle.radius = 0.32f;
+                circle.offset = new Vector2(0f, -0.22f);
+                circle.sharedMaterial = matSinFriccion;
             }
         }
 

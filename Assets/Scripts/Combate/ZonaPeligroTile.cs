@@ -18,7 +18,7 @@ namespace SoulKnight
     public class ZonaPeligroTile : MonoBehaviour
     {
         public TipoPeligroTile tipoPeligro;
-        public int danoTick = 3;
+        public int danoTick = 1;
         public float intervaloTick = 0.6f;
 
         private float _timer;
@@ -54,10 +54,10 @@ namespace SoulKnight
                     switch (tipoPeligro)
                     {
                         case TipoPeligroTile.Lava:
-                            pj.AplicarQuemadura(2.5f, 2);
+                            pj.AplicarQuemadura(1.5f, 1);
                             break;
                         case TipoPeligroTile.Veneno:
-                            pj.AplicarEsporasVeneno(2.5f, 2);
+                            pj.AplicarEsporasVeneno(1.5f, 1);
                             break;
                         case TipoPeligroTile.AguaHelada:
                             pj.AplicarRalentizacion(2.0f);
@@ -103,7 +103,7 @@ namespace SoulKnight
             _personajesDentro.Remove(other);
         }
 
-        public void Configurar(TipoPeligroTile tipo, int dano = 3)
+        public void Configurar(TipoPeligroTile tipo, int dano = 1)
         {
             tipoPeligro = tipo;
             danoTick = dano;

@@ -97,6 +97,13 @@ namespace SoulKnight
         {
             base.Awake();
             _boxCol = GetComponent<BoxCollider2D>();
+            if (_boxCol != null)
+            {
+                _boxCol.size = new Vector2(0.60f, 0.65f);
+                _boxCol.offset = new Vector2(0f, -0.22f);
+                PhysicsMaterial2D matSinFriccion = new PhysicsMaterial2D("SinFriccionJugador") { friction = 0f, bounciness = 0f };
+                _boxCol.sharedMaterial = matSinFriccion;
+            }
             danoRayo = 4;
             intervaloTickRayo = 0.020f;
         }
@@ -625,11 +632,8 @@ namespace SoulKnight
 
         private void ActualizarHitbox(Vector2 size, Vector2 offset)
         {
-            if (_boxCol != null)
-            {
-                if (_boxCol.size != size) _boxCol.size = size;
-                if (_boxCol.offset != offset) _boxCol.offset = offset;
-            }
+            // La hitbox física se mantiene compacta en los pies (0.60 x 0.65) para permitir
+            // caminar fluidamente pegado a muros, doblar esquinas y pasar puertas sin buguearse.
         }
 
         private void ActualizarAnimacionGato()

@@ -452,6 +452,7 @@ namespace SoulKnight
                         var enemigo = enemigoObj.GetComponent<EnemigoBase>();
                         if (enemigo != null)
                         {
+                            enemigo.salaActual = sala;
                             enemigo.ConfigurarRolYBioma(biomaActual, rol, multDificultad, NivelActual);
                             _enemigosActivos.Add(enemigo);
                         }
@@ -488,6 +489,7 @@ namespace SoulKnight
                 var jefe = jefeObj.GetComponent<JefeBase>();
                 if (jefe != null)
                 {
+                    jefe.salaActual = salaJefe;
                     jefe.ConfigurarJefeBioma(biomaActual, multDificultad);
                     _enemigosActivos.Add(jefe);
                 }
@@ -515,6 +517,7 @@ namespace SoulKnight
             if (enemigo != null)
             {
                 enemigo.EsInvocado = true; // Minion invocado: no da XP
+                enemigo.salaActual = _salaActivaEnCombate;
                 int nivelEnCiclo = ((NivelActual - 1) % 10) + 1;
                 float mult = (1.0f + (nivelEnCiclo - 1) * 0.12f) * (1.0f + (LoopActual * 0.65f));
                 enemigo.ConfigurarRolYBioma(bioma, rol, mult, NivelActual);
@@ -716,7 +719,8 @@ namespace SoulKnight
                         SalaRed.Instancia.LimpiarZonasPeligroClientRpc();
                     }
 
-                    if (salaCompletada.esSalaJefe)
+                    bool esSalaFinalCamino = (generadorMazmorra != null && indiceSala == generadorMazmorra.totalSalasCaminoPrincipal - 1);
+                    if (salaCompletada.esSalaJefe || esSalaFinalCamino)
                     {
                         // Se mató al jefe o se completó la cámara de guardianes: abrir el pasillo final y activar el hoyo
                         salaCompletada.AbrirMuroSalidaJefe();

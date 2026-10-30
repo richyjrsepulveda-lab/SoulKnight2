@@ -15,7 +15,7 @@ namespace SoulKnight
         public float intervaloOculto = 1.8f;
         public float duracionAviso = 0.4f;
         public float duracionActivo = 1.2f;
-        public int danoTick = 5;
+        public int danoTick = 1;
 
         private int _estado = 0; // 0 = Oculto, 1 = Aviso, 2 = Activo
         private float _timer = 0f;

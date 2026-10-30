@@ -23,7 +23,7 @@ namespace SoulKnight
         public TipoZonaPeligro tipoZona;
         public float radio = 1.9f;
         public float duracion = 6.5f;
-        public int danoPorTick = 4;
+        public int danoPorTick = 1;
         public bool esServidor = false;
 
         private float _tiempoVivo = 0f;
@@ -65,7 +65,7 @@ namespace SoulKnight
             Todas.Clear();
         }
 
-        public static ZonaPeligroPiso Instanciar(Vector2 posicion, float radio, TipoZonaPeligro tipo, float duracion, bool esServidor, int danoTick = 4)
+        public static ZonaPeligroPiso Instanciar(Vector2 posicion, float radio, TipoZonaPeligro tipo, float duracion, bool esServidor, int danoTick = 1)
         {
             var go = new GameObject($"ZonaPeligro_{tipo}");
             go.transform.position = new Vector3(posicion.x, posicion.y, -0.15f);

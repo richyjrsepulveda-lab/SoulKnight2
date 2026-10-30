@@ -48,6 +48,7 @@ namespace SoulKnight
         public NetworkVariable<int> RolActualNet = new NetworkVariable<int>(0);
         public NetworkVariable<float> EscalaVisualNet = new NetworkVariable<float>(1.0f);
         public bool EsInvocado { get; set; } = false;
+        public ControladorSala salaActual;
 
         private float _timerHabilidadRol = 0f;
 
@@ -805,19 +806,18 @@ namespace SoulKnight
 
             _rb.velocity = movimiento + _knockback;
 
-            // Seguridad anti-atasco en muros: si el enemigo overlap con un muro o columna, expulsarlo suavemente hacia afuera
-            int hitsMuro = Physics2D.OverlapCircleNonAlloc(_rb.position, 0.35f, _murosCheckBuffer);
-            for (int i = 0; i < hitsMuro; i++)
+            // Seguridad de confinamiento estricto: impedir que los enemigos atraviesen muros o salgan de la sala
+            if (salaActual != null)
             {
-                var m = _murosCheckBuffer[i];
-                if (m != null && !m.isTrigger && (m.CompareTag("Pared") || m.name.IndexOf("muro", System.StringComparison.OrdinalIgnoreCase) >= 0 || m.name.IndexOf("columna", System.StringComparison.OrdinalIgnoreCase) >= 0))
+                Rect lim = salaActual.limitesInteriores;
+                Vector2 pos = _rb.position;
+                float clampedX = Mathf.Clamp(pos.x, lim.xMin + 0.35f, lim.xMax - 0.35f);
+                float clampedY = Mathf.Clamp(pos.y, lim.yMin + 0.35f, lim.yMax - 0.35f);
+                if (pos.x != clampedX || pos.y != clampedY)
                 {
-                    Vector2 posMuro = m.transform.position;
-                    Vector2 dirEscape = ((Vector2)transform.position - posMuro);
-                    if (dirEscape.sqrMagnitude < 0.001f) dirEscape = Vector2.down;
-                    _rb.position += dirEscape.normalized * (1.5f * Time.fixedDeltaTime);
+                    _rb.position = new Vector2(clampedX, clampedY);
+                    _rb.velocity = Vector2.zero;
                     _knockback = Vector2.zero;
-                    break;
                 }
             }
         }
@@ -1072,13 +1072,13 @@ namespace SoulKnight
         {
             if (!IsServer) return;
             // Prevenir empujar al enemigo dentro de una pared sólida
-            RaycastHit2D hitCercano = Physics2D.Raycast(transform.position, direccion, 0.6f);
-            if (hitCercano.collider != null && !hitCercano.collider.isTrigger && (hitCercano.collider.CompareTag("Pared") || hitCercano.collider.name.IndexOf("muro", System.StringComparison.OrdinalIgnoreCase) >= 0 || hitCercano.collider.name.IndexOf("columna", System.StringComparison.OrdinalIgnoreCase) >= 0))
+            RaycastHit2D hitCercano = Physics2D.Raycast(transform.position, direccion, 0.75f);
+            if (hitCercano.collider != null && EsObstaculoSolido(hitCercano.collider))
             {
                 _knockback = Vector2.zero;
                 return;
             }
-            _knockback = direccion.normalized * Mathf.Min(fuerza / 32f, 10f);
+            _knockback = direccion.normalized * Mathf.Min(fuerza / 40f, 6.5f);
         }
 
         public void AplicarRalentizacion(float duracionPersonalizada = -1f)

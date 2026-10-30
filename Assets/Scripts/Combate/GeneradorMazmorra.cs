@@ -755,6 +755,26 @@ namespace SoulKnight
                     ConfigurarOleadasSala(ctrl, s, esSalaFinal, esJefe);
                 }
             }
+
+            // Instanciar el Pasadizo Secreto / Hoyito en la pared final del pasillo detrás de la Sala Final / Jefe
+            var hoyitoObj = new GameObject("HoyitoSiguienteNivel");
+            hoyitoObj.transform.SetParent(contenedorMapa);
+            hoyitoObj.transform.position = new Vector3(posicionPortal.x, posicionPortal.y, 0f);
+
+            var srHoyito = hoyitoObj.AddComponent<SpriteRenderer>();
+            srHoyito.sprite = (spriteHoyitoParedCerrado != null) ? spriteHoyitoParedCerrado : (spriteHoyitoPared ?? spritePortal);
+            srHoyito.sortingOrder = 3;
+            hoyitoObj.transform.localScale = Vector3.one * 2.1f;
+
+            var colHoyito = hoyitoObj.AddComponent<CircleCollider2D>();
+            colHoyito.isTrigger = true;
+            colHoyito.radius = 1.6f;
+
+            var pasaje = hoyitoObj.AddComponent<PasajeSiguienteNivel>();
+            pasaje.sr = srHoyito;
+            pasaje.spriteCerrado = (spriteHoyitoParedCerrado != null) ? spriteHoyitoParedCerrado : srHoyito.sprite;
+            pasaje.spriteAbierto = (spriteHoyitoPared != null) ? spriteHoyitoPared : srHoyito.sprite;
+            pasaje.estaAbierto = false;
         }
 
         private void InstanciarTileSuelo(Vector2 pos, Sprite spriteSuelo, DatosBioma d = null)
@@ -789,6 +809,16 @@ namespace SoulKnight
             }
         }
 
+        private static PhysicsMaterial2D _matParedSinFriccion;
+        public static PhysicsMaterial2D ObtenerMaterialParedSinFriccion()
+        {
+            if (_matParedSinFriccion == null)
+            {
+                _matParedSinFriccion = new PhysicsMaterial2D("ParedSinFriccion") { friction = 0f, bounciness = 0f };
+            }
+            return _matParedSinFriccion;
+        }
+
         private void InstanciarTileWallTop(Vector2 pos, Sprite spriteWallTop)
         {
             var go = new GameObject("WallTop");
@@ -802,6 +832,8 @@ namespace SoulKnight
 
             var col = go.AddComponent<BoxCollider2D>();
             col.size = Vector2.one;
+            col.sharedMaterial = ObtenerMaterialParedSinFriccion();
+            col.sharedMaterial = ObtenerMaterialParedSinFriccion();
 
             _murosVisuales.Add(sr);
         }
@@ -818,6 +850,8 @@ namespace SoulKnight
 
             var col = go.AddComponent<BoxCollider2D>();
             col.size = Vector2.one;
+            col.sharedMaterial = ObtenerMaterialParedSinFriccion();
+            col.sharedMaterial = ObtenerMaterialParedSinFriccion();
 
             _murosVisuales.Add(sr);
 
@@ -1141,6 +1175,7 @@ namespace SoulKnight
             var col = go.AddComponent<BoxCollider2D>();
             col.size = new Vector2(0.75f, 0.625f);
             col.offset = new Vector2(0f, -0.4f);
+            col.sharedMaterial = ObtenerMaterialParedSinFriccion();
 
             _murosVisuales.Add(sr);
         }
@@ -1282,6 +1317,7 @@ namespace SoulKnight
 
             var col = go.AddComponent<BoxCollider2D>();
             col.size = Vector2.one;
+            col.sharedMaterial = ObtenerMaterialParedSinFriccion();
 
             var prop = go.AddComponent<PropDestruible>();
             prop.tipoProp = TipoPropDestruible.MuroDestructible;
@@ -1304,6 +1340,7 @@ namespace SoulKnight
 
             var col = go.AddComponent<BoxCollider2D>();
             col.size = Vector2.one;
+            col.sharedMaterial = ObtenerMaterialParedSinFriccion();
 
             _murosVisuales.Add(sr);
         }
@@ -1323,7 +1360,7 @@ namespace SoulKnight
             col.size = new Vector2(0.85f, 0.85f);
 
             var trampa = go.AddComponent<TrampaPinchos>();
-            trampa.Configurar(frames, 5);
+            trampa.Configurar(frames, 1);
         }
 
         private void CrearTileAgua(Transform padre, Vector2 pos, Sprite[] framesWater)
@@ -1364,6 +1401,7 @@ namespace SoulKnight
             // Bloquea el paso a personajes, balas pasan por encima (no tag Pared, nombre Foso)
             var col = go.AddComponent<BoxCollider2D>();
             col.size = Vector2.one;
+            col.sharedMaterial = ObtenerMaterialParedSinFriccion();
         }
 
         public void InstanciarLayoutSalaPiedra(Transform padre, SalaInfo s, DatosBioma d, int indiceLayout = -1, bool esSalaCofre = false)
@@ -1494,7 +1532,7 @@ namespace SoulKnight
             col.size = new Vector2(0.85f, 0.85f);
 
             var trampa = go.AddComponent<TrampaPinchos>();
-            trampa.Configurar(spOff, spOn, 5);
+            trampa.Configurar(spOff, spOn, 1);
         }
 
         private void CrearTilePeligro(Transform padre, Vector2 pos, Sprite[] frames, TipoPeligroTile tipo)
@@ -1518,7 +1556,7 @@ namespace SoulKnight
             col.size = new Vector2(0.9f, 0.9f);
 
             var zona = go.AddComponent<ZonaPeligroTile>();
-            zona.Configurar(tipo, 4);
+            zona.Configurar(tipo, 1);
         }
 
         private void CrearPropEspecial(Transform padre, Vector2 pos, DatosBioma d)
@@ -1542,7 +1580,8 @@ namespace SoulKnight
                     try { go.tag = "Pared"; } catch { }
                     var colPlant = go.AddComponent<BoxCollider2D>();
                     colPlant.size = new Vector2(0.8f, 0.8f);
-                    go.AddComponent<PropDanoContacto>().danoContacto = 4;
+                    colPlant.sharedMaterial = ObtenerMaterialParedSinFriccion();
+                    go.AddComponent<PropDanoContacto>().danoContacto = 1;
                     _murosVisuales.Add(sr);
                     break;
 
@@ -1551,6 +1590,7 @@ namespace SoulKnight
                     try { go.tag = "Pared"; } catch { }
                     var colIce = go.AddComponent<BoxCollider2D>();
                     colIce.size = new Vector2(0.8f, 0.8f);
+                    colIce.sharedMaterial = ObtenerMaterialParedSinFriccion();
                     _murosVisuales.Add(sr);
                     break;
 
@@ -1564,6 +1604,7 @@ namespace SoulKnight
                     }
                     var colFire = go.AddComponent<BoxCollider2D>();
                     colFire.size = new Vector2(0.8f, 0.8f);
+                    colFire.sharedMaterial = ObtenerMaterialParedSinFriccion();
                     _murosVisuales.Add(sr);
                     break;
 
@@ -1572,7 +1613,8 @@ namespace SoulKnight
                     try { go.tag = "Pared"; } catch { }
                     var colCactus = go.AddComponent<BoxCollider2D>();
                     colCactus.size = new Vector2(0.8f, 0.8f);
-                    go.AddComponent<PropDanoContacto>().danoContacto = 4;
+                    colCactus.sharedMaterial = ObtenerMaterialParedSinFriccion();
+                    go.AddComponent<PropDanoContacto>().danoContacto = 1;
                     _murosVisuales.Add(sr);
                     break;
             }

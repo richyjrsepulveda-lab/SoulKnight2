@@ -7,7 +7,7 @@ namespace SoulKnight
     /// </summary>
     public class PropDanoContacto : MonoBehaviour
     {
-        public int danoContacto = 3;
+        public int danoContacto = 1;
         public float intervaloDano = 0.6f;
         private float _timer;
 
